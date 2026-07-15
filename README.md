@@ -34,8 +34,21 @@ rebuilds SQLite, and opens Sports Hub.
 
 ## Current navigation model
 
-- **Today** is intentionally simple: league toggles, game cards, and the top five MLB opportunities.
+- **Today / Tomorrow** switch (same-tab links). League toggles, game cards, and a
+  ranked cross-sport opportunity feed.
 - Click any game card to open its game view.
 - MLB game views contain **Teams** and **Players** tabs.
-- WNBA cards currently open a schedule-only placeholder until a WNBA analysis feed is connected.
-- League buttons are independent toggles. When neither is selected, every supported sport with games that day is shown.
+- WNBA and World Cup cards open a schedule-only placeholder until deeper analysis
+  is connected.
+- League buttons are independent toggles. When none is selected, every supported
+  sport with games that day is shown.
+- If a league's live schedule is briefly unavailable, the most recent cached slate
+  is shown; a genuinely empty slate shows no fallback. See `ARCHITECTURE_AUDIT.md`.
+
+## Architecture & tests
+
+- Code is organized into `domain/`, `leagues/` (adapters), `services/`,
+  `components/`, and `views/`; `app.py` is a thin router shell. See
+  `ARCHITECTURE_AUDIT.md` and `MIGRATION_NOTES.md`.
+- Data diagnostics: `python diagnostics.py`.
+- Tests: `pip install -r requirements-dev.txt && python -m pytest` (offline).
