@@ -3,7 +3,22 @@ from __future__ import annotations
 import pandas as pd
 
 
+_REQUIRED_COLUMNS = {
+    "batting_team", "batter_id", "batter_name", "game_date", "game_id",
+    "pa_number", "is_hit", "reached_base", "is_strikeout", "pitch_count_pa",
+}
+
+_RESULT_COLUMNS = [
+    "batter_id", "player", "team", "market", "opportunity_score",
+    "stability_score", "last_25_hit_rate", "last_50_hit_rate",
+    "pa_per_game", "k_rate", "support", "risks",
+]
+
+
 def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30) -> pd.DataFrame:
+    # Guard: empty input or missing columns yields an empty result, never a crash.
+    if pa.empty or not _REQUIRED_COLUMNS.issubset(pa.columns) or not teams:
+        return pd.DataFrame(columns=_RESULT_COLUMNS)
     x = pa.loc[pa["batting_team"].isin(teams)].sort_values(["game_date", "game_id", "pa_number"])
     rows = []
     for batter_id, all_pa in x.groupby("batter_id"):
@@ -55,12 +70,7 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
             "support": support[:3],
             "risks": risks[:2],
         })
-    columns = [
-        "batter_id", "player", "team", "market", "opportunity_score",
-        "stability_score", "last_25_hit_rate", "last_50_hit_rate",
-        "pa_per_game", "k_rate", "support", "risks",
-    ]
-    result = pd.DataFrame(rows, columns=columns)
+    result = pd.DataFrame(rows, columns=_RESULT_COLUMNS)
     if result.empty:
         return result
     return result.sort_values(
