@@ -1,0 +1,28 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# --- Virtual environment ---
+.venv/
+venv/
+
+# --- macOS ---
+.DS_Store
+
+# --- Persistent working data (kept on disk, never committed) ---
+# These are the user's daily-refreshed artifacts and can be large.
+# They are intentionally NOT versioned. Do not delete them.
+database/*.db
+database/*.db-wal
+database/*.db-shm
+data/current/*.xlsx
+data/incoming/*.xlsx
+data/archive/
+data/wnba/*.csv
+logs/*.csv
+
+# --- Streamlit local secrets (if ever added) ---
+.streamlit/secrets.toml
