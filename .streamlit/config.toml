@@ -1,0 +1,15 @@
+# Sports Hub Streamlit configuration.
+# Theme values mirror styles/app.css so the pre-render chrome matches the app.
+
+[theme]
+base = "dark"
+primaryColor = "#f47a24"
+backgroundColor = "#0c0f12"
+secondaryBackgroundColor = "#151a20"
+textColor = "#f5f3ef"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+runOnSave = false
