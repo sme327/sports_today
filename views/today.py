@@ -95,15 +95,48 @@ def _status_text(mlb_games: list[SlateGame], mlb_status: DataStatus | None, day:
     return None
 
 
+def _count_chips_html(slates: dict[str, tuple[list[SlateGame], DataStatus]]) -> str:
+    """Summarize the day as per-league count chips for the header."""
+    chips: list[str] = []
+    for adapter in iter_adapters():
+        n = len(slates.get(adapter.league, ([], None))[0])
+        if not n:
+            continue
+        noun = "Match" if adapter.league == "World Cup" else "Game"
+        plural = "" if n == 1 else ("es" if noun == "Match" else "s")
+        chips.append(
+            f'<span class="count-chip">{adapter.emoji} '
+            f'<span class="count-num">{n}</span> {noun}{plural}</span>'
+        )
+    return f'<div class="page-counts">{"".join(chips)}</div>' if chips else ""
+
+
 def render(nav: NavState) -> None:
     day = nav.day
     slate_date = nav.slate_date
 
-    # Header: title + same-tab date switch.
-    left, right = st.columns([4.4, 1.45], vertical_alignment="center")
+    # Fetch each league's slate up front (live -> cached -> error/empty) so the
+    # header can summarize the day.
+    slates: dict[str, tuple[list[SlateGame], DataStatus]] = {}
+    for adapter in iter_adapters():
+        try:
+            games, status = cached_slate(adapter.league, slate_date.isoformat())
+        except Exception as exc:  # defensive: never crash the page on one league
+            games, status = [], DataStatus(adapter.source_name, SourceStatus.ERROR, None, str(exc))
+        slates[adapter.league] = (games, status)
+
+    mlb_games = slates.get("MLB", ([], None))[0]
+    mlb_status = slates.get("MLB", ([], None))[1]
+
+    # Header: hero title + date subtitle + league counts, date switch opposite.
+    left, right = st.columns([4.4, 1.6], vertical_alignment="top")
     with left:
         st.markdown(
-            f'<div class="page-title">{day_possessive(day)} Sports Slate</div>',
+            '<div class="page-heading">'
+            f'<h1 class="page-title">{day_possessive(day)} Sports Slate</h1>'
+            f'<div class="page-subtitle">{slate_date:%A, %B %-d}</div>'
+            f'{_count_chips_html(slates)}'
+            '</div>',
             unsafe_allow_html=True,
         )
     with right:
@@ -121,18 +154,6 @@ def render(nav: NavState) -> None:
         if st.button("Refresh cached data", width="stretch"):
             st.cache_data.clear()
             st.rerun()
-
-    # Fetch each league's slate (live -> cached -> error/empty).
-    slates: dict[str, tuple[list[SlateGame], DataStatus]] = {}
-    for adapter in iter_adapters():
-        try:
-            games, status = cached_slate(adapter.league, slate_date.isoformat())
-        except Exception as exc:  # defensive: never crash the page on one league
-            games, status = [], DataStatus(adapter.source_name, SourceStatus.ERROR, None, str(exc))
-        slates[adapter.league] = (games, status)
-
-    mlb_games = slates.get("MLB", ([], None))[0]
-    mlb_status = slates.get("MLB", ([], None))[1]
 
     # Storyline status chip.
     text = _status_text(mlb_games, mlb_status, day)
