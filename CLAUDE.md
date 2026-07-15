@@ -106,39 +106,47 @@ and copies it to the stable current filename above.
 
 ## Current architecture
 
+Reorganized in the architecture cleanup (see `ARCHITECTURE_AUDIT.md` and
+`MIGRATION_NOTES.md`). `app.py` is a thin shell; rendering, scoring, and
+league logic live in dedicated packages. Leagues are added by implementing the
+`LeagueAdapter` protocol and registering — no edits to the Today page.
+
 ```text
 sports_hub_v1_daily/
-├── app.py
-├── morning_update.py
-├── import_feed.py
-├── setup.command
-├── update.command
-├── update_only.command
-├── run.command
-├── requirements.txt
-├── CLAUDE.md
-├── AGENT_BUILD_BRIEF.md
-├── STEP_BY_STEP.md
-├── data/
-│   ├── current/
-│   │   └── mlb_pbp_current.xlsx
-│   ├── archive/
-│   │   └── 2026/
-│   └── incoming/
-├── database/
-│   └── sportshub.db
-├── logs/
-│   └── mlb_import_history.csv
-├── scripts/
-│   ├── __init__.py
-│   └── sync_mlb_download.py
-└── src/
-    ├── config.py
-    ├── ingest.py
-    ├── metrics.py
-    ├── mlb_api.py
-    └── opportunity.py
+├── app.py                  # config, CSS, migration, router dispatch, error boundary
+├── router.py               # query-param NavState; Today vs Game dispatch (same tab)
+├── domain/models.py        # SlateGame, Opportunity, Evidence, DataStatus, enums
+├── leagues/
+│   ├── base.py             # LeagueAdapter Protocol + registry
+│   ├── mlb/                # teams.py, adapter.py
+│   ├── wnba/adapter.py
+│   └── world_cup/adapter.py
+├── services/
+│   ├── data_access.py      # leakage-safe loads (as_of)
+│   ├── schedules.py        # live -> cached -> error/empty ordering
+│   ├── schedule_cache.py   # SQLite schedule cache
+│   ├── snapshots.py        # daily opportunity snapshots
+│   ├── migrations.py       # additive schema setup (schema_version)
+│   ├── freshness.py        # data-through dates
+│   └── app_cache.py        # st.cache_data layer (schedules/opportunities)
+├── views/                  # today.py, game.py
+├── components/             # date_switch, league_filters, game_cards,
+│                           #   opportunity_feed, status_chip, empty_states, ...
+├── styles/app.css          # single stylesheet (loaded once)
+├── diagnostics.py          # CLI data diagnostics (not part of UI)
+├── .streamlit/config.toml  # theme + server settings
+├── tests/                  # offline pytest suite
+├── morning_update.py  import_feed.py  collect_wnba.py
+├── setup.command  update.command  update_only.command  run.command  update_wnba.command
+├── data/ (current/ archive/ incoming/ wnba/)   database/sportshub.db   logs/
+├── scripts/sync_mlb_download.py
+└── src/                    # config, ingest, metrics, mlb_api, wnba_api,
+                            #   wnba_collector, opportunity, wnba_opportunity, ...
 ```
+
+Database tables: `plate_appearances`, `players`, `games`, `wnba_games`,
+`wnba_player_game_logs`, `wnba_collection_runs` (existing), plus additive
+`schedule_cache`, `opportunity_snapshots`, `schema_version`.
 
 ## Daily workflow
 
