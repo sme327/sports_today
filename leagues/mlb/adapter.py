@@ -32,6 +32,12 @@ class MLBAdapter:
     label = "⚾️ MLB"
     source_name = "MLB StatsAPI"
     supports_deep_dive = True
+    chip_label = "Analysis"
+
+    def describe_game(self, game: SlateGame) -> str:
+        away_p = game.meta.get("away_pitcher") or "TBD"
+        home_p = game.meta.get("home_pitcher") or "TBD"
+        return f"{away_p} vs {home_p}"
 
     def fetch_schedule(self, slate_date: date) -> list[SlateGame]:
         games: list[SlateGame] = []

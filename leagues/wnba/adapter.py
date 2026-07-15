@@ -39,6 +39,12 @@ class WNBAAdapter:
     label = "🏀 WNBA"
     source_name = "ESPN WNBA"
     supports_deep_dive = False
+    chip_label = "Schedule"
+
+    def describe_game(self, game: SlateGame) -> str:
+        venue = game.venue or "Venue TBD"
+        broadcast = game.meta.get("broadcast") or ""
+        return venue if not broadcast else f"{venue} · {broadcast}"
 
     def fetch_schedule(self, slate_date: date) -> list[SlateGame]:
         games: list[SlateGame] = []

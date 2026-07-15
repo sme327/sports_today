@@ -21,6 +21,11 @@ class LeagueAdapter(Protocol):
     label: str           # filter-chip label, e.g. "⚾️ MLB"
     source_name: str     # provenance label, e.g. "MLB StatsAPI"
     supports_deep_dive: bool
+    chip_label: str      # game-card chip, e.g. "Analysis"
+
+    def describe_game(self, game: SlateGame) -> str:
+        """One-line game-card meta (probable pitchers, venue, round, ...)."""
+        ...
 
     def fetch_schedule(self, slate_date: date) -> list[SlateGame]:
         """Fetch and normalize the league's games for ``slate_date``.

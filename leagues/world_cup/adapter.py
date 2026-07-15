@@ -31,6 +31,13 @@ class WorldCupAdapter:
     label = "⚽ World Cup"
     source_name = "ESPN World Cup"
     supports_deep_dive = False
+    chip_label = "Match"
+
+    def describe_game(self, game: SlateGame) -> str:
+        parts = [game.meta.get("round") or "World Cup"]
+        if game.venue:
+            parts.append(game.venue)
+        return " · ".join(parts)
 
     def fetch_schedule(self, slate_date: date) -> list[SlateGame]:
         games: list[SlateGame] = []
