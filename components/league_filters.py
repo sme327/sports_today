@@ -31,7 +31,7 @@ def render_filters(leagues_with_games: list[LeagueAdapter]) -> None:
                 adapter.label,
                 key=f"toggle_{key}",
                 type="primary" if active else "secondary",
-                width="stretch",
+                width="content",
             ):
                 st.session_state[key] = not active
                 st.rerun()
