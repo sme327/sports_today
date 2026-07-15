@@ -1,0 +1,1 @@
+"""MLB league adapter package."""
