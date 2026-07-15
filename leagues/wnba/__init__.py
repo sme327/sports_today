@@ -1,0 +1,1 @@
+"""WNBA league adapter package."""
