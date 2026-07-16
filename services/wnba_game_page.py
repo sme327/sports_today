@@ -29,7 +29,7 @@ _LABELS = [
     ("Elite offense", "off_pct", lambda r: f"{r.pts_for:.1f} PPG"),
     ("Defensive-minded", "def_pct", lambda r: f"{r.pts_against:.1f} allowed"),
     ("Three-point shooting", "three_pct", lambda r: f"{r.tpm_pg:.1f} 3PM at {r.tp_pct:.0%}"),
-    ("Transition team", "pace_pct", lambda r: f"{r.scoring_pace:.0f} combined-scoring pace"),
+    ("Transition team", "pace_pct", lambda r: f"{r.scoring_pace:.0f} combined pts/gm"),
     ("Paint-first offense", "paint_pct", lambda r: f"{r.two_pt_pg:.1f} two-point makes"),
     ("Ball movement", "ballmove_pct", lambda r: f"{r.ast_pg:.1f} assists"),
     ("Rebounding", "reb_pct", lambda r: f"{r.reb_margin:+.1f} rebound margin"),
@@ -141,15 +141,15 @@ def _battlefields(tt, a_id, h_id, a_disp, h_disp) -> tuple[WNBABattlefield, ...]
     conf = _conf(min(a.games, h.games))
     cands: list[tuple[float, WNBABattlefield]] = []
 
-    # Tempo
+    # Scoring environment (combined points; not a possession-based pace estimate)
     gap = abs(a.pace_pct - h.pace_pct)
     faster = a_disp if a.scoring_pace > h.scoring_pace else h_disp
     cands.append((gap, WNBABattlefield(
-        title="Tempo", advantage=faster, confidence=conf,
-        explanation=(f"{a_disp} play at a {a.scoring_pace:.0f} combined-scoring pace, {h_disp} at "
-                     f"{h.scoring_pace:.0f}. A faster game favors {faster}."),
-        supporting_metrics=(f"{a_disp}: {a.scoring_pace:.0f} pace ({_ordinal(int(round(a.pace_pct)))} pct)",
-                            f"{h_disp}: {h.scoring_pace:.0f} pace ({_ordinal(int(round(h.pace_pct)))} pct)"))))
+        title="Scoring Environment", advantage=faster, confidence=conf,
+        explanation=(f"{a_disp} have averaged {a.scoring_pace:.0f} combined points a game, {h_disp} "
+                     f"{h.scoring_pace:.0f}. A higher-scoring environment favors {faster}."),
+        supporting_metrics=(f"{a_disp}: {a.scoring_pace:.0f} combined pts/gm ({_ordinal(int(round(a.pace_pct)))} pct)",
+                            f"{h_disp}: {h.scoring_pace:.0f} combined pts/gm ({_ordinal(int(round(h.pace_pct)))} pct)"))))
     # Perimeter: each offense's 3PT vs opponent's 3PT defense
     a_edge = a.three_pct - (100 - h.perimeter_def_pct)
     h_edge = h.three_pct - (100 - a.perimeter_def_pct)
@@ -196,9 +196,9 @@ def _game_script(tt, a_id, h_id, a_disp, h_disp, battlefields) -> tuple[str, ...
     defense = (a.def_pct + h.def_pct) / 2
     paint = (a.paint_pct + h.paint_pct) / 2
     if pace >= 62 and three >= 58:
-        style = "a fast-paced, perimeter-oriented matchup"
+        style = "a high-scoring, perimeter-oriented matchup"
     elif pace >= 62:
-        style = "an up-tempo, high-scoring matchup"
+        style = "a high-scoring matchup"
     elif defense >= 62 and pace < 45:
         style = "a defensive, grind-it-out battle"
     elif abs(a.off_pct - h.off_pct) >= 35 or abs(a.def_pct - h.def_pct) >= 35:

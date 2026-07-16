@@ -37,9 +37,9 @@ supports_deep_dive = True`; cached on `game_id | as_of | wnba-game-page-v1`.
 4. **Team Identity** — labels (Elite offense, Defensive-minded, Three-point
    shooting, Transition, Paint-first, Ball movement, Rebounding, Rim protection)
    from league percentiles, plus a summary and W/L form dots.
-5. **Where the Game Will Be Won** — 3–5 "battlefields" (Tempo, Perimeter, Paint,
-   Turnovers, Rebounding) each with an explanation, supporting metrics, an
-   advantage, and a confidence.
+5. **Where the Game Will Be Won** — 3–5 "battlefields" (Scoring Environment,
+   Perimeter, Paint, Turnovers, Rebounding) each with an explanation, supporting
+   metrics, an advantage, and a confidence.
 6. **Players Who Shape Tonight** — top players per team, role-classified
    (Superstar / Primary scorer / creator / Defensive anchor / Floor spacer /
    Rebounding presence) with season line, trend, strengths, and why they matter.
@@ -58,10 +58,11 @@ supports_deep_dive = True`; cached on `game_id | as_of | wnba-game-page-v1`.
   `team_game_frame` (per-team box score + the opponent's, paired by `game_id`),
   `team_season_table` (season profile + league percentiles), `recent_form`,
   `rest_days`, `season_series`, `player_season_frame`, `player_trend_frame`.
-- **Composites are transparent heuristics.** Tempo uses a **combined-scoring pace**
-  (observed total points in a team's games), not a possession/pace estimate. Trends
-  use a composite z-score (points/minutes/rebounds/assists deltas), min 0.6, with a
-  minimum recent-minutes filter.
+- **Composites are transparent heuristics.** The "Scoring Environment" battlefield
+  uses **combined points per game** (observed total points in a team's games),
+  deliberately **not** labeled "tempo/pace" since we have no possession estimate.
+  Trends use a composite z-score (points/minutes/rebounds/assists deltas), min 0.6,
+  with a minimum recent-minutes filter.
 
 ## Not shown in this version (honest gaps)
 

@@ -17,6 +17,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Experience Principles](product/EXPERIENCE_PRINCIPLES.md) | The UX constitution — how every screen should feel. |
 | [Roadmap](product/ROADMAP.md) | Where we're going, organized around the user's day. |
 | [Future Endeavors](product/FUTURE_ENDEAVORS.md) | The next major product tracks (Preview / Live / Postgame) and how they connect. |
+| [WNBA Matchup Spec (v2)](WNBA_Matchup_Page_Specification_v2.md) | Source product spec for the WNBA matchup page. |
+| [MLS Matchup Philosophy](MLS_MATCHUP_PHILOSOPHY.md) | Product/UX philosophy for a future MLS matchup page. |
 
 ## Design — *how it looks and feels*
 
