@@ -21,20 +21,20 @@ def render_filters(leagues_with_games: list[LeagueAdapter]) -> None:
         st.session_state.setdefault(state_key(adapter.league), False)
     if not leagues_with_games:
         return
-    ratios = [1] * len(leagues_with_games) + [max(1, 7 - len(leagues_with_games))]
-    cols = st.columns(ratios, gap="small")
-    for col, adapter in zip(cols, leagues_with_games):
-        with col:
-            key = state_key(adapter.league)
-            active = bool(st.session_state.get(key, False))
-            if st.button(
-                adapter.label,
-                key=f"toggle_{key}",
-                type="primary" if active else "secondary",
-                width="content",
-            ):
-                st.session_state[key] = not active
-                st.rerun()
+    # Content-hugging horizontal group so the pills read as one filter set
+    # rather than buttons spread across wide columns.
+    row = st.container(horizontal=True, gap="small")
+    for adapter in leagues_with_games:
+        key = state_key(adapter.league)
+        active = bool(st.session_state.get(key, False))
+        if row.button(
+            adapter.label,
+            key=f"toggle_{key}",
+            type="primary" if active else "secondary",
+            width="content",
+        ):
+            st.session_state[key] = not active
+            st.rerun()
 
 
 def selected_leagues(leagues_with_games: list[LeagueAdapter]) -> list[str]:

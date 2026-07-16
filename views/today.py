@@ -78,7 +78,8 @@ def render(nav: NavState) -> None:
     left, right = st.columns([4.4, 1.45], vertical_alignment="center")
     with left:
         st.markdown(
-            f'<div class="page-title">{day_possessive(day)} Sports Slate</div>',
+            f'<div class="page-title">'
+            f'<span class="title-accent">{day_possessive(day)}</span> Sports Slate</div>',
             unsafe_allow_html=True,
         )
     with right:
@@ -170,10 +171,8 @@ def _render_opportunities(
     top_slate = slate_opps[:8]
 
     if analysis_leagues:
-        label = " + ".join(l for l in ("MLB", "WNBA") if l in analysis_leagues)
         st.markdown(
-            '<div class="section-row"><h2>Top Opportunities</h2>'
-            f'<span class="section-count">{label} · preliminary</span></div>',
+            '<div class="section-row"><h2>Top Opportunities</h2></div>',
             unsafe_allow_html=True,
         )
         if top_slate:
