@@ -30,16 +30,17 @@ in services; components only format. The page model is cached on
 Reading flow: **summary → evidence → synthesis → matchups → players → expected
 game**. Team Identity (evidence) is placed above the story (synthesis).
 
-1. **Game hero** — doubles as a game summary: full city + team names, venue, time,
-   each team's recent-form indicator, and probable starters with handedness +
-   strikeout percentile (all from already-computed analytics). "Probable starters
-   not yet available" when missing.
+1. **Game hero** — doubles as a game summary in plain English: full city + team
+   names, venue, time, a recent-form phrase per team ("Bats heating up"), and each
+   probable starter with handedness + a descriptor ("Elite strikeout stuff",
+   "Command specialist", "Pitches to contact") derived from the same K/control
+   percentiles. "Probable starters not yet available" when missing.
 2. **Team Identity** — six dimensions per team: Power, Contact, Plate Discipline,
    Speed, RISP (league-relative percentiles shown as qualitative tiers + the
    number), and Recent Form (composite last-10 vs. season baseline → Trending
    Up/Down). A conversational, form-aware identity sentence.
-3. **What This Game Is About** — 2–4 deterministic observations rendered as
-   scannable insight cards (no free generative text).
+3. **What This Game Is About** — three deterministic, role-tagged insight cards
+   (Biggest Advantage · Swing Factor · Momentum). No free generative text.
 4. **Key Matchups** — 3–5 offense-vs-probable-starter interactions with editorial
    headline questions ("Can Nola command the strike zone?"); explanations keep the
    exact analytics. Team-vs-team fallback if a starter isn't matched.
@@ -48,12 +49,15 @@ game**. Team Identity (evidence) is placed above the story (synthesis).
    the team-level "Trending Up/Down" wording on purpose.)
 6. **Players Positioned to Succeed** — the shared Opportunity engine (1+ Hit),
    filtered to the two teams, **same scores as the slate** (not rescaled), enriched
-   with player headshots.
+   with **team logo + player headshot** (also applied to homepage MLB opportunities).
 7. **Expected Game Shape** — a multi-factor classification (Starter-driven,
-   Power-oriented, Contact-heavy, Balanced, Uncertain), presented as a lead label +
-   read + inline facets. Never "pitcher's duel".
+   Power-oriented, Contact-heavy, Balanced, Uncertain), presented as a big label +
+   a **plain-English narrative** + inline facets. Never "pitcher's duel".
 8. **Storylines to Watch** — 2–3, only above a quality threshold; never padded;
-   rendered as ranked article headlines.
+   editorial article headlines marked with a small baseball icon (no numbering).
+
+Small monochrome SVG icons (no emoji) mark identity dimensions, matchups,
+storylines, and insight roles to aid scanning.
 9. **Data context** — a compact line naming the `as_of` cutoff and what's excluded.
 
 **Deliberately not added (V1.1):** a separate "Players To Watch" section (duplicates

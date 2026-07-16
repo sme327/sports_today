@@ -143,6 +143,8 @@ class Opportunity:
     supporting_evidence: list[str] = field(default_factory=list)
     negative_evidence: list[str] = field(default_factory=list)
     image_url: str | None = None
+    # Optional secondary image (e.g. player headshot alongside a team logo).
+    headshot_url: str | None = None
     data_status: DataStatus | None = None
 
     # Context for snapshots / deep dives.

@@ -63,6 +63,11 @@ class MLBGameHero:
     away_pitcher_hand: str | None = None
     home_pitcher_k_pct: float | None = None
     home_pitcher_hand: str | None = None
+    # Plain-English summaries (derived from the same analytics) for the hero.
+    away_form_note: str | None = None
+    home_form_note: str | None = None
+    away_pitcher_note: str | None = None
+    home_pitcher_note: str | None = None
 
 
 @dataclass(frozen=True)
@@ -100,6 +105,7 @@ class MLBGameShape:
     volatility: str
     likely_shape: str
     supporting_facts: tuple[str, ...]
+    narrative: tuple[str, ...] = ()   # plain-English read (presentation)
 
 
 @dataclass(frozen=True)

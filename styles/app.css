@@ -643,7 +643,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* What This Game Is About — scannable insight cards */
 .mlb-insights { display: flex; flex-direction: column; gap: .5rem; }
 .mlb-insight { display: flex; align-items: flex-start; gap: .7rem; padding: .8rem 1rem; border-radius: var(--r-md); background: var(--surface-1); box-shadow: var(--edge-hi), var(--shadow-sm); }
-.mlb-insight-dot { flex: 0 0 auto; width: 8px; height: 8px; margin-top: .42rem; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 .mlb-insight p { margin: 0; color: var(--text-1); font-size: .92rem; line-height: 1.45; font-weight: 550; }
 
 /* Team identity */
@@ -713,7 +712,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .mlb-storylines { display: flex; flex-direction: column; }
 .mlb-storyline { display: flex; gap: .85rem; padding: .95rem 0; }
 .mlb-storyline + .mlb-storyline { border-top: 1px solid var(--hairline); }
-.mlb-storyline-num { flex: 0 0 auto; color: var(--brand-2); font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; opacity: .65; padding-top: .12rem; }
 .mlb-storyline-body { min-width: 0; }
 .mlb-storyline-q { color: var(--text-1); font-size: 1.05rem; font-weight: 800; letter-spacing: -.015em; line-height: 1.25; }
 .mlb-storyline-a { color: var(--text-2); font-size: .88rem; line-height: 1.45; margin-top: .25rem; }
@@ -732,4 +730,35 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .mlb-hero-logo { width: 40px; height: 40px; flex-basis: 40px; }
   .mlb-metric-row { grid-template-columns: 82px 1fr auto; }
   .mlb-shape-label { font-size: 1.25rem; }
+}
+
+/* --- MLB V1.2: restrained icons + player identity + insight roles --------- */
+.mlb-ic { width: 13px; height: 13px; flex: 0 0 auto; display: inline-block; vertical-align: -1px; }
+
+/* Opportunity feed: player headshot alongside the team logo (MLB) */
+.op-headshot { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; object-fit: cover; background: var(--surface-3); box-shadow: var(--edge-hi); }
+.op-headshot.img-fallback { background: radial-gradient(circle at 50% 35%, #3a4553, #222a34); }
+
+/* Recent-form pill: icon + label */
+.mlb-form-pill { display: inline-flex; align-items: center; gap: .3rem; }
+
+/* Insight cards get a role header (icon + label) */
+.mlb-insight { flex-direction: column; align-items: stretch; gap: .35rem; }
+.mlb-insight-role { display: inline-flex; align-items: center; gap: .35rem; color: var(--brand-2); font-size: .64rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.mlb-insight-role .mlb-ic { color: var(--brand-2); }
+
+/* Identity dimension icon before the name */
+.mlb-metric-name { display: inline-flex; align-items: center; gap: .38rem; }
+.mlb-metric-name .mlb-ic { color: var(--text-4); }
+
+/* Matchup headline icon */
+.mlb-matchup-q { display: flex; align-items: center; gap: .45rem; }
+.mlb-matchup-q .mlb-ic { color: var(--brand-2); }
+
+/* Storyline baseball icon (replaces the numeric index) */
+.mlb-storyline-ic { flex: 0 0 auto; color: var(--brand-2); padding-top: .18rem; }
+.mlb-storyline-ic .mlb-ic { width: 15px; height: 15px; }
+
+@media (max-width: 650px) {
+  .op-headshot { width: 28px; height: 28px; flex-basis: 28px; }
 }
