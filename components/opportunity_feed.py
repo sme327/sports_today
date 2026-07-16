@@ -27,9 +27,16 @@ _DEFAULT_FALLBACK = ("Recent profile supports further review",
 _ON_ERR = "this.classList.add('op-ph-fallback');this.removeAttribute('src')"
 
 
-def _avatar(headshot: str | None, team_logo: str | None, alt: str) -> str:
+def _zoom_class(league: str) -> str:
+    # League-specific headshot crop/zoom (WNBA sources sit smaller in frame).
+    return {"MLB": "op-zoom-mlb", "WNBA": "op-zoom-wnba"}.get(league, "op-zoom-gen")
+
+
+def _avatar(headshot: str | None, team_logo: str | None, alt: str, league: str) -> str:
     """Merged avatar: circular headshot + overlapping team-logo badge.
 
+    The photo lives in an overflow-hidden circular wrapper so it can be scaled
+    (to fill the circle) without growing the circle or clipping the badge.
     Fallback order: headshot + badge -> headshot only -> team logo only ->
     neutral silhouette. No broken-image icons.
     """
@@ -39,14 +46,15 @@ def _avatar(headshot: str | None, team_logo: str | None, alt: str) -> str:
         badge = (f'<img class="op-badge" src="{escape(team_logo, quote=True)}" alt="" '
                  f'onerror="this.style.display=\'none\'">')
     if headshot:
-        photo = (f'<img class="op-photo" src="{escape(headshot, quote=True)}" '
+        photo = (f'<img class="op-photo {_zoom_class(league)}" src="{escape(headshot, quote=True)}" '
                  f'alt="{a}" onerror="{_ON_ERR}">')
-        return f'<div class="op-avatar">{photo}{badge}</div>'
+        return f'<div class="op-avatar"><div class="op-photo-wrap">{photo}</div>{badge}</div>'
     if team_logo:  # no headshot: team logo becomes the avatar, no badge
         photo = (f'<img class="op-photo logo" src="{escape(team_logo, quote=True)}" '
                  f'alt="{a}" onerror="{_ON_ERR}">')
-        return f'<div class="op-avatar">{photo}</div>'
-    return '<div class="op-avatar"><div class="op-photo op-ph-fallback"></div></div>'
+        return f'<div class="op-avatar"><div class="op-photo-wrap">{photo}</div></div>'
+    return ('<div class="op-avatar"><div class="op-photo-wrap">'
+            '<div class="op-photo op-ph-fallback"></div></div></div>')
 
 
 def _evidence(kind: str, heading: str, body: str) -> str:
@@ -64,7 +72,7 @@ def _row_html(opp: Opportunity) -> str:
         '<div class="op-row">'
         f'<div class="op-score">{opp.opportunity_score}</div>'
         '<div class="op-identity">'
-        f'{_avatar(opp.headshot_url, opp.image_url, opp.player_name)}'
+        f'{_avatar(opp.headshot_url, opp.image_url, opp.player_name, opp.league)}'
         '<div class="op-info">'
         f'<div class="op-player">{escape(opp.player_name)}</div>'
         f'<div class="op-market">{escape(opp.market)}</div>'
