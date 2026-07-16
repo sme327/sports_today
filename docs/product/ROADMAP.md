@@ -56,9 +56,21 @@ The user is planning their day. This is where the opportunity engine lives.
 
 ### 🏟️ During Games — "What's happening right now that matters?"
 
-Today the app is schedule-aware, not live. This phase grows carefully.
+Today the app is schedule-aware with **final and basic live scores** on the game
+cards (Final-score V1). This phase grows carefully.
 
 - **Live status honesty** — clear data-freshness signals. *(shipped: degraded mode)*
+- **Scores on cards** — final score + winner; live score + a compact status badge.
+  *(shipped: Final-score V1; parsers extract score/state/winner/status_detail, no
+  endpoint or hydrate change)*
+- **Live State V2** *(follow-on)* — richer in-game detail from fields the sources
+  already expose: MLB inning/state/outs via a `hydrate=linescore` add; WNBA quarter
+  + clock (`status.period` / `status.displayClock`); soccer match minute + status
+  detail. Presentation grows to show period/clock.
+- **Live Refresh V2** *(follow-on)* — auto-rerun **only while at least one game is
+  live**; no polling when every game is pregame or final; refresh interval TBD after
+  observing source reliability (candidates: `st.fragment(run_every=…)` or
+  `streamlit-autorefresh`). Until then, the 120 s cache TTL + manual refresh apply.
 - **Live opportunity tracking** — is the pick on pace?
 - **Win probability, momentum swings, close-game alerts.** *(future)*
 

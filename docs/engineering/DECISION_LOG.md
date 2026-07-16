@@ -9,6 +9,23 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-07-16 — Final-score V1 (scores on game cards)
+
+**Decision.** Surface final and basic live scores on the game cards. Parsers now
+extract `away_score`, `home_score`, a normalized `state` (pre/live/final),
+`winner`, and `status_detail`; these are optional fields on `SlateGame` with safe
+defaults. No schedule endpoint or hydrate parameter changed — the current
+requests already return scores/state/winner for all three leagues. Kept the 120 s
+cache TTL and the manual refresh; no live auto-rerun.
+**Reason.** Scores are the highest-value live signal and were already in the raw
+responses but discarded during normalization. Optional defaulted fields keep the
+schedule cache backward-compatible (old rows deserialize with `None`).
+**Tradeoffs.** Idle pages don't refresh until interaction/TTL; MLB inning and live
+clocks are not shown yet.
+**Future.** *Live State V2* (MLB `hydrate=linescore` inning/outs; WNBA quarter+clock;
+soccer minute) and *Live Refresh V2* (auto-rerun only while a game is live) — see
+[Roadmap → During Games](../product/ROADMAP.md).
+
 ## 2026-07-16 — Sport-specific game pages on shared product principles
 
 **Decision.** Give each league its own game-page view (starting with MLB's

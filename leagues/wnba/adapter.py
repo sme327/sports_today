@@ -64,6 +64,11 @@ class WNBAAdapter:
                     away_logo=g.get("away_logo"),
                     home_logo=g.get("home_logo"),
                     venue=g.get("venue"),
+                    away_score=g.get("away_score"),
+                    home_score=g.get("home_score"),
+                    state=g.get("state"),
+                    winner=g.get("winner"),
+                    status_detail=g.get("status_detail"),
                     meta={"broadcast": g.get("broadcast")},
                 )
             )
