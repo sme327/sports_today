@@ -16,6 +16,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Vision](product/VISION.md) | Why the product exists, positioning, the decision filter. |
 | [Experience Principles](product/EXPERIENCE_PRINCIPLES.md) | The UX constitution — how every screen should feel. |
 | [Roadmap](product/ROADMAP.md) | Where we're going, organized around the user's day. |
+| [Future Endeavors](product/FUTURE_ENDEAVORS.md) | The next major product tracks (Preview / Live / Postgame) and how they connect. |
 
 ## Design — *how it looks and feels*
 
