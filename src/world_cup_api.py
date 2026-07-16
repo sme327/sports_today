@@ -101,6 +101,25 @@ def _logo(team: dict) -> str | None:
     return logos[0].get("href") if logos else None
 
 
+def _score(value: object) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _state(status: dict) -> str:
+    return {"pre": "pre", "in": "live", "post": "final"}.get(
+        status.get("type", {}).get("state"), "pre")
+
+
+def _winner(competitors: list[dict]) -> str | None:
+    for c in competitors:
+        if c.get("winner"):
+            return c.get("homeAway")
+    return None
+
+
 def _parse_espn(payload: dict) -> list[dict]:
     games: list[dict] = []
     for event in payload.get("events", []):
@@ -110,6 +129,8 @@ def _parse_espn(payload: dict) -> list[dict]:
         away = next((c for c in competitors if c.get("homeAway") == "away"), {})
         home_team = home.get("team", {})
         away_team = away.get("team", {})
+        status = event.get("status", {})
+        stype = status.get("type", {})
         broadcasts: list[str] = []
         for item in competition.get("broadcasts") or []:
             broadcasts.extend(item.get("names") or [])
@@ -121,8 +142,7 @@ def _parse_espn(payload: dict) -> list[dict]:
         games.append({
             "game_id": event.get("id"),
             "game_date": event.get("date"),
-            "status": event.get("status", {}).get("type", {}).get("detail")
-                or event.get("status", {}).get("type", {}).get("description"),
+            "status": stype.get("detail") or stype.get("description"),
             "away": away_team.get("displayName"),
             "home": home_team.get("displayName"),
             "away_short": away_team.get("shortDisplayName")
@@ -138,6 +158,12 @@ def _parse_espn(payload: dict) -> list[dict]:
             "venue": competition.get("venue", {}).get("fullName"),
             "round": round_name,
             "broadcast": ", ".join(dict.fromkeys(broadcasts)),
+            # Final-score V1 fields.
+            "away_score": _score(away.get("score")),
+            "home_score": _score(home.get("score")),
+            "state": _state(status),
+            "winner": _winner(competitors),
+            "status_detail": stype.get("shortDetail") or stype.get("detail"),
         })
     return games
 

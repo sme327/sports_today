@@ -96,8 +96,29 @@ class SlateGame:
     home_logo: str | None = None
 
     venue: str | None = None
+
+    # Score/state (Final-score V1). Optional with safe defaults so older cached
+    # SlateGame rows (serialized before these existed) still deserialize.
+    away_score: int | None = None
+    home_score: int | None = None
+    state: str | None = None          # "pre" | "live" | "final" | None
+    winner: str | None = None         # "away" | "home" | None
+    status_detail: str | None = None  # e.g. "Final", "3rd Quarter", "AET"
+
     # League-specific extras (probable pitchers, broadcast, round, etc.).
     meta: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def has_score(self) -> bool:
+        return self.away_score is not None and self.home_score is not None
+
+    @property
+    def is_final(self) -> bool:
+        return self.state == "final"
+
+    @property
+    def is_live(self) -> bool:
+        return self.state == "live"
 
     @property
     def away_display(self) -> str:

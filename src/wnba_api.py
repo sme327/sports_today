@@ -61,16 +61,27 @@ def _logo(team: dict) -> str | None:
     return f"https://a.espncdn.com/i/teamlogos/wnba/500/{code}.png"
 
 
-def schedule(game_date: date | str) -> list[dict]:
-    if hasattr(game_date, "strftime"):
-        date_token = game_date.strftime("%Y%m%d")
-    else:
-        date_token = str(game_date).replace("-", "")
+def _score(value: object) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
-    response = requests.get(BASE, params={"dates": date_token, "limit": 20}, timeout=20)
-    response.raise_for_status()
-    payload = response.json()
 
+def _state(status: dict) -> str:
+    """Normalize ESPN status.type.state (pre/in/post) to pre / live / final."""
+    return {"pre": "pre", "in": "live", "post": "final"}.get(
+        status.get("type", {}).get("state"), "pre")
+
+
+def _winner(competitors: list[dict]) -> str | None:
+    for c in competitors:
+        if c.get("winner"):
+            return c.get("homeAway")  # "home" | "away"
+    return None
+
+
+def _parse_events(payload: dict) -> list[dict]:
     games: list[dict] = []
     for event in payload.get("events", []):
         competition = (event.get("competitions") or [{}])[0]
@@ -79,6 +90,8 @@ def schedule(game_date: date | str) -> list[dict]:
         away = next((c for c in competitors if c.get("homeAway") == "away"), {})
         home_team = home.get("team", {})
         away_team = away.get("team", {})
+        status = event.get("status", {})
+        stype = status.get("type", {})
 
         broadcasts = []
         for item in competition.get("broadcasts") or []:
@@ -87,7 +100,7 @@ def schedule(game_date: date | str) -> list[dict]:
         games.append({
             "game_id": event.get("id"),
             "game_date": event.get("date"),
-            "status": event.get("status", {}).get("type", {}).get("detail") or event.get("status", {}).get("type", {}).get("description"),
+            "status": stype.get("detail") or stype.get("description"),
             "away": away_team.get("displayName"),
             "home": home_team.get("displayName"),
             "away_short": away_team.get("shortDisplayName") or away_team.get("name") or away_team.get("abbreviation"),
@@ -98,5 +111,22 @@ def schedule(game_date: date | str) -> list[dict]:
             "home_logo": _logo(home_team),
             "venue": competition.get("venue", {}).get("fullName"),
             "broadcast": ", ".join(dict.fromkeys(broadcasts)),
+            # Final-score V1 fields.
+            "away_score": _score(away.get("score")),
+            "home_score": _score(home.get("score")),
+            "state": _state(status),
+            "winner": _winner(competitors),
+            "status_detail": stype.get("shortDetail") or stype.get("detail"),
         })
     return games
+
+
+def schedule(game_date: date | str) -> list[dict]:
+    if hasattr(game_date, "strftime"):
+        date_token = game_date.strftime("%Y%m%d")
+    else:
+        date_token = str(game_date).replace("-", "")
+
+    response = requests.get(BASE, params={"dates": date_token, "limit": 20}, timeout=20)
+    response.raise_for_status()
+    return _parse_events(response.json())
