@@ -138,7 +138,7 @@ def test_as_of_excludes_game_date_and_later(pa_all, tmp_path):
 # 2. Page builds with valid input.
 def test_page_builds(pa, game):
     page = build_mlb_game_page(game, GAME_DATE, GAME_DATE, pa=pa)
-    assert page.hero.away_team == "A" and page.hero.home_team == "B"  # short display names
+    assert page.hero.away_team == "Team A" and page.hero.home_team == "Team B"  # full names
     assert page.away_identity.team == "Team A" and page.home_identity.team == "Team B"
     assert page.away_identity.metrics and page.home_identity.metrics
     assert page.game_story
@@ -202,9 +202,11 @@ def test_no_unsupported_metrics(pa, game):
         *[s.explanation for s in page.storylines],
         page.game_shape.likely_shape if page.game_shape else "",
     ]).lower()
+    import re
     for banned in ("bullpen", "defense", "weather", "park factor", "velocity",
                    "pitch type", "catcher", "statcast", "era", "win probability"):
-        assert banned not in blob, banned
+        # Word-boundary match so 'era' (the stat) isn't found inside 'average'.
+        assert not re.search(rf"\b{re.escape(banned)}\b", blob), banned
 
 
 # 11. Story builder uses available facts.
