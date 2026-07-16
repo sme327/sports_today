@@ -30,6 +30,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | --- | --- |
 | [Architecture](engineering/ARCHITECTURE.md) | Structure, layers, "where to add X", glossary. |
 | [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks. |
+| [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
 | [MLS Phase 1 Inspection](engineering/MLS_PHASE1_INSPECTION.md) | Read-only inspection + plan for a future MLS matchup page (reuse, data gaps, risks, sequence). |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |

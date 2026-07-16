@@ -9,6 +9,23 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-07-16 — WNBA matchup page (basketball-designed)
+
+**Decision.** Ship a dedicated WNBA matchup page (`WNBAAdapter.supports_deep_dive
+= True`) designed around basketball — Game Script, Snapshot, Team Identity,
+"Where the Game Will Be Won" battlefields, Players Who Shape Tonight, Trending
+Players, Team Trends sparklines, and the shared opportunity engine. It reuses the
+MLB page's architecture and design-system primitives but has its own analytics.
+**Reason.** WNBA had rich box-score data but only a schedule placeholder; the MLB
+pattern transfers cleanly, and the spec asked for a basketball story, not a
+baseball page with labels swapped.
+**Tradeoffs.** Tempo uses an observed combined-scoring pace (not true possessions);
+no injuries/lineups/advanced ratings yet (collected data doesn't exist). Reuses
+`mlb-*` CSS class names for shared primitives (functional, slightly misnamed).
+**Future.** `services/wnba_analytics.py` is basketball-generic — a future NBA page
+reuses it. Advanced ratings / injuries / projected lineups plug in as new
+collected data. See [WNBA Game Page](WNBA_GAME_PAGE.md).
+
 ## 2026-07-16 — Final-score V1 (scores on game cards)
 
 **Decision.** Surface final and basic live scores on the game cards. Parsers now

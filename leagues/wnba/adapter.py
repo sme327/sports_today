@@ -38,8 +38,8 @@ class WNBAAdapter:
     emoji = "🏀"
     label = "🏀 WNBA"
     source_name = "ESPN WNBA"
-    supports_deep_dive = False
-    chip_label = "Schedule"
+    supports_deep_dive = True
+    chip_label = "Matchup"
 
     def describe_game(self, game: SlateGame) -> str:
         venue = game.venue or "Venue TBD"

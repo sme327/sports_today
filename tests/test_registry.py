@@ -14,5 +14,5 @@ def test_adapters_satisfy_protocol():
 
 def test_deep_dive_support_flags():
     assert get_adapter("MLB").supports_deep_dive is True
-    assert get_adapter("WNBA").supports_deep_dive is False
+    assert get_adapter("WNBA").supports_deep_dive is True   # WNBA matchup page shipped
     assert get_adapter("World Cup").supports_deep_dive is False

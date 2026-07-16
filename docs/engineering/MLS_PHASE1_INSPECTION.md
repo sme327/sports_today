@@ -7,6 +7,13 @@
 
 _Inspection date: 2026-07-16. Verified against the running app and the live SQLite database via read-only queries; inference is marked explicitly. **No code changed during Phase 1.**_
 
+> **Update (2026-07-16, later):** the "there is no WNBA matchup page" finding below
+> reflects the state at inspection time. A basketball-designed **WNBA matchup page
+> has since shipped** (see [WNBA Game Page](WNBA_GAME_PAGE.md)); for MLS this means
+> there are now **two** matchup-page templates to learn from, and the basketball
+> analytics pattern (`services/wnba_analytics.py`) confirms the "collect box scores →
+> team/season aggregates → page" flow the MLS plan recommends.
+
 ---
 
 ## 1. Executive Summary

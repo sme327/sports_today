@@ -36,6 +36,15 @@ def cached_mlb_game_page(cache_key: str, _game, as_of_iso: str):
 
 
 @st.cache_data(ttl=900, show_spinner=False)
+def cached_wnba_game_page(cache_key: str, _game, as_of_iso: str):
+    """Build the WNBA matchup page model, cached by cache_key (see cached_mlb_game_page)."""
+    from datetime import date
+    from services.wnba_game_page import build_wnba_game_page
+    d = date.fromisoformat(as_of_iso)
+    return build_wnba_game_page(_game, d, d)
+
+
+@st.cache_data(ttl=900, show_spinner=False)
 def cached_opportunities(
     league: str,
     as_of_iso: str,
