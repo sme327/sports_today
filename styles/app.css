@@ -762,3 +762,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 @media (max-width: 650px) {
   .op-headshot { width: 28px; height: 28px; flex-basis: 28px; }
 }
+
+/* Section-header icons (MLB) */
+.mlb-section-head h2 { display: inline-flex; align-items: center; gap: .45rem; }
+.mlb-h2-ic { display: inline-flex; color: var(--brand-2); }
+.mlb-h2-ic .mlb-ic { width: 16px; height: 16px; }

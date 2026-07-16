@@ -26,3 +26,6 @@ logs/*.csv
 
 # --- Streamlit local secrets (if ever added) ---
 .streamlit/secrets.toml
+
+# Icon zips (SVG sources are kept)
+icons/*.zip
