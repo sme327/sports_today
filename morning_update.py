@@ -16,7 +16,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Run the full MLB morning update: locate the newest feed in Downloads, "
-            "archive/copy it, rebuild SQLite, and optionally launch Sports Hub."
+            "archive/copy it, rebuild SQLite, and optionally launch Sports Today."
         )
     )
     parser.add_argument(
@@ -64,7 +64,7 @@ def main() -> int:
             print(f"WNBA update skipped: {exc}", file=sys.stderr)
 
         if not args.no_launch:
-            print("Launching Sports Hub...")
+            print("Launching Sports Today...")
             return subprocess.call(
                 [sys.executable, "-m", "streamlit", "run", "app.py"]
             )

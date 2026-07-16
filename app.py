@@ -1,4 +1,4 @@
-"""Sports Hub — Streamlit entry point.
+"""Sports Today — Streamlit entry point.
 
 Thin shell: configure the page, load styles, ensure schema, then route to the
 Today or Game view. All rendering, scoring, and league logic live in views/,
@@ -16,7 +16,7 @@ from src.config import DB_PATH, CURRENT_FEED
 from src.ingest import import_feed
 
 st.set_page_config(
-    page_title="Sports Hub — Today",
+    page_title="Sports Today",
     page_icon="🟠",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -27,7 +27,7 @@ load_css()
 def _first_run_import() -> None:
     """Offer a one-time workbook import when no database exists yet."""
     st.markdown('<div class="page-title">Today’s Sports Slate</div>', unsafe_allow_html=True)
-    st.warning("No Sports Hub database exists yet.")
+    st.warning("No Sports Today database exists yet.")
     feed = st.text_input("Current MLB workbook", value=str(CURRENT_FEED))
     if st.button("Import workbook", type="primary"):
         try:
@@ -64,5 +64,5 @@ def main() -> None:
 try:
     main()
 except Exception as exc:  # top-level boundary: show a message, never a raw crash
-    st.error("Something went wrong while rendering Sports Hub.")
+    st.error("Something went wrong while rendering Sports Today.")
     st.exception(exc)
