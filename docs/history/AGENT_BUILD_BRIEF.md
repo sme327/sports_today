@@ -1,3 +1,7 @@
+> 🗄️ **Historical record.** The original V1 build brief. It describes the
+> pre-refactor layout and is superseded by
+> [Architecture](../engineering/ARCHITECTURE.md); kept for provenance only.
+
 # Copy/Paste Build Brief for Another Agent
 
 Create or update a local Mac project named `sports_hub_v1_daily` with the exact folder structure and behavior below.

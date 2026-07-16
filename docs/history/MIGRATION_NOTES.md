@@ -1,3 +1,8 @@
+> 🗄️ **Historical record (2026-07-15).** What changed during the architecture
+> refactor and confirmation that persistent data stayed intact. Kept for
+> provenance; current structure is documented in
+> [Architecture](../engineering/ARCHITECTURE.md).
+
 # Migration Notes — Architecture Cleanup
 
 Branch: `refactor/architecture-cleanup`. This pass reorganized the code without

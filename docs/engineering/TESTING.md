@@ -1,4 +1,9 @@
-# Test Plan
+# Testing
+
+> **Purpose** — What is tested, how to run it, and what still needs coverage.
+> **Audience** — Engineers and AI assistants.
+> **Update when** — Tests are added/removed or the test philosophy changes.
+> **Related** — [Architecture](ARCHITECTURE.md) · [Decision Log](DECISION_LOG.md) · [Docs index](../README.md)
 
 Run: `pip install -r requirements-dev.txt` then `python -m pytest`.
 All tests run offline (no network); schedule payloads are stubbed/recorded.
