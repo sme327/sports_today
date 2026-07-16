@@ -81,10 +81,10 @@ without reading why it was made.
 - **Today / Tomorrow** switch (same-tab links); independent league filter pills
   (none selected = show every sport with games that day); a chronological game grid;
   and a ranked cross-sport **Top Opportunities** feed.
-- Click a game card to open its view. **MLB games open a dedicated editorial game
-  page** (identity, matchups, trends, opportunities, game shape, storylines — see
-  [MLB Game Page](docs/engineering/MLB_GAME_PAGE.md)); WNBA and World Cup are
-  schedule-only for now.
+- Click a game card to open its view. **MLB and WNBA games open dedicated editorial
+  matchup pages** (see [MLB Game Page](docs/engineering/MLB_GAME_PAGE.md) and
+  [WNBA Game Page](docs/engineering/WNBA_GAME_PAGE.md)); World Cup is schedule-only
+  for now.
 - If a league's live schedule is briefly unavailable, the most recent **cached**
   slate is shown; a genuinely empty slate shows no fallback
   ([degraded mode](docs/engineering/DECISION_LOG.md)).

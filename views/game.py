@@ -60,10 +60,14 @@ def render(nav: NavState) -> None:
         st.error("This game could not be found for the selected date.")
         return
 
-    # Dispatch to the league's game page. MLB has a dedicated editorial page.
+    # Dispatch to the league's game page. MLB and WNBA have dedicated pages.
     if league == "MLB":
         from views import mlb_game
         mlb_game.render(nav, game)
+        return
+    if league == "WNBA":
+        from views import wnba_game
+        wnba_game.render(nav, game)
         return
 
     # Leagues without a deep-dive: generic header + honest placeholder.
