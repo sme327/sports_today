@@ -9,6 +9,37 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-07-16 — MLS matchup page (soccer-designed, honesty-first shell)
+
+**Decision.** Ship a dedicated MLS matchup page (`MLSAdapter.supports_deep_dive =
+True`) as the reference implementation for soccer. It reuses the shared
+architecture and design system and adds soccer-specific pieces (W/D/L form dots, a
+nine-dimension tactical lean bar, a CSS/SVG formation pitch, a "what to watch"
+timeline). The whole 11-section shell ships now; each section carries an explicit
+`DataState` (Available / Partial / Projected / Unavailable) so the layout is fixed
+while intelligence grows. Schedule is real via a new neutral ESPN soccer client
+(`src/espn_soccer.py`, `usa.1`). The hero, a record/form snapshot, and a small
+deterministic storyline engine run on **real** ESPN data (records, recent form,
+colors, logos); everything requiring a soccer-stats pipeline renders as an honest
+Unavailable/Projected state.
+**Reason.** The philosophy is emphatic — *"Never invent statistics. Never fabricate
+tactical conclusions."* — and there is no soccer stats pipeline yet. Building the
+full shell with honest data states (rather than a fixture of fake numbers)
+satisfies both "build the complete experience" and the non-negotiable honesty rule,
+and lets real data drop in later with zero redesign. ESPN's MLS scoreboard already
+returns real records, form, and colors, so the hero/snapshot/storylines are
+genuinely substantive without fabrication.
+**Tradeoffs.** Most analytical sections are Unavailable in V1 (tactical, lineups,
+players, attacking, discipline) — the page is intentionally honest over full. Form
+storylines rest on a 5-game sample (Low confidence; counted order-independently to
+avoid a false directional claim). Reuses `mlb-*` section/storyline CSS for shared
+primitives. A separate soccer client is kept from World Cup to avoid coupling
+(national flags + bracket fallback vs. club logos + no fallback).
+**Future.** Build the soccer data pipeline (collector + additive tables +
+repository) per [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) §13; then flip
+sections from Unavailable → real. `src/espn_soccer.py` is competition-agnostic and
+can later absorb World Cup. See [MLS Game Page](MLS_GAME_PAGE.md).
+
 ## 2026-07-16 — WNBA matchup page (basketball-designed)
 
 **Decision.** Ship a dedicated WNBA matchup page (`WNBAAdapter.supports_deep_dive

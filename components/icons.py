@@ -29,6 +29,11 @@ _ICONS = {
     # Evidence marks (same style): a positive check-in-circle and a risk triangle.
     "positive": _P + '<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6L16 9"/></svg>',
     "risk": _P + '<path d="M12 3.5l8.5 15h-17z"/><path d="M12 10v4.2M12 17.2h.01"/></svg>',
+    # Soccer marks (same 24x24 outline style).
+    "pitch": _P + '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M12 5v14"/><circle cx="12" cy="12" r="2.4"/><path d="M3.5 9.2h2.4v5.6H3.5M20.5 9.2h-2.4v5.6h2.4"/></svg>',
+    "timeline": _P + '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3 2"/></svg>',
+    "tactics": _P + '<circle cx="7" cy="7" r="2"/><circle cx="17" cy="8" r="2"/><circle cx="10" cy="17" r="2"/><path d="M8.6 8.2l6.8 6.6M9 7.4l6 .4M12 15.4l4.2-5.8"/></svg>',
+    "attack": _P + '<path d="M4 12h13"/><path d="M12 6l6 6-6 6"/><path d="M20 5v14"/></svg>',
 }
 _ICONS["advantage"] = _ICONS["confidence"]
 _ICONS["swing"] = _ICONS["strikeout"]

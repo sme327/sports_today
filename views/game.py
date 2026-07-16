@@ -69,6 +69,10 @@ def render(nav: NavState) -> None:
         from views import wnba_game
         wnba_game.render(nav, game)
         return
+    if league == "MLS":
+        from views import mls_game
+        mls_game.render(nav, game)
+        return
 
     # Leagues without a deep-dive: generic header + honest placeholder.
     st.markdown(_detail_header(game), unsafe_allow_html=True)

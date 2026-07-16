@@ -890,3 +890,160 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .wnba-hero-feats { grid-template-columns: 1fr; }
   .wnba-snap-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ============================================================================
+   MLS MATCHUP PAGE (.mls-*)
+   Soccer-designed. Reuses tokens, section shell, and the storyline rows; adds a
+   form-dot system (W/D/L), a three-way tactical lean bar, a CSS/SVG pitch, an
+   attacking profile, and the "What to watch" timeline. Every section carries a
+   data-state badge so honest, unavailable sections read as deliberate.
+   ========================================================================== */
+
+/* Section head with a right-aligned data-state badge. */
+.mls-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.mls-badge { flex: 0 0 auto; padding: .16rem .5rem; border-radius: var(--r-pill); font-size: .62rem;
+  font-weight: 750; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.mls-badge.ok { color: var(--green); background: rgba(107, 198, 143, .13); }
+.mls-badge.warn { color: var(--brand-2); background: var(--brand-soft); }
+.mls-badge.muted { color: var(--text-4); background: var(--surface-2); }
+.mls-note { color: var(--text-4); font-size: .72rem; line-height: 1.45; margin-top: .6rem; }
+
+/* ------------------------------------------------------------------ HERO --- */
+.mls-hero { padding: 1.15rem 1.25rem; border-radius: var(--r-lg);
+  background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
+  box-shadow: var(--edge-hi), var(--shadow-md); }
+.mls-hero-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 1rem; }
+.mls-hero-team { display: flex; align-items: flex-start; gap: .7rem; min-width: 0; }
+.mls-hero-team.home { flex-direction: row-reverse; text-align: right; }
+.mls-hero-logo { width: 54px; height: 54px; object-fit: contain; flex: 0 0 54px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+.mls-hero-side { min-width: 0; display: flex; flex-direction: column; gap: .28rem; }
+.mls-hero-team.home .mls-hero-side { align-items: flex-end; }
+.mls-hero-name { font-size: 1.22rem; font-weight: 850; letter-spacing: -.02em; color: var(--text-1); line-height: 1.08; }
+.mls-hero-rec { color: var(--text-3); font-size: .8rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.mls-hero-pts { color: var(--text-2); font-weight: 750; }
+.mls-hero-accent { display: block; width: 42px; height: 3px; border-radius: var(--r-pill); margin-top: .1rem; }
+.mls-hero-team.home .mls-hero-accent { align-self: flex-end; }
+.mls-hero-mid { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding-top: .35rem; }
+.mls-hero-kick { color: var(--text-1); font-size: 1.05rem; font-weight: 800; white-space: nowrap; }
+.mls-hero-vs { color: var(--text-4); font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+.mls-hero-score { display: inline-flex; align-items: baseline; gap: .4rem; font-size: 1.7rem; font-weight: 850;
+  color: var(--text-1); font-variant-numeric: tabular-nums; }
+.mls-hero-detail { color: var(--text-4); font-size: .68rem; }
+.mls-hero-meta { margin-top: .9rem; padding-top: .75rem; border-top: 1px solid var(--hairline);
+  color: var(--text-3); font-size: .76rem; text-align: center; }
+
+/* Form dots (W / D / L). */
+.mls-dots { display: inline-flex; gap: .2rem; }
+.mls-hero-team.home .mls-dots { justify-content: flex-end; }
+.mls-dot { width: 16px; height: 16px; border-radius: 5px; display: grid; place-items: center;
+  font-size: .58rem; font-weight: 850; }
+.mls-dot.w { color: #0c2a17; background: var(--green); }
+.mls-dot.d { color: var(--text-1); background: var(--surface-3); box-shadow: var(--edge-hi); }
+.mls-dot.l { color: #2a1010; background: var(--red); }
+.mls-form-na { color: var(--text-4); font-size: .72rem; font-style: italic; }
+
+/* -------------------------------------------------------- COMPARISON ROWS -- */
+.mls-cmp { margin-top: .2rem; }
+.mls-cmp-head, .mls-cmp-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .8rem; }
+.mls-cmp-head { padding: 0 0 .5rem; color: var(--text-4); font-size: .66rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; }
+.mls-cmp-head span:first-child { text-align: left; }
+.mls-cmp-head span:last-child { text-align: right; }
+.mls-cmp-row { padding: .5rem 0; border-top: 1px solid var(--hairline); }
+.mls-cmp-tight .mls-cmp-row { padding: .42rem 0; }
+.mls-cmp-k { color: var(--text-4); font-size: .72rem; font-weight: 600; text-align: center; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: .35rem; }
+.mls-cmp-v { color: var(--text-1); font-size: .95rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.mls-cmp-row .mls-cmp-v:first-child { text-align: left; }
+.mls-cmp-row .mls-cmp-v:last-child { text-align: right; }
+.mls-cmp-v.best { color: var(--brand-2); }
+.mls-cmp-v.na { color: var(--text-4); }
+.mls-cmp-soon { padding: .06rem .32rem; border-radius: var(--r-pill); background: var(--surface-2);
+  color: var(--text-4); font-size: .54rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+
+/* --------------------------------------------------------- TACTICAL MATCHUP - */
+.mls-tac { display: flex; flex-direction: column; gap: .55rem; }
+.mls-tac-row { padding: .8rem .95rem; border-radius: var(--r-md); background: var(--surface-1);
+  box-shadow: var(--edge-hi), var(--shadow-sm); }
+.mls-tac-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .5rem; }
+.mls-tac-dim { color: var(--text-1); font-size: .96rem; font-weight: 800; letter-spacing: -.01em; }
+.mls-tac-edge { color: var(--brand-2); font-size: .72rem; font-weight: 750; }
+.mls-tac-await { color: var(--text-4); font-size: .68rem; font-weight: 600; font-style: italic; }
+.mls-tac-expl { color: var(--text-3); font-size: .78rem; line-height: 1.4; margin-top: .5rem; }
+.mls-lean { position: relative; height: 14px; display: flex; align-items: center; }
+.mls-lean-track { position: absolute; left: 0; right: 0; height: 4px; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--brand-soft), rgba(255,255,255,.05) 50%, var(--brand-soft)); }
+.mls-lean.idle .mls-lean-track { background: rgba(255,255,255,.06); }
+.mls-lean-dot { position: absolute; width: 11px; height: 11px; border-radius: 50%; transform: translateX(-50%);
+  background: var(--brand); box-shadow: 0 0 0 3px rgba(11,14,18,.9), var(--shadow-sm); }
+.mls-lean.idle .mls-lean-dot { background: var(--text-4); }
+
+/* ---------------------------------------------------------- PROJECTED PITCH - */
+.mls-pitch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.mls-pitch-wrap { min-width: 0; }
+.mls-pitch-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+.mls-pitch-team { color: var(--text-1); font-size: .92rem; font-weight: 800; }
+.mls-pitch-form { color: var(--text-4); font-size: .68rem; font-weight: 650; }
+.mls-pitch { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-md); overflow: hidden;
+  background: linear-gradient(180deg, #16241b, #12201a);
+  box-shadow: var(--edge-hi), var(--shadow-sm); }
+.mls-pitch-lines { position: absolute; inset: 7px; border: 1px solid rgba(255,255,255,.10); border-radius: 4px; }
+.mls-pitch-lines::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  background: rgba(255,255,255,.10); }
+.mls-pitch-lines::after { content: ""; position: absolute; left: 50%; top: 50%; width: 46px; height: 46px;
+  transform: translate(-50%,-50%); border: 1px solid rgba(255,255,255,.10); border-radius: 50%; }
+.mls-slot { position: absolute; transform: translate(-50%, 50%); width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; text-align: center;
+  background: color-mix(in srgb, var(--slot-accent) 82%, #0b0e12); color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.mls-slot span { font-size: .5rem; font-weight: 800; letter-spacing: .02em; line-height: 1; }
+.mls-slot.empty { background: rgba(255,255,255,.10); color: var(--text-3);
+  border: 1px dashed rgba(255,255,255,.22); box-shadow: none; }
+.mls-pitch-note { color: var(--text-4); font-size: .68rem; line-height: 1.4; margin-top: .5rem; }
+
+/* --------------------------------------------------------- PLAYERS TO WATCH - */
+.mls-arch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+.mls-arch-card { padding: .85rem .95rem; border-radius: var(--r-md); background: var(--surface-1);
+  box-shadow: var(--edge-hi), var(--shadow-sm); }
+.mls-arch-role { color: var(--brand-2); font-size: .64rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .05em; margin-bottom: .3rem; }
+.mls-arch-who { color: var(--text-1); font-size: .95rem; font-weight: 800; margin-bottom: .3rem; }
+.mls-arch-who.empty { color: var(--text-4); font-size: .8rem; font-weight: 600; font-style: italic; }
+.mls-arch-desc { color: var(--text-3); font-size: .76rem; line-height: 1.4; }
+
+/* ------------------------------------------------------- WHAT TO WATCH TL --- */
+.mls-tl { display: flex; flex-direction: column; }
+.mls-tl-item { display: grid; grid-template-columns: 92px 1fr; gap: .9rem; padding: .1rem 0; position: relative; }
+.mls-tl-marker { color: var(--brand-2); font-size: .72rem; font-weight: 800; text-align: right; padding-top: .05rem;
+  font-variant-numeric: tabular-nums; }
+.mls-tl-body { border-left: 2px solid var(--hairline-2); padding: 0 0 1rem 1rem; position: relative; }
+.mls-tl-item:last-child .mls-tl-body { padding-bottom: .1rem; }
+.mls-tl-body::before { content: ""; position: absolute; left: -6px; top: .28rem; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--bg); }
+.mls-tl-title { color: var(--text-1); font-size: .92rem; font-weight: 800; letter-spacing: -.01em; }
+.mls-tl-guide { color: var(--text-3); font-size: .82rem; line-height: 1.5; margin-top: .2rem; }
+
+/* --------------------------------------------------------------- HONEST GAPS */
+.mls-gaps { display: flex; flex-direction: column; }
+.mls-gap { display: flex; gap: .7rem; padding: .7rem 0; }
+.mls-gap + .mls-gap { border-top: 1px solid var(--hairline); }
+.mls-gap-ic { flex: 0 0 auto; color: var(--brand-2); padding-top: .1rem; }
+.mls-gap-ic .mlb-ic { width: 15px; height: 15px; }
+.mls-gap-label { color: var(--text-1); font-size: .88rem; font-weight: 750; }
+.mls-gap-detail { color: var(--text-3); font-size: .78rem; line-height: 1.4; margin-top: .15rem; }
+.mls-tone-up { color: var(--green) !important; }
+.mls-tone-down { color: var(--red) !important; }
+
+/* -------------------------------------------------------------- RESPONSIVE -- */
+@media (max-width: 860px) {
+  .mls-arch-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 650px) {
+  .mls-hero-logo { width: 44px; height: 44px; flex-basis: 44px; }
+  .mls-hero-name { font-size: 1.06rem; }
+  .mls-pitch-grid { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; }
+  .mls-arch-grid { grid-template-columns: 1fr; }
+  .mls-cmp-head, .mls-cmp-row { gap: .5rem; }
+  .mls-tl-item { grid-template-columns: 68px 1fr; gap: .6rem; }
+}
