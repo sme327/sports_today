@@ -430,19 +430,35 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* Identity — merged avatar (headshot + team badge) + text */
 .op-identity { display: flex; align-items: center; gap: .72rem; min-width: 0; }
 .op-avatar { position: relative; width: 50px; height: 50px; flex: 0 0 50px; }
-.op-photo {
-  width: 100%; height: 100%; border-radius: 50%;
-  object-fit: cover; background: var(--surface-3);
+/* Circular clip wrapper: lets the photo scale to fill without growing the
+   circle or clipping the (absolutely-positioned, unclipped) badge. */
+.op-photo-wrap {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  background: var(--surface-3);
   box-shadow: var(--edge-hi), 0 1px 3px rgba(0, 0, 0, .35);
 }
-.op-photo.logo { object-fit: contain; background: rgba(255, 255, 255, .05); padding: 5px; }
-.op-ph-fallback {
+.op-photo {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover; object-position: center 16%;
+  transform-origin: center 20%;
+}
+/* Zoom the player to fill the frame; sources sit at different scales. */
+.op-photo.op-zoom-mlb { transform: scale(1.16); }
+.op-photo.op-zoom-wnba { transform: scale(1.24); }
+.op-photo.op-zoom-gen { transform: scale(1.16); }
+.op-photo.logo {
+  object-fit: contain; object-position: center; transform: none;
+  background: rgba(255, 255, 255, .05); padding: 5px;
+}
+.op-photo.op-ph-fallback {
+  transform: none;
   background: #222a34 url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237c8792'%3E%3Ccircle cx='12' cy='8.5' r='4'/%3E%3Cpath d='M4 20c0-4.2 3.6-6.5 8-6.5s8 2.3 8 6.5z'/%3E%3C/svg%3E") center 60% / 62% no-repeat;
 }
 .op-badge {
-  position: absolute; right: -2px; bottom: -2px;
-  width: 20px; height: 20px; border-radius: 50%;
-  object-fit: contain; background: var(--surface-1);
+  position: absolute; right: -3px; bottom: -3px;
+  width: 23px; height: 23px; border-radius: 50%;
+  object-fit: contain; padding: 1px;
+  background: var(--surface-1);
   border: 2px solid var(--surface-1);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .45);
 }
@@ -585,7 +601,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .date-toggle-wrap { justify-content: flex-start; margin-top: .55rem; }
   .team-logo { width: 38px; height: 38px; flex-basis: 38px; }
   .op-avatar { width: 44px; height: 44px; flex-basis: 44px; }
-  .op-badge { width: 18px; height: 18px; }
+  .op-badge { width: 20px; height: 20px; }
   .team-name { font-size: .94rem; }
   .detail-header { grid-template-columns: 1fr; text-align: left; }
   .detail-team.home { justify-content: flex-start; text-align: left; }
