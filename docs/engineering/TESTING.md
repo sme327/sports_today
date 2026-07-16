@@ -21,6 +21,7 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_navigation.py` | Same-tab query-param hrefs; back link carries only `day` |
 | `test_registry.py` | All three adapters registered in order; satisfy Protocol; deep-dive flags |
 | `test_wnba_parser.py` | ESPN boxscore parsing over a recorded-shape payload; stat helpers |
+| `test_mlb_game_page.py` | MLB game page (Phase 1): `as_of` leakage, page builds (with/without probable pitchers), pitcher matching, trend min-sample, no hot/cold overlap, matchups cite real metrics, no unsupported metrics emitted, empty-opportunity state, headshot fallback, component rendering, and a deterministic hot/cold regression on synthetic data |
 
 ## Manual verification performed
 

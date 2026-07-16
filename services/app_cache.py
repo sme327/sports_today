@@ -23,6 +23,19 @@ def cached_slate(league: str, slate_iso: str) -> tuple[list[SlateGame], DataStat
 
 
 @st.cache_data(ttl=900, show_spinner=False)
+def cached_mlb_game_page(cache_key: str, _game, as_of_iso: str):
+    """Build the MLB game page model, cached by cache_key.
+
+    ``_game`` is prefixed with ``_`` so Streamlit does not try to hash the
+    SlateGame; ``cache_key`` (game id + as_of + engine version) drives caching.
+    """
+    from datetime import date
+    from services.mlb_game_page import build_mlb_game_page
+    d = date.fromisoformat(as_of_iso)
+    return build_mlb_game_page(_game, d, d)
+
+
+@st.cache_data(ttl=900, show_spinner=False)
 def cached_opportunities(
     league: str,
     as_of_iso: str,
