@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "$0")"
 
-echo "Setting up Sports Hub..."
+echo "Setting up Sports Today..."
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip

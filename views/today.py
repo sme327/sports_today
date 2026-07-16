@@ -88,7 +88,7 @@ def render(nav: NavState) -> None:
     # Sidebar: provenance / freshness.
     fresh = get_freshness()
     with st.sidebar:
-        st.markdown("## 🟠 Sports Hub")
+        st.markdown("## 🟠 Sports Today")
         st.caption(f"Viewing {day_label(day).lower()} · {slate_date:%A, %B %-d}")
         if fresh.mlb_through:
             st.caption(f"MLB data through {fresh.mlb_through:%B %-d, %Y}")
