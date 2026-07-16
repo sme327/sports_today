@@ -9,6 +9,35 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-07-16 — Sport-specific game pages on shared product principles
+
+**Decision.** Give each league its own game-page view (starting with MLB's
+editorial preview) dispatched from the thin game router, rather than one generic
+game page. The MLB page has its own navy "scorebook" visual identity but obeys the
+same product rules (explainable, evidence-first, honest about missing data,
+`as_of`-bounded) and reuses shared models (`Opportunity`, `DataStatus`) and the
+existing opportunity scorer (same scores as the slate).
+**Reason.** Different sports have genuinely different analytical stories; a generic
+page can't tell them well. Isolating per-league rendering keeps the router thin and
+lets leagues evolve independently.
+**Tradeoffs.** More view/component/service code per league; some presentation
+patterns (bars, stat rows) may later be worth generalizing.
+**Future.** WNBA/World Cup get their own pages when data supports it; reusable MLB
+patterns can be promoted into shared components. See
+[MLB Game Page](MLB_GAME_PAGE.md).
+
+## 2026-07-16 — Product name reconciled to "Sports Today" in the app
+
+**Decision.** Rename the visible product name (window title, sidebar, in-app
+messages, launch output) from "Sports Hub" to "Sports Today". Folders, modules,
+tables, and internal identifiers were left unchanged.
+**Reason.** The docs and product had standardized on "Sports Today"; the app UI
+still read "Sports Hub". A narrow, user-facing rename removed the inconsistency
+without churn.
+**Tradeoffs.** Some internal docstrings still say "Sports Hub" (intentionally out
+of scope); can be swept later.
+**Future.** —
+
 ## 2026-07-15 — Documentation reorganized into a `docs/` knowledge base
 
 **Decision.** Move all long-form docs out of the repo root into
