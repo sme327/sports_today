@@ -405,75 +405,66 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 }
 .op-row {
   display: grid;
-  grid-template-columns: 52px minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(180px, 1fr);
-  gap: .9rem;
+  grid-template-columns: 58px 1.15fr 1fr 1fr;
+  gap: 1rem;
   align-items: center;
-  padding: .72rem .82rem;
+  padding: .8rem .9rem;
   transition: background var(--dur) var(--ease);
 }
 .op-row + .op-row { box-shadow: inset 0 1px 0 var(--hairline); }
 .op-row:hover { background: var(--surface-2); }
 
-/* Premium score badge — elevated tile, subtle brand ring, orange numerals. */
+/* Score — compact rounded rect, thin orange border, dark interior, orange number */
 .op-score {
-  position: relative;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
+  min-width: 44px; height: 44px; padding: 0 .35rem;
+  display: grid; place-items: center;
   border-radius: var(--r-sm);
-  background: linear-gradient(180deg, var(--surface-3), #191e26);
-  box-shadow: var(--edge-hi), 0 2px 7px rgba(0, 0, 0, .35),
-              inset 0 0 0 1px var(--brand-ring);
-  color: var(--brand-2);
-  font-size: 1.02rem;
-  font-weight: 800;
-  letter-spacing: -.02em;
-}
-
-.op-identity { display: flex; align-items: center; gap: .62rem; min-width: 0; }
-.op-sport {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
-  border-radius: var(--r-xs);
-  background: var(--surface-3);
+  background: #14181f;
+  border: 1px solid var(--brand);
   box-shadow: var(--edge-hi);
-  font-size: 1rem;
+  color: var(--brand-2);
+  font-size: 1.15rem; font-weight: 850; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
 }
-.op-team-logo {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  object-fit: contain;
-  border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, .035);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .3));
-}
-.op-player {
-  color: var(--text-1);
-  font-size: 1.0rem;
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -.017em;
-}
-.op-market { color: var(--brand-2); font-size: .85rem; font-weight: 750; margin-top: .08rem; }
-.op-team { color: var(--text-meta); font-size: .7rem; margin-top: .12rem; }
 
-/* Evidence labels: quieter, more editorial — sentence case, tight tracking. */
-.evidence-title {
-  margin-bottom: .16rem;
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .008em;
-  text-transform: none;
+/* Identity — merged avatar (headshot + team badge) + text */
+.op-identity { display: flex; align-items: center; gap: .72rem; min-width: 0; }
+.op-avatar { position: relative; width: 50px; height: 50px; flex: 0 0 50px; }
+.op-photo {
+  width: 100%; height: 100%; border-radius: 50%;
+  object-fit: cover; background: var(--surface-3);
+  box-shadow: var(--edge-hi), 0 1px 3px rgba(0, 0, 0, .35);
 }
-.evidence-good .evidence-title { color: var(--green); }
-.evidence-risk .evidence-title { color: var(--red); }
-.evidence-body { color: var(--text-2); font-size: .78rem; line-height: 1.38; }
+.op-photo.logo { object-fit: contain; background: rgba(255, 255, 255, .05); padding: 5px; }
+.op-ph-fallback {
+  background: #222a34 url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237c8792'%3E%3Ccircle cx='12' cy='8.5' r='4'/%3E%3Cpath d='M4 20c0-4.2 3.6-6.5 8-6.5s8 2.3 8 6.5z'/%3E%3C/svg%3E") center 60% / 62% no-repeat;
+}
+.op-badge {
+  position: absolute; right: -2px; bottom: -2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  object-fit: contain; background: var(--surface-1);
+  border: 2px solid var(--surface-1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+}
+.op-info { min-width: 0; }
+.op-player {
+  color: var(--text-1); font-size: 1.02rem; font-weight: 800;
+  line-height: 1.12; letter-spacing: -.017em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.op-market { color: var(--brand-2); font-size: .9rem; font-weight: 800; margin-top: .1rem; }
+.op-team {
+  color: var(--text-meta); font-size: .72rem; margin-top: .12rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Evidence — larger colored heading with an icon, neutral body */
+.op-evidence { min-width: 0; }
+.op-ev-head { display: inline-flex; align-items: center; gap: .34rem; font-size: .82rem; font-weight: 750; letter-spacing: -.005em; margin-bottom: .22rem; }
+.op-ev-head .mlb-ic { width: 15px; height: 15px; flex: 0 0 auto; }
+.op-good .op-ev-head { color: var(--green); }
+.op-risk .op-ev-head { color: var(--red); }
+.op-ev-body { color: var(--text-2); font-size: .8rem; line-height: 1.4; }
 
 /* ---------------------------------------------------- GAME DEEP DIVE ----- */
 .back-link {
@@ -584,8 +575,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* -------------------------------------------------------- RESPONSIVE ----- */
 @media (max-width: 900px) {
   .schedule-grid { grid-template-columns: 1fr; }
-  .op-row { grid-template-columns: 46px 1fr; gap: .9rem; }
-  .evidence-good, .evidence-risk { grid-column: 2; }
+  .op-row { grid-template-columns: 52px 1fr; gap: .8rem; }
+  .op-evidence { grid-column: 2; }
 }
 
 @media (max-width: 650px) {
@@ -593,7 +584,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .page-title { font-size: 1.65rem; }
   .date-toggle-wrap { justify-content: flex-start; margin-top: .55rem; }
   .team-logo { width: 38px; height: 38px; flex-basis: 38px; }
-  .op-team-logo { width: 32px; height: 32px; flex-basis: 32px; }
+  .op-avatar { width: 44px; height: 44px; flex-basis: 44px; }
+  .op-badge { width: 18px; height: 18px; }
   .team-name { font-size: .94rem; }
   .detail-header { grid-template-columns: 1fr; text-align: left; }
   .detail-team.home { justify-content: flex-start; text-align: left; }
@@ -736,8 +728,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .mlb-ic { width: 13px; height: 13px; flex: 0 0 auto; display: inline-block; vertical-align: -1px; }
 
 /* Opportunity feed: player headshot alongside the team logo (MLB) */
-.op-headshot { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; object-fit: cover; background: var(--surface-3); box-shadow: var(--edge-hi); }
-.op-headshot.img-fallback { background: radial-gradient(circle at 50% 35%, #3a4553, #222a34); }
 
 /* Recent-form pill: icon + label */
 .mlb-form-pill { display: inline-flex; align-items: center; gap: .3rem; }
@@ -758,10 +748,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* Storyline baseball icon (replaces the numeric index) */
 .mlb-storyline-ic { flex: 0 0 auto; color: var(--brand-2); padding-top: .18rem; }
 .mlb-storyline-ic .mlb-ic { width: 15px; height: 15px; }
-
-@media (max-width: 650px) {
-  .op-headshot { width: 28px; height: 28px; flex-basis: 28px; }
-}
 
 /* Section-header icons (MLB) */
 .mlb-section-head h2 { display: inline-flex; align-items: center; gap: .45rem; }
