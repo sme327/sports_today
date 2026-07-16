@@ -139,14 +139,43 @@ def test_card_pregame_shows_time_not_score():
 def test_card_live_shows_score_and_live_badge():
     html = game_card_html(_sg(state="live", away_score=2, home_score=3,
                               status_detail="3rd Inning"), "today")
-    assert 'game-state live' in html and "3rd Inning" in html
+    assert 'game-state live' in html and "LIVE" in html
+    assert 'game-card--live' in html     # state class drives the accent bar
     assert 'game-score' in html and ">2<" in html and ">3<" in html
 
 
 def test_card_final_shows_score_and_winner_emphasis():
     html = game_card_html(_sg(state="final", away_score=5, home_score=14, winner="home"), "today")
     assert 'game-state final' in html and "Final" in html
+    assert 'game-card--final' in html
     assert 'game-score' in html
     assert 'class="gs win"' in html      # winner (home) score emphasized
     assert 'class="team home loss"' not in html  # home is winner, not loss
     assert 'class="team loss"' in html   # away side dimmed
+
+
+def test_card_pregame_has_no_state_class():
+    html = game_card_html(_sg(state="pre"), "tomorrow")
+    assert "game-card--live" not in html and "game-card--final" not in html
+
+
+# ---------------------------------------------- state grouping / ordering ----
+def test_group_games_by_state_orders_live_upcoming_final():
+    from components.game_cards import group_games_by_state
+    g_pre = _sg(game_id="p", state="pre", start_time=datetime(2026, 7, 16, 20, 0))
+    g_live = _sg(game_id="l", state="live", start_time=datetime(2026, 7, 16, 18, 0))
+    g_final = _sg(game_id="f", state="final", start_time=datetime(2026, 7, 16, 13, 0))
+    live, upcoming, final = group_games_by_state([g_pre, g_final, g_live])
+    assert [g.game_id for g in live] == ["l"]
+    assert [g.game_id for g in upcoming] == ["p"]
+    assert [g.game_id for g in final] == ["f"]
+
+
+def test_group_chronological_within_group_and_none_state_is_upcoming():
+    from components.game_cards import group_games_by_state
+    early = _sg(game_id="e", state="pre", start_time=datetime(2026, 7, 16, 16, 0))
+    late = _sg(game_id="t", state="pre", start_time=datetime(2026, 7, 16, 22, 0))
+    unknown = _sg(game_id="u", state=None, start_time=datetime(2026, 7, 16, 12, 0))
+    live, upcoming, final = group_games_by_state([late, early, unknown])
+    assert live == [] and final == []
+    assert [g.game_id for g in upcoming] == ["u", "e", "t"]  # None state -> upcoming

@@ -315,6 +315,18 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   box-shadow: var(--edge-hi), var(--shadow-md);
 }
 
+/* State treatments — same layout/size, color only (Homepage evolution). */
+/* Live: thin orange accent bar on the left edge (pseudo-element = no size shift). */
+.game-card--live::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  background: var(--brand);
+}
+/* Final: recede with a slightly darker surface; readability/scores unchanged. */
+.game-card--final { background: linear-gradient(165deg, #141820, #0f1319); }
+.game-card--final:hover { background: linear-gradient(165deg, #181d25, #12161c); }
+
 .game-top {
   display: flex;
   justify-content: space-between;

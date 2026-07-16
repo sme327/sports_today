@@ -9,12 +9,11 @@ from __future__ import annotations
 
 import dataclasses
 
-import pandas as pd
 import streamlit as st
 
 from components import empty_states
 from components.date_switch import date_switch_html
-from components.game_cards import schedule_grid_html
+from components.game_cards import group_games_by_state, schedule_grid_html
 from components.league_filters import render_filters, selected_leagues
 from components.navigation import day_label
 from components.opportunity_feed import opportunity_feed_html
@@ -123,11 +122,15 @@ def render(nav: NavState) -> None:
         games = slates[league][0]
         visible[league] = games if (nothing_selected or league in selected) else []
 
-    # Chronological slate grid across leagues.
+    # Slate grid across leagues, grouped by state (live -> upcoming -> final),
+    # chronological within each. No headers: the ordering and card treatment
+    # carry the meaning. Empty groups are skipped, so the page reorganizes itself
+    # as games transition — no filters, no user interaction.
     all_visible = [g for games in visible.values() for g in games]
-    all_visible.sort(key=lambda g: pd.to_datetime(g.start_time, utc=True, errors="coerce"))
     if all_visible:
-        st.markdown(schedule_grid_html(all_visible, day), unsafe_allow_html=True)
+        for group in group_games_by_state(all_visible):
+            if group:
+                st.markdown(schedule_grid_html(group, day), unsafe_allow_html=True)
     else:
         empty_states.no_games(day_label(day))
 
