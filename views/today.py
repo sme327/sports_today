@@ -16,7 +16,7 @@ from components import empty_states
 from components.date_switch import date_switch_html
 from components.game_cards import schedule_grid_html
 from components.league_filters import render_filters, selected_leagues
-from components.navigation import day_label, day_possessive
+from components.navigation import day_label
 from components.opportunity_feed import opportunity_feed_html
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from leagues.base import LeagueAdapter, get_adapter, iter_adapters
@@ -78,8 +78,7 @@ def render(nav: NavState) -> None:
     left, right = st.columns([4.4, 1.45], vertical_alignment="center")
     with left:
         st.markdown(
-            f'<div class="page-title">'
-            f'<span class="title-accent">{day_possessive(day)}</span> Sports Slate</div>',
+            '<div class="page-title">Sports <span class="title-accent">Today</span></div>',
             unsafe_allow_html=True,
         )
     with right:

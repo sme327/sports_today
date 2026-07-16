@@ -117,7 +117,8 @@ class WNBAAdapter:
                     stability_score=int(row.stability_score),
                     supporting_evidence=support,
                     negative_evidence=risks,
-                    image_url=headshot,  # team logo fallback stamped by feed builder
+                    image_url=None,          # team logo stamped by the feed builder
+                    headshot_url=headshot,   # player headshot for the merged avatar
                     mode=mode,
                     components={
                         "minutes_l5": float(row.minutes_l5),
