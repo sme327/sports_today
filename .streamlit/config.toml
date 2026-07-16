@@ -1,4 +1,4 @@
-# Sports Hub Streamlit configuration.
+# Sports Today Streamlit configuration.
 # Theme values mirror styles/app.css so the pre-render chrome matches the app.
 
 [theme]

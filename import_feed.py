@@ -8,7 +8,7 @@ from src.ingest import import_feed
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Import an MLB PBP workbook into Sports Hub SQLite.")
+    parser = argparse.ArgumentParser(description="Import an MLB PBP workbook into Sports Today SQLite.")
     parser.add_argument(
         "workbook",
         nargs="?",

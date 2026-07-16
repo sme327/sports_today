@@ -1,1 +1,1 @@
-"""Reusable Streamlit/HTML rendering components for Sports Hub."""
+"""Reusable Streamlit/HTML rendering components for Sports Today."""

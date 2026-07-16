@@ -1,4 +1,4 @@
-"""Sports Hub data diagnostics (CLI only — never part of UI rendering).
+"""Sports Today data diagnostics (CLI only — never part of UI rendering).
 
 Reports MLB and WNBA data coverage and whether stored data looks complete.
 Supersedes the old validate_mlb_feed.py / validate_wnba_data.py scripts.

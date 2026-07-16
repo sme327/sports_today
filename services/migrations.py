@@ -1,4 +1,4 @@
-"""Guarded, additive schema setup for Sports Hub's SQLite database.
+"""Guarded, additive schema setup for Sports Today's SQLite database.
 
 Creates only the new tables this refactor introduces (schedule_cache,
 opportunity_snapshots) and a schema_version marker. Existing tables

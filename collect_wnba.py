@@ -20,7 +20,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Collect WNBA schedule and completed player game logs into "
-            "Sports Hub SQLite and CSV exports."
+            "Sports Today SQLite and CSV exports."
         )
     )
     parser.add_argument("--season", type=int, default=date.today().year)
