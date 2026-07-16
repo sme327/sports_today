@@ -125,6 +125,8 @@ class MLBAdapter:
                     supporting_evidence=support,
                     negative_evidence=risks,
                     image_url=None,  # stamped with team logo by the feed builder
+                    headshot_url=(f"https://img.mlbstatic.com/mlb-photos/image/upload/"
+                                  f"w_120,q_auto:best/v1/people/{int(row.batter_id)}/headshot/67/current"),
                     mode=mode,
                     components={
                         "last_25_hit_rate": float(row.last_25_hit_rate),

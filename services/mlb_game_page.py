@@ -67,6 +67,31 @@ def _headshot(player_id: str) -> str:
             f"v1/people/{player_id}/headshot/67/current")
 
 
+def _form_note(direction: str | None) -> str | None:
+    return {"up": "Bats heating up", "down": "Offense cooling lately",
+            "steady": "Steady at the plate"}.get(direction or "")
+
+
+def _pitcher_note(k_pct: float | None, ctrl_pct: float | None) -> str | None:
+    """Plain-English starter descriptor from existing K/control percentiles."""
+    if k_pct is None:
+        return None
+    if k_pct >= 85:
+        note = "Elite strikeout stuff"
+    elif k_pct >= 66:
+        note = "High-strikeout arm"
+    elif k_pct <= 30:
+        note = "Pitches to contact"
+    elif ctrl_pct is not None and ctrl_pct >= 68:
+        note = "Command specialist"
+    else:
+        note = "Balanced starter"
+    # A high-strikeout arm that also limits walks earns a control tag.
+    if k_pct >= 66 and ctrl_pct is not None and ctrl_pct >= 78:
+        note += " · plus control"
+    return note
+
+
 # --------------------------------------------------------------- HERO --------
 def _hero(game: SlateGame, away_ident=None, home_ident=None,
           ptable=None, away_pid=None, home_pid=None) -> MLBGameHero:
@@ -81,11 +106,11 @@ def _hero(game: SlateGame, away_ident=None, home_ident=None,
     def _pitcher(pid):
         if ptable is not None and pid and pid in ptable.index:
             row = ptable.loc[pid]
-            return float(row["k_pct"]), row["hand"]
-        return None, None
+            return float(row["k_pct"]), row["hand"], float(row["bb_suppress_pct"])
+        return None, None, None
 
-    a_k, a_hand = _pitcher(away_pid)
-    h_k, h_hand = _pitcher(home_pid)
+    a_k, a_hand, a_ctrl = _pitcher(away_pid)
+    h_k, h_hand, h_ctrl = _pitcher(home_pid)
 
     def _form(ident):
         if ident is None:
@@ -109,6 +134,9 @@ def _hero(game: SlateGame, away_ident=None, home_ident=None,
         home_form_label=h_form, home_form_dir=h_dir,
         away_pitcher_k_pct=a_k, away_pitcher_hand=a_hand,
         home_pitcher_k_pct=h_k, home_pitcher_hand=h_hand,
+        away_form_note=_form_note(a_dir), home_form_note=_form_note(h_dir),
+        away_pitcher_note=_pitcher_note(a_k, a_ctrl),
+        home_pitcher_note=_pitcher_note(h_k, h_ctrl),
     )
 
 
@@ -342,6 +370,8 @@ def _build_opportunities(pa, game: SlateGame, teams: list[str]) -> tuple[Opportu
     scored = score_hit_opportunities(pa, teams)
     if scored.empty:
         return ()
+    logos = {str(n): logo for n, logo in
+             ((game.away_name, game.away_logo), (game.home_name, game.home_logo)) if n and logo}
     out = []
     for _, row in scored.head(6).iterrows():
         pid = str(int(row.batter_id))
@@ -351,7 +381,9 @@ def _build_opportunities(pa, game: SlateGame, teams: list[str]) -> tuple[Opportu
             opportunity_score=int(row.opportunity_score), stability_score=int(row.stability_score),
             supporting_evidence=list(row.support) if isinstance(row.support, list) else [],
             negative_evidence=list(row.risks) if isinstance(row.risks, list) else [],
-            image_url=_headshot(pid), mode=OpportunityMode.SLATE,  # recognizable player photo
+            image_url=logos.get(str(row.team)),          # team logo (recognition)
+            headshot_url=_headshot(pid),                 # player headshot (identity)
+            mode=OpportunityMode.SLATE,
             components={"last_25_hit_rate": float(row.last_25_hit_rate),
                         "last_50_hit_rate": float(row.last_50_hit_rate),
                         "pa_per_game": float(row.pa_per_game), "k_rate": float(row.k_rate)},
@@ -399,9 +431,22 @@ def _game_shape(table, away, home, a_disp, h_disp, away_dom, home_dom, away_form
     early_edge = a_disp if away_attack > home_attack else h_disp
     volatility = "Elevated" if (away_form == "up" and home_form == "down") or (away_form == "down" and home_form == "up") else "Moderate"
     facts.append(f"{a_disp} are trending {away_form}; {h_disp} are trending {home_form}.")
+
+    # Plain-English narrative read (presentation; from the same numbers).
+    narrative: list[str] = [f"{label} matchup.", shape]
+    if away_form == "up" and home_form != "up":
+        narrative.append(f"{a_disp} bring stronger recent momentum.")
+    elif home_form == "up" and away_form != "up":
+        narrative.append(f"{h_disp} bring stronger recent momentum.")
+    if abs(ar["power"] - hr["power"]) >= 12:
+        stronger = a_disp if ar["power"] > hr["power"] else h_disp
+        narrative.append(f"{stronger} bring more power.")
+    if len(doms) == 2 and sum(doms) / 2 >= 58:
+        narrative.append("Starting pitching is likely to set the tone.")
+
     return MLBGameShape(label=label, confidence=conf, early_edge=early_edge,
                         offensive_driver=driver, volatility=volatility, likely_shape=shape,
-                        supporting_facts=tuple(facts))
+                        supporting_facts=tuple(facts), narrative=tuple(narrative))
 
 
 # --------------------------------------------------------- STORYLINES --------
@@ -449,7 +494,9 @@ def _build_storylines(away_id, home_id, heating, cooling, away_dom, home_dom,
 
 # --------------------------------------------------------- STORY -------------
 def _game_story(a_disp, h_disp, away_ident, home_ident, matchups, away_form, home_form) -> tuple[str, ...]:
+    """Three role-ordered insights: Biggest Advantage, Swing Factor, Momentum."""
     s: list[str] = []
+    # 1) Biggest Advantage — the defining identity contrast.
     a_str = away_ident.strengths[0] if away_ident.strengths else None
     h_str = home_ident.strengths[0] if home_ident.strengths else None
     if a_str and h_str and a_str != h_str:
@@ -462,18 +509,21 @@ def _game_story(a_disp, h_disp, away_ident, home_ident, matchups, away_form, hom
         s.append(f"{_poss(a_disp)} offense is defined by being {_STRONG[a_str][0]}, and this game tests "
                  f"whether {h_disp} can match it.")
     else:
-        s.append("Neither offense enters with a dominant identity, making early execution pivotal.")
+        s.append("Neither offense enters with a dominant identity, so early execution matters most.")
+    # 2) Swing Factor — the top matchup.
     if matchups:
-        s.append(f"The central question: {matchups[0].explanation}")
-    away_weaker = _overall(away_ident) < _overall(home_ident)
-    weaker_disp = a_disp if away_weaker else h_disp
-    weaker_ident = away_ident if away_weaker else home_ident
-    if weaker_ident.strengths:
-        s.append(f"For {weaker_disp}, the path runs through being {_STRONG[weaker_ident.strengths[0]][0]}.")
+        s.append(matchups[0].explanation)
+    # 3) Momentum — recent form, or the weaker side's path if both steady.
     if away_form != "steady" or home_form != "steady":
-        s.append(f"Recent form adds a wrinkle: {a_disp} are {away_ident.recent_form_label.lower()} and "
-                 f"{h_disp} are {home_ident.recent_form_label.lower()} over their last 10.")
-    return tuple(s[:4])
+        s.append(f"{a_disp} are {away_ident.recent_form_label.lower()} and {h_disp} are "
+                 f"{home_ident.recent_form_label.lower()} over their last 10 games.")
+    else:
+        away_weaker = _overall(away_ident) < _overall(home_ident)
+        weaker_disp = a_disp if away_weaker else h_disp
+        weaker_ident = away_ident if away_weaker else home_ident
+        if weaker_ident.strengths:
+            s.append(f"For {weaker_disp}, the path runs through being {_STRONG[weaker_ident.strengths[0]][0]}.")
+    return tuple(s[:3])
 
 
 def _overall(ident: MLBTeamIdentity) -> float:

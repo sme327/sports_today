@@ -35,12 +35,19 @@ def _row_html(opp: Opportunity) -> str:
     support = opp.primary_support or support_fb
     risk = opp.primary_risk or risk_fb
     image_html = logo_img(opp.image_url, opp.team_name or "", "op-team-logo")
+    # Optional second image: a player headshot alongside the team logo (MLB).
+    headshot_html = ""
+    if opp.headshot_url:
+        headshot_html = (
+            f'<img class="op-headshot" src="{escape(opp.headshot_url, quote=True)}" '
+            f'alt="{escape(opp.player_name, quote=True)}" '
+            f'onerror="this.classList.add(\'img-fallback\');this.removeAttribute(\'src\')">')
     return (
         f'<div class="op-row">'
         f'<div class="op-score">{opp.opportunity_score}</div>'
         f'<div class="op-identity">'
         f'<span class="op-sport">{_emoji(opp.league)}</span>'
-        f'{image_html}<div>'
+        f'{image_html}{headshot_html}<div>'
         f'<div class="op-player">{escape(opp.player_name)}</div>'
         f'<div class="op-market">{escape(opp.market)}</div>'
         f'<div class="op-team">{escape(opp.team_name or "")}</div>'

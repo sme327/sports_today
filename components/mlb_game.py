@@ -1,8 +1,8 @@
 """Render functions for the MLB game page (pure HTML; no calculations).
 
-V1.1 refinement: the hero doubles as a game summary; sections read as an editorial
-briefing (insight cards, headline matchups, qualitative identity tiers) rather than
-a dashboard. All values arrive precomputed on the immutable MLBGamePage model.
+V1.2 polish: plain-English hero, role-tagged insight cards, a narrative game
+shape, de-numbered storylines, and a small set of restrained monochrome SVG icons
+(no emoji) that aid scanning. All values arrive precomputed on the page model.
 """
 
 from __future__ import annotations
@@ -14,7 +14,30 @@ from domain.mlb_game_page import (
     MLBGameHero, MLBGameShape, MLBKeyMatchup, MLBPlayerTrend, MLBStoryline, MLBTeamIdentity,
 )
 
-_ARROW = {"up": "▲", "down": "▼", "steady": "•"}
+# --- Restrained monochrome icons (currentColor; sized by CSS) ---------------
+_ICONS = {
+    "power": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>',
+    "contact": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
+    "discipline": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="4" width="12" height="16" rx="1"/><line x1="10" y1="4" x2="10" y2="20"/><line x1="14" y1="4" x2="14" y2="20"/><line x1="6" y1="9.3" x2="18" y2="9.3"/><line x1="6" y1="14.6" x2="18" y2="14.6"/></svg>',
+    "speed": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l6 6-6 6"/><path d="M13 6l6 6-6 6"/></svg>',
+    "risp": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 9-9 9-9-9z"/></svg>',
+    "form-up": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l6-6 4 4 6-7"/><path d="M17 7h3v3"/></svg>',
+    "form-down": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l6 6 4-4 6 7"/><path d="M17 17h3v-3"/></svg>',
+    "form-steady": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16"/></svg>',
+    "matchup": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>',
+    "baseball": '<svg class="mlb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><path d="M6.6 6.6c2 2 2 8.8 0 10.8"/><path d="M17.4 6.6c-2 2-2 8.8 0 10.8"/></svg>',
+}
+_ICONS["advantage"] = _ICONS["power"]
+_ICONS["swing"] = _ICONS["contact"]
+_ICONS["momentum"] = _ICONS["form-up"]
+_DIM_ICON = {"Power": "power", "Contact": "contact", "Plate Discipline": "discipline",
+             "Speed": "speed", "RISP": "risp"}
+_INSIGHT_ROLES = [("Biggest Advantage", "advantage"), ("Swing Factor", "swing"),
+                  ("Momentum", "momentum")]
+
+
+def _icon(name: str) -> str:
+    return _ICONS.get(name, "")
 
 
 def _ordinal(n) -> str:
@@ -26,7 +49,6 @@ def _ordinal(n) -> str:
 
 
 def _tier(pct: float | None) -> tuple[str, str] | None:
-    """(label, css-class) for a percentile — clearer than a bare number."""
     if pct is None:
         return None
     if pct >= 85:
@@ -45,17 +67,16 @@ def _hand_label(hand: str | None) -> str:
 
 
 # --------------------------------------------------------------- HERO --------
-def _hero_side(name, logo, form_label, form_dir, pitcher, hand, k_pct, home=False) -> str:
+def _hero_side(name, logo, form_note, form_dir, pitcher, hand, pitcher_note, home=False) -> str:
     form = ""
-    if form_label:
-        form = (f'<span class="mlb-form-pill {form_dir}">{_ARROW.get(form_dir, "•")} '
-                f'{escape(form_label)}</span>')
+    if form_note:
+        cls = form_dir if form_dir in ("up", "down") else "steady"
+        form = (f'<span class="mlb-form-pill {cls}">{_icon("form-" + cls)}'
+                f'<span>{escape(form_note)}</span></span>')
     if pitcher:
-        bits = [b for b in (_hand_label(hand), pitcher) if b]
-        line = " ".join(escape(b) for b in bits)
-        if k_pct is not None:
-            line += f' · {_ordinal(k_pct)} pct K'
-        sp = f'<div class="mlb-hero-sp">{line}</div>'
+        lead = " ".join(b for b in (_hand_label(hand), escape(pitcher)) if b)
+        tail = f' · {escape(pitcher_note)}' if pitcher_note else ""
+        sp = f'<div class="mlb-hero-sp">{lead}{tail}</div>'
     else:
         sp = '<div class="mlb-hero-sp tbd">Starter TBD</div>'
     return (
@@ -76,9 +97,9 @@ def hero_html(h: MLBGameHero) -> str:
     return (
         '<div class="mlb-hero">'
         '<div class="mlb-hero-row">'
-        f'{_hero_side(h.away_team, h.away_logo_url, h.away_form_label, h.away_form_dir, h.probable_away_pitcher, h.away_pitcher_hand, h.away_pitcher_k_pct)}'
+        f'{_hero_side(h.away_team, h.away_logo_url, h.away_form_note, h.away_form_dir, h.probable_away_pitcher, h.away_pitcher_hand, h.away_pitcher_note)}'
         '<div class="mlb-hero-vs">@</div>'
-        f'{_hero_side(h.home_team, h.home_logo_url, h.home_form_label, h.home_form_dir, h.probable_home_pitcher, h.home_pitcher_hand, h.home_pitcher_k_pct, home=True)}'
+        f'{_hero_side(h.home_team, h.home_logo_url, h.home_form_note, h.home_form_dir, h.probable_home_pitcher, h.home_pitcher_hand, h.home_pitcher_note, home=True)}'
         '</div>'
         f'<div class="mlb-hero-meta">{meta}</div>'
         f'{note}'
@@ -95,10 +116,13 @@ def _section(title: str, body: str) -> str:
 def game_story_html(story: tuple[str, ...]) -> str:
     if not story:
         return ""
-    cards = "".join(
-        f'<div class="mlb-insight"><span class="mlb-insight-dot"></span>'
-        f'<p>{escape(s)}</p></div>' for s in story)
-    return _section("What This Game Is About", f'<div class="mlb-insights">{cards}</div>')
+    cards = []
+    for i, s in enumerate(story):
+        role, icon = _INSIGHT_ROLES[i] if i < len(_INSIGHT_ROLES) else ("Key Point", "baseball")
+        cards.append(
+            f'<div class="mlb-insight"><div class="mlb-insight-role">{_icon(icon)}'
+            f'<span>{escape(role)}</span></div><p>{escape(s)}</p></div>')
+    return _section("What This Game Is About", f'<div class="mlb-insights">{"".join(cards)}</div>')
 
 
 # ------------------------------------------------------------ IDENTITY -------
@@ -114,17 +138,20 @@ def _identity_card(idn: MLBTeamIdentity) -> str:
     rows = []
     for m in idn.metrics:
         if m.name == "Recent Form":
-            arrow = _ARROW.get(m.trend_direction or "", "•")
             cls = m.trend_direction if m.trend_direction in ("up", "down") else "steady"
-            right = f'<span class="mlb-form-pill {cls}">{arrow} {escape(m.display_value)}</span>'
-        elif m.percentile is None:
-            right = f'<span class="mlb-metric-na">{escape(m.sample_note or "n/a")}</span>'
+            icon = _icon("form-" + cls)
+            right = f'<span class="mlb-form-pill {cls}">{icon}<span>{escape(m.display_value)}</span></span>'
         else:
-            tier = _tier(m.percentile)
-            right = (f'<span class="mlb-tier {tier[1]}">{tier[0]}</span>'
-                     f'<span class="mlb-pct-sm">{int(round(m.percentile))}</span>')
-        rows.append(f'<div class="mlb-metric-row"><span class="mlb-metric-name">{escape(m.name)}</span>'
-                    f'{_pct_bar(m.percentile)}<span class="mlb-metric-right">{right}</span></div>')
+            icon = _icon(_DIM_ICON.get(m.name, ""))
+            if m.percentile is None:
+                right = f'<span class="mlb-metric-na">{escape(m.sample_note or "n/a")}</span>'
+            else:
+                tier = _tier(m.percentile)
+                right = (f'<span class="mlb-tier {tier[1]}">{tier[0]}</span>'
+                         f'<span class="mlb-pct-sm">{int(round(m.percentile))}</span>')
+        name_cell = f'<span class="mlb-metric-name">{icon}<span>{escape(m.name)}</span></span>'
+        rows.append(f'<div class="mlb-metric-row">{name_cell}{_pct_bar(m.percentile)}'
+                    f'<span class="mlb-metric-right">{right}</span></div>')
     return (
         f'<div class="mlb-identity-card">'
         f'<div class="mlb-identity-head">{logo_img(idn.logo_url, idn.team, "mlb-identity-logo")}'
@@ -152,7 +179,7 @@ def key_matchups_html(matchups: tuple[MLBKeyMatchup, ...]) -> str:
         note = f'<div class="mlb-matchup-note">{escape(m.availability_note)}</div>' if m.availability_note else ""
         items.append(
             '<div class="mlb-matchup">'
-            f'<div class="mlb-matchup-q">{escape(m.title)}</div>'
+            f'<div class="mlb-matchup-q">{_icon("matchup")}<span>{escape(m.title)}</span></div>'
             f'<div class="mlb-matchup-body">{escape(m.explanation)}</div>'
             f'<div class="mlb-chips"><span class="mlb-edge">Edge · {escape(m.advantage)}</span>'
             f'{metrics}<span class="mlb-conf">{escape(m.confidence)} confidence</span></div>'
@@ -191,6 +218,7 @@ def player_trends_html(heating: tuple[MLBPlayerTrend, ...], cooling: tuple[MLBPl
 def game_shape_html(shape: MLBGameShape | None) -> str:
     if shape is None:
         return ""
+    prose = " ".join(shape.narrative[1:]) if len(shape.narrative) > 1 else shape.likely_shape
     facets = []
     if shape.early_edge:
         facets.append(("Early edge", shape.early_edge))
@@ -204,7 +232,7 @@ def game_shape_html(shape: MLBGameShape | None) -> str:
         '<div class="mlb-shape-headline">'
         f'<span class="mlb-shape-label">{escape(shape.label)}</span>'
         f'<span class="mlb-shape-conf">{escape(shape.confidence)} confidence</span></div>'
-        f'<p class="mlb-shape-lead">{escape(shape.likely_shape)}</p>'
+        f'<p class="mlb-shape-lead">{escape(prose)}</p>'
         f'<div class="mlb-shape-facets">{facet_html}</div>'
         f'<ul class="mlb-shape-facts">{facts}</ul>'
         '</div>')
@@ -216,12 +244,12 @@ def storylines_html(storylines: tuple[MLBStoryline, ...]) -> str:
     if not storylines:
         return ""
     items = []
-    for i, s in enumerate(storylines, 1):
+    for s in storylines:
         facts = " · ".join(escape(f) for f in s.supporting_facts)
         facts_html = f'<div class="mlb-storyline-facts">{facts}</div>' if facts else ""
         items.append(
             '<div class="mlb-storyline">'
-            f'<span class="mlb-storyline-num">{i:02d}</span>'
+            f'<span class="mlb-storyline-ic">{_icon("baseball")}</span>'
             '<div class="mlb-storyline-body">'
             f'<div class="mlb-storyline-q">{escape(s.title)}</div>'
             f'<div class="mlb-storyline-a">{escape(s.explanation)}</div>'
