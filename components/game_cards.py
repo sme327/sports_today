@@ -15,9 +15,22 @@ def _status_badge(game: SlateGame, time: str) -> str:
     if game.state == "final":
         return '<span class="game-state final">Final</span>'
     if game.state == "live":
-        detail = escape(game.status_detail or "Live")
-        return f'<span class="game-state live"><span class="live-dot"></span>{detail}</span>'
+        return '<span class="game-state live"><span class="live-dot"></span>LIVE</span>'
     return f'<span class="game-time">{escape(time)}</span>'
+
+
+def group_games_by_state(games: list[SlateGame]) -> tuple[list[SlateGame], ...]:
+    """Split games into (live, upcoming, final), each chronological.
+
+    League-agnostic: only game state determines placement. Start times are UTC-aware
+    or None (None sorts last). Empty groups are simply left empty.
+    """
+    def _key(g: SlateGame):
+        return (g.start_time is None, g.start_time)
+    live = sorted((g for g in games if g.state == "live"), key=_key)
+    upcoming = sorted((g for g in games if g.state not in ("live", "final")), key=_key)
+    final = sorted((g for g in games if g.state == "final"), key=_key)
+    return live, upcoming, final
 
 
 def _center(game: SlateGame) -> str:
@@ -49,8 +62,15 @@ def game_card_html(game: SlateGame, day: str) -> str:
         away_cls = " win" if game.winner == "away" else " loss"
         home_cls = " win" if game.winner == "home" else " loss"
 
+    # State modifier drives the card's color treatment (same layout/size).
+    state_cls = ""
+    if game.state == "live":
+        state_cls = " game-card--live"
+    elif game.state == "final":
+        state_cls = " game-card--final"
+
     return (
-        f'<a class="game-link" href="{href}" target="_self"><div class="game-card">'
+        f'<a class="game-link" href="{href}" target="_self"><div class="game-card{state_cls}">'
         f'<div class="game-top"><span class="league-name">{escape(league_label)}</span>'
         f'{_status_badge(game, time)}</div>'
         f'<div class="teams"><div class="team{away_cls}">{away_logo}<span class="team-name">{escape(away)}</span></div>'
