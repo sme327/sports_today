@@ -1,3 +1,7 @@
+> 🗄️ **Historical record (2026-07-15).** Point-in-time audit that guided the
+> architecture refactor. Kept for provenance; for current guidance see
+> [Architecture](../engineering/ARCHITECTURE.md) and the [Decision Log](../engineering/DECISION_LOG.md).
+
 # Sports Hub — Architecture Audit & Cleanup Plan
 
 Status: **approved, in progress** on branch `refactor/architecture-cleanup`.

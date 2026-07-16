@@ -1,3 +1,8 @@
+> 🗄️ **Historical record.** The brief that commissioned the architecture
+> cleanup. Kept for provenance; the resulting structure and decisions live in
+> [Architecture](../engineering/ARCHITECTURE.md) and the
+> [Decision Log](../engineering/DECISION_LOG.md).
+
 # Sports Hub Architectural Cleanup — Claude Work Brief
 
 You are taking over an existing local Streamlit sports-analysis application for a focused architectural cleanup.

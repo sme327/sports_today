@@ -1,4 +1,9 @@
-# Exact Setup and Daily Run Instructions
+# Setup & Daily Run
+
+> **Purpose** — Exact one-time installation and the daily data/run workflow (macOS).
+> **Audience** — The app owner and any operator running Sports Today locally.
+> **Update when** — The setup steps, command files, or daily pipeline change.
+> **Related** — [Architecture](ARCHITECTURE.md) · [README](../../README.md) · [Docs index](../README.md)
 
 ## Part A — One-time installation
 
