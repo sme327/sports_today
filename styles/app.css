@@ -23,6 +23,7 @@
   --text-2: #cdd2d9;
   --text-3: #97a0aa;
   --text-4: #6b747e;
+  --text-meta: #868e99;   /* dimmed metadata (arena, TV, league, team) */
   --on-brand: #2a1103;
 
   /* Brand (orange) + semantics (green support, coral risk) */
@@ -100,12 +101,13 @@ header[data-testid="stHeader"] {
 /* ---------------------------------------------------------- TYPOGRAPHY --- */
 .page-title {
   margin: 0 0 .42rem;
-  color: var(--brand);
-  font-size: 1.92rem;
+  color: var(--text-1);
+  font-size: 2.08rem;
   font-weight: 800;
-  letter-spacing: -.02em;
-  line-height: 1.12;
+  letter-spacing: -.03em;
+  line-height: 1.08;
 }
+.page-title .title-accent { color: var(--brand); }
 
 .section-row {
   display: flex;
@@ -118,8 +120,8 @@ header[data-testid="stHeader"] {
   margin: 0;
   color: var(--text-1);
   font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -.022em;
+  font-weight: 850;
+  letter-spacing: -.024em;
   line-height: 1.15;
 }
 .section-count {
@@ -131,10 +133,10 @@ header[data-testid="stHeader"] {
 }
 
 /* Reusable uppercase micro-label. */
-.league-name, .evidence-title, .analysis-chip {
-  font-size: .66rem;
+.league-name, .analysis-chip {
+  font-size: .63rem;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: .055em;
   text-transform: uppercase;
 }
 
@@ -182,6 +184,12 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
   color: var(--on-brand) !important;
+}
+
+/* League filter group: sits just below the title with tight, grouped spacing. */
+[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) {
+  margin-top: .5rem;
+  gap: .55rem !important;
 }
 
 /* --------------------------------------------- SEGMENTED CONTROL --------- */
@@ -348,8 +356,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   color: var(--text-1);
   font-size: 1.02rem;
   line-height: 1.15;
-  font-weight: 750;
-  letter-spacing: -.015em;
+  font-weight: 800;
+  letter-spacing: -.017em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -364,9 +372,9 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   align-items: center;
   justify-content: space-between;
   gap: .7rem;
-  color: var(--text-3);
-  font-size: .74rem;
-  line-height: 1.25;
+  color: var(--text-meta);
+  font-size: .7rem;
+  line-height: 1.28;
 }
 .game-meta > span:first-child {
   display: -webkit-box;
@@ -448,13 +456,21 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .op-player {
   color: var(--text-1);
   font-size: 1.0rem;
-  font-weight: 750;
-  letter-spacing: -.015em;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -.017em;
 }
-.op-market { color: var(--brand-2); font-size: .84rem; font-weight: 650; margin-top: .08rem; }
-.op-team { color: var(--text-3); font-size: .74rem; margin-top: .12rem; }
+.op-market { color: var(--brand-2); font-size: .85rem; font-weight: 750; margin-top: .08rem; }
+.op-team { color: var(--text-meta); font-size: .7rem; margin-top: .12rem; }
 
-.evidence-title { margin-bottom: .14rem; }
+/* Evidence labels: quieter, more editorial — sentence case, tight tracking. */
+.evidence-title {
+  margin-bottom: .16rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .008em;
+  text-transform: none;
+}
 .evidence-good .evidence-title { color: var(--green); }
 .evidence-risk .evidence-title { color: var(--red); }
 .evidence-body { color: var(--text-2); font-size: .78rem; line-height: 1.38; }
