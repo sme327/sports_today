@@ -53,6 +53,16 @@ class MLBGameHero:
     probable_home_pitcher: str | None
     probable_pitcher_status: str     # "available" | "partial" | "unavailable"
     league_context: str              # "MLB" (division/standings not available in Phase 1)
+    # Presentation-only summary fields (V1.1). Populated from already-computed
+    # analytics — no new calculations.
+    away_form_label: str | None = None      # "Trending Up" | "Trending Down" | "Holding Steady"
+    away_form_dir: str | None = None        # "up" | "down" | "steady"
+    home_form_label: str | None = None
+    home_form_dir: str | None = None
+    away_pitcher_k_pct: float | None = None
+    away_pitcher_hand: str | None = None
+    home_pitcher_k_pct: float | None = None
+    home_pitcher_hand: str | None = None
 
 
 @dataclass(frozen=True)

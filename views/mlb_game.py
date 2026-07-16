@@ -28,11 +28,12 @@ def render(nav: NavState, game: SlateGame) -> None:
 
     st.markdown(C.hero_html(page.hero), unsafe_allow_html=True)
 
+    # Evidence (Team Identity) before the synthesis (What This Game Is About).
+    st.markdown(C.team_identity_html(page.away_identity, page.home_identity), unsafe_allow_html=True)
+
     story = C.game_story_html(page.game_story)
     if story:
         st.markdown(story, unsafe_allow_html=True)
-
-    st.markdown(C.team_identity_html(page.away_identity, page.home_identity), unsafe_allow_html=True)
 
     matchups = C.key_matchups_html(page.key_matchups)
     if matchups:

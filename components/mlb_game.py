@@ -1,8 +1,8 @@
 """Render functions for the MLB game page (pure HTML; no calculations).
 
-All values arrive precomputed on the immutable MLBGamePage model. These helpers
-only format them into the Sports Today design system with a subtle MLB scorebook
-character (deep navy surfaces, compact stat rows).
+V1.1 refinement: the hero doubles as a game summary; sections read as an editorial
+briefing (insight cards, headline matchups, qualitative identity tiers) rather than
+a dashboard. All values arrive precomputed on the immutable MLBGamePage model.
 """
 
 from __future__ import annotations
@@ -14,73 +14,117 @@ from domain.mlb_game_page import (
     MLBGameHero, MLBGameShape, MLBKeyMatchup, MLBPlayerTrend, MLBStoryline, MLBTeamIdentity,
 )
 
+_ARROW = {"up": "▲", "down": "▼", "steady": "•"}
 
+
+def _ordinal(n) -> str:
+    if n is None:
+        return "—"
+    n = int(round(n))
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def _tier(pct: float | None) -> tuple[str, str] | None:
+    """(label, css-class) for a percentile — clearer than a bare number."""
+    if pct is None:
+        return None
+    if pct >= 85:
+        return "Elite", "hi"
+    if pct >= 66:
+        return "Above Avg", "hi"
+    if pct >= 45:
+        return "Average", "mid"
+    if pct >= 25:
+        return "Below Avg", "lo"
+    return "Well Below", "lo"
+
+
+def _hand_label(hand: str | None) -> str:
+    return {"L": "LHP", "R": "RHP"}.get(hand or "", "")
+
+
+# --------------------------------------------------------------- HERO --------
+def _hero_side(name, logo, form_label, form_dir, pitcher, hand, k_pct, home=False) -> str:
+    form = ""
+    if form_label:
+        form = (f'<span class="mlb-form-pill {form_dir}">{_ARROW.get(form_dir, "•")} '
+                f'{escape(form_label)}</span>')
+    if pitcher:
+        bits = [b for b in (_hand_label(hand), pitcher) if b]
+        line = " ".join(escape(b) for b in bits)
+        if k_pct is not None:
+            line += f' · {_ordinal(k_pct)} pct K'
+        sp = f'<div class="mlb-hero-sp">{line}</div>'
+    else:
+        sp = '<div class="mlb-hero-sp tbd">Starter TBD</div>'
+    return (
+        f'<div class="mlb-hero-team{" home" if home else ""}">'
+        f'{logo_img(logo, name, "mlb-hero-logo")}'
+        f'<div class="mlb-hero-side">'
+        f'<span class="mlb-hero-name">{escape(name)}</span>{form}{sp}'
+        f'</div></div>'
+    )
+
+
+def hero_html(h: MLBGameHero) -> str:
+    meta_bits = [b for b in (h.league_context, h.venue, h.scheduled_time) if b]
+    meta = " · ".join(escape(b) for b in meta_bits)
+    note = ""
+    if h.probable_pitcher_status == "unavailable":
+        note = '<div class="mlb-hero-note">Probable starters not yet available</div>'
+    return (
+        '<div class="mlb-hero">'
+        '<div class="mlb-hero-row">'
+        f'{_hero_side(h.away_team, h.away_logo_url, h.away_form_label, h.away_form_dir, h.probable_away_pitcher, h.away_pitcher_hand, h.away_pitcher_k_pct)}'
+        '<div class="mlb-hero-vs">@</div>'
+        f'{_hero_side(h.home_team, h.home_logo_url, h.home_form_label, h.home_form_dir, h.probable_home_pitcher, h.home_pitcher_hand, h.home_pitcher_k_pct, home=True)}'
+        '</div>'
+        f'<div class="mlb-hero-meta">{meta}</div>'
+        f'{note}'
+        '</div>'
+    )
+
+
+def _section(title: str, body: str) -> str:
+    return (f'<div class="mlb-section"><div class="mlb-section-head">'
+            f'<h2>{escape(title)}</h2></div>{body}</div>')
+
+
+# ------------------------------------------------- WHAT THIS GAME IS ABOUT ---
+def game_story_html(story: tuple[str, ...]) -> str:
+    if not story:
+        return ""
+    cards = "".join(
+        f'<div class="mlb-insight"><span class="mlb-insight-dot"></span>'
+        f'<p>{escape(s)}</p></div>' for s in story)
+    return _section("What This Game Is About", f'<div class="mlb-insights">{cards}</div>')
+
+
+# ------------------------------------------------------------ IDENTITY -------
 def _pct_bar(percentile: float | None) -> str:
     if percentile is None:
         return '<div class="mlb-bar"><div class="mlb-bar-fill" style="width:0"></div></div>'
     w = max(3, min(100, round(percentile)))
     tier = "hi" if percentile >= 66 else "lo" if percentile <= 33 else "mid"
-    return (f'<div class="mlb-bar"><div class="mlb-bar-fill {tier}" '
-            f'style="width:{w}%"></div></div>')
-
-
-def hero_html(h: MLBGameHero) -> str:
-    def side(name, logo):
-        return (f'<div class="mlb-hero-team">{logo_img(logo, name, "mlb-hero-logo")}'
-                f'<span class="mlb-hero-name">{escape(name)}</span></div>')
-    if h.probable_pitcher_status == "unavailable":
-        pitchers = '<div class="mlb-hero-pitchers">Probable starters not yet available</div>'
-    else:
-        ap = escape(h.probable_away_pitcher or "TBD")
-        hp = escape(h.probable_home_pitcher or "TBD")
-        pitchers = (f'<div class="mlb-hero-pitchers"><span class="mlb-pitcher">{ap}</span>'
-                    f'<span class="mlb-hero-vs-sm">vs</span>'
-                    f'<span class="mlb-pitcher">{hp}</span></div>')
-    meta_bits = [b for b in (h.league_context, h.venue, h.scheduled_time) if b]
-    meta = " · ".join(escape(b) for b in meta_bits)
-    return (
-        '<div class="mlb-hero">'
-        '<div class="mlb-hero-row">'
-        f'{side(h.away_team, h.away_logo_url)}'
-        '<div class="mlb-hero-vs">@</div>'
-        f'{side(h.home_team, h.home_logo_url)}'
-        '</div>'
-        f'<div class="mlb-hero-meta">{meta}</div>'
-        f'{pitchers}'
-        '</div>'
-    )
-
-
-def _section(title: str, body: str, sub: str | None = None) -> str:
-    sub_html = f'<span class="mlb-section-sub">{escape(sub)}</span>' if sub else ""
-    return (f'<div class="mlb-section"><div class="mlb-section-head">'
-            f'<h2>{escape(title)}</h2>{sub_html}</div>{body}</div>')
-
-
-def game_story_html(story: tuple[str, ...]) -> str:
-    if not story:
-        return ""
-    paras = "".join(f"<p>{escape(s)}</p>" for s in story)
-    return _section("What This Game Is About", f'<div class="mlb-story">{paras}</div>')
+    return f'<div class="mlb-bar"><div class="mlb-bar-fill {tier}" style="width:{w}%"></div></div>'
 
 
 def _identity_card(idn: MLBTeamIdentity) -> str:
-    form_cls = {"up": "up", "down": "down"}.get(
-        next((m.trend_direction for m in idn.metrics if m.name == "Recent Form"), None), "steady")
     rows = []
     for m in idn.metrics:
         if m.name == "Recent Form":
-            arrow = {"up": "▲", "down": "▼"}.get(m.trend_direction or "", "—")
-            right = f'<span class="mlb-form-pill {form_cls}">{arrow} {escape(m.display_value)}</span>'
-            rows.append(f'<div class="mlb-metric-row"><span class="mlb-metric-name">{escape(m.name)}</span>'
-                        f'{_pct_bar(m.percentile)}{right}</div>')
-            continue
-        if m.percentile is None:
+            arrow = _ARROW.get(m.trend_direction or "", "•")
+            cls = m.trend_direction if m.trend_direction in ("up", "down") else "steady"
+            right = f'<span class="mlb-form-pill {cls}">{arrow} {escape(m.display_value)}</span>'
+        elif m.percentile is None:
             right = f'<span class="mlb-metric-na">{escape(m.sample_note or "n/a")}</span>'
         else:
-            right = f'<span class="mlb-metric-pct">{int(round(m.percentile))}<span class="mlb-pctl">pctl</span></span>'
+            tier = _tier(m.percentile)
+            right = (f'<span class="mlb-tier {tier[1]}">{tier[0]}</span>'
+                     f'<span class="mlb-pct-sm">{int(round(m.percentile))}</span>')
         rows.append(f'<div class="mlb-metric-row"><span class="mlb-metric-name">{escape(m.name)}</span>'
-                    f'{_pct_bar(m.percentile)}{right}</div>')
+                    f'{_pct_bar(m.percentile)}<span class="mlb-metric-right">{right}</span></div>')
     return (
         f'<div class="mlb-identity-card">'
         f'<div class="mlb-identity-head">{logo_img(idn.logo_url, idn.team, "mlb-identity-logo")}'
@@ -94,10 +138,11 @@ def _identity_card(idn: MLBTeamIdentity) -> str:
 
 
 def team_identity_html(away: MLBTeamIdentity, home: MLBTeamIdentity) -> str:
-    body = (f'<div class="mlb-identity-grid">{_identity_card(away)}{_identity_card(home)}</div>')
-    return _section("Team Identity", body)
+    return _section("Team Identity",
+                    f'<div class="mlb-identity-grid">{_identity_card(away)}{_identity_card(home)}</div>')
 
 
+# ------------------------------------------------------------ MATCHUPS -------
 def key_matchups_html(matchups: tuple[MLBKeyMatchup, ...]) -> str:
     if not matchups:
         return ""
@@ -107,14 +152,15 @@ def key_matchups_html(matchups: tuple[MLBKeyMatchup, ...]) -> str:
         note = f'<div class="mlb-matchup-note">{escape(m.availability_note)}</div>' if m.availability_note else ""
         items.append(
             '<div class="mlb-matchup">'
-            f'<div class="mlb-matchup-top"><div class="mlb-matchup-title">{escape(m.title)}</div>'
-            f'<span class="mlb-edge">Edge: {escape(m.advantage)}</span></div>'
+            f'<div class="mlb-matchup-q">{escape(m.title)}</div>'
             f'<div class="mlb-matchup-body">{escape(m.explanation)}</div>'
-            f'<div class="mlb-chips">{metrics}<span class="mlb-conf">{escape(m.confidence)} confidence</span></div>'
+            f'<div class="mlb-chips"><span class="mlb-edge">Edge · {escape(m.advantage)}</span>'
+            f'{metrics}<span class="mlb-conf">{escape(m.confidence)} confidence</span></div>'
             f'{note}</div>')
     return _section("Key Matchups", f'<div class="mlb-matchups">{"".join(items)}</div>')
 
 
+# ------------------------------------------------- HEATING UP / COOLING OFF --
 def _trend_card(t: MLBPlayerTrend) -> str:
     cls = "up" if t.direction == "up" else "down"
     tag = "Heating Up" if t.direction == "up" else "Cooling Off"
@@ -141,32 +187,45 @@ def player_trends_html(heating: tuple[MLBPlayerTrend, ...], cooling: tuple[MLBPl
     return _section("Heating Up / Cooling Off", f'<div class="mlb-trend-grid">{cards}</div>')
 
 
+# --------------------------------------------------------- GAME SHAPE --------
 def game_shape_html(shape: MLBGameShape | None) -> str:
     if shape is None:
         return ""
-    facets = [
-        ("Shape", shape.label), ("Early edge", shape.early_edge or "—"),
-        ("Driver", shape.offensive_driver), ("Volatility", shape.volatility),
-        ("Confidence", shape.confidence),
-    ]
-    tiles = "".join(f'<div class="mlb-shape-tile"><span class="mlb-shape-k">{escape(k)}</span>'
-                    f'<span class="mlb-shape-v">{escape(str(v))}</span></div>' for k, v in facets)
+    facets = []
+    if shape.early_edge:
+        facets.append(("Early edge", shape.early_edge))
+    facets += [("Driver", shape.offensive_driver), ("Volatility", shape.volatility)]
+    facet_html = " ".join(
+        f'<span class="mlb-shape-facet"><span class="k">{escape(k)}</span> '
+        f'<span class="v">{escape(str(v))}</span></span>' for k, v in facets)
     facts = "".join(f"<li>{escape(f)}</li>" for f in shape.supporting_facts)
-    body = (f'<div class="mlb-shape-tiles">{tiles}</div>'
-            f'<div class="mlb-shape-shape">{escape(shape.likely_shape)}</div>'
-            f'<ul class="mlb-shape-facts">{facts}</ul>')
+    body = (
+        '<div class="mlb-shape">'
+        '<div class="mlb-shape-headline">'
+        f'<span class="mlb-shape-label">{escape(shape.label)}</span>'
+        f'<span class="mlb-shape-conf">{escape(shape.confidence)} confidence</span></div>'
+        f'<p class="mlb-shape-lead">{escape(shape.likely_shape)}</p>'
+        f'<div class="mlb-shape-facets">{facet_html}</div>'
+        f'<ul class="mlb-shape-facts">{facts}</ul>'
+        '</div>')
     return _section("Expected Game Shape", body)
 
 
+# --------------------------------------------------------- STORYLINES --------
 def storylines_html(storylines: tuple[MLBStoryline, ...]) -> str:
     if not storylines:
         return ""
     items = []
-    for s in storylines:
+    for i, s in enumerate(storylines, 1):
         facts = " · ".join(escape(f) for f in s.supporting_facts)
-        items.append(f'<div class="mlb-storyline"><div class="mlb-storyline-q">{escape(s.title)}</div>'
-                     f'<div class="mlb-storyline-a">{escape(s.explanation)}</div>'
-                     f'<div class="mlb-storyline-facts">{facts}</div></div>')
+        facts_html = f'<div class="mlb-storyline-facts">{facts}</div>' if facts else ""
+        items.append(
+            '<div class="mlb-storyline">'
+            f'<span class="mlb-storyline-num">{i:02d}</span>'
+            '<div class="mlb-storyline-body">'
+            f'<div class="mlb-storyline-q">{escape(s.title)}</div>'
+            f'<div class="mlb-storyline-a">{escape(s.explanation)}</div>'
+            f'{facts_html}</div></div>')
     return _section("Storylines to Watch", f'<div class="mlb-storylines">{"".join(items)}</div>')
 
 

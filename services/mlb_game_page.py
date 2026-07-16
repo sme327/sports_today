@@ -68,7 +68,8 @@ def _headshot(player_id: str) -> str:
 
 
 # --------------------------------------------------------------- HERO --------
-def _hero(game: SlateGame) -> MLBGameHero:
+def _hero(game: SlateGame, away_ident=None, home_ident=None,
+          ptable=None, away_pid=None, home_pid=None) -> MLBGameHero:
     ap, hp = game.meta.get("away_pitcher"), game.meta.get("home_pitcher")
     if ap and hp:
         status = "available"
@@ -76,13 +77,38 @@ def _hero(game: SlateGame) -> MLBGameHero:
         status = "partial"
     else:
         status = "unavailable"
+
+    def _pitcher(pid):
+        if ptable is not None and pid and pid in ptable.index:
+            row = ptable.loc[pid]
+            return float(row["k_pct"]), row["hand"]
+        return None, None
+
+    a_k, a_hand = _pitcher(away_pid)
+    h_k, h_hand = _pitcher(home_pid)
+
+    def _form(ident):
+        if ident is None:
+            return None, None
+        d = next((m.trend_direction for m in ident.metrics if m.name == "Recent Form"), None)
+        return ident.recent_form_label, d
+
+    a_form, a_dir = _form(away_ident)
+    h_form, h_dir = _form(home_ident)
+
     return MLBGameHero(
-        away_team=game.away_display, home_team=game.home_display,
+        # Full city + team name (Baseball is tied to cities) — fall back to display.
+        away_team=game.away_name or game.away_display,
+        home_team=game.home_name or game.home_display,
         away_logo_url=game.away_logo, home_logo_url=game.home_logo,
         scheduled_time=format_game_time(game.start_time),
         venue=game.venue, game_status=game.status,
         probable_away_pitcher=ap, probable_home_pitcher=hp,
         probable_pitcher_status=status, league_context="MLB",
+        away_form_label=a_form, away_form_dir=a_dir,
+        home_form_label=h_form, home_form_dir=h_dir,
+        away_pitcher_k_pct=a_k, away_pitcher_hand=a_hand,
+        home_pitcher_k_pct=h_k, home_pitcher_hand=h_hand,
     )
 
 
@@ -119,17 +145,26 @@ def _identity_metric(name: str, row: pd.Series, table: pd.DataFrame) -> MLBIdent
                              trend_direction=None, evidence_text=evidence, sample_note=note)
 
 
-def _identity_summary(strengths: list[str], vulns: list[str]) -> str:
+def _identity_summary(ranked: list, form_dir: str | None) -> str:
+    """Conversational, deterministic identity sentence; form clause differentiates teams."""
+    strengths = [m for m in ranked if m.percentile is not None and m.percentile >= 66]
+    vulns = [m for m in ranked if m.percentile is not None and m.percentile <= 33]
+    tail = ""
+    if form_dir == "up":
+        tail = " The bats have been heating up lately."
+    elif form_dir == "down":
+        tail = " The offense has cooled off recently."
     if not strengths:
-        if len(vulns) >= 3:
-            return "A below-league-average offense across most categories this season."
-        return "A balanced offense without a dominant strength or glaring weakness."
-    lead = ", ".join(_STRONG[s][0] for s in strengths[:2])
-    clause = _STRONG[strengths[0]][1]
+        base = ("A below-league-average offense across most categories this season"
+                if len(vulns) >= 3 else
+                "A balanced offense without a standout strength or glaring weakness")
+        return base + "." + tail
+    lead = ", ".join(_STRONG[m.name][0] for m in strengths[:2])
+    clause = _STRONG[strengths[0].name][1]
     text = f"{_article(lead)} {lead} offense that {clause}"
     if vulns:
-        text += f", though it can be {_WEAK[vulns[0]]}"
-    return text + "."
+        text += f", though it can be {_WEAK[vulns[-1].name]}"
+    return text + "." + tail
 
 
 def _team_identity(pa: pd.DataFrame, team: str, logo: str | None, table: pd.DataFrame) -> MLBTeamIdentity:
@@ -149,7 +184,7 @@ def _team_identity(pa: pd.DataFrame, team: str, logo: str | None, table: pd.Data
         team=team, logo_url=logo,
         recent_form_label=rf.label, recent_form_evidence=rf.evidence,
         metrics=tuple(metrics + [form_metric]),
-        identity_summary=_identity_summary(strengths, vulns),
+        identity_summary=_identity_summary(ranked, rf.direction),
         strengths=tuple(strengths), vulnerabilities=tuple(vulns),
         sample_context=f"Season-to-date, {int(row['games'])} games, {int(row['pa']):,} PA.",
     )
@@ -168,7 +203,7 @@ def _pitcher_matchups(offense: str, opp_row: pd.Series, pitcher: pd.Series,
     gap = abs(opp_row["power"] - pitcher["tb_suppress_pct"])
     edge = offense if opp_row["power"] > pitcher["tb_suppress_pct"] else pitcher_name
     out.append((gap, MLBKeyMatchup(
-        title=f"{offense} power vs. {pitcher_name}'s ability to limit extra bases",
+        title=f"Can {pitcher_name} limit {_poss(offense)} power?",
         advantage=edge, confidence=conf,
         explanation=(f"{offense} rank in the {_ordinal(int(round(opp_row['power'])))} percentile in "
                      f"extra-base production, while {pitcher_name} sits in the "
@@ -179,7 +214,7 @@ def _pitcher_matchups(offense: str, opp_row: pd.Series, pitcher: pd.Series,
     # Team contact vs strikeout profile
     edge = pitcher_name if pitcher["k_pct"] >= 60 and opp_row["contact"] < 50 else offense
     out.append((abs(pitcher["k_pct"] - 50) + abs(opp_row["contact"] - 50), MLBKeyMatchup(
-        title=f"{offense} contact vs. {pitcher_name}'s strikeout stuff",
+        title=f"Can {pitcher_name} miss enough bats?",
         advantage=edge, confidence=conf,
         explanation=(f"{pitcher_name} strikes hitters out at a {pitcher['k_rate']:.1%} clip "
                      f"({_ordinal(int(round(pitcher['k_pct'])))} percentile); {offense} carry a "
@@ -189,7 +224,7 @@ def _pitcher_matchups(offense: str, opp_row: pd.Series, pitcher: pd.Series,
     )))
     # Team discipline vs walk suppression
     out.append((abs(opp_row["discipline"] - 50), MLBKeyMatchup(
-        title=f"{offense}'s patience vs. {pitcher_name}'s control",
+        title=f"Can {pitcher_name} command the strike zone?",
         advantage=offense if opp_row["discipline"] >= 60 and pitcher["bb_suppress_pct"] < 50 else pitcher_name,
         confidence=conf,
         explanation=(f"{offense} walk in {opp_row['bb_rate']:.1%} of trips; {pitcher_name} allows "
@@ -208,10 +243,11 @@ def _handedness_matchup(pa: pd.DataFrame, offense_full: str, offense_disp: str,
         return None
     tb_diff = info["tb_per_pa"] - info["overall_tb"]
     hand_label = "left-handers" if hand == "L" else "right-handers"
+    hand_side = "left" if hand == "L" else "right"
     better = "better" if tb_diff > 0 else "worse"
     strength = abs(tb_diff) * 1000
     return (strength, MLBKeyMatchup(
-        title=f"{offense_disp} vs. {hand_label} ({pitcher_name} throws {hand})",
+        title=f"How do {offense_disp} handle {hand_side}-handers?",
         advantage=offense_disp if tb_diff > 0 else pitcher_name,
         confidence="Moderate",
         explanation=(f"{offense_disp} have produced {better} against {hand_label} this season "
@@ -226,7 +262,7 @@ def _team_vs_team_matchup(away: str, away_row: pd.Series, home: str,
     gap = abs(away_row["power"] - home_row["power"])
     edge = away if away_row["power"] > home_row["power"] else home
     return (gap, MLBKeyMatchup(
-        title="Which lineup profiles stronger for power",
+        title="Which lineup profiles stronger?",
         advantage=edge, confidence="Low",
         explanation=(f"{away} sit in the {_ordinal(int(round(away_row['power'])))} percentile for "
                      f"extra-base production, {home} in the {_ordinal(int(round(home_row['power'])))}."),
@@ -306,19 +342,16 @@ def _build_opportunities(pa, game: SlateGame, teams: list[str]) -> tuple[Opportu
     scored = score_hit_opportunities(pa, teams)
     if scored.empty:
         return ()
-    logos = {}
-    for name, logo in ((game.away_name, game.away_logo), (game.home_name, game.home_logo)):
-        if name and logo:
-            logos[str(name)] = logo
     out = []
     for _, row in scored.head(6).iterrows():
+        pid = str(int(row.batter_id))
         out.append(Opportunity(
-            league="MLB", player_id=str(int(row.batter_id)), player_name=str(row.player),
+            league="MLB", player_id=pid, player_name=str(row.player),
             team_id=None, team_name=str(row.team), market="1+ Hit", threshold=1,
             opportunity_score=int(row.opportunity_score), stability_score=int(row.stability_score),
             supporting_evidence=list(row.support) if isinstance(row.support, list) else [],
             negative_evidence=list(row.risks) if isinstance(row.risks, list) else [],
-            image_url=logos.get(str(row.team)), mode=OpportunityMode.SLATE,
+            image_url=_headshot(pid), mode=OpportunityMode.SLATE,  # recognizable player photo
             components={"last_25_hit_rate": float(row.last_25_hit_rate),
                         "last_50_hit_rate": float(row.last_50_hit_rate),
                         "pa_per_game": float(row.pa_per_game), "k_rate": float(row.k_rate)},
@@ -479,6 +512,8 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
 
     away_ident = _team_identity(pa, away, game.away_logo, table)
     home_ident = _team_identity(pa, home, game.home_logo, table)
+    # Enrich the hero into a game summary (form + starter K-percentile/hand).
+    hero = _hero(game, away_ident, home_ident, ptable, away_pid, home_pid)
     matchups = _build_matchups(pa, away, home, a_disp, h_disp, table, ptable, away_pid, home_pid,
                                game.meta.get("away_pitcher"), game.meta.get("home_pitcher"))
     heating, cooling = _build_trends(pa, [away, home])

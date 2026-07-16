@@ -25,26 +25,41 @@ One `as_of`-bounded plate-appearance load feeds the whole page. Calculations liv
 in services; components only format. The page model is cached on
 `game_id | as_of | mlb-game-page-v1`.
 
-## Sections (all Phase 1)
+## Sections (Phase 1, order refined in V1.1)
 
-1. **Game hero** — teams, logos, venue, time, and probable pitcher *names* with an
-   availability status ("Probable starters not yet available" when missing).
-2. **What This Game Is About** — 2–4 deterministic sentences assembled from
-   structured observations (no free generative text).
-3. **Team Identity** — six dimensions per team: Power, Contact, Plate Discipline,
-   Speed, RISP (league-relative percentiles), and Recent Form (composite last-10
-   vs. season baseline → Trending Up/Down). A generated identity sentence.
-4. **Key Matchups** — 3–5 offense-vs-probable-starter interactions (power vs.
-   extra-base suppression, contact vs. strikeout profile, discipline vs. control,
-   handedness), or a team-vs-team fallback if a starter isn't matched.
+Reading flow: **summary → evidence → synthesis → matchups → players → expected
+game**. Team Identity (evidence) is placed above the story (synthesis).
+
+1. **Game hero** — doubles as a game summary: full city + team names, venue, time,
+   each team's recent-form indicator, and probable starters with handedness +
+   strikeout percentile (all from already-computed analytics). "Probable starters
+   not yet available" when missing.
+2. **Team Identity** — six dimensions per team: Power, Contact, Plate Discipline,
+   Speed, RISP (league-relative percentiles shown as qualitative tiers + the
+   number), and Recent Form (composite last-10 vs. season baseline → Trending
+   Up/Down). A conversational, form-aware identity sentence.
+3. **What This Game Is About** — 2–4 deterministic observations rendered as
+   scannable insight cards (no free generative text).
+4. **Key Matchups** — 3–5 offense-vs-probable-starter interactions with editorial
+   headline questions ("Can Nola command the strike zone?"); explanations keep the
+   exact analytics. Team-vs-team fallback if a starter isn't matched.
 5. **Heating Up / Cooling Off** — up to 3 each, gated by a minimum trend
-   magnitude; fewer (or none) when the data doesn't support it.
+   magnitude; fewer (or none) when the data doesn't support it. (Kept distinct from
+   the team-level "Trending Up/Down" wording on purpose.)
 6. **Players Positioned to Succeed** — the shared Opportunity engine (1+ Hit),
-   filtered to the two teams, **same scores as the slate** (not rescaled).
+   filtered to the two teams, **same scores as the slate** (not rescaled), enriched
+   with player headshots.
 7. **Expected Game Shape** — a multi-factor classification (Starter-driven,
-   Power-oriented, Contact-heavy, Balanced, Uncertain). Never "pitcher's duel".
-8. **Storylines to Watch** — 2–3, only above a quality threshold; never padded.
+   Power-oriented, Contact-heavy, Balanced, Uncertain), presented as a lead label +
+   read + inline facets. Never "pitcher's duel".
+8. **Storylines to Watch** — 2–3, only above a quality threshold; never padded;
+   rendered as ranked article headlines.
 9. **Data context** — a compact line naming the `as_of` cutoff and what's excluded.
+
+**Deliberately not added (V1.1):** a separate "Players To Watch" section (duplicates
+the hero's starters + Heating/Cooling, and "biggest star" has no honest data
+source) and a separate "Game At A Glance" (would restate Team Identity) — its
+summary intent is folded into the enriched hero instead.
 
 ## Data sources
 
