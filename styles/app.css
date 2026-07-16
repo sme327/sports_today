@@ -1,75 +1,62 @@
 /* ============================================================================
    SPORTS HUB — DESIGN SYSTEM
-   A single cohesive visual language. Every component inherits from the tokens
-   below (color, type, space, radius, shadow, motion). Premium native feel:
-   layered surfaces over borders, soft elevation, generous whitespace, restrained
-   color, smooth motion. Loaded once via styles.load_css().
+   Same layout, hierarchy, and density as the original homepage. This pass is
+   craftsmanship only: one token system (color, type, space, radius, shadow,
+   motion), layered surfaces in place of heavy borders, softer elevation, and
+   subtle motion. iOS 17 -> iOS 18, not a redesign. Loaded via styles.load_css().
    ========================================================================== */
 
 /* ---------------------------------------------------------------- TOKENS -- */
 :root {
-  /* Type */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
           "Inter", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
-  --fs-hero: 2.35rem;
-  --fs-h2: 1.22rem;
-  --fs-card-title: 1.08rem;
-  --fs-body: .92rem;
-  --fs-meta: .8rem;
-  --fs-caption: .72rem;
-  --fs-label: .645rem;
 
-  /* Canvas + layered surfaces (elevation without heavy borders) */
-  --bg: #0a0b0e;
-  --surface-1: #15181e;      /* resting card */
-  --surface-1-top: #1a1e25;  /* card gradient top */
-  --surface-2: #1c212a;      /* hover / secondary control */
-  --surface-3: #232935;      /* elevated tile / badge track */
+  /* Canvas + layered surfaces */
+  --bg: #0b0e12;
+  --surface-1: #161b21;      /* resting card */
+  --surface-1-top: #1a2027;  /* card gradient top */
+  --surface-2: #1c222a;      /* hover / secondary control */
+  --surface-3: #232a33;      /* elevated tile / badge track */
 
   /* Text ramp (grayscale) */
-  --text-1: #f5f4f1;
-  --text-2: #c3c8d0;
-  --text-3: #888e98;
-  --text-4: #646a73;
+  --text-1: #f4f3ef;
+  --text-2: #cdd2d9;
+  --text-3: #97a0aa;
+  --text-4: #6b747e;
   --on-brand: #2a1103;
 
-  /* Brand (orange, the only accent) */
-  --brand: #f7852b;
-  --brand-2: #ff9d4e;
-  --brand-grad: linear-gradient(180deg, #ff9d4e 0%, #f27a20 100%);
-  --brand-soft: rgba(247, 133, 43, .13);
-  --brand-ring: rgba(247, 133, 43, .34);
-
-  /* Semantic (green support, coral risk) */
-  --green: #5fd08a;
-  --green-soft: rgba(95, 208, 138, .12);
-  --red: #ff8b80;
-  --red-soft: rgba(255, 139, 128, .11);
+  /* Brand (orange) + semantics (green support, coral risk) */
+  --brand: #ff7a1a;
+  --brand-2: #ff9a52;
+  --brand-grad: linear-gradient(180deg, #ff9b56 0%, #f47a24 100%);
+  --brand-soft: rgba(244, 122, 36, .14);
+  --brand-ring: rgba(247, 133, 43, .32);
+  --green: #6bc68f;
+  --red: #ef8e86;
 
   /* Hairlines + edge lighting (keep dark mode crisp) */
   --hairline: rgba(255, 255, 255, .06);
   --hairline-2: rgba(255, 255, 255, .10);
-  --edge-hi: inset 0 1px 0 rgba(255, 255, 255, .055);
+  --edge-hi: inset 0 1px 0 rgba(255, 255, 255, .05);
 
   /* Radius scale */
   --r-xs: 8px;
-  --r-sm: 11px;
-  --r-md: 14px;
-  --r-lg: 18px;
-  --r-xl: 24px;
+  --r-sm: 10px;
+  --r-md: 13px;
+  --r-lg: 16px;
   --r-pill: 999px;
 
   /* Shadow system */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .40);
-  --shadow-md: 0 6px 18px rgba(0, 0, 0, .32), 0 1px 3px rgba(0, 0, 0, .40);
-  --shadow-lg: 0 18px 44px rgba(0, 0, 0, .46), 0 4px 12px rgba(0, 0, 0, .32);
-  --shadow-brand: 0 6px 20px rgba(242, 122, 32, .30);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+  --shadow-md: 0 5px 16px rgba(0, 0, 0, .30), 0 1px 3px rgba(0, 0, 0, .38);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, .44), 0 3px 10px rgba(0, 0, 0, .30);
+  --shadow-brand: 0 4px 14px rgba(242, 122, 32, .28);
 
   /* Motion */
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease: cubic-bezier(.4, 0, .2, 1);
   --dur-fast: .14s;
-  --dur: .22s;
+  --dur: .2s;
 }
 
 /* ----------------------------------------------------------- APP SHELL --- */
@@ -82,23 +69,20 @@ html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"] {
 .stApp {
   color: var(--text-1);
   background:
-    radial-gradient(1200px 520px at 12% -8%, rgba(247, 133, 43, .10), transparent 60%),
-    radial-gradient(1000px 480px at 92% -6%, rgba(120, 150, 220, .05), transparent 55%),
+    radial-gradient(1100px 480px at 10% -10%, rgba(255, 122, 26, .10), transparent 55%),
     var(--bg);
   background-attachment: fixed;
 }
 
 .block-container {
-  max-width: 1140px;
-  padding-top: 2.6rem;
-  padding-bottom: 3rem;
+  max-width: 1160px;
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
 }
 
-/* Comfortable vertical rhythm between blocks. */
-[data-testid="stVerticalBlock"] { gap: .55rem; }
+[data-testid="stVerticalBlock"] { gap: .42rem; }
 [data-testid="stElementContainer"] { margin-bottom: 0 !important; }
 
-/* Hide Streamlit chrome. */
 #MainMenu, footer,
 [data-testid="stDeployButton"],
 [data-testid="stToolbar"],
@@ -114,93 +98,59 @@ header[data-testid="stHeader"] {
 }
 
 /* ---------------------------------------------------------- TYPOGRAPHY --- */
-.page-heading { min-width: 0; }
-
 .page-title {
-  margin: 0;
-  color: var(--text-1);
-  font-size: var(--fs-hero);
+  margin: 0 0 .42rem;
+  color: var(--brand);
+  font-size: 1.92rem;
   font-weight: 800;
-  letter-spacing: -.022em;
-  line-height: 1.04;
+  letter-spacing: -.02em;
+  line-height: 1.12;
 }
 
-.page-subtitle {
-  margin: .55rem 0 0;
-  color: var(--text-3);
-  font-size: 1.02rem;
-  font-weight: 500;
-  letter-spacing: -.01em;
-}
-
-.page-counts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-  margin-top: 1rem;
-}
-
-.count-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  padding: .34rem .72rem;
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  box-shadow: var(--edge-hi);
-  color: var(--text-2);
-  font-size: var(--fs-meta);
-  font-weight: 600;
-  letter-spacing: -.005em;
-  white-space: nowrap;
-}
-.count-chip .count-num { color: var(--text-1); font-weight: 750; }
-
-/* Section headers — editorial, with a muted trailing count. */
 .section-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  margin: 2.1rem 0 .95rem;
+  margin: 0 0 .55rem;
 }
 .section-row h2 {
   margin: 0;
   color: var(--text-1);
-  font-size: var(--fs-h2);
-  font-weight: 700;
-  letter-spacing: -.02em;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -.022em;
   line-height: 1.15;
 }
 .section-count {
   color: var(--text-3);
-  font-size: var(--fs-caption);
+  font-size: .78rem;
   font-weight: 600;
   letter-spacing: .01em;
   white-space: nowrap;
 }
 
-/* Reusable uppercase micro-label primitive. */
-.label, .league-name, .evidence-title {
-  font-size: var(--fs-label);
+/* Reusable uppercase micro-label. */
+.league-name, .evidence-title, .analysis-chip {
+  font-size: .66rem;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
 /* --------------------------------------------------- BUTTONS / PILLS ----- */
-/* Native Streamlit buttons, restyled as filter pills in the segmented-control
-   family: compact, rounded, subtle gradient, soft hover lift. */
+/* Native Streamlit buttons as compact filter pills in the segmented-control
+   family: rounded, subtle gradient, soft hover lift. */
 div[data-testid="stButton"] > button {
-  min-height: 2.35rem;
-  height: 2.35rem;
-  padding: 0 1.05rem !important;
+  min-height: 2.3rem;
+  height: 2.3rem;
+  padding: 0 .95rem !important;
   border: 1px solid var(--hairline) !important;
   border-radius: var(--r-pill) !important;
   background: var(--surface-2) !important;
   color: var(--text-2) !important;
   box-shadow: var(--edge-hi) !important;
-  font-size: .87rem !important;
+  font-size: .9rem !important;
   font-weight: 600 !important;
   letter-spacing: -.005em;
   transition: transform var(--dur-fast) var(--ease-out),
@@ -222,8 +172,6 @@ div[data-testid="stButton"] > button p {
   font-weight: inherit !important;
   letter-spacing: inherit !important;
 }
-
-/* Selected filter pill — matches the Today/Tomorrow active aesthetic. */
 div[data-testid="stButton"] > button[kind="primary"] {
   background: var(--brand-grad) !important;
   border-color: rgba(255, 170, 110, .5) !important;
@@ -237,18 +185,18 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 }
 
 /* --------------------------------------------- SEGMENTED CONTROL --------- */
-/* The Today / Tomorrow switch: the benchmark component. Joined capsule with a
-   signature angled seam, brand gradient on the active side, smooth transitions. */
+/* Today / Tomorrow: the benchmark. Joined capsule, angled seam, brand gradient
+   on the active side, smooth transitions. */
 .date-toggle-wrap {
   display: flex;
   justify-content: flex-end;
-  align-items: flex-start;
+  align-items: center;
 }
 .date-toggle {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  width: 258px;
+  width: 268px;
   height: 46px;
   overflow: hidden;
   border-radius: var(--r-lg);
@@ -299,12 +247,13 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .date-toggle a:not(.active):hover { background: var(--surface-3); color: var(--text-1) !important; }
 
 /* --------------------------------------------------------- STATUS CHIP --- */
+/* Retained as a primitive (used by degraded-mode / error notices elsewhere). */
 .status-row {
   display: flex;
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  margin: .25rem 0 .25rem;
+  margin: .1rem 0 1rem;
 }
 .status-chip {
   display: inline-flex;
@@ -312,18 +261,18 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   gap: .5rem;
   width: max-content;
   max-width: min(760px, 100%);
-  padding: .46rem .8rem;
+  padding: .44rem .76rem;
   border-radius: var(--r-pill);
   background: var(--surface-1);
   box-shadow: var(--edge-hi);
   color: var(--text-2);
-  font-size: var(--fs-meta);
+  font-size: .82rem;
   font-weight: 550;
   line-height: 1.2;
 }
 .status-chip .status-dot {
-  width: .5rem;
-  height: .5rem;
+  width: .48rem;
+  height: .48rem;
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--brand);
@@ -334,8 +283,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .schedule-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.1rem;
-  margin: .35rem 0 1.6rem;
+  gap: 1rem;
+  margin: 0 0 1.45rem;
 }
 .game-link { text-decoration: none !important; color: inherit !important; }
 
@@ -343,8 +292,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 190px;
-  padding: 1.15rem 1.2rem 1.05rem;
+  min-height: 172px;
+  padding: 1rem 1.05rem .95rem;
   border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
   box-shadow: var(--edge-hi), var(--shadow-sm);
@@ -353,27 +302,27 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
               background var(--dur) var(--ease);
 }
 .game-card:hover {
-  transform: translateY(-3px);
-  background: linear-gradient(165deg, #20252e, #171b21);
-  box-shadow: var(--edge-hi), var(--shadow-lg);
+  transform: translateY(-2px);
+  background: linear-gradient(165deg, #1f252d, #171b20);
+  box-shadow: var(--edge-hi), var(--shadow-md);
 }
 
 .game-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: .7rem;
 }
 .league-name { color: var(--text-3); }
 
-/* Game time as a pill badge. */
+/* Game time as a compact pill badge. */
 .game-time {
-  padding: .26rem .6rem;
+  padding: .2rem .5rem;
   border-radius: var(--r-pill);
   background: var(--surface-3);
   box-shadow: var(--edge-hi);
   color: var(--text-1);
-  font-size: .74rem;
+  font-size: .72rem;
   font-weight: 650;
   letter-spacing: -.005em;
   white-space: nowrap;
@@ -382,42 +331,42 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .teams {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: .7rem;
+  gap: .65rem;
   align-items: center;
   margin: auto 0;
 }
-.team { display: flex; align-items: center; gap: .62rem; min-width: 0; }
+.team { display: flex; align-items: center; gap: .58rem; min-width: 0; }
 .team.home { justify-content: flex-end; text-align: right; }
 .team-logo {
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
-  flex: 0 0 46px;
+  flex: 0 0 44px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35));
 }
 .team-name {
   color: var(--text-1);
-  font-size: var(--fs-card-title);
-  line-height: 1.14;
+  font-size: 1.02rem;
+  line-height: 1.15;
   font-weight: 750;
   letter-spacing: -.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.at-sign { color: var(--text-4); font-size: .78rem; font-weight: 600; }
+.at-sign { color: var(--text-4); font-size: .8rem; font-weight: 600; }
 
 .game-meta {
-  margin-top: 1rem;
-  padding-top: .8rem;
+  margin-top: .7rem;
+  padding-top: .65rem;
   border-top: 1px solid var(--hairline);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: .7rem;
   color: var(--text-3);
-  font-size: var(--fs-caption);
-  line-height: 1.3;
+  font-size: .74rem;
+  line-height: 1.25;
 }
 .game-meta > span:first-child {
   display: -webkit-box;
@@ -427,15 +376,12 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 }
 .analysis-chip {
   flex: 0 0 auto;
-  padding: .24rem .5rem;
+  padding: .2rem .46rem;
   border-radius: var(--r-pill);
   background: var(--surface-2);
   box-shadow: var(--edge-hi);
   color: var(--text-3);
-  font-size: var(--fs-label);
-  font-weight: 650;
   letter-spacing: .05em;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -447,54 +393,53 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   overflow: hidden;
   background: var(--surface-1);
   box-shadow: var(--edge-hi), var(--shadow-md);
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.1rem;
 }
 .op-row {
   display: grid;
-  grid-template-columns: 58px minmax(190px, 1.2fr) minmax(180px, 1fr) minmax(180px, 1fr);
-  gap: 1.1rem;
+  grid-template-columns: 52px minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: .9rem;
   align-items: center;
-  padding: 1rem 1.15rem;
+  padding: .72rem .82rem;
   transition: background var(--dur) var(--ease);
 }
 .op-row + .op-row { box-shadow: inset 0 1px 0 var(--hairline); }
 .op-row:hover { background: var(--surface-2); }
 
-/* Premium score badge — elevated squircle with a subtle brand ring and orange
-   numerals. Restrained: the badge reads premium without saturating the feed. */
+/* Premium score badge — elevated tile, subtle brand ring, orange numerals. */
 .op-score {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
-  border-radius: var(--r-md);
-  background: linear-gradient(180deg, var(--surface-3), #191e27);
-  box-shadow: var(--edge-hi), 0 3px 10px rgba(0, 0, 0, .38),
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, var(--surface-3), #191e26);
+  box-shadow: var(--edge-hi), 0 2px 7px rgba(0, 0, 0, .35),
               inset 0 0 0 1px var(--brand-ring);
   color: var(--brand-2);
-  font-size: 1.2rem;
+  font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: -.02em;
 }
 
-.op-identity { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.op-identity { display: flex; align-items: center; gap: .62rem; min-width: 0; }
 .op-sport {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   border-radius: var(--r-xs);
   background: var(--surface-3);
   box-shadow: var(--edge-hi);
   font-size: 1rem;
 }
 .op-team-logo {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   object-fit: contain;
   border-radius: var(--r-sm);
   background: rgba(255, 255, 255, .035);
@@ -502,17 +447,17 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 }
 .op-player {
   color: var(--text-1);
-  font-size: 1.02rem;
+  font-size: 1.0rem;
   font-weight: 750;
   letter-spacing: -.015em;
 }
-.op-market { color: var(--brand-2); font-size: .86rem; font-weight: 650; margin-top: .12rem; }
-.op-team { color: var(--text-3); font-size: var(--fs-caption); margin-top: .16rem; }
+.op-market { color: var(--brand-2); font-size: .84rem; font-weight: 650; margin-top: .08rem; }
+.op-team { color: var(--text-3); font-size: .74rem; margin-top: .12rem; }
 
-.evidence-title { margin-bottom: .22rem; }
+.evidence-title { margin-bottom: .14rem; }
 .evidence-good .evidence-title { color: var(--green); }
 .evidence-risk .evidence-title { color: var(--red); }
-.evidence-body { color: var(--text-2); font-size: var(--fs-meta); line-height: 1.4; }
+.evidence-body { color: var(--text-2); font-size: .78rem; line-height: 1.38; }
 
 /* ---------------------------------------------------- GAME DEEP DIVE ----- */
 .back-link {
@@ -522,8 +467,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   color: var(--text-3) !important;
   text-decoration: none !important;
   font-weight: 600;
-  font-size: var(--fs-meta);
-  margin-bottom: 1rem;
+  font-size: .84rem;
+  margin-bottom: .8rem;
   transition: color var(--dur) var(--ease);
 }
 .back-link:hover { color: var(--brand-2) !important; }
@@ -532,34 +477,33 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1.4rem 1.5rem;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
   border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
   box-shadow: var(--edge-hi), var(--shadow-md);
-  margin-bottom: 1.2rem;
+  margin-bottom: .8rem;
 }
-.detail-team { display: flex; align-items: center; gap: .9rem; }
+.detail-team { display: flex; align-items: center; gap: .75rem; }
 .detail-team.home { justify-content: flex-end; text-align: right; }
 .detail-logo {
-  width: 58px; height: 58px; object-fit: contain;
+  width: 54px; height: 54px; object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .4));
 }
-.detail-name { color: var(--text-1); font-size: 1.28rem; font-weight: 800; letter-spacing: -.02em; }
-.detail-sub { color: var(--text-3); font-size: var(--fs-caption); margin-top: .2rem; }
+.detail-name { color: var(--text-1); font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; }
+.detail-sub { color: var(--text-3); font-size: .76rem; margin-top: .16rem; }
 .detail-at { color: var(--text-4); font-size: .95rem; font-weight: 600; text-align: center; }
 
 /* -------------------------------------------------- STREAMLIT WIDGETS ---- */
-/* Metrics as elevated tiles. */
 [data-testid="stMetric"] {
-  padding: .85rem 1rem;
+  padding: .6rem .8rem;
   border-radius: var(--r-md);
   background: var(--surface-1);
   box-shadow: var(--edge-hi), var(--shadow-sm);
 }
 [data-testid="stMetricLabel"] p {
   color: var(--text-3) !important;
-  font-size: var(--fs-caption) !important;
+  font-size: .72rem !important;
   font-weight: 600 !important;
   letter-spacing: .01em;
 }
@@ -569,10 +513,9 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   letter-spacing: -.02em;
 }
 
-/* Tabs — quiet segmented feel with a brand underline on the active tab. */
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
   gap: .3rem;
-  margin-top: .4rem;
+  margin-top: .35rem;
   border-bottom: 1px solid var(--hairline);
 }
 [data-testid="stTabs"] [data-baseweb="tab"] {
@@ -583,14 +526,12 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 [data-testid="stTabs"] [aria-selected="true"] { color: var(--text-1) !important; }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"] { background: var(--brand) !important; }
 
-/* Data tables. */
 [data-testid="stDataFrame"] {
   border: 1px solid var(--hairline) !important;
   border-radius: var(--r-md);
   overflow: hidden;
 }
 
-/* Alerts (info / warning / success / error) as soft rounded cards. */
 [data-testid="stAlert"] {
   border: 0 !important;
   border-radius: var(--r-md) !important;
@@ -599,7 +540,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   color: var(--text-2) !important;
 }
 
-/* Expanders (opportunity detail) as elevated cards. */
 [data-testid="stExpander"] details {
   border: 0 !important;
   border-radius: var(--r-md) !important;
@@ -610,7 +550,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 [data-testid="stExpander"] summary { font-weight: 650; }
 [data-testid="stExpander"] summary:hover { color: var(--brand-2); }
 
-/* Text input (first-run import). */
 [data-testid="stTextInput"] input {
   border-radius: var(--r-sm) !important;
   background: var(--surface-2) !important;
@@ -618,30 +557,28 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   color: var(--text-1) !important;
 }
 
-/* Sidebar. */
 [data-testid="stSidebar"] {
   background: var(--surface-1) !important;
   border-right: 1px solid var(--hairline);
 }
-[data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] p { color: var(--text-3); }
-
-/* Subheaders / captions in flow. */
-.stCaption, [data-testid="stCaptionContainer"] p { color: var(--text-3) !important; font-size: var(--fs-caption); }
+[data-testid="stSidebar"] p, .stCaption, [data-testid="stCaptionContainer"] p {
+  color: var(--text-3) !important;
+}
 
 /* -------------------------------------------------------- RESPONSIVE ----- */
 @media (max-width: 900px) {
   .schedule-grid { grid-template-columns: 1fr; }
-  .op-row { grid-template-columns: 52px 1fr; gap: .9rem; }
+  .op-row { grid-template-columns: 46px 1fr; gap: .9rem; }
   .evidence-good, .evidence-risk { grid-column: 2; }
 }
 
 @media (max-width: 650px) {
-  .block-container { padding-left: .8rem; padding-right: .8rem; padding-top: 1.8rem; }
-  .page-title { font-size: 1.85rem; }
-  .date-toggle-wrap { justify-content: flex-start; margin-top: 1.1rem; }
+  .block-container { padding-left: .7rem; padding-right: .7rem; }
+  .page-title { font-size: 1.65rem; }
+  .date-toggle-wrap { justify-content: flex-start; margin-top: .55rem; }
   .team-logo { width: 38px; height: 38px; flex-basis: 38px; }
-  .op-team-logo { width: 34px; height: 34px; flex-basis: 34px; }
-  .team-name { font-size: .96rem; }
+  .op-team-logo { width: 32px; height: 32px; flex-basis: 32px; }
+  .team-name { font-size: .94rem; }
   .detail-header { grid-template-columns: 1fr; text-align: left; }
   .detail-team.home { justify-content: flex-start; text-align: left; }
   .detail-at { display: none; }
