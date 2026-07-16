@@ -16,7 +16,7 @@ def _read_css(path: str, mtime: float) -> str:
 
 
 def load_css() -> None:
-    """Inject the Sports Hub stylesheet once per session."""
+    """Inject the Sports Today stylesheet once per session."""
     if not _CSS_PATH.exists():
         return
     css = _read_css(str(_CSS_PATH), _CSS_PATH.stat().st_mtime)
