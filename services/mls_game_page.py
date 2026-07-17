@@ -1,15 +1,16 @@
 """Builder for the MLS matchup page.
 
-Assembles an immutable :class:`MLSGamePage` from the (real) live schedule. The
-hero and a recent-form/record snapshot are genuine provider data; a small
-deterministic storyline engine reads only the real record + form. Every section
-that needs a soccer-stats pipeline that does not exist yet is emitted in an
-honest :class:`DataState` (``UNAVAILABLE``/``PROJECTED``) with its real component
-shell — no invented statistics, no fabricated tactical conclusions.
+Assembles an immutable :class:`MLSGamePage`. When collected MLS team data exists
+strictly before the match date, the Snapshot, Tactical proxies, Attacking
+Profile, Discipline, and Storylines are built from **real, leakage-safe**
+aggregates (``services/mls_repository`` + ``services/mls_analytics``). When no
+team data is available yet, every section degrades to the honest Phase-3A state
+(``UNAVAILABLE``/``PROJECTED``) — no invented statistics, no fabricated tactical
+conclusions.
 
-This is "Version 1: rule-based" in the blueprint's progressive-intelligence
-ladder. The layout is fixed; later versions swap section states for richer data
-without touching the view.
+Players-to-Watch and Projected Lineups remain intentionally unavailable this
+phase (Option A collects team stats only). The layout never changes; only the
+section data states do — the blueprint's progressive-intelligence ladder.
 """
 
 from __future__ import annotations
@@ -25,10 +26,47 @@ from domain.mls_game_page import (
     MLSTeamLine, MLSTimeline, MLSTimelinePhase,
 )
 from domain.models import DataStatus, SlateGame, SourceStatus
+from services import mls_analytics as A
+from services import mls_repository as R
 
-ENGINE_VERSION = "mls-game-page-v1"
+ENGINE_VERSION = "mls-game-page-v2"
 
 _NA = "—"
+
+
+# ------------------------------------------------------- number formatting ---
+def _n1(x) -> str:
+    return f"{x:.1f}" if x is not None else _NA
+
+
+def _n2(x) -> str:
+    return f"{x:.2f}" if x is not None else _NA
+
+
+def _pct0(x) -> str:
+    return f"{x:.0f}%" if x is not None else _NA
+
+
+def _signed1(x) -> str:
+    return f"{x:+.1f}" if x is not None else _NA
+
+
+def _ordinal(n) -> str:
+    if n is None:
+        return _NA
+    n = int(n)
+    suf = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suf}"
+
+
+def _better(home, away, threshold: float, lower_better: bool = False) -> str | None:
+    if home is None or away is None:
+        return None
+    if abs(home - away) < threshold:
+        return "even"
+    if lower_better:
+        return "home" if home < away else "away"
+    return "home" if home > away else "away"
 
 
 # ------------------------------------------------------------- HELPERS -------
@@ -71,7 +109,7 @@ def _win_pct(record: str | None) -> float | None:
     return (w / total) if total else None
 
 
-def _team_line(name, short, logo, color, record, form) -> MLSTeamLine:
+def _team_line(name, short, logo, color, record, form, standing=None) -> MLSTeamLine:
     pts = _points(record)
     return MLSTeamLine(
         name=name or short or "TBD",
@@ -81,16 +119,31 @@ def _team_line(name, short, logo, color, record, form) -> MLSTeamLine:
         record=record,
         form=_form_tuple(form),
         points_display=f"{pts} pts" if pts is not None else None,
+        standing=standing,
     )
 
 
+def _standing_line(standing: dict | None) -> str | None:
+    """Compact hero standing, e.g. '6th in West · 24 pts'."""
+    if not standing or standing.get("conference_rank") is None:
+        return None
+    conf = (standing.get("conference") or "").replace(" Conference", "")
+    rank = _ordinal(standing["conference_rank"])
+    pts = standing.get("points")
+    tail = f" · {int(pts)} pts" if pts is not None else ""
+    return f"{rank} in {conf}{tail}" if conf else f"{rank}{tail}"
+
+
 # --------------------------------------------------------------- HERO --------
-def _build_hero(game: SlateGame) -> MLSHero:
+def _build_hero(game: SlateGame, away_standing: dict | None = None,
+                home_standing: dict | None = None) -> MLSHero:
     m = game.meta or {}
     away = _team_line(game.away_name, game.away_display, game.away_logo,
-                      m.get("away_color"), m.get("away_record"), m.get("away_form"))
+                      m.get("away_color"), m.get("away_record"), m.get("away_form"),
+                      _standing_line(away_standing))
     home = _team_line(game.home_name, game.home_display, game.home_logo,
-                      m.get("home_color"), m.get("home_record"), m.get("home_form"))
+                      m.get("home_color"), m.get("home_record"), m.get("home_form"),
+                      _standing_line(home_standing))
     return MLSHero(
         competition=m.get("competition") or "Major League Soccer",
         kickoff=format_game_time(game.start_time),
@@ -274,9 +327,10 @@ def _build_players() -> MLSPlayersToWatch:
     return MLSPlayersToWatch(
         state=DataState.UNAVAILABLE,
         archetypes=archetypes,
-        note=("Players are chosen for their role in *this* matchup, not fame. Each "
-              "archetype fills in once player match stats and availability are "
-              "collected."),
+        note=("Players are chosen for their role in *this* matchup, not fame. "
+              "Position-aware player evaluation requires richer player data than the "
+              "current feed provides (it lacks minutes, passing, and defensive "
+              "actions per player), so this section stays honest until that is sourced."),
     )
 
 
@@ -348,51 +402,238 @@ def _build_timeline() -> MLSTimeline:
     )
 
 
+# ======================================================================
+# REAL-DATA SECTION BUILDERS (Phase 3B). Used when collected team data
+# exists strictly before the match date; otherwise the fallbacks above run.
+# ======================================================================
+def _build_snapshot_real(hero, ha, aa, ha_ppm=None, aa_ppm=None) -> MLSSnapshot:
+    """Snapshot = *outcomes* ("who's been stronger"). Distinct from Tactical
+    (style contrasts), Attacking (volume), and Discipline. ``ha_ppm``/``aa_ppm``
+    are the home club's home-form and away club's away-form points per match."""
+    def row(label, hv, av, thr, lower=False, fmt=_n1):
+        return MLSSnapshotRow(label, fmt(av), fmt(hv),
+                              _better(hv, av, thr, lower), DataState.AVAILABLE)
+    rows = [
+        row("Goals / match", ha.get("goals_for"), aa.get("goals_for"), 0.15),
+        row("Goals allowed / match", ha.get("goals_against"), aa.get("goals_against"), 0.15, lower=True),
+        row("Goal difference / match", ha.get("goal_diff"), aa.get("goal_diff"), 0.2, fmt=_signed1),
+        row("Shots / match", ha.get("shots"), aa.get("shots"), 0.8),
+        row("Shots on target / match", ha.get("shots_on_target"), aa.get("shots_on_target"), 0.4),
+        row("Ball Share", ha.get("possession"), aa.get("possession"), 2.0, fmt=_pct0),
+    ]
+    if ha_ppm is not None and aa_ppm is not None:
+        rows.append(MLSSnapshotRow("Points / match (venue)", _n1(aa_ppm), _n1(ha_ppm),
+                                   _better(ha_ppm, aa_ppm, 0.25), DataState.AVAILABLE))
+    note = (f"Season to date, strictly before this match — {hero.home.short} "
+            f"{ha.get('matches', 0)} matches, {hero.away.short} {aa.get('matches', 0)}. "
+            f"“Ball Share” is average possession, not control; “Points / match "
+            f"(venue)” is {hero.home.short}'s home form vs {hero.away.short}'s away form.")
+    return MLSSnapshot(state=DataState.AVAILABLE, rows=tuple(rows), note=note)
+
+
+def _build_tactical_real(hero, dims, similar_summary: str) -> MLSTactical:
+    """Show only meaningful contrasts. Fewer than two → a compact similar-profile
+    interpretation instead of a wall of near-even rows."""
+    note = ("Measured box-score contrasts only — never claims about pressing, low "
+            "blocks, transitions, width, or line height, which this data can't support.")
+    if len(dims) < 2:
+        return MLSTactical(state=DataState.AVAILABLE, rows=(), note=note,
+                           summary=similar_summary)
+    rows = tuple(
+        MLSTacticalRow(dimension=d.name, lean=d.edge,
+                       away_label=d.away_display, home_label=d.home_display,
+                       explanation=d.evidence, state=DataState.AVAILABLE,
+                       confidence=d.confidence)
+        for d in dims
+    )
+    return MLSTactical(state=DataState.AVAILABLE, rows=rows, note=note)
+
+
+def _significant(hv, av, thr: float) -> bool:
+    """True when the gap is large enough to be worth a row."""
+    return hv is not None and av is not None and abs(hv - av) >= thr
+
+
+def _build_attacking_real(hero, ha, aa) -> MLSAttacking:
+    """Attacking = how volume is generated. Rows below their significance
+    threshold are suppressed so near-identical values don't read as noise."""
+    dims: list[MLSAttackDimension] = []
+    if _significant(ha.get("shot_accuracy"), aa.get("shot_accuracy"), 3.0):
+        dims.append(MLSAttackDimension("Shot accuracy", _pct0(aa.get("shot_accuracy")),
+            _pct0(ha.get("shot_accuracy")), DataState.AVAILABLE,
+            _better(ha.get("shot_accuracy"), aa.get("shot_accuracy"), 3.0)))
+    if _significant(ha.get("crosses"), aa.get("crosses"), 2.5):
+        dims.append(MLSAttackDimension("Crossing volume / match", _n1(aa.get("crosses")),
+            _n1(ha.get("crosses")), DataState.AVAILABLE, None))
+    if _significant(ha.get("cross_accuracy"), aa.get("cross_accuracy"), 4.0):
+        dims.append(MLSAttackDimension("Cross accuracy", _pct0(aa.get("cross_accuracy")),
+            _pct0(ha.get("cross_accuracy")), DataState.AVAILABLE, None))
+    # Penalty *attempts per match* (rate, not raw season totals). Penalties are
+    # rare, so this row is only shown when the per-match gap clears the threshold;
+    # the threshold is not lowered to force a low-signal row to appear.
+    if _significant(ha.get("pk_attempts"), aa.get("pk_attempts"), 0.15):
+        dims.append(MLSAttackDimension("Penalty attempts / match", _n2(aa.get("pk_attempts")),
+            _n2(ha.get("pk_attempts")), DataState.AVAILABLE, None))
+    note = ("How each side generates attacking volume — shot accuracy is shots on "
+            "target ÷ shots. Near-identical rows are omitted.")
+    if not dims:
+        return MLSAttacking(state=DataState.AVAILABLE, away_team=hero.away.short,
+                            home_team=hero.home.short, dimensions=(), note=note,
+                            summary="Similar attacking profiles across the available volume metrics.")
+    return MLSAttacking(state=DataState.AVAILABLE, away_team=hero.away.short,
+                        home_team=hero.home.short, dimensions=tuple(dims), note=note)
+
+
+def _build_discipline_real(hero, ha, aa) -> MLSDiscipline:
+    """Compact discipline signal. If both clubs sit close to each other, show a
+    concise similar-profile line rather than several low-signal rows."""
+    rows: list[MLSDisciplineRow] = []
+    if _significant(ha.get("fouls"), aa.get("fouls"), 1.0):
+        rows.append(MLSDisciplineRow("Fouls / match", _n1(aa.get("fouls")), _n1(ha.get("fouls")),
+            DataState.AVAILABLE, _better(ha.get("fouls"), aa.get("fouls"), 1.0, lower_better=True)))
+    if _significant(ha.get("yellows"), aa.get("yellows"), 0.4):
+        rows.append(MLSDisciplineRow("Yellow cards / match", _n1(aa.get("yellows")), _n1(ha.get("yellows")),
+            DataState.AVAILABLE, _better(ha.get("yellows"), aa.get("yellows"), 0.4, lower_better=True)))
+    hr, ar = ha.get("reds_total", 0), aa.get("reds_total", 0)
+    reds_shown = max(hr, ar) >= 3 or abs(hr - ar) >= 2
+    if reds_shown:
+        rows.append(MLSDisciplineRow("Red cards (season)", str(ar), str(hr), DataState.AVAILABLE,
+            _better(hr, ar, 0.5, lower_better=True)))
+    note = "Fouls and cards are a discipline signal, not a measure of pressing. Lower is the edge."
+    if reds_shown:
+        note += (f" Red cards are season counts, not rates ({hero.home.short} over "
+                 f"{ha.get('matches', 0)} matches, {hero.away.short} {aa.get('matches', 0)}).")
+    if not rows:
+        return MLSDiscipline(state=DataState.AVAILABLE, rows=(), note=note,
+                             summary="Both clubs draw fouls and cards at similar, unremarkable rates.")
+    return MLSDiscipline(state=DataState.AVAILABLE, rows=tuple(rows), note=note)
+
+
+def _build_storylines_state(story_objs, home_n: int, away_n: int, hero) -> MLSStorylines:
+    """Three honest states: real-with-triggers, real-with-none, partial, or none."""
+    real = home_n >= A.MIN_MATCHES_LOW and away_n >= A.MIN_MATCHES_LOW
+    if real:
+        if story_objs:
+            items = tuple(MLSStoryline(title=s.title, detail=s.detail, evidence=s.evidence,
+                                       confidence=s.confidence, tone=s.tone) for s in story_objs)
+            note = ("Generated deterministically from collected team stats, recent results, "
+                    "and the table. Only the strongest, non-redundant storylines are shown.")
+            return MLSStorylines(state=DataState.AVAILABLE, items=items, note=note)
+        return MLSStorylines(state=DataState.AVAILABLE, items=(),
+                             note="No standout storylines. These clubs profile similarly "
+                                  "across the available team metrics.")
+    if home_n >= 1 or away_n >= 1:
+        return MLSStorylines(state=DataState.PARTIAL, items=(),
+                             note="Limited match data collected so far — not enough of a "
+                                  "sample to surface reliable storylines yet.")
+    # No collected team data at all — fall back to record/form storylines if any.
+    return _build_storylines(hero)
+
+
 # ------------------------------------------------------------- HONEST GAPS ----
-def _build_honest_gaps(hero: MLSHero) -> MLSHonestGaps:
-    gaps = [
+def _build_honest_gaps(hero: MLSHero, has_team_data: bool = False,
+                       n_matches: int | None = None) -> MLSHonestGaps:
+    gaps: list[MLSHonestGap] = []
+    if not has_team_data:
+        gaps.append(MLSHonestGap("Season match stats missing",
+            "Goals, shots, possession, and passing are not collected for this match yet, "
+            "so the snapshot and profiles are partial."))
+    else:
+        cover = f" (team stats cover {n_matches} matches each side)" if n_matches else ""
+        gaps.append(MLSHonestGap("Team stats, not tracking data",
+            f"The snapshot, proxies, and storylines are real team box-score aggregates{cover} — "
+            "not positional or event tracking."))
+    gaps += [
         MLSHonestGap("Lineups not confirmed",
                      "Projected and confirmed XIs are not connected yet; the pitch shows "
                      "a reference layout, not a prediction."),
-        MLSHonestGap("Season match stats missing",
-                     "Goals, shots, possession, and passing are not collected yet, so the "
-                     "snapshot and attacking profiles are partial."),
-        MLSHonestGap("Tactical model pending",
-                     "The tactical matchup framework is in place but has no team style data "
-                     "to resolve its leans."),
-        MLSHonestGap("No advanced tracking",
-                     "Expected goals (xG), pressing intensity, and heat maps require an "
+        MLSHonestGap("Player-level analysis limited",
+                     "The feed lacks per-player minutes, passing, and defensive actions, so "
+                     "Players to Watch stays unavailable rather than guessing."),
+        MLSHonestGap("No true tactical metrics",
+                     "Pressing intensity, defensive-line height, transition speed, and width "
+                     "are not measured — the Tactical section shows honest box-score proxies only."),
+        MLSHonestGap("No expected goals or tracking",
+                     "Expected goals (xG), shot maps, and pressing/heat-map data require an "
                      "advanced provider that is not wired in."),
-        MLSHonestGap("Small recent-form sample",
-                     "Recent-form storylines rest on the last five results — a small, noisy "
-                     "sample — so their confidence is low."),
+        MLSHonestGap("No match-event timing",
+                     "Goal, card, and substitution timing is collected by the provider but not "
+                     "analyzed yet, so the What-to-Watch guide stays general."),
     ]
     return MLSHonestGaps(items=tuple(gaps))
 
 
 # ----------------------------------------------------------------- BUILD ------
 def build_mls_game_page(game: SlateGame, slate_date: date, as_of: date) -> MLSGamePage:
-    hero = _build_hero(game)
+    home_id, away_id = game.home_id, game.away_id
+    home_standing = R.standings_lookup(home_id, as_of) if home_id else None
+    away_standing = R.standings_lookup(away_id, as_of) if away_id else None
+    hero = _build_hero(game, away_standing, home_standing)
 
-    real_note = ("Live from the ESPN MLS feed: teams, records, recent form, colors, and "
-                 "kickoff. Deeper analysis is honestly marked as it comes online.")
-    data_status = DataStatus(
-        source="ESPN MLS",
-        status=SourceStatus.LIVE,
-        detail=(f"{real_note} As of {as_of.isoformat()}."),
-    )
+    # Leakage-safe team frame strictly before the match date, minus this match.
+    frame = R.team_match_frame(as_of, exclude_event_id=game.game_id) if home_id and away_id else None
+    ha = R.team_aggregate(frame, home_id) if frame is not None and not frame.empty else {"matches": 0}
+    aa = R.team_aggregate(frame, away_id) if frame is not None and not frame.empty else {"matches": 0}
+    have_data = ha.get("matches", 0) >= A.MIN_MATCHES_LOW and aa.get("matches", 0) >= A.MIN_MATCHES_LOW
+
+    if have_data:
+        # Venue splits + recent form + league context (all leakage-safe).
+        ha_home = R.team_aggregate(frame, home_id, venue="home")
+        aa_away = R.team_aggregate(frame, away_id, venue="away")
+        h_last5 = R.recent_results(frame, home_id, n=5)
+        a_last5 = R.recent_results(frame, away_id, n=5)
+        league = R.league_averages(frame)
+
+        dims = A.proxy_dimensions(ha, aa, home_name=hero.home.short, away_name=hero.away.short)
+        traits = A.shared_traits(ha, aa, league)
+        # Similar-profile message is scoped to *style* (the tactical proxies), so it
+        # never contradicts a lopsided Snapshot. A lone surviving edge is surfaced.
+        if len(dims) == 1:
+            similar = f"Mostly even on style — the one clear edge is {dims[0].name.lower()}: {dims[0].evidence}"
+        else:
+            similar = ("Few clear style edges. These clubs are similar in passing completion, "
+                       "defensive shot pressure, and corner volume, even when their overall "
+                       "results differ.")
+            if traits:
+                similar = f"{similar} Both also {traits[0]}."
+        story_objs = A.storylines(
+            hero.home.short, hero.away.short, home_agg=ha, away_agg=aa,
+            home_last5=h_last5, away_last5=a_last5, league=league,
+            home_standing=home_standing, away_standing=away_standing,
+            home_home_ppm=ha_home.get("ppm"), away_away_ppm=aa_away.get("ppm"))
+
+        snapshot = _build_snapshot_real(hero, ha, aa, ha_home.get("ppm"), aa_away.get("ppm"))
+        tactical = _build_tactical_real(hero, dims, similar)
+        storylines = _build_storylines_state(story_objs, ha["matches"], aa["matches"], hero)
+        attacking = _build_attacking_real(hero, ha, aa)
+        discipline = _build_discipline_real(hero, ha, aa)
+        honest = _build_honest_gaps(hero, has_team_data=True, n_matches=min(ha["matches"], aa["matches"]))
+        detail = (f"Team match stats from ESPN MLS, strictly before {as_of.isoformat()} "
+                  f"({hero.home.short} {ha['matches']} matches, {hero.away.short} {aa['matches']}). "
+                  f"Standings snapshot included. No player, event, or tracking data yet.")
+    else:
+        snapshot = _build_snapshot(hero)
+        tactical = _build_tactical()
+        storylines = _build_storylines_state(None, ha.get("matches", 0), aa.get("matches", 0), hero)
+        attacking = _build_attacking(hero)
+        discipline = _build_discipline()
+        honest = _build_honest_gaps(hero, has_team_data=False)
+        detail = ("Live from the ESPN MLS feed: teams, records, recent form, colors, and "
+                  f"kickoff. Team match stats not yet collected for these clubs. As of {as_of.isoformat()}.")
+
+    data_status = DataStatus(source="ESPN MLS", status=SourceStatus.LIVE, detail=detail)
 
     return MLSGamePage(
         hero=hero,
-        snapshot=_build_snapshot(hero),
-        tactical=_build_tactical(),
-        storylines=_build_storylines(hero),
+        snapshot=snapshot,
+        tactical=tactical,
+        storylines=storylines,
         lineups=_build_lineups(hero),
         players=_build_players(),
-        attacking=_build_attacking(hero),
-        discipline=_build_discipline(),
+        attacking=attacking,
+        discipline=discipline,
         timeline=_build_timeline(),
-        honest_gaps=_build_honest_gaps(hero),
+        honest_gaps=honest,
         data_status=data_status,
         generated_at=datetime.now().isoformat(timespec="seconds"),
         as_of=as_of.isoformat(),

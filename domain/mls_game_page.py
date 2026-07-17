@@ -66,6 +66,7 @@ class MLSTeamLine:
     record: str | None           # "W-D-L"
     form: tuple[str, ...]        # ("W","D","L",...) oldest → most recent
     points_display: str | None   # e.g. "18 pts" (W*3 + D), or None if unknown
+    standing: str | None = None  # e.g. "6th in West · 24 pts" (real, from standings)
 
 
 @dataclass(frozen=True)
@@ -102,12 +103,13 @@ class MLSSnapshot:
 # ------------------------------------------------------- TACTICAL MATCHUP -----
 @dataclass(frozen=True)
 class MLSTacticalRow:
-    dimension: str               # "Possession", "Pressing", ...
+    dimension: str               # measured proxy: "Ball Share", "Shot Volume", ...
     lean: str | None             # "away" | "home" | "even" | None (awaiting)
-    away_label: str              # short descriptor for the away side
-    home_label: str              # short descriptor for the home side
-    explanation: str
+    away_label: str              # away value display (e.g. "10.8")
+    home_label: str              # home value display
+    explanation: str             # exact evidence sentence
     state: DataState
+    confidence: str = ""         # "Moderate" | "Low" (real-data rows)
 
 
 @dataclass(frozen=True)
@@ -115,6 +117,7 @@ class MLSTactical:
     state: DataState
     rows: tuple[MLSTacticalRow, ...]
     note: str
+    summary: str = ""            # compact "similar profile" message when rows is empty
 
 
 # --------------------------------------------------------- KEY STORYLINES -----
@@ -177,10 +180,11 @@ class MLSPlayersToWatch:
 # -------------------------------------------------------- ATTACKING PROFILE ---
 @dataclass(frozen=True)
 class MLSAttackDimension:
-    label: str                   # "Patient build-up", "Quick transitions", ...
+    label: str                   # measured: "Shot accuracy", "Crossing volume", ...
     away_value: str
     home_value: str
     state: DataState
+    better: str | None = None    # "away" | "home" | "even" | None
 
 
 @dataclass(frozen=True)
@@ -190,6 +194,7 @@ class MLSAttacking:
     home_team: str
     dimensions: tuple[MLSAttackDimension, ...]
     note: str
+    summary: str = ""            # compact message when few rows survive suppression
 
 
 # --------------------------------------------------------------- DISCIPLINE ---
@@ -199,6 +204,7 @@ class MLSDisciplineRow:
     away_value: str
     home_value: str
     state: DataState
+    better: str | None = None    # "away" | "home" | "even" | None (lower fouls/cards = better)
 
 
 @dataclass(frozen=True)
@@ -206,6 +212,7 @@ class MLSDiscipline:
     state: DataState
     rows: tuple[MLSDisciplineRow, ...]
     note: str
+    summary: str = ""            # compact "similar profile" message when rows is empty
 
 
 # ----------------------------------------------------- WHAT TO WATCH TIMELINE -

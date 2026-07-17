@@ -1047,3 +1047,20 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .mls-cmp-head, .mls-cmp-row { gap: .5rem; }
   .mls-tl-item { grid-template-columns: 68px 1fr; gap: .6rem; }
 }
+
+/* MLS Phase 3B — real-data additions (hero standing, tactical values/confidence). */
+.mls-hero-standing { color: var(--brand-2); font-size: .72rem; font-weight: 700; margin-top: .1rem; }
+.mls-hero-team.home .mls-hero-standing { text-align: right; }
+.mls-tac-edge.lean { color: var(--brand-2); }
+.mls-tac-edge.even { color: var(--text-3); }
+.mls-tac-conf { margin-left: .45rem; color: var(--text-4); font-size: .62rem; font-weight: 650;
+  text-transform: uppercase; letter-spacing: .04em; }
+.mls-tac-bar-row { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; gap: .5rem; margin: .1rem 0 .1rem; }
+.mls-tac-val { color: var(--text-2); font-size: .74rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.mls-tac-bar-row .mls-tac-val:last-child { text-align: right; }
+
+/* MLS Phase 3B refinement — compact similar-profile interpretation. */
+.mls-similar { display: flex; align-items: center; gap: .6rem; padding: .85rem 1rem;
+  border-radius: var(--r-md); background: var(--surface-1); box-shadow: var(--edge-hi), var(--shadow-sm);
+  color: var(--text-2); font-size: .86rem; line-height: 1.4; }
+.mls-similar .mlb-ic { flex: 0 0 auto; width: 18px; height: 18px; color: var(--brand-2); }

@@ -96,10 +96,19 @@ def parse(payload: dict, slug: str) -> list[dict]:
         away_team = away.get("team", {})
         status = event.get("status", {})
         stype = status.get("type", {})
+        season = event.get("season") or {}
         games.append({
             "game_id": event.get("id"),
             "game_date": event.get("date"),
             "status": stype.get("detail") or stype.get("description"),
+            # Stable identifiers + season context (used by the MLS collector; the
+            # SlateGame adapters ignore keys they don't read).
+            "away_id": str(away_team.get("id")) if away_team.get("id") else None,
+            "home_id": str(home_team.get("id")) if home_team.get("id") else None,
+            "season_year": season.get("year"),
+            "season_type": season.get("type"),
+            "season_slug": season.get("slug"),
+            "completed": bool(stype.get("completed")),
             "away": away_team.get("displayName"),
             "home": home_team.get("displayName"),
             "away_short": away_team.get("shortDisplayName") or away_team.get("name"),
@@ -141,3 +150,200 @@ def schedule(competition_slug: str, game_date: date | str) -> list[dict]:
         return parse(response.json(), competition_slug)
     except Exception:
         return []
+
+
+# ============================================================================
+# Match summary + standings (added for MLS team-stat integration, Phase 3B).
+# Pure parsers only. Retry/backoff, date-range orchestration, incremental logic,
+# and SQLite writes live in src/mls_collector.py, NOT here.
+# ============================================================================
+
+SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/summary"
+STANDINGS = "https://site.web.api.espn.com/apis/v2/sports/soccer/{slug}/standings"
+
+
+def fetch_summary(competition_slug: str, event_id: str,
+                  *, session: requests.Session | None = None, timeout: int = 25) -> dict:
+    """Fetch one match's summary payload. Raises on HTTP/JSON error (the caller
+    owns retry/backoff)."""
+    getter = session.get if session is not None else requests.get
+    resp = getter(SUMMARY.format(slug=competition_slug),
+                  params={"event": str(event_id)}, timeout=timeout)
+    resp.raise_for_status()
+    payload = resp.json()
+    if not isinstance(payload, dict):
+        raise ValueError(f"Unexpected non-object summary JSON for event {event_id}")
+    return payload
+
+
+def fetch_standings(competition_slug: str, season: int,
+                    *, session: requests.Session | None = None, timeout: int = 25) -> dict:
+    """Fetch the competition standings payload for a season. Raises on error."""
+    getter = session.get if session is not None else requests.get
+    resp = getter(STANDINGS.format(slug=competition_slug),
+                  params={"season": int(season)}, timeout=timeout)
+    resp.raise_for_status()
+    payload = resp.json()
+    if not isinstance(payload, dict):
+        raise ValueError("Unexpected non-object standings JSON")
+    return payload
+
+
+def _int(display: object) -> int | None:
+    """Coerce an ESPN stat displayValue to int. Missing → None; '0' → 0 (valid
+    zero); non-numeric → None. Never invents a zero."""
+    if display is None:
+        return None
+    try:
+        return int(round(float(str(display).replace(",", "").strip())))
+    except (TypeError, ValueError):
+        return None
+
+
+def _float(display: object) -> float | None:
+    if display is None:
+        return None
+    try:
+        return float(str(display).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _pct(numer: int | None, denom: int | None) -> float | None:
+    """A 0–100 accuracy percentage derived from raw counts. NULL when the
+    denominator is missing or zero (never 0%)."""
+    if numer is None or denom is None or denom == 0:
+        return None
+    return round(100.0 * numer / denom, 1)
+
+
+# Provider stat name → our column name. All values come from ``displayValue``
+# (the provider leaves numeric ``value`` null for soccer). Accuracy percentages
+# are NOT taken from the provider (its *Pct fields are lossily rounded to one
+# decimal); they are derived from the counts below.
+_TEAM_STAT_MAP = {
+    "possessionPct": "possession_pct",   # 0–100, provider-reported (no raw count)
+    "totalShots": "total_shots",
+    "shotsOnTarget": "shots_on_target",
+    "blockedShots": "blocked_shots",
+    "wonCorners": "won_corners",
+    "foulsCommitted": "fouls_committed",
+    "offsides": "offsides",
+    "saves": "saves",
+    "yellowCards": "yellow_cards",
+    "redCards": "red_cards",
+    "totalPasses": "total_passes",
+    "accuratePasses": "accurate_passes",
+    "totalCrosses": "total_crosses",
+    "accurateCrosses": "accurate_crosses",
+    "totalTackles": "total_tackles",
+    "interceptions": "interceptions",
+    "totalClearance": "total_clearances",
+    "penaltyKickGoals": "pk_goals",
+    "penaltyKickShots": "pk_shots",
+}
+_COUNT_COLUMNS = {v for k, v in _TEAM_STAT_MAP.items() if k != "possessionPct"}
+
+
+def parse_team_stats(summary_payload: dict) -> list[dict]:
+    """Two per-team stat dicts from a summary payload, keyed by ``team_id``.
+
+    Raises ValueError if the match structure is invalid (not exactly two team
+    blocks with team IDs). Missing individual stats stay None; a present '0' is a
+    valid zero. Accuracy percentages are derived from counts, not the provider's
+    rounded fields.
+    """
+    teams = (summary_payload.get("boxscore") or {}).get("teams") or []
+    if len(teams) != 2:
+        raise ValueError(f"Expected 2 team stat blocks, found {len(teams)}")
+
+    parsed: list[dict] = []
+    ids: list[str] = []
+    for block in teams:
+        tid = str((block.get("team") or {}).get("id") or "")
+        if not tid:
+            raise ValueError("Team stat block missing team id")
+        ids.append(tid)
+        by_name = {s.get("name"): s.get("displayValue") for s in block.get("statistics") or []}
+        row: dict = {"team_id": tid, "is_home": 1 if block.get("homeAway") == "home" else 0}
+        for prov, col in _TEAM_STAT_MAP.items():
+            if prov == "possessionPct":
+                row[col] = _float(by_name.get(prov)) if prov in by_name else None
+            else:
+                row[col] = _int(by_name.get(prov)) if prov in by_name else None
+        # Derived accuracy percentages (0–100) from raw counts.
+        row["shot_pct"] = _pct(row.get("shots_on_target"), row.get("total_shots"))
+        row["pass_pct"] = _pct(row.get("accurate_passes"), row.get("total_passes"))
+        row["cross_pct"] = _pct(row.get("accurate_crosses"), row.get("total_crosses"))
+        parsed.append(row)
+
+    for row in parsed:
+        row["opponent_id"] = ids[1] if row["team_id"] == ids[0] else ids[0]
+    return parsed
+
+
+def parse_match_meta(summary_payload: dict) -> dict:
+    """Venue id/name, attendance, and referee from a summary payload's gameInfo.
+
+    Match date/teams/scores/state come from the scoreboard event, not here.
+    """
+    gi = summary_payload.get("gameInfo") or {}
+    venue = gi.get("venue") or {}
+    officials = gi.get("officials") or []
+    referee = None
+    for off in officials:
+        pos = (off.get("position") or {}).get("name") or (off.get("position") or {}).get("displayName")
+        if pos in (None, "Referee", "Head Referee") and off.get("displayName"):
+            referee = off.get("displayName")
+            break
+    if referee is None and officials:
+        referee = officials[0].get("displayName")
+    return {
+        "venue_id": str(venue.get("id")) if venue.get("id") else None,
+        "venue": venue.get("fullName"),
+        "attendance": gi.get("attendance") if isinstance(gi.get("attendance"), int) else _int(gi.get("attendance")),
+        "referee": referee,
+    }
+
+
+def parse_standings(standings_payload: dict) -> list[dict]:
+    """One row per team from the competition standings payload.
+
+    Reads the conference groups (``children``); each entry carries rank, points,
+    W/D/L, goals for/against, and goal difference. Empty list if none present.
+    """
+    def _stat(entry: dict, name: str):
+        for s in entry.get("stats") or []:
+            if isinstance(s, dict) and s.get("name") == name:
+                v = s.get("value")
+                if v is None:
+                    v = s.get("displayValue")
+                try:
+                    return int(round(float(v)))
+                except (TypeError, ValueError):
+                    return None
+        return None
+
+    rows: list[dict] = []
+    for group in standings_payload.get("children") or []:
+        conference = group.get("name")
+        entries = ((group.get("standings") or {}).get("entries")) or []
+        for e in entries:
+            team = e.get("team") or {}
+            tid = str(team.get("id") or e.get("id") or "")
+            if not tid:
+                continue
+            rows.append({
+                "team_id": tid,
+                "conference": conference,
+                "conference_rank": _stat(e, "rank"),
+                "points": _stat(e, "points"),
+                "games_played": _stat(e, "gamesPlayed"),
+                "wins": _stat(e, "wins"),
+                "draws": _stat(e, "ties"),
+                "losses": _stat(e, "losses"),
+                "goals_for": _stat(e, "pointsFor"),
+                "goals_against": _stat(e, "pointsAgainst"),
+                "goal_difference": _stat(e, "pointDifferential"),
+            })
+    return rows
