@@ -55,6 +55,8 @@ class MLSAdapter:
                     game_id=str(g.get("game_id")),
                     start_time=_parse_start(g.get("game_date")),
                     status=g.get("status"),
+                    away_id=g.get("away_id"),
+                    home_id=g.get("home_id"),
                     away_name=g.get("away"),
                     home_name=g.get("home"),
                     away_short=g.get("away_short"),

@@ -167,8 +167,8 @@ def test_no_player_names_invented():
 def test_honest_gaps_present():
     p = _build()
     assert len(p.honest_gaps.items) >= 4
-    labels = " ".join(g.label for g in p.honest_gaps.items)
-    assert "Lineups" in labels and "Tactical" in labels
+    labels = " ".join(g.label for g in p.honest_gaps.items).lower()
+    assert "lineups" in labels and "tactical" in labels
 
 
 # -------------------------------------------------------- rendering ----------

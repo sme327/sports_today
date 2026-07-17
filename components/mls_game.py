@@ -79,6 +79,8 @@ def _hero_side(team, home: bool) -> str:
     accent = _safe_accent(team.color)
     pts = f'<span class="mls-hero-pts">{escape(team.points_display)}</span>' if team.points_display else ""
     rec = f'{escape(team.record)} · ' if team.record else ""
+    standing = (f'<div class="mls-hero-standing">{escape(team.standing)}</div>'
+                if team.standing else "")
     return (
         f'<div class="mls-hero-team{" home" if home else ""}">'
         f'{logo_img(team.logo, team.name, "mls-hero-logo")}'
@@ -86,6 +88,7 @@ def _hero_side(team, home: bool) -> str:
         f'<div class="mls-hero-name">{escape(team.short)}</div>'
         f'<div class="mls-hero-rec">{rec}{pts}</div>'
         f'{_form_dots(team.form)}'
+        f'{standing}'
         f'<span class="mls-hero-accent" style="background:{accent}"></span>'
         f'</div></div>'
     )
@@ -143,21 +146,40 @@ def _lean_bar(lean: str | None) -> str:
             f'<span class="mls-lean-dot" style="left:{pos}%"></span></div>')
 
 
+def _edge_chip(lean: str | None, confidence: str) -> str:
+    label = {"home": "Home edge", "away": "Away edge", "even": "Even"}.get(lean or "", "—")
+    conf = f'<span class="mls-tac-conf">{escape(confidence)}</span>' if confidence else ""
+    tone = "even" if lean == "even" else "lean"
+    return f'<span class="mls-tac-edge {tone}">{escape(label)}</span>{conf}'
+
+
+def _similar_block(message: str) -> str:
+    return (f'<div class="mls-similar">{icon("tactics")}'
+            f'<span>{escape(message)}</span></div>')
+
+
 def tactical_html(t: MLSTactical) -> str:
+    note = f'<div class="mls-note">{escape(t.note)}</div>'
+    if not t.rows and t.summary:
+        body = _similar_block(t.summary)
+        return _section("Tactical Matchup", f'{body}{note}', "tactics", t.state)
     rows = []
     for r in t.rows:
         if r.state is DataState.UNAVAILABLE:
-            lean_note = '<span class="mls-tac-await">Awaiting team style data</span>'
+            top_right = '<span class="mls-tac-await">Awaiting team style data</span>'
+            bar_row = _lean_bar(r.lean)
         else:
-            edge = "Even" if r.lean == "even" else (r.away_label if r.lean == "away" else r.home_label)
-            lean_note = f'<span class="mls-tac-edge">{escape(edge)}</span>'
+            top_right = _edge_chip(r.lean, r.confidence)
+            bar_row = (f'<div class="mls-tac-bar-row">'
+                       f'<span class="mls-tac-val">{escape(r.away_label)}</span>'
+                       f'{_lean_bar(r.lean)}'
+                       f'<span class="mls-tac-val">{escape(r.home_label)}</span></div>')
         rows.append(
             f'<div class="mls-tac-row">'
             f'<div class="mls-tac-top"><span class="mls-tac-dim">{escape(r.dimension)}</span>'
-            f'{lean_note}</div>'
-            f'{_lean_bar(r.lean)}'
+            f'{top_right}</div>'
+            f'{bar_row}'
             f'<div class="mls-tac-expl">{escape(r.explanation)}</div></div>')
-    note = f'<div class="mls-note">{escape(t.note)}</div>'
     return _section("Tactical Matchup", f'<div class="mls-tac">{"".join(rows)}</div>{note}',
                     "tactics", t.state)
 
@@ -228,20 +250,24 @@ def players_html(p: MLSPlayersToWatch) -> str:
 
 # --------------------------------------------------- ATTACKING PROFILE -------
 def attacking_html(a: MLSAttacking) -> str:
+    note = f'<div class="mls-note">{escape(a.note)}</div>'
+    if not a.dimensions and a.summary:
+        return _section("Attacking Profile", f'{_similar_block(a.summary)}{note}', "attack", a.state)
     head = (f'<div class="mls-cmp-head"><span>{escape(a.away_team)}</span>'
             f'<span></span><span>{escape(a.home_team)}</span></div>')
-    rows = "".join(_cmp_row(d.label, d.away_value, d.home_value, None, d.state)
+    rows = "".join(_cmp_row(d.label, d.away_value, d.home_value, d.better, d.state)
                    for d in a.dimensions)
-    note = f'<div class="mls-note">{escape(a.note)}</div>'
     return _section("Attacking Profile", f'<div class="mls-cmp">{head}{rows}</div>{note}',
                     "attack", a.state)
 
 
 # --------------------------------------------------- DISCIPLINE --------------
 def discipline_html(d: MLSDiscipline) -> str:
-    rows = "".join(_cmp_row(r.label, r.away_value, r.home_value, None, r.state)
-                   for r in d.rows)
     note = f'<div class="mls-note">{escape(d.note)}</div>'
+    if not d.rows and d.summary:
+        return _section("Discipline", f'{_similar_block(d.summary)}{note}', "discipline", d.state)
+    rows = "".join(_cmp_row(r.label, r.away_value, r.home_value, r.better, r.state)
+                   for r in d.rows)
     return _section("Discipline", f'<div class="mls-cmp mls-cmp-tight">{rows}</div>{note}',
                     "discipline", d.state)
 

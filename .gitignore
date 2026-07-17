@@ -29,3 +29,4 @@ logs/*.csv
 
 # Icon zips (SVG sources are kept)
 icons/*.zip
+data/mls/*.csv
