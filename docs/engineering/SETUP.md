@@ -78,7 +78,7 @@ The program will:
 5. Rebuild:
    `database/sportshub.db`
 6. Print plate appearance, game, batter, and pitcher counts.
-7. Launch Sports Hub in your default browser.
+7. Launch Sports Today in your default browser.
 
 ### 6. Verify the files
 
@@ -95,7 +95,7 @@ logs/mlb_import_history.csv
 
 In the browser:
 
-1. The page title should be **Sports Hub**.
+1. The page title should be **Sports Today**.
 2. The sidebar should show the date through which the imported data runs.
 3. Choose the slate date you want to inspect.
 4. The app should show:
