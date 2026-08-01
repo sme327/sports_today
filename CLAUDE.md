@@ -4,9 +4,10 @@ Guidance for AI assistants (and humans) working in this repo. This file is
 intentionally lean: it orients you and points into the knowledge base rather than
 restating it. **Start with [`docs/README.md`](docs/README.md).**
 
-> Naming note: the product is **Sports Today**. Some code and the app's window
-> title still read "Sports Hub" (the original name); treat that as a known
-> cosmetic inconsistency to reconcile, not a second product.
+> Naming note: the product is **Sports Today** — all user-facing surfaces (the
+> window/page title, headers, launch output) say so. Some **internal identifiers**
+> keep the original "Sports Hub" name by design (the `sportshub.db` filename, the
+> `sports_hub_v1_daily` folder); that's intentional, not an inconsistency to fix.
 
 ## What this is
 
