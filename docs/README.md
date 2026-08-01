@@ -33,8 +33,9 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Architecture](engineering/ARCHITECTURE.md) | Structure, layers, "where to add X", glossary. |
 | [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks. |
 | [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
-| [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, data states, what's real vs. honestly deferred. |
-| [MLS Phase 1 Inspection](engineering/MLS_PHASE1_INSPECTION.md) | Read-only inspection + plan for the MLS matchup page (reuse, data gaps, risks, sequence). |
+| [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
+| [MLS Provider Audit](engineering/MLS_PHASE3A_PROVIDER_AUDIT.md) | What ESPN provides for MLS, field reliability, and what to collect next. |
+| [MLS Phase 1 Inspection](engineering/MLS_PHASE1_INSPECTION.md) | Original read-only inspection + build sequence (steps 1–6 now shipped). |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
 | [Setup](engineering/SETUP.md) | One-time install and the daily data/run workflow. |

@@ -5,7 +5,7 @@
 > **Update when** — Priorities shift or a phase ships. Keep it experience-first.
 > **Related** — [Vision](VISION.md) · [Experience Principles](EXPERIENCE_PRINCIPLES.md) · [Architecture](../engineering/ARCHITECTURE.md) · [Docs index](../README.md)
 
-_Last updated: July 2026._
+_Last updated: July 2026 (after the MLS team-data integration)._
 
 ---
 
@@ -49,9 +49,12 @@ The user is planning their day. This is where the opportunity engine lives.
   1+ hit; WNBA points/rebounds/assists)*
 - **Evidence & risk** — every opportunity shows why it stands out and what could
   go wrong. *(shipped)*
-- **Game previews / deep dives** — Teams and Players tabs. *(shipped for MLB)*
+- **Game previews / deep dives** — editorial matchup pages. *(shipped: MLB, WNBA, and
+  MLS — the latter with real collected team-stat analysis; see
+  [MLS Game Page](../engineering/MLS_GAME_PAGE.md))*
 - **Better inputs** — probable pitchers & handedness, confirmed lineups, expected
-  plate appearances / minutes, park & weather, bullpen/rest. *(next)*
+  plate appearances / minutes, park & weather, bullpen/rest; for MLS, match-event
+  timing then confirmed lineups. *(next)*
 - **Watchability score, best matchup, closest games.**
 
 ### 🏟️ During Games — "What's happening right now that matters?"
@@ -103,8 +106,11 @@ These support every phase of the journey.
 ### Leagues & coverage
 
 Adding a league should feel routine, not like a project (one adapter + one
-registry entry — see [Architecture](../engineering/ARCHITECTURE.md)). Planned:
-NBA, NFL, NHL, MLS, College Football/Basketball, MLB postseason, and beyond.
+registry entry — see [Architecture](../engineering/ARCHITECTURE.md)). Shipped: MLB,
+WNBA, World Cup (schedule), and **MLS** (first soccer league with a full matchup page
+and collected team-stat analysis). Planned: NBA, NFL, NHL, College Football/Basketball,
+MLB postseason, and beyond. The MLS soccer client + collector + repository + analytics
+form a reusable template for the next soccer or box-score league.
 
 ### Intelligence & explainability
 
@@ -147,7 +153,9 @@ If it scores poorly, it belongs later — or not at all.
 ## Current priorities (next major version)
 
 - **Before Games:** better opportunity inputs (probable pitchers, lineups,
-  expected volume) and cleaner game pages.
+  expected volume) and cleaner game pages. For **MLS**, add match-event data
+  (goal/card/sub timing + scorers) to make the timeline and storylines richer, then
+  confirmed lineups; **MLS player data is deferred** until a richer source exists.
 - **After Games:** grade the daily snapshots (did opportunities hit?).
 - **Foundations:** NBA support; continued caching/startup improvements; continued
   design refinement.

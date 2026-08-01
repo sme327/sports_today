@@ -14,13 +14,21 @@
 | a new **league** | `leagues/<name>/adapter.py` implementing `LeagueAdapter`, then `register(...)` and import it in `leagues/__init__.py` |
 | a new **screen/view** | `views/<name>.py`, dispatched from `router.py` |
 | a new **component** (reusable UI/HTML) | `components/<name>.py` |
-| a new **service** (data, schedules, cache, snapshots, migrations) | `services/<name>.py` |
-| a new **domain object** | `domain/models.py` |
+| a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |
+| a new **domain object** | `domain/models.py`, or a league page model (`domain/<league>_game_page.py`) |
+| a new **data collector** (fetch → normalize → SQLite) | `src/<league>_collector.py`, writing via a `services/<league>_store.py` |
+| a **schema table** | add DDL to the store module and call it from `services/migrations.ensure_schema` |
 | a **style/token** | `styles/app.css` (one stylesheet) |
 | a **test** | `tests/test_<area>.py` (offline; no network) |
 
 Ingestion and lower-level data collection live in `src/` (kept from the original
-build). Everything else follows the layers below.
+build). A league that collects its own history follows the collector pattern
+(`src/wnba_collector.py`, `src/mls_collector.py`): a **collector** orchestrates
+fetch/retry/incremental/audit, a neutral **client** does transport + pure parsing
+(`src/espn_soccer.py`), a **store** owns DDL + upserts (`services/mls_store.py`), a
+**repository** does leakage-safe reads (`services/mls_repository.py`), and an
+**analytics** module does deterministic computation (`services/mls_analytics.py`).
+Everything else follows the layers below.
 
 ## Glossary (canonical terminology)
 

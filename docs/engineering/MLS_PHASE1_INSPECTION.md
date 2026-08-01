@@ -14,6 +14,13 @@ _Inspection date: 2026-07-16. Verified against the running app and the live SQLi
 > analytics pattern (`services/wnba_analytics.py`) confirms the "collect box scores →
 > team/season aggregates → page" flow the MLS plan recommends.
 
+> **Superseded (2026-07-17):** this is a point-in-time planning record. The MLS page
+> and its **team-data pipeline have since shipped** — steps 1–6 of the §13 sequence are
+> done (fixture shell → adapter → schedule → team-stat collection → analytics → real
+> wiring). For the current implementation see [MLS Game Page](MLS_GAME_PAGE.md); for the
+> provider reality see [MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md). Remaining §13
+> steps: match events (7, next), then confirmed lineups (8).
+
 ---
 
 ## 1. Executive Summary

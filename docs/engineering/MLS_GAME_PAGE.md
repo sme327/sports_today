@@ -1,20 +1,20 @@
 # MLS Matchup Page
 
-> **Purpose** — How the MLS matchup page is built: its sections, data states, what is real today, and what is honestly deferred until a soccer-stats pipeline exists.
+> **Purpose** — How the MLS matchup page is built: its sections, the real team-data pipeline behind them, the exact analytical definitions, and what is honestly deferred.
 > **Audience** — Engineers and AI assistants extending the MLS page (and a template for a future NBA/soccer page).
-> **Update when** — Sections, data states, formulas, or supported data change.
-> **Related** — [Architecture](ARCHITECTURE.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [MLS Philosophy](../MLS_MATCHUP_PHILOSOPHY.md) · [MLS Blueprint](../MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
+> **Update when** — Sections, data states, formulas, thresholds, collected data, or the pipeline change.
+> **Related** — [Architecture](ARCHITECTURE.md) · [MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [Philosophy](../MLS_MATCHUP_PHILOSOPHY.md) · [Blueprint](../MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
 
-A soccer-designed matchup preview that answers one question: **"what kind of match
-am I about to watch?"** It reuses the shared architecture (router → view → cached
-builder → immutable model → pure-HTML components) and the design system, and adds
-soccer-specific pieces (form dots, a tactical lean bar, a formation pitch, a
-"what to watch" timeline).
+A soccer-designed matchup preview that answers **"what kind of match am I about to
+watch?"** It reuses the shared architecture (router → view → cached builder →
+immutable model → pure-HTML components) and adds soccer-specific pieces (W/D/L form
+dots, a tactical lean bar, a CSS/SVG formation pitch, a "what to watch" timeline).
 
-This is the **reference implementation for future soccer coverage**. Its defining
-idea is **progressive intelligence over a fixed layout**: the page shell and every
-component ship now; sections that need data we do not yet collect render in an
-honest **data state** and fill in later without a redesign.
+Its defining idea is **progressive intelligence over a fixed layout**: the shell and
+every component ship once; each section carries a `DataState`, and real data drops in
+by flipping a state — never by a redesign. **As of the team-data integration, the
+team-level analysis is real** (collected ESPN box scores); player- and event-level
+sections remain honestly unavailable.
 
 ## Flow
 
@@ -23,18 +23,25 @@ router → views/game.py (dispatch: league == "MLS")
        → views/mls_game.py (renders sections in blueprint order)
        → services/app_cache.cached_mls_game_page  (cache: game_id | as_of | engine version)
        → services/mls_game_page.build_mls_game_page  (deterministic builder)
+             ├── services/mls_repository   (leakage-safe reads of collected team data)
+             └── services/mls_analytics     (tactical proxies + storyline rules)
        → domain/mls_game_page.MLSGamePage  (immutable model; per-section DataState)
        → components/mls_game.py  (pure HTML; shared section shell + soccer pieces)
+
+collection (offline, separate from the app):
+  src/mls_collector.py → src/espn_soccer.py (summary/standings parsers)
+                       → services/mls_store.py (additive SQLite tables + upserts)
 ```
 
-Schedule comes from `src/espn_soccer.py` (a neutral, competition-parameterized
-ESPN soccer client; MLS = `usa.1`) via `leagues/mls/adapter.py`. Cached on
-`game_id | as_of | mls-game-page-v1`.
+The schedule (and hero) come from `src/espn_soccer.py` (a neutral,
+competition-parameterized ESPN client; MLS = `usa.1`) via `leagues/mls/adapter.py`,
+which also carries the stable `team_id`s. Builder cached on
+`game_id | as_of | mls-game-page-v2`.
 
 ## Data states (the honesty model)
 
-Every section carries a `DataState`, rendered as a badge. The layout is identical
-across states; only the intelligence and the badge change.
+Every section carries a `DataState`, rendered as a badge. Layout is identical across
+states; only the intelligence and the badge change.
 
 | State | Badge | Meaning |
 |---|---|---|
@@ -45,75 +52,126 @@ across states; only the intelligence and the badge change.
 
 **Non-negotiable:** `UNAVAILABLE`/`PROJECTED` sections render their real component
 shell with an honest explanation — **never fabricated numbers or team-specific
-tactical claims.** This is the product's "be honest about data" rule made structural.
+tactical claims.**
 
-## Sections (blueprint order)
+## Sections (current states)
 
-1. **Hero** — teams, club logos, W-D-L records, points, recent form (W/D/L dots),
-   competition, kickoff, venue, broadcast, and live/final score. **All real.**
-2. **Matchup Snapshot** — `PARTIAL`. Record, points, and last-5 form are real;
-   goals, possession, shots, and passing are `UNAVAILABLE` placeholder rows.
-3. **Tactical Matchup** ⭐ — the signature framework: nine style dimensions
-   (possession, pressing, defensive line, width, transition speed, set-piece
-   danger, crossing, directness, game control), each a home/even/away lean bar
-   with a one-line reason. `UNAVAILABLE` in V1 (no team style data yet); the
-   framework renders so the read is stable when data arrives.
-4. **Key Storylines** — `AVAILABLE` when triggered. A small deterministic engine
-   over the **real** record + form: a record-contrast storyline (season-long,
-   Moderate confidence) and per-team "in form"/"searching for form" storylines
-   (last-5, Low confidence). W/D/L counts are **order-independent**, so no claim
-   depends on the feed's (unreliable) result ordering.
-5. **Projected Lineups** — `UNAVAILABLE`. A CSS/SVG formation pitch renders a
-   neutral 4-3-3 of empty slots per team, labeled "layout shown for reference, not
-   a projection." Degrades gracefully (stacks) rather than disappearing.
-6. **Players to Watch** — `UNAVAILABLE`. Five role archetypes (Finisher, Creator,
-   Ball progressor, Defensive anchor, Goalkeeper) shown as awaiting squad data.
-7. **Attacking Profile** — `UNAVAILABLE`. Six style dimensions (build-up,
-   transitions, crossing, through balls, set pieces, long-range) as awaiting rows.
-8. **Discipline** — `UNAVAILABLE`. Cards / fouls / suspensions as awaiting rows.
-9. **What to Watch Timeline** ⭐ — `AVAILABLE`. Six phases (Pregame → Opening →
-   Midfield → Tactical shift → Late match → Substitutions) with **generic,
-   clearly-labeled** match-watching guidance (education, not a team-specific
-   prediction). Team-specific cues arrive with the tactical model.
-10. **Honest Gaps** — the real list of what we do not know yet and why.
-11. **Data Context** — provenance line (source, as_of, what is live).
+When collected team data exists strictly before the match date for **both** clubs
+(≥ 4 matches each), the analytical sections build from real aggregates; otherwise they
+fall back to the honest awaiting-data states.
+
+1. **Hero** — `AVAILABLE`. Teams, logos, W-D-L records, points, recent form dots,
+   competition, kickoff, venue, broadcast, live/final score, **plus real conference
+   standing** (e.g. "6th in West · 24 pts").
+2. **Matchup Snapshot** — `AVAILABLE` (**outcomes**): goals/match, goals allowed/match,
+   goal difference/match, shots/match, shots on target/match, Ball Share, and
+   Points/match (venue) — the home club's home form vs the away club's away form.
+3. **Tactical Matchup** ⭐ — `AVAILABLE` (**measured style contrasts**): Passing
+   Completion, Defensive Shot Pressure, Corner Pressure. Only dimensions with a real
+   edge are shown; fewer than two → a compact *similar-profile* line scoped to style
+   (never contradicting a lopsided Snapshot). **No claims** about pressing, low blocks,
+   transitions, width, directness, or line height.
+4. **Key Storylines** — deterministic rules over real aggregates, recent results, and
+   the table; the strongest 3–5, deduped by theme. Three honest empty states:
+   real-but-no-trigger (`AVAILABLE`, "No standout storylines"), `PARTIAL` (thin sample),
+   `UNAVAILABLE` (no collected data → record/form fallback).
+5. **Projected Lineups** — `UNAVAILABLE`. A CSS/SVG reference pitch (empty 4-3-3 slots),
+   clearly "layout shown for reference, not a projection." Degrades gracefully.
+6. **Players to Watch** — `UNAVAILABLE`. Five role archetypes; the feed lacks per-player
+   minutes/passing/defensive actions, so it stays honest rather than guessing.
+7. **Attacking Profile** — `AVAILABLE` (**volume/finishing**): shot accuracy, crossing
+   volume, cross accuracy, penalty attempts/match. Near-identical rows are suppressed;
+   all suppressed → a compact summary.
+8. **Discipline** — `AVAILABLE`. Fouls/match, yellow cards/match, red cards (season
+   count, with sample size). Compact; if both clubs are unremarkable → a summary line.
+9. **What to Watch Timeline** ⭐ — `AVAILABLE`. Six phases of **generic, clearly-labeled**
+   match-watching guidance (education, not a team-specific prediction).
+10. **Honest Gaps** — a dynamic list of what we don't know yet and why (updates once
+    team data is present).
+11. **Data Context** — provenance line (source, as_of, sample sizes).
 
 ## Data & engine
 
-- **Source:** `src/espn_soccer.py` → ESPN `usa.1` scoreboard. Real per-game:
-  teams, club logos, brand colors, W-D-L records, recent form, venue, kickoff,
-  broadcast, and Final-score V1 fields. The adapter stashes the soccer-specific
-  extras (records, form, colors, competition) in `SlateGame.meta`.
-- **Builder** (`services/mls_game_page.py`, `ENGINE_VERSION = "mls-game-page-v1"`):
-  deterministic, no generative text. The only V1 "intelligence" is the storyline
-  engine over real record + form. Everything else composes honest states.
-- **Team color safety:** brand colors from ESPN are contrast-guarded at render
-  time (`components/mls_game._safe_accent`) so a dark primary (e.g. a black) never
-  disappears on the charcoal canvas; missing colors fall back to the brand orange.
+### Collection (offline)
+- **`src/espn_soccer.py`** — neutral ESPN soccer client. Beyond the scoreboard it adds
+  `fetch_summary` / `fetch_standings` and **pure parsers** (`parse_team_stats`,
+  `parse_match_meta`, `parse_standings`). No orchestration/SQLite/retries live here.
+- **`src/mls_collector.py`** — regular-season, completed-only collector (WNBA-collector
+  pattern): scoreboard discovery, incremental skip, retries/backoff, explicit validation
+  (2 competitors, IDs reconcile, 2 team-stat blocks), idempotent upserts, standings
+  refresh, audit run, CSV mirror. **Never writes partial/fabricated rows.**
+- **`services/mls_store.py`** — additive tables + upserts: `mls_matches`,
+  `mls_team_match_stats` (PK `event_id,team_id`), `mls_standings` (snapshot history),
+  `mls_collection_runs`. Created via `services/migrations.ensure_schema`. **Missing
+  provider fields stay NULL — never converted to zero.**
 
-## Not shown in this version (honest gaps)
+### Reads & analysis (in-app)
+- **`services/mls_repository.py`** — leakage-safe reads. Every query includes only
+  completed matches **strictly before** the match date `D`, excludes the selected match,
+  and never sees a match on/after `D`. Provides season aggregates, home/away splits,
+  last-5 results, league averages, standings lookup, and **sample sizes**.
+- **`services/mls_analytics.py`** — deterministic engines: `proxy_dimensions` (tactical
+  proxies + significance filtering) and `storylines` (rule-based, deduped).
+- **`services/mls_game_page.py`** (`ENGINE_VERSION = "mls-game-page-v2"`) — assembles the
+  immutable page; real-data path when both clubs have ≥ 4 prior matches, else the honest
+  fallback.
 
-Confirmed/projected lineups, season match stats (goals/shots/possession/passing),
-team tactical style, player match stats and availability, discipline records, and
-advanced tracking (xG, pressing intensity, heat maps). None are collected or
-claimed — each renders as an honest state, not a guess.
+### Exact analytical definitions
+- **Window:** completed regular-season matches with `match_date < D`, minus the selected
+  event. Home split = `is_home = 1`; away split = `is_home = 0`.
+- **Aggregation:** counts & possession use **per-match means**; accuracy rates
+  (shot/pass/cross) use **pooled ratios** `100·Σnumerator/Σdenominator` (NULL if the
+  denominator is 0). Stored `shot_pct/pass_pct/cross_pct` are **derived from raw counts**
+  (the provider's `*Pct` are lossily rounded); `possession_pct` is provider-reported
+  (0–100). Points/match = `(3W + D)/n` on the relevant venue split.
+- **Section ownership (no metric appears twice):** Snapshot = outcomes · Tactical = style
+  proxies (passing, defensive shot pressure, corners) · Attacking = finishing/crossing ·
+  Discipline = fouls/cards.
+- **Tactical edge:** magnitude `= |home − away| / scale`; `< 0.35 → suppressed/Even`; else
+  the better side (lower-is-better for Defensive Shot Pressure). Scales: Passing
+  Completion 6.0, Defensive Shot Pressure 4.0, Corner Pressure 2.5.
+- **Significance suppression:** Attacking — shot accuracy ≥ 3.0 pts, crossing volume ≥
+  2.5/match, cross accuracy ≥ 4.0 pts, penalty attempts ≥ 0.15/match. Discipline —
+  fouls ≥ 1.0/match, yellows ≥ 0.4/match, reds shown if `max ≥ 3 or |diff| ≥ 2`.
+- **Confidence:** `min(matches) ≥ 8 → Moderate`, `≥ 4 → Low`, else the dimension/section
+  is omitted. No "High" (a dozen unadjusted matches is not high confidence).
+- **Storyline rules** (each carries inputs, threshold, sample, confidence): strong-home
+  (home PPM ≥ 2.0), weak-away (away PPM ≤ 0.9), unbeaten/losing run (last 5), scoring
+  surge / defensive decline (last-5 vs season Δ ≥ 0.7), high/low shot volume (±3 vs
+  league), defensive-shot-pressure concern (+3), ball-share contrast (≥ 10 pts),
+  high-card matchup (≥ 4.5 combined), table gap (≥ 6 places).
+- **Team color safety:** ESPN brand colors are contrast-guarded at render
+  (`components/mls_game._safe_accent`) so a dark primary never disappears on the charcoal
+  canvas; missing colors fall back to brand orange.
 
-## Progressive intelligence (how it grows without a redesign)
+## Not shown yet (honest gaps)
 
-| Version | What changes | Layout |
-|---|---|---|
-| **V1 (this)** | Rule-based; real hero + snapshot + storylines; the rest honest states. | fixed |
-| **V1.5** | Match-stats collection → snapshot/attacking/discipline become real; tactical leans resolve. | fixed |
-| **V2** | Formation-aware; projected then confirmed lineups populate the pitch. | fixed |
-| **V3** | Advanced tracking (xG, pressing) and live tactical cues. | fixed |
+Confirmed/projected lineups & formations, per-player stats (the feed lacks minutes,
+passing, and defensive actions), match-event timing (goal/card/sub minutes, scorers —
+collected by the provider but not yet stored), and advanced tracking (xG, pressing, heat
+maps). None are claimed — each renders as an honest state. See the
+[Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md) for exact field reliability.
 
-The next build step is the **soccer data pipeline** (collector + additive tables +
-repository), following the sequence in [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md)
-§13. Until it exists, no section fabricates data.
+## Progressive intelligence & next steps
+
+| Stage | State | What it adds | Layout |
+|---|---|---|---|
+| **Foundation** | ✅ shipped | Real hero + records/form + honest shells | fixed |
+| **Team data (Option A)** | ✅ shipped | Real Snapshot, Tactical proxies, Attacking, Discipline, Storylines, standings | fixed |
+| **Match events (Option C)** | next | Goal/card/sub timing + scorers → real timeline cues + richer storylines | fixed |
+| **Confirmed lineups** | later | Projected → confirmed XI populates the pitch; formation-aware | fixed |
+| **Player data (Option B)** | deferred | Position-aware Players to Watch — **blocked** until a richer player source exists | fixed |
+| **Advanced / live** | future | xG, pressing, live tactical cues | fixed |
+
+The recommended next increment is **Option C (match events)** — cheap (same summary
+payload), high narrative value, no player-data dependency. Player data (Option B) is
+deferred because the ESPN feed's player totals are too thin for an honest,
+differentiated section.
 
 ## Extension points
 
 - `src/espn_soccer.py` is competition-agnostic — other soccer competitions (and,
-  eventually, a migration of World Cup) can reuse it by slug.
-- Each section is an independent `DataState` swap: wiring real data means changing
-  a builder function and a state, not the view or the CSS.
+  eventually, a migration of World Cup) reuse it by slug.
+- `services/mls_analytics.py` is soccer-generic and reusable for a future league page.
+- Each section is an independent `DataState` swap: wiring new data means changing a
+  builder function and a state, not the view or the CSS.
