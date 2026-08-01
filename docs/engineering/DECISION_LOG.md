@@ -9,6 +9,53 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-07-17 — MLS team-data integration + matchup analytics (Option A)
+
+**Decision.** Collect **MLS regular-season team box-score statistics** from ESPN and
+wire them into the matchup page, turning the Snapshot, Tactical Matchup, Attacking
+Profile, Discipline, Storylines, and hero standings from honest placeholders into
+**real, leakage-safe analysis**. New pieces: `src/espn_soccer` summary/standings
+parsers; `src/mls_collector.py` (regular-season, completed-only, incremental,
+validated, idempotent); additive tables via `services/mls_store.py`
+(`mls_matches`, `mls_team_match_stats`, `mls_standings` snapshot-history,
+`mls_collection_runs`); `services/mls_repository.py` (date-bounded reads);
+`services/mls_analytics.py` (tactical proxies + storyline rules). Player stats
+(Option B) and match events (Option C) were explicitly **out of scope**.
+**Reason.** ESPN's MLS summary provides 28 team stats at ~100% coverage plus full
+standings — enough to make the page genuinely useful with the smallest, most reliable
+pipeline and the lowest delay risk. Player totals are too thin (no minutes/passing) to
+power an honest Players-to-Watch, so they were deferred.
+**Tradeoffs.** No player, event, lineup, or xG data yet (those sections stay honestly
+unavailable). Accuracy percentages are **derived from raw counts** (the provider's
+`*Pct` are lossily rounded); possession is provider-reported. Missing stats are stored
+NULL, never zero. A local, gitignored SQLite backfill (191 matches / 30 clubs) must be
+refreshed by running the collector — it is not part of the app runtime.
+**Future.** Option C (match events) is the recommended next increment; Option B (player
+data) waits on a richer source. See [MLS Game Page](MLS_GAME_PAGE.md) and
+[MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md).
+
+## 2026-07-17 — Tactical honesty: measured proxies, one metric per section
+
+**Decision.** The Tactical Matchup presents **honestly measured box-score proxies**
+(Ball Share, Shot Volume, Shot Accuracy, Defensive Shot Pressure, Corner Pressure,
+Crossing Volume, Passing Completion, Card & Foul Rate, Home/Away Performance) — never
+"high press / low block / transition speed / width / directness / line height / game
+control," which this data cannot support. A UX-refinement pass then gave **each
+analytical section a single, non-overlapping metric set** (Snapshot = outcomes,
+Tactical = style contrasts, Attacking = finishing/crossing, Discipline = fouls/cards),
+suppressed low-signal rows, and added compact **similar-profile** states for even
+matchups plus honest empty-storyline copy. Penalties are shown as a **per-match rate**
+(not raw season totals); red cards remain event counts but state their sample size.
+**Reason.** The first real-data render repeated the same metrics across sections and
+produced walls of "Even" rows for similar clubs. Box-score stats are not tactical
+identity; labeling them as such would violate the product's honesty rule.
+**Tradeoffs.** For statistically even matchups the Tactical/Attacking/Discipline
+sections may collapse to a single line rather than a table — deliberately calmer, and
+scoped to style so it never contradicts a lopsided Snapshot. A banned-term test guards
+the wording.
+**Future.** When richer data lands (events, tracking), sections can add genuinely
+tactical dimensions without relabeling the existing proxies.
+
 ## 2026-07-16 — MLS matchup page (soccer-designed, honesty-first shell)
 
 **Decision.** Ship a dedicated MLS matchup page (`MLSAdapter.supports_deep_dive =

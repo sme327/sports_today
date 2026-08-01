@@ -168,6 +168,32 @@ Force the newest file to be recopied:
 python morning_update.py --force
 ```
 
+## League data collectors (WNBA, MLS)
+
+MLB comes from the daily vendor workbook above. **WNBA and MLS collect their own
+history from ESPN** into the same `database/sportshub.db` (additive tables; the MLB
+data is never touched). These are run occasionally, not part of the daily MLB flow,
+and require an internet connection. The collected data is **gitignored** — a fresh
+clone starts empty and the relevant sections show honest awaiting-data states until a
+collector runs.
+
+From the project folder (`source .venv/bin/activate` first):
+
+```bash
+# MLS — regular-season team match stats + standings (leakage-safe reads in-app).
+python -m src.mls_collector --season 2026 --start 2026-03-07
+python -m src.mls_collector --force            # re-collect everything
+
+# WNBA — player game logs (powers the WNBA opportunity feed + matchup page).
+python collect_wnba.py                         # see the script for options
+```
+
+The MLS collector is **incremental** (skips already-collected matches), validated
+(won't write partial rows), and idempotent. It prints a summary and records each run in
+`mls_collection_runs`. Only completed **regular-season** matches are stored (no Leagues
+Cup, Open Cup, Concacaf, friendlies, or playoffs). Re-run periodically to pick up new
+results.
+
 ## Troubleshooting
 
 ### “No dated MLB play-by-play workbook found”
