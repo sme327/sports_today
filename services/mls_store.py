@@ -36,6 +36,12 @@ STANDINGS_COLUMNS = (
     "goals_for", "goals_against", "goal_difference", "collected_at",
 )
 
+EVENT_COLUMNS = (
+    "match_id", "seq", "type", "category", "goal_source", "minute", "stoppage",
+    "period", "bucket", "team_id", "primary_id", "primary_name",
+    "secondary_id", "secondary_name", "collected_at",
+)
+
 
 def ensure_tables(conn: sqlite3.Connection) -> None:
     """Idempotently create the MLS tables + indexes. Safe on every startup."""
@@ -116,6 +122,29 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
             PRIMARY KEY (season, team_id, snapshot_date)
         );
 
+        -- Match events (goals/cards/subs) for timeline + storyline signals.
+        CREATE TABLE IF NOT EXISTS mls_match_events (
+            match_id TEXT NOT NULL,
+            seq TEXT NOT NULL,
+            type TEXT,
+            category TEXT,
+            goal_source TEXT,
+            minute INTEGER,
+            stoppage INTEGER,
+            period INTEGER,
+            bucket TEXT,
+            team_id TEXT,
+            primary_id TEXT,
+            primary_name TEXT,
+            secondary_id TEXT,
+            secondary_name TEXT,
+            collected_at TEXT,
+            PRIMARY KEY (match_id, seq)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_mls_events_match ON mls_match_events(match_id);
+        CREATE INDEX IF NOT EXISTS idx_mls_events_team ON mls_match_events(team_id, category);
+
         CREATE TABLE IF NOT EXISTS mls_collection_runs (
             run_id INTEGER PRIMARY KEY AUTOINCREMENT,
             started_at TEXT,
@@ -162,12 +191,26 @@ def upsert_standings(conn: sqlite3.Connection, rows: list[dict]) -> int:
                    ("season", "team_id", "snapshot_date"))
 
 
+def upsert_events(conn: sqlite3.Connection, rows: list[dict]) -> int:
+    return _upsert(conn, "mls_match_events", EVENT_COLUMNS, rows, ("match_id", "seq"))
+
+
 def collected_event_ids(conn: sqlite3.Connection) -> set[str]:
     """Event IDs that already have both team-stat rows (a complete collection)."""
     rows = conn.execute(
         "SELECT event_id FROM mls_team_match_stats GROUP BY event_id HAVING COUNT(*) >= 2"
     ).fetchall()
     return {str(r[0]) for r in rows}
+
+
+def fully_collected_event_ids(conn: sqlite3.Connection) -> set[str]:
+    """Event IDs with **both** team stats and match events collected. Used as the
+    incremental-skip set so matches that predate event collection get reprocessed
+    (every match has at least substitution events)."""
+    have_stats = collected_event_ids(conn)
+    have_events = {str(r[0]) for r in conn.execute(
+        "SELECT DISTINCT match_id FROM mls_match_events").fetchall()}
+    return have_stats & have_events
 
 
 def insert_run(conn: sqlite3.Connection, **fields) -> None:

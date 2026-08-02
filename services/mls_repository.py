@@ -201,3 +201,53 @@ def standings_lookup(team_id: str, as_of: date, *, season: int = 2026,
 
 def has_team_data(as_of: date, *, db_path: Path = DB_PATH) -> bool:
     return not team_match_frame(as_of, db_path=db_path).empty
+
+
+# ------------------------------------------------------- MATCH-EVENT PATTERNS -
+def team_event_patterns(team_id: str, as_of: date, *, exclude_event_id: str | None = None,
+                        db_path: Path = DB_PATH) -> dict:
+    """Leakage-safe goal-timing and goal-source patterns for a team from collected
+    match events (strictly before ``as_of``, excluding the selected match).
+
+    Buckets: 0-15, 16-30, 31-45, 46-60, 61-75, 76-90+ (stoppage folded into its
+    half). "set_piece_share" combines set-piece + header goals (aerial/dead-ball
+    threat); penalties are counted separately. Own goals are excluded (ambiguous
+    attribution). Returns ``{"goals": n, ...}`` with 0 when no data.
+    """
+    empty = {"matches": 0, "goals": 0, "conceded": 0}
+    try:
+        with _connect(db_path) as conn:
+            ev = pd.read_sql_query(
+                "SELECT e.category, e.goal_source, e.bucket, e.team_id, "
+                "       m.event_id AS match_id, m.match_date "
+                "FROM mls_match_events e JOIN mls_matches m ON m.event_id = e.match_id "
+                "WHERE m.match_date < ? AND (m.home_team_id = ? OR m.away_team_id = ?)",
+                conn, params=(as_of.isoformat(), str(team_id), str(team_id)))
+    except Exception:
+        return empty
+    if ev.empty:
+        return empty
+    if exclude_event_id is not None:
+        ev = ev[ev["match_id"].astype(str) != str(exclude_event_id)]
+    n_matches = ev["match_id"].nunique()
+    goals = ev[ev["category"] == "goal"]
+    scored = goals[goals["team_id"].astype(str) == str(team_id)]
+    conceded = goals[(goals["team_id"].notna())
+                     & (goals["team_id"].astype(str) != str(team_id))]
+
+    def share(sub, bucket):
+        return (len(sub[sub["bucket"] == bucket]) / len(sub)) if len(sub) else None
+
+    ns = len(scored)
+    set_piece_goals = int(len(scored[scored["goal_source"].isin(["set_piece", "header"])]))
+    return {
+        "matches": int(n_matches),
+        "goals": ns,
+        "conceded": int(len(conceded)),
+        "early_scored_share": share(scored, "0-15"),
+        "late_scored_share": share(scored, "76-90+"),
+        "late_conceded_share": share(conceded, "76-90+"),
+        "set_piece_goals": set_piece_goals,
+        "set_piece_share": (set_piece_goals / ns) if ns else None,
+        "penalty_goals": int(len(scored[scored["goal_source"] == "penalty"])),
+    }
