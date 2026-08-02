@@ -28,6 +28,28 @@ from services import snapshots
 _ANALYSIS_LEAGUES = {"MLB", "WNBA"}
 
 
+def _mlb_import_affordance() -> None:
+    """Optional, non-blocking MLB workbook import (sidebar). Shown only when no MLB
+    data is loaded; the daily `update.command` / CLI path is the primary route, so
+    the app never dead-ends when the feed is absent (e.g. on a fresh/cloud deploy)."""
+    from pathlib import Path
+    from src.config import CURRENT_FEED
+    with st.expander("Load MLB data", expanded=False):
+        st.caption("Live schedules work without this. Load the MLB feed to enable "
+                   "1+ hit opportunities and the MLB matchup page.")
+        feed = st.text_input("MLB workbook path", value=str(CURRENT_FEED))
+        if st.button("Import workbook", type="primary", width="stretch"):
+            try:
+                from src.ingest import import_feed
+                _, summary = import_feed(Path(feed).expanduser())
+                st.success(f"Imported {summary['plate_appearances']:,} plate appearances "
+                           f"from {summary['games']:,} games.")
+                st.cache_data.clear()
+                st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
+
+
 def _logo_map(games: list[SlateGame]) -> dict[str, str]:
     """Map every team identifier (name/short/abbr) to its logo url."""
     out: dict[str, str] = {}
@@ -95,6 +117,8 @@ def render(nav: NavState) -> None:
         if st.button("Refresh cached data", width="stretch"):
             st.cache_data.clear()
             st.rerun()
+        if not fresh.mlb_through:
+            _mlb_import_affordance()
 
     # Fetch each league's slate (live -> cached -> error/empty).
     slates: dict[str, tuple[list[SlateGame], DataStatus]] = {}

@@ -194,6 +194,29 @@ The MLS collector is **incremental** (skips already-collected matches), validate
 Cup, Open Cup, Concacaf, friendlies, or playoffs). Re-run periodically to pick up new
 results.
 
+## Deploying to Streamlit Community Cloud (live-schedule build)
+
+The app boots against a schema-migrated database, creating an empty one if none
+exists — so it runs anywhere, including Streamlit Community Cloud, **without** the
+local MLB workbook. On a fresh deploy the live-schedule leagues (MLS, World Cup,
+and the MLB/WNBA schedules) work with just an internet connection; the MLB "1+ hit"
+and WNBA opportunity analysis show honest degraded/empty states until their data is
+loaded.
+
+To deploy:
+
+1. Push the repo to GitHub (the DB and vendor feeds are gitignored — nothing
+   sensitive is committed).
+2. At [share.streamlit.io](https://share.streamlit.io), create an app from the repo,
+   branch, and main file `app.py`. Set the Python version to 3.11+.
+3. It installs `requirements.txt` and launches. No secrets are required (the ESPN
+   endpoints are unauthenticated).
+
+Caveats: Community Cloud's filesystem is ephemeral, so any collected data written at
+runtime does not persist across restarts. For a build with real MLB/WNBA/MLS
+*analysis* (not just schedules), commit a prebuilt `sportshub.db` to a **private**
+repo, or run the collectors on a host with persistent storage.
+
 ## Troubleshooting
 
 ### “No dated MLB play-by-play workbook found”
