@@ -3,17 +3,20 @@
 Thin shell: configure the page, load styles, ensure schema, then route to the
 Today or Game view. All rendering, scoring, and league logic live in views/,
 components/, leagues/, and services/.
+
+The app always boots against a schema-migrated database, creating an empty one if
+none exists. Live-schedule leagues (MLS, World Cup, and MLB/WNBA schedules) work
+with only an internet connection; leagues whose historical data has not been
+loaded show honest degraded/empty states rather than blocking the whole app. This
+lets the app run anywhere (including Streamlit Community Cloud) without the local
+MLB workbook; loading that feed stays an optional sidebar/CLI action.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import streamlit as st
 
 from styles import load_css
-from src.config import DB_PATH, CURRENT_FEED
-from src.ingest import import_feed
 
 st.set_page_config(
     page_title="Sports Today",
@@ -24,36 +27,13 @@ st.set_page_config(
 load_css()
 
 
-def _first_run_import() -> None:
-    """Offer a one-time workbook import when no database exists yet."""
-    st.markdown('<div class="page-title">Today’s Sports Slate</div>', unsafe_allow_html=True)
-    st.warning("No Sports Today database exists yet.")
-    feed = st.text_input("Current MLB workbook", value=str(CURRENT_FEED))
-    if st.button("Import workbook", type="primary"):
-        try:
-            _, summary = import_feed(Path(feed).expanduser())
-            st.success(
-                f"Imported {summary['plate_appearances']:,} plate appearances "
-                f"from {summary['games']:,} games."
-            )
-            st.rerun()
-        except Exception as exc:
-            st.error(str(exc))
-
-
 def main() -> None:
-    if not DB_PATH.exists():
-        _first_run_import()
-        return
-
-    # Imports below require the DB / registry; keep them inside main so the
-    # first-run path stays lightweight.
     import leagues  # noqa: F401  (populates the adapter registry on import)
     from services.migrations import ensure_schema
     from router import read_nav
     from views import today, game
 
-    ensure_schema()
+    ensure_schema()  # creates the DB + additive tables if missing (empty is fine)
     nav = read_nav()
     if nav.in_game_view:
         game.render(nav)
