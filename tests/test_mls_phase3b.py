@@ -464,3 +464,145 @@ def test_storyline_three_states(monkeypatch):
     monkeypatch.setattr(B.R, "team_match_frame", lambda *a, **k: pd.DataFrame())
     p1 = B.build_mls_game_page(_game_records("5-5-5", "5-5-5"), date(2026, 6, 1), date(2026, 6, 1))
     assert p1.storylines.state is B.DataState.UNAVAILABLE
+
+
+# ============================================ match events (Option C) =========
+def _summary_with_events():
+    return {"keyEvents": [
+        {"id": "1", "type": {"text": "Yellow Card"}, "clock": {"displayValue": "7'"},
+         "period": {"number": 1}, "team": {"id": "100"},
+         "participants": [{"athlete": {"id": "9", "displayName": "Booker"}}]},
+        {"id": "2", "type": {"text": "Goal - Header"}, "clock": {"displayValue": "42'"},
+         "period": {"number": 1}, "team": {"id": "100"},
+         "text": "Goal! header from a corner.",
+         "participants": [{"athlete": {"id": "5", "displayName": "Scorer"}},
+                          {"athlete": {"id": "6", "displayName": "Assister"}}]},
+        {"id": "3", "type": {"text": "Penalty - Scored"}, "clock": {"displayValue": "45'+7'"},
+         "period": {"number": 1}, "team": {"id": "100"},
+         "text": "converts the penalty.",
+         "participants": [{"athlete": {"id": "7", "displayName": "Taker"}}]},
+        {"id": "4", "type": {"text": "Goal"}, "clock": {"displayValue": "88'"},
+         "period": {"number": 2}, "team": {"id": "200"},
+         "text": "left footed shot to the bottom right corner.",   # NOT a set piece
+         "participants": [{"athlete": {"id": "8", "displayName": "Late"}}]},
+        {"id": "5", "type": {"text": "Substitution"}, "clock": {"displayValue": "60'"},
+         "period": {"number": 2}, "team": {"id": "200"},
+         "participants": [{"athlete": {"id": "1", "displayName": "In"}},
+                          {"athlete": {"id": "2", "displayName": "Out"}}]},
+        {"id": "6", "type": {"text": "Kickoff"}, "clock": {"displayValue": ""}},  # skipped
+    ]}
+
+
+def test_parse_key_events_categories_and_sources():
+    ev = E.parse_key_events(_summary_with_events())
+    assert len(ev) == 5                                   # kickoff skipped
+    by = {e["seq"]: e for e in ev}
+    assert by["1"]["category"] == "card"
+    assert by["2"]["category"] == "goal" and by["2"]["goal_source"] == "set_piece"  # "from a corner"
+    assert by["3"]["category"] == "goal" and by["3"]["goal_source"] == "penalty"
+    # "bottom right corner" is shot placement, NOT a set piece
+    assert by["4"]["category"] == "goal" and by["4"]["goal_source"] == "open_play"
+    assert by["5"]["category"] == "sub"
+
+
+def test_parse_key_events_minute_buckets():
+    by = {e["seq"]: e for e in E.parse_key_events(_summary_with_events())}
+    assert by["1"]["bucket"] == "0-15"
+    assert by["2"]["minute"] == 42 and by["2"]["bucket"] == "31-45"
+    # first-half stoppage folds into 31-45 (not 46-60), stoppage captured
+    assert by["3"]["minute"] == 45 and by["3"]["stoppage"] == 7 and by["3"]["bucket"] == "31-45"
+    assert by["4"]["bucket"] == "76-90+"
+
+
+def test_parse_key_events_participants():
+    by = {e["seq"]: e for e in E.parse_key_events(_summary_with_events())}
+    assert by["2"]["primary_name"] == "Scorer" and by["2"]["secondary_name"] == "Assister"
+    assert by["5"]["primary_name"] == "In" and by["5"]["secondary_name"] == "Out"
+    assert by["1"]["secondary_name"] is None             # card has no second athlete
+
+
+def test_store_events_idempotent_and_fully_collected(tmp_path):
+    db = tmp_path / "ev.db"
+    with sqlite3.connect(db) as conn:
+        mls_store.ensure_tables(conn)
+        mls_store.upsert_team_stats(conn, [{"event_id": "M1", "team_id": "100"},
+                                           {"event_id": "M1", "team_id": "200"}])
+        # only team stats so far → not fully collected
+        assert mls_store.fully_collected_event_ids(conn) == set()
+        rows = [{"match_id": "M1", "seq": "1"}, {"match_id": "M1", "seq": "2"}]
+        mls_store.upsert_events(conn, rows)
+        mls_store.upsert_events(conn, rows)              # idempotent
+        conn.commit()
+        assert conn.execute("SELECT COUNT(*) FROM mls_match_events").fetchone()[0] == 2
+        assert mls_store.fully_collected_event_ids(conn) == {"M1"}
+
+
+def _seed_events_db(tmp_path):
+    """Team H scores late + from set pieces; concedes to O. Dated matches."""
+    db = tmp_path / "evrepo.db"
+    matches, events = [], []
+    for i, d in enumerate(["2026-03-01", "2026-03-08", "2026-03-15", "2026-03-22"]):
+        eid = f"E{i}"
+        matches.append({"event_id": eid, "match_date": d, "home_team_id": "H", "away_team_id": "O",
+                        "home_score": 2, "away_score": 1})
+        # H: one set-piece goal late (76-90+), one open-play; O: one goal 46-60
+        events += [
+            {"match_id": eid, "seq": f"{eid}a", "category": "goal", "goal_source": "set_piece",
+             "bucket": "76-90+", "team_id": "H"},
+            {"match_id": eid, "seq": f"{eid}b", "category": "goal", "goal_source": "open_play",
+             "bucket": "16-30", "team_id": "H"},
+            {"match_id": eid, "seq": f"{eid}c", "category": "goal", "goal_source": "open_play",
+             "bucket": "46-60", "team_id": "O"},
+        ]
+    with sqlite3.connect(db) as conn:
+        mls_store.ensure_tables(conn)
+        mls_store.upsert_matches(conn, matches)
+        mls_store.upsert_events(conn, events)
+        conn.commit()
+    return db
+
+
+def test_repository_event_patterns_leakage_and_shares(tmp_path):
+    db = _seed_events_db(tmp_path)
+    p = R.team_event_patterns("H", date(2026, 5, 1), db_path=db)
+    assert p["matches"] == 4 and p["goals"] == 8 and p["conceded"] == 4
+    assert p["set_piece_share"] == pytest.approx(0.5)     # 4 of 8 set-piece
+    assert p["late_scored_share"] == pytest.approx(0.5)   # 4 of 8 in 76-90+
+    # leakage-safe: strictly before the date, and exclusion works
+    early = R.team_event_patterns("H", date(2026, 3, 16), db_path=db)
+    assert early["goals"] == 6                            # E0,E1,E2 (E3 on 03-22 excluded)
+    excl = R.team_event_patterns("H", date(2026, 5, 1), exclude_event_id="E0", db_path=db)
+    assert excl["goals"] == 6                             # selected match removed
+
+
+def test_event_timeline_cues_and_storylines():
+    home = {"goals": 20, "conceded": 14, "early_scored_share": 0.10, "late_scored_share": 0.40,
+            "late_conceded_share": 0.20, "set_piece_share": 0.40, "set_piece_goals": 8}
+    away = {"goals": 18, "conceded": 20, "early_scored_share": 0.25, "late_scored_share": 0.10,
+            "late_conceded_share": 0.40, "set_piece_share": 0.15, "set_piece_goals": 3}
+    cues = A.event_timeline_cues("Home", "Away", home, away)
+    assert "Late match" in cues and "Home score late" in cues["Late match"]
+    assert "0–15'" in cues and "Away start fast" in cues["0–15'"]
+    stories = A.event_storylines("Home", "Away", home, away)
+    ids = {s.rule_id for s in stories}
+    assert "SET_PIECE_THREAT" in ids and "LATE_GOALS" in ids and "LATE_LEAK" in ids
+    # min-sample gate: too few goals → nothing
+    assert A.event_storylines("Home", "Away", {"goals": 5, "conceded": 5}, {"goals": 5}) == []
+
+
+def test_builder_wires_event_cues(monkeypatch):
+    from services import mls_game_page as B
+    frame = _sim_frame()   # even teams → weak team storylines, so event stories rank in
+    monkeypatch.setattr(B.R, "team_match_frame", lambda *a, **k: frame)
+    monkeypatch.setattr(B.R, "standings_lookup", lambda *a, **k: None)
+    monkeypatch.setattr(B.R, "team_event_patterns", lambda tid, *a, **k: (
+        {"goals": 20, "conceded": 14, "early_scored_share": 0.10, "late_scored_share": 0.40,
+         "late_conceded_share": 0.20, "set_piece_share": 0.40, "set_piece_goals": 8}
+        if tid == "H" else
+        {"goals": 16, "conceded": 20, "early_scored_share": 0.12, "late_scored_share": 0.15,
+         "late_conceded_share": 0.20, "set_piece_share": 0.15, "set_piece_goals": 2}))
+    page = B.build_mls_game_page(_real_game(), date(2026, 6, 1), date(2026, 6, 1))
+    # a timeline phase now carries a data cue, and a set-piece event storyline surfaces
+    assert any(ph.kind == "data" for ph in page.timeline.phases)
+    assert any("set pieces" in s.title or "finish strong" in s.title for s in page.storylines.items)
+    assert "Match events are used at a basic level" in [g.label for g in page.honest_gaps.items]

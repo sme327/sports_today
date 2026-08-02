@@ -1064,3 +1064,9 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   border-radius: var(--r-md); background: var(--surface-1); box-shadow: var(--edge-hi), var(--shadow-sm);
   color: var(--text-2); font-size: .86rem; line-height: 1.4; }
 .mls-similar .mlb-ic { flex: 0 0 auto; width: 18px; height: 18px; color: var(--brand-2); }
+
+/* MLS Option C — data-driven "What to Watch" cues (from collected match events). */
+.mls-tl-item.data .mls-tl-body::before { background: var(--brand); box-shadow: 0 0 0 3px var(--bg), 0 0 8px var(--brand-ring); }
+.mls-tl-guide.data { color: var(--text-2); }
+.mls-tl-tag { margin-left: .5rem; padding: .08rem .4rem; border-radius: var(--r-pill); background: var(--brand-soft);
+  color: var(--brand-2); font-size: .56rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: middle; }

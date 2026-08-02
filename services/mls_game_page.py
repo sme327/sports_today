@@ -391,15 +391,21 @@ _TIMELINE = [
 ]
 
 
-def _build_timeline() -> MLSTimeline:
-    phases = tuple(MLSTimelinePhase(marker=m, title=t, guidance=g, kind="generic")
-                   for m, t, g in _TIMELINE)
-    return MLSTimeline(
-        state=DataState.AVAILABLE,
-        phases=phases,
-        note=("A general match-watching guide. Team-specific tactical cues arrive "
-              "with the tactical model."),
+def _build_timeline(cues: dict | None = None) -> MLSTimeline:
+    """Generic match-watching guide, with any phase enriched by a real,
+    data-driven cue (from collected match events) replacing the generic line."""
+    cues = cues or {}
+    phases = tuple(
+        MLSTimelinePhase(marker=m, title=t, guidance=cues[m], kind="data") if m in cues
+        else MLSTimelinePhase(marker=m, title=t, guidance=g, kind="generic")
+        for m, t, g in _TIMELINE
     )
+    note = ("Cues marked from recent matches are team-specific goal-timing tendencies "
+            "(a small sample); the rest is general match-watching guidance."
+            if cues else
+            "A general match-watching guide. Team-specific tactical cues arrive with "
+            "more collected data.")
+    return MLSTimeline(state=DataState.AVAILABLE, phases=phases, note=note)
 
 
 # ======================================================================
@@ -556,14 +562,27 @@ def _build_honest_gaps(hero: MLSHero, has_team_data: bool = False,
         MLSHonestGap("No expected goals or tracking",
                      "Expected goals (xG), shot maps, and pressing/heat-map data require an "
                      "advanced provider that is not wired in."),
-        MLSHonestGap("No match-event timing",
-                     "Goal, card, and substitution timing is collected by the provider but not "
-                     "analyzed yet, so the What-to-Watch guide stays general."),
+        MLSHonestGap("Match events are used at a basic level",
+                     "Goal/card timing powers simple timeline cues and storylines (a small "
+                     "sample); detailed event sequences, passing networks, and shot maps are not modeled."),
     ]
     return MLSHonestGaps(items=tuple(gaps))
 
 
 # ----------------------------------------------------------------- BUILD ------
+def _dedup_by_theme(stories: list) -> list:
+    """Strongest-first, one storyline per theme (merges team-stat + event stories)."""
+    stories = sorted(stories, key=lambda s: s.strength, reverse=True)
+    seen: set[str] = set()
+    out = []
+    for s in stories:
+        if s.theme in seen:
+            continue
+        seen.add(s.theme)
+        out.append(s)
+    return out
+
+
 def build_mls_game_page(game: SlateGame, slate_date: date, as_of: date) -> MLSGamePage:
     home_id, away_id = game.home_id, game.away_id
     home_standing = R.standings_lookup(home_id, as_of) if home_id else None
@@ -602,15 +621,23 @@ def build_mls_game_page(game: SlateGame, slate_date: date, as_of: date) -> MLSGa
             home_standing=home_standing, away_standing=away_standing,
             home_home_ppm=ha_home.get("ppm"), away_away_ppm=aa_away.get("ppm"))
 
+        # Match-event signals (Option C): goal-timing/source patterns → timeline
+        # cues + storylines merged with the team-stat storylines (deduped by theme).
+        home_ep = R.team_event_patterns(home_id, as_of, exclude_event_id=game.game_id)
+        away_ep = R.team_event_patterns(away_id, as_of, exclude_event_id=game.game_id)
+        event_stories = A.event_storylines(hero.home.short, hero.away.short, home_ep, away_ep)
+        combined = _dedup_by_theme(list(story_objs) + list(event_stories))[:5]
+        cues = A.event_timeline_cues(hero.home.short, hero.away.short, home_ep, away_ep)
+
         snapshot = _build_snapshot_real(hero, ha, aa, ha_home.get("ppm"), aa_away.get("ppm"))
         tactical = _build_tactical_real(hero, dims, similar)
-        storylines = _build_storylines_state(story_objs, ha["matches"], aa["matches"], hero)
+        storylines = _build_storylines_state(combined, ha["matches"], aa["matches"], hero)
         attacking = _build_attacking_real(hero, ha, aa)
         discipline = _build_discipline_real(hero, ha, aa)
         honest = _build_honest_gaps(hero, has_team_data=True, n_matches=min(ha["matches"], aa["matches"]))
-        detail = (f"Team match stats from ESPN MLS, strictly before {as_of.isoformat()} "
+        detail = (f"Team match stats + events from ESPN MLS, strictly before {as_of.isoformat()} "
                   f"({hero.home.short} {ha['matches']} matches, {hero.away.short} {aa['matches']}). "
-                  f"Standings snapshot included. No player, event, or tracking data yet.")
+                  f"Standings snapshot included. No player or tracking data yet.")
     else:
         snapshot = _build_snapshot(hero)
         tactical = _build_tactical()
@@ -618,6 +645,7 @@ def build_mls_game_page(game: SlateGame, slate_date: date, as_of: date) -> MLSGa
         attacking = _build_attacking(hero)
         discipline = _build_discipline()
         honest = _build_honest_gaps(hero, has_team_data=False)
+        cues = {}
         detail = ("Live from the ESPN MLS feed: teams, records, recent form, colors, and "
                   f"kickoff. Team match stats not yet collected for these clubs. As of {as_of.isoformat()}.")
 
@@ -632,7 +660,7 @@ def build_mls_game_page(game: SlateGame, slate_date: date, as_of: date) -> MLSGa
         players=_build_players(),
         attacking=attacking,
         discipline=discipline,
-        timeline=_build_timeline(),
+        timeline=_build_timeline(cues),
         honest_gaps=honest,
         data_status=data_status,
         generated_at=datetime.now().isoformat(timespec="seconds"),

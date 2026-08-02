@@ -276,11 +276,14 @@ def discipline_html(d: MLSDiscipline) -> str:
 def timeline_html(t: MLSTimeline) -> str:
     items = []
     for ph in t.phases:
+        data = ph.kind == "data"
+        tag = '<span class="mls-tl-tag">from recent matches</span>' if data else ""
+        guide_cls = "mls-tl-guide data" if data else "mls-tl-guide"
         items.append(
-            f'<div class="mls-tl-item">'
+            f'<div class="mls-tl-item{" data" if data else ""}">'
             f'<div class="mls-tl-marker">{escape(ph.marker)}</div>'
-            f'<div class="mls-tl-body"><div class="mls-tl-title">{escape(ph.title)}</div>'
-            f'<div class="mls-tl-guide">{escape(ph.guidance)}</div></div></div>')
+            f'<div class="mls-tl-body"><div class="mls-tl-title">{escape(ph.title)}{tag}</div>'
+            f'<div class="{guide_cls}">{escape(ph.guidance)}</div></div></div>')
     note = f'<div class="mls-note">{escape(t.note)}</div>'
     return _section("What to Watch", f'<div class="mls-tl">{"".join(items)}</div>{note}',
                     "timeline", t.state)

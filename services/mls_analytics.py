@@ -253,3 +253,75 @@ def storylines(home_name: str, away_name: str, *, home_agg: dict, away_agg: dict
 def _ord(n: int) -> str:
     suf = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suf}"
+
+
+# ---------------------------------------------- MATCH-EVENT SIGNALS (Option C) -
+# Goal-timing/source shares are a smallish sample (~12–40 goals per club), so
+# these are Low-confidence, threshold-gated, and always cite the count.
+EVENT_MIN_GOALS = 12          # minimum scored goals to read a scoring pattern
+EVENT_MIN_CONCEDED = 12       # minimum conceded goals to read a defensive pattern
+
+
+def _pcts(x) -> str:
+    return f"{round(100 * x)}%" if x is not None else "—"
+
+
+def event_timeline_cues(home_name: str, away_name: str,
+                        home_p: dict, away_p: dict) -> dict:
+    """Data-driven cues keyed by "What to Watch" phase marker. Only phases with a
+    real, sufficiently-sampled tendency get a cue; the rest stay generic."""
+    cues: dict[str, str] = {}
+
+    opens = []
+    for name, p in ((home_name, home_p), (away_name, away_p)):
+        if p.get("goals", 0) >= EVENT_MIN_GOALS and (p.get("early_scored_share") or 0) >= 0.22:
+            opens.append(f"{name} start fast ({_pcts(p['early_scored_share'])} of goals in the first 15')")
+    if opens:
+        cues["0–15'"] = "Watch the openings — " + "; ".join(opens) + "."
+
+    lates = []
+    for name, p in ((home_name, home_p), (away_name, away_p)):
+        if p.get("goals", 0) >= EVENT_MIN_GOALS and (p.get("late_scored_share") or 0) >= 0.30:
+            lates.append(f"{name} score late ({_pcts(p['late_scored_share'])} of goals after 75')")
+    for name, p in ((home_name, home_p), (away_name, away_p)):
+        if p.get("conceded", 0) >= EVENT_MIN_CONCEDED and (p.get("late_conceded_share") or 0) >= 0.35:
+            lates.append(f"{name} have leaked late ({_pcts(p['late_conceded_share'])} of goals conceded after 75')")
+    if lates:
+        cues["Late match"] = "Late goals have been a theme — " + "; ".join(lates) + "."
+    return cues
+
+
+def event_storylines(home_name: str, away_name: str,
+                     home_p: dict, away_p: dict) -> list[Storyline]:
+    """Deterministic storylines from goal-timing/source patterns. Low confidence
+    (small goal sample); each cites its counts. Deduped by theme by the caller."""
+    out: list[Storyline] = []
+    for name, p in ((home_name, home_p), (away_name, away_p)):
+        g, c = p.get("goals", 0), p.get("conceded", 0)
+        if g >= EVENT_MIN_GOALS and (p.get("set_piece_share") or 0) >= 0.32:
+            out.append(Storyline(
+                "SET_PIECE_THREAT", f"{name} are dangerous from set pieces",
+                f"{name} have scored {p['set_piece_goals']} of their {g} goals from set "
+                f"pieces or headers ({_pcts(p['set_piece_share'])}).",
+                (f"{p['set_piece_goals']}/{g} set-piece/header goals",), "Low", "up", 1.1, "set_piece"))
+        if g >= EVENT_MIN_GOALS and (p.get("late_scored_share") or 0) >= 0.33:
+            out.append(Storyline(
+                "LATE_GOALS", f"{name} finish strong",
+                f"{name} score {_pcts(p['late_scored_share'])} of their goals after the 75th minute.",
+                (f"late goals: {_pcts(p['late_scored_share'])} of {g}",), "Low", "up", 1.0, "late_scoring"))
+        if c >= EVENT_MIN_CONCEDED and (p.get("late_conceded_share") or 0) >= 0.38:
+            out.append(Storyline(
+                "LATE_LEAK", f"{name} have been vulnerable late",
+                f"{name} have conceded {_pcts(p['late_conceded_share'])} of their goals "
+                f"after the 75th minute.",
+                (f"late conceded: {_pcts(p['late_conceded_share'])} of {c}",), "Low", "down", 1.0, "late_defense"))
+    # Dedup by theme (keep the strongest per theme).
+    out.sort(key=lambda s: s.strength, reverse=True)
+    seen: set[str] = set()
+    unique: list[Storyline] = []
+    for s in out:
+        if s.theme in seen:
+            continue
+        seen.add(s.theme)
+        unique.append(s)
+    return unique

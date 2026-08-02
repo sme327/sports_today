@@ -188,7 +188,7 @@ def collect(*, season: int = 2026, start: date | None = None, end: date | None =
 
     with sqlite3.connect(db_path) as conn:
         mls_store.ensure_tables(conn)
-        already = mls_store.collected_event_ids(conn) if not force else set()
+        already = mls_store.fully_collected_event_ids(conn) if not force else set()
 
         log(f"→ Discovering MLS events {start} … {end}")
         events = discover_events(start, end, session=session)
@@ -205,6 +205,12 @@ def collect(*, season: int = 2026, start: date | None = None, end: date | None =
                 match_row, team_rows = validate_and_build(e, summary, started_at)
                 mls_store.upsert_matches(conn, [match_row])
                 mls_store.upsert_team_stats(conn, team_rows)
+                # Match events come from the same payload (no extra request).
+                event_rows = espn_soccer.parse_key_events(summary)
+                for ev in event_rows:
+                    ev["match_id"] = gid
+                    ev["collected_at"] = started_at
+                mls_store.upsert_events(conn, [ev for ev in event_rows if ev.get("seq")])
                 conn.commit()
                 collected += 1
                 log(f"  ✓ {match_row['match_date']} {e.get('away')} {e.get('away_score')}"
@@ -257,6 +263,7 @@ def _write_csv_mirror(conn: sqlite3.Connection) -> None:
     MLS_DATA_DIR.mkdir(parents=True, exist_ok=True)
     for table, name in (("mls_matches", "mls_matches.csv"),
                         ("mls_team_match_stats", "mls_team_match_stats.csv"),
+                        ("mls_match_events", "mls_match_events.csv"),
                         ("mls_standings", "mls_standings.csv")):
         try:
             pd.read_sql_query(f"SELECT * FROM {table}", conn).to_csv(

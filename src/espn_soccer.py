@@ -347,3 +347,109 @@ def parse_standings(standings_payload: dict) -> list[dict]:
                 "goal_difference": _stat(e, "pointDifferential"),
             })
     return rows
+
+
+# --------------------------------------------------- match events (Option C) --
+def _event_category(type_text: str) -> str | None:
+    """Coarse category, or None to skip (kickoff, halftime, VAR, …)."""
+    low = (type_text or "").lower()
+    if "yellow card" in low or "red card" in low:
+        return "card"
+    if "substitution" in low:
+        return "sub"
+    if "own goal" in low:
+        return "own_goal"
+    if "penalty" in low and "scored" not in low:      # missed/saved penalty
+        return "penalty_miss"
+    if "goal" in low or ("penalty" in low and "scored" in low):
+        return "goal"
+    return None
+
+
+_SET_PIECE_PHRASES = (
+    "following a corner", "from a corner", "corner kick", "following a set piece",
+    "from a free kick", "direct free kick", "set piece", "set-piece",
+)
+
+
+def _goal_source(type_text: str, text: str) -> str:
+    """Honest goal-source category from the structured type + the provider
+    sentence. Precise phrase matching only — bare "corner" is avoided because the
+    provider also uses it for shot placement ("bottom right corner").
+
+    penalty → set_piece → header → open_play (priority order).
+    """
+    low_t, txt = (type_text or "").lower(), (text or "").lower()
+    if "penalty" in low_t:
+        return "penalty"
+    if "free-kick" in low_t or any(ph in txt for ph in _SET_PIECE_PHRASES):
+        return "set_piece"
+    if "header" in low_t:
+        return "header"
+    return "open_play"
+
+
+def _minute_bucket(clock_display: str, period) -> tuple[int | None, int, str | None]:
+    """Parse a clock like "47'", "45'+7'", "90'+1'" → (base minute, stoppage,
+    half-aware bucket). Stoppage time is bucketed to the end of its half."""
+    s = (clock_display or "").replace("'", "").strip()
+    if not s:
+        return (None, 0, None)
+    stoppage = 0
+    if "+" in s:
+        base_s, extra_s = s.split("+", 1)
+        base, stoppage = _int(base_s), (_int(extra_s) or 0)
+        bucket = "31-45" if period == 1 else "76-90+"
+    else:
+        base = _int(s)
+        if base is None:
+            return (None, 0, None)
+        bucket = ("0-15" if base <= 15 else "16-30" if base <= 30 else "31-45"
+                  if base <= 45 else "46-60" if base <= 60 else "61-75"
+                  if base <= 75 else "76-90+")
+    return (base, stoppage, bucket)
+
+
+def parse_key_events(summary_payload: dict) -> list[dict]:
+    """Normalized goal/card/substitution events from a summary payload.
+
+    Each row carries the minute + half-aware bucket, the event's team id, a goal
+    source proxy (open_play / set_piece / penalty), and the involved athletes
+    (scorer + assist, or sub in + out, or carded player). Non-material events
+    (kickoff, halftime, VAR reviews) are skipped. `match_id` is filled by the
+    collector.
+    """
+    rows: list[dict] = []
+    for e in summary_payload.get("keyEvents") or []:
+        type_text = (e.get("type") or {}).get("text") or ""
+        category = _event_category(type_text)
+        if category is None:
+            continue
+        base, stoppage, bucket = _minute_bucket(
+            (e.get("clock") or {}).get("displayValue"), (e.get("period") or {}).get("number"))
+        participants = e.get("participants") or []
+
+        def athlete(i: int) -> tuple[str | None, str | None]:
+            if i < len(participants):
+                a = participants[i].get("athlete") or {}
+                return (str(a.get("id")) if a.get("id") else None, a.get("displayName"))
+            return (None, None)
+
+        p1, p2 = athlete(0), athlete(1)
+        rows.append({
+            "match_id": None,
+            "seq": str(e.get("id")) if e.get("id") is not None else None,
+            "type": type_text,
+            "category": category,
+            "goal_source": _goal_source(type_text, e.get("text") or "")
+            if category == "goal" else None,
+            "minute": base,
+            "stoppage": stoppage,
+            "period": (e.get("period") or {}).get("number"),
+            "bucket": bucket,
+            "team_id": str((e.get("team") or {}).get("id"))
+            if (e.get("team") or {}).get("id") else None,
+            "primary_id": p1[0], "primary_name": p1[1],      # scorer / carded / sub-in
+            "secondary_id": p2[0], "secondary_name": p2[1],  # assist / sub-out
+        })
+    return rows
