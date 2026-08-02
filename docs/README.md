@@ -31,7 +31,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | Document | Read it for |
 | --- | --- |
 | [Architecture](engineering/ARCHITECTURE.md) | Structure, layers, "where to add X", glossary. |
-| [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks. |
+| [MLB Matchup Page — Handoff](engineering/MLB_MATCHUP_PAGE_HANDOFF.md) | Pick-up-and-go briefing: what the MLB page shows, why, and where to refine/expand. Start here. |
+| [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks (deeper reference). |
 | [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
 | [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
 | [MLS Provider Audit](engineering/MLS_PHASE3A_PROVIDER_AUDIT.md) | What ESPN provides for MLS, field reliability, and what to collect next. |
