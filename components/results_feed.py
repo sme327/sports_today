@@ -18,6 +18,10 @@ def _actual_display(row: dict) -> str:
         return "pending"
     market = (row.get("market") or "").lower()
     n = int(val) if float(val).is_integer() else val
+    if "strikeout" in market:
+        return f"{n} K"
+    if "hits allowed" in market:
+        return f"{n} hits allowed"
     if "hit" in market:
         return f"{n} hit" if n == 1 else f"{n} hits"
     if "point" in market:

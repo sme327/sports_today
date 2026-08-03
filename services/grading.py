@@ -61,11 +61,12 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
             return summary
 
         mlb = _mlb_hits(conn, token)          # {batter_id: total_hits}
+        mlb_sp = _mlb_pitcher_lines(conn, token)  # {pitcher_id: {k, hits}} for starters
         wnba = _wnba_lines(conn, token)       # {player_id: {points, rebounds, assists, minutes}}
         graded_at = datetime.now().isoformat(timespec="seconds")
 
         for r in rows:
-            result, actual = _grade_row(r, mlb, wnba)
+            result, actual = _grade_row(r, mlb, mlb_sp, wnba)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
                 continue
@@ -78,12 +79,23 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
     return summary
 
 
-def _grade_row(r, mlb: dict, wnba: dict) -> tuple[str | None, float | None]:
+def _grade_row(r, mlb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, float | None]:
     league = r["league"]
     threshold = r["threshold"]
     pid = str(r["player_id"])
     if league == "MLB":
-        if pid not in mlb:
+        market = (r["market"] or "").lower()
+        if "strikeout" in market:          # SP strikeouts — over
+            line = mlb_sp.get(pid)
+            if line is None:
+                return "void", None        # did not start
+            return ("hit" if line["k"] >= (threshold or 0) else "miss"), float(line["k"])
+        if "hits allowed" in market:       # SP hits allowed — under
+            line = mlb_sp.get(pid)
+            if line is None:
+                return "void", None
+            return ("hit" if line["hits"] <= (threshold or 0) else "miss"), float(line["hits"])
+        if pid not in mlb:                  # batter 1+ Hit
             return "void", None            # did not bat that day
         hits = mlb[pid]
         return ("hit" if hits >= (threshold or 1) else "miss"), float(hits)
@@ -109,10 +121,33 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
 def _mlb_hits(conn: sqlite3.Connection, token: str) -> dict:
     if not _table_exists(conn, "plate_appearances"):
         return {}
-    rows = conn.execute(
-        "SELECT CAST(batter_id AS TEXT) AS bid, SUM(is_hit) AS hits "
-        "FROM plate_appearances WHERE game_date = ? GROUP BY batter_id", (token,)).fetchall()
+    try:                                       # tolerate a table missing batter columns
+        rows = conn.execute(
+            "SELECT CAST(batter_id AS TEXT) AS bid, SUM(is_hit) AS hits "
+            "FROM plate_appearances WHERE game_date = ? GROUP BY batter_id", (token,)).fetchall()
+    except sqlite3.OperationalError:
+        return {}
     return {r["bid"]: int(r["hits"] or 0) for r in rows}
+
+
+def _mlb_pitcher_lines(conn: sqlite3.Connection, token: str) -> dict:
+    """Per-pitcher K's and hits allowed that day, for pitchers who **started**
+    (had a plate appearance in the 1st inning). ``{pitcher_id: {k, hits}}``."""
+    if not _table_exists(conn, "plate_appearances"):
+        return {}
+    try:                                       # tolerate a table missing pitcher columns
+        started = {str(r[0]) for r in conn.execute(
+            "SELECT DISTINCT pitcher_id FROM plate_appearances "
+            "WHERE game_date = ? AND inning IN ('1T', '1B')", (token,))}
+        if not started:
+            return {}
+        rows = conn.execute(
+            "SELECT CAST(pitcher_id AS TEXT) AS pid, SUM(is_strikeout) AS k, SUM(is_hit) AS hits "
+            "FROM plate_appearances WHERE game_date = ? GROUP BY pitcher_id", (token,)).fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    return {r["pid"]: {"k": int(r["k"] or 0), "hits": int(r["hits"] or 0)}
+            for r in rows if r["pid"] in started}
 
 
 def _wnba_lines(conn: sqlite3.Connection, token: str) -> dict:
