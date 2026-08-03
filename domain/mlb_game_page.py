@@ -117,6 +117,42 @@ class MLBStoryline:
 
 
 @dataclass(frozen=True)
+class MLBBatterTrend:
+    """A confidence-building recent-form card for a batter (enriched trend)."""
+    player_id: str
+    name: str
+    team: str
+    headshot_url: str | None
+    category: str                    # "Heating up" | "Cooling off" | "High conviction"
+    tone: str                        # "up" | "down" | "neutral"
+    dots: tuple[int, ...]            # per-game 1+ hit (1/0), oldest → newest
+    windows: tuple[tuple[str, str], ...]   # ("L5", "4 / 5"), ("L10", "8 / 10"), …
+    hit_streak: int
+    line: str                        # e.g. "1+ Hit · Score 92"
+    support: tuple[str, ...]
+    risks: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class MLBPitcherTrend:
+    """Per-start trend card for a probable starting pitcher."""
+    pitcher_id: str
+    name: str
+    team: str
+    headshot_url: str | None
+    k_spark: tuple[int, ...]         # K's per start, oldest → newest
+    hits_spark: tuple[int, ...]      # hits allowed per start, oldest → newest
+    k_avg: float
+    hits_avg: float
+    k_pct: float | None              # season strikeout rate (per PA)
+    k_dir: str                       # "up" | "down" | "steady"
+    hits_dir: str
+    starts: int
+    props: tuple[str, ...]           # served SP props, e.g. "7+ K — 4 of last 5"
+    caveat: str
+
+
+@dataclass(frozen=True)
 class MLBGamePage:
     hero: MLBGameHero
     game_story: tuple[str, ...]
@@ -131,3 +167,7 @@ class MLBGamePage:
     data_status: DataStatus
     generated_at: str
     as_of: str
+    # Trend spotlights (added later): per-start SP trends + enriched batter trends
+    # (heating/cooling + our ≥90 high-conviction picks).
+    pitcher_trends: tuple[MLBPitcherTrend, ...] = ()
+    batter_trends: tuple[MLBBatterTrend, ...] = ()

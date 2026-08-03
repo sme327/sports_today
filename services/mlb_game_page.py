@@ -568,6 +568,8 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
                                game.meta.get("away_pitcher"), game.meta.get("home_pitcher"))
     heating, cooling = _build_trends(pa, [away, home])
     opportunities = _build_opportunities(pa, game, [away, home])
+    pitcher_trends, batter_trends = _build_spotlights(
+        pa, away_pid, home_pid, opportunities, heating, cooling)
     away_dom, home_dom = _starter_dominance(ptable, away_pid), _starter_dominance(ptable, home_pid)
     a_form = away_ident.metrics[-1].trend_direction
     h_form = home_ident.metrics[-1].trend_direction
@@ -582,4 +584,41 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
         key_matchups=tuple(matchups), heating_up=heating, cooling_off=cooling,
         opportunities=opportunities, game_shape=shape, storylines=storylines,
         data_status=data_status, generated_at=datetime.now().isoformat(timespec="seconds"),
-        as_of=as_of.isoformat())
+        as_of=as_of.isoformat(), pitcher_trends=pitcher_trends, batter_trends=batter_trends)
+
+
+# Confidence-building trend spotlights: per-start SP trends for both probables, and
+# enriched batter trends for our ≥90 picks plus the strongest heating/cooling movers.
+_CONVICTION_SCORE = 90
+
+
+def _build_spotlights(pa, away_pid, home_pid, opportunities, heating, cooling):
+    from services import mlb_trends as TR
+    pitcher_trends = tuple(t for t in (TR.pitcher_trend(pa, pid)
+                                       for pid in (away_pid, home_pid) if pid) if t)
+    batter: list = []
+    seen: set[str] = set()
+
+    def add(pid, category, tone, line, support, risks):
+        if pid in seen:
+            return
+        t = TR.batter_trend(pa, pid, category, tone, line, support, risks)
+        if t:
+            batter.append(t)
+            seen.add(pid)
+
+    conviction = 0
+    for o in opportunities:                        # our high-conviction picks lead
+        if o.opportunity_score >= _CONVICTION_SCORE and conviction < 6:
+            before = len(batter)
+            add(o.player_id, "High conviction", "neutral",
+                f"{o.market} · Score {o.opportunity_score}",
+                list(o.supporting_evidence), list(o.negative_evidence))
+            conviction += len(batter) - before
+    for p in heating[:3]:
+        add(p.player_id, "Heating up", "up", p.recent_summary or "Trending up",
+            [p.explanation], [])
+    for p in cooling[:3]:
+        add(p.player_id, "Cooling off", "down", p.recent_summary or "Cooling off",
+            [], [p.explanation])
+    return pitcher_trends, tuple(batter)

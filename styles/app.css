@@ -1150,3 +1150,62 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .result-meta { text-align: right; }
 .result-actual { color: var(--text-1); font-size: .86rem; font-weight: 750; font-variant-numeric: tabular-nums; }
 .result-score { color: var(--text-4); font-size: .68rem; font-variant-numeric: tabular-nums; }
+
+/* ============================================================================
+   MLB TREND SPOTLIGHTS — pitcher per-start trends + enriched batter trends
+   ========================================================================== */
+.mlb-ptrend-grid, .mlb-btrend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.mlb-ptrend-card, .mlb-btrend-card { padding: .9rem 1rem; border-radius: var(--r-md);
+  background: linear-gradient(160deg, var(--surface-1-top), var(--surface-1));
+  box-shadow: var(--edge-hi), var(--shadow-sm); }
+
+.mlb-trend-tag.sp { color: var(--brand-2); background: var(--brand-soft); }
+
+/* Pitcher: two sparkline rows (K's, hits allowed). */
+.mlb-ptrend-row { display: grid; grid-template-columns: 74px 1fr auto; align-items: center;
+  gap: .55rem; padding: .3rem 0; }
+.mlb-ptrend-row + .mlb-ptrend-row { border-top: 1px solid var(--hairline); }
+.mlb-ptrend-row.k { color: var(--brand-2); }
+.mlb-ptrend-row.h { color: var(--text-3); }
+.mlb-ptrend-k { color: var(--text-3); font-size: .72rem; font-weight: 600; }
+.mlb-spark { width: 100%; height: 22px; display: block; }
+.mlb-spark-flat { display: block; height: 1px; background: var(--hairline); }
+.mlb-ptrend-v { color: var(--text-1); font-size: .76rem; font-weight: 750; font-variant-numeric: tabular-nums;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: .25rem; }
+.mlb-ptrend-dir .mlb-ic { width: 13px; height: 13px; }
+.mlb-ptrend-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  margin-top: .55rem; flex-wrap: wrap; }
+.mlb-ptrend-kpct { color: var(--text-4); font-size: .7rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mlb-ptrend-caveat { color: var(--text-4); font-size: .68rem; line-height: 1.4; margin-top: .5rem; }
+
+/* Batter: per-game 1+ hit dot row + L5/L10/L25 windows + streak + evidence. */
+.mlb-btrend-card.up { border-left: 3px solid var(--green); }
+.mlb-btrend-card.down { border-left: 3px solid var(--red); }
+.mlb-btrend-card.neutral { border-left: 3px solid var(--brand); }
+.mlb-cat { margin-left: auto; padding: .18rem .5rem; border-radius: var(--r-pill);
+  font-size: .6rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.mlb-cat.up { color: var(--green); background: rgba(107,198,143,.13); }
+.mlb-cat.down { color: var(--red); background: rgba(239,142,134,.13); }
+.mlb-cat.neutral { color: var(--brand-2); background: var(--brand-soft); }
+.mlb-btrend-dots { display: flex; align-items: center; gap: .6rem; margin: .6rem 0 .5rem; }
+.mlb-dot-row { display: inline-flex; gap: 3px; }
+.mlb-dot { width: 11px; height: 11px; border-radius: 50%; }
+.mlb-dot.hit { background: var(--green); box-shadow: var(--edge-hi); }
+.mlb-dot.miss { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--hairline-2); }
+.mlb-btrend-legend { color: var(--text-4); font-size: .62rem; }
+.mlb-btrend-wins { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.mlb-win { display: inline-flex; align-items: baseline; gap: .3rem; padding: .18rem .5rem;
+  border-radius: var(--r-sm); background: var(--surface-2); box-shadow: var(--edge-hi); }
+.mlb-win .k { color: var(--text-4); font-size: .6rem; font-weight: 700; text-transform: uppercase; }
+.mlb-win .v { color: var(--text-1); font-size: .8rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.mlb-streak { color: var(--brand-2); font-size: .72rem; font-weight: 700; }
+.mlb-btrend-sup, .mlb-btrend-risk { display: flex; align-items: center; gap: .35rem; font-size: .76rem;
+  line-height: 1.4; margin-top: .5rem; }
+.mlb-btrend-sup { color: var(--text-2); }
+.mlb-btrend-sup .mlb-ic { color: var(--green); width: 14px; height: 14px; }
+.mlb-btrend-risk { color: var(--text-3); }
+.mlb-btrend-risk .mlb-ic { color: var(--red); width: 14px; height: 14px; }
+
+@media (max-width: 860px) {
+  .mlb-ptrend-grid, .mlb-btrend-grid { grid-template-columns: 1fr; }
+}
