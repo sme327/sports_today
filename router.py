@@ -14,6 +14,7 @@ class NavState:
     slate_date: date
     league: str | None
     game_id: str | None
+    games_collapsed: bool = False   # Today page: schedule grid collapsed (?games=off)
 
     @property
     def in_game_view(self) -> bool:
@@ -30,4 +31,5 @@ def read_nav() -> NavState:
         slate_date=slate,
         league=st.query_params.get("league"),
         game_id=st.query_params.get("game"),
+        games_collapsed=st.query_params.get("games") == "off",
     )
