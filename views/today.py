@@ -13,7 +13,7 @@ import streamlit as st
 
 from components import empty_states
 from components.date_switch import date_switch_html
-from components.game_cards import group_games_by_state, schedule_grid_html
+from components.game_cards import games_toggle_html, group_games_by_state, schedule_grid_html
 from components.league_filters import render_filters, selected_leagues
 from components.navigation import day_label
 from components.opportunity_feed import opportunity_feed_html
@@ -103,7 +103,7 @@ def render(nav: NavState) -> None:
             unsafe_allow_html=True,
         )
     with right:
-        st.markdown(date_switch_html(day), unsafe_allow_html=True)
+        st.markdown(date_switch_html(day, nav.games_collapsed), unsafe_allow_html=True)
 
     # Sidebar: provenance / freshness.
     fresh = get_freshness()
@@ -152,9 +152,14 @@ def render(nav: NavState) -> None:
     # as games transition — no filters, no user interaction.
     all_visible = [g for games in visible.values() for g in games]
     if all_visible:
-        for group in group_games_by_state(all_visible):
-            if group:
-                st.markdown(schedule_grid_html(group, day), unsafe_allow_html=True)
+        # Optional, sticky collapse of the schedule grid so the opportunity feed
+        # is one glance away on a busy slate. Default is expanded.
+        st.markdown(games_toggle_html(day, nav.games_collapsed, len(all_visible)),
+                    unsafe_allow_html=True)
+        if not nav.games_collapsed:
+            for group in group_games_by_state(all_visible):
+                if group:
+                    st.markdown(schedule_grid_html(group, day), unsafe_allow_html=True)
     else:
         empty_states.no_games(day_label(day))
 

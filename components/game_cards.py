@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from html import escape
+from urllib.parse import quote_plus
 
 from components.format import format_game_time, logo_img
 from components.navigation import game_href
@@ -85,3 +86,22 @@ def game_card_html(game: SlateGame, day: str) -> str:
 def schedule_grid_html(games: list[SlateGame], day: str) -> str:
     cards = "".join(game_card_html(game, day) for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
+
+
+def games_toggle_html(day: str, collapsed: bool, count: int) -> str:
+    """A same-tab link that collapses/expands the schedule grid. Sticky via the
+    ``games`` query param (carried by the date switch; preserved on filter/refresh
+    reruns). When collapsed, it becomes a compact bar so the games never feel gone."""
+    d = quote_plus(day)
+    noun = "game" if count == 1 else "games"
+    if collapsed:
+        return (
+            f'<a class="games-toggle collapsed" target="_self" href="?day={d}">'
+            f'<span class="games-toggle-count">{count} {noun} hidden</span>'
+            f'<span class="games-toggle-action">Show games ▾</span></a>'
+        )
+    return (
+        '<div class="games-toggle-row">'
+        f'<a class="games-toggle" target="_self" href="?day={d}&games=off">Hide games ▴</a>'
+        '</div>'
+    )

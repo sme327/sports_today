@@ -1070,3 +1070,35 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .mls-tl-guide.data { color: var(--text-2); }
 .mls-tl-tag { margin-left: .5rem; padding: .08rem .4rem; border-radius: var(--r-pill); background: var(--brand-soft);
   color: var(--brand-2); font-size: .56rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: middle; }
+
+/* ---------------------------------------------- SCHEDULE COLLAPSE TOGGLE --- */
+/* Optional, sticky collapse of the Today schedule grid (?games=off), so the
+   opportunity feed is one glance away on a busy slate. Default is expanded. */
+.games-toggle-row { display: flex; justify-content: flex-end; margin: 0 0 .5rem; }
+.games-toggle {
+  color: var(--text-3) !important;
+  text-decoration: none !important;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: -.005em;
+  padding: .2rem .1rem;
+  transition: color var(--dur) var(--ease);
+}
+.games-toggle:hover { color: var(--brand-2) !important; }
+
+/* Collapsed: a full-width, inviting bar in place of the grid. */
+.games-toggle.collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: .7rem 1rem;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  box-shadow: var(--edge-hi), var(--shadow-sm);
+  border: 1px dashed var(--hairline-2);
+}
+.games-toggle.collapsed:hover { background: var(--surface-2); color: var(--text-2) !important; }
+.games-toggle-count { color: var(--text-3); font-weight: 650; }
+.games-toggle-action { color: var(--brand-2); font-weight: 700; white-space: nowrap; }
