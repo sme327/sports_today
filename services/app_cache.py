@@ -54,6 +54,17 @@ def cached_mls_game_page(cache_key: str, _game, as_of_iso: str):
 
 
 @st.cache_data(ttl=900, show_spinner=False)
+def cached_mlb_pitcher_opps(as_of_iso: str, probables: tuple[tuple[str, str], ...]):
+    """SP strikeout + hits-allowed opportunities for the slate's probable starters,
+    cached by (as_of, probable pitchers)."""
+    from services.data_access import load_plate_appearances
+    from services.mlb_pitcher_props import build_pitcher_opportunities
+    d = date.fromisoformat(as_of_iso)
+    pa = load_plate_appearances(as_of=d)
+    return build_pitcher_opportunities(pa, [tuple(p) for p in probables], d)
+
+
+@st.cache_data(ttl=900, show_spinner=False)
 def cached_opportunities(
     league: str,
     as_of_iso: str,

@@ -17,10 +17,13 @@ from components.game_cards import games_toggle_html, group_games_by_state, sched
 from components.league_filters import render_filters, selected_leagues
 from components.navigation import day_label
 from components.opportunity_feed import opportunity_feed_html
+from components.prop_filters import (
+    present_prop_types, prop_type_of, render_prop_type_filters, selected_prop_types,
+)
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
-from services.app_cache import cached_opportunities, cached_slate
+from services.app_cache import cached_mlb_pitcher_opps, cached_opportunities, cached_slate
 from services.freshness import get_freshness
 from services import snapshots
 
@@ -205,8 +208,20 @@ def _render_opportunities(
                                     team_ids, limit=_LEDGER_LIMIT)
         slate_opps.extend(_stamp(opps, games, adapter))
 
-    slate_opps.sort(key=lambda o: o.sort_key, reverse=True)
-    top_slate = slate_opps[:8]
+    # MLB starting-pitcher props (SP strikeouts + SP hits allowed) for the slate's
+    # probable starters — same feed / ledger / grading path as the batter props.
+    mlb_games = visible.get("MLB") or []
+    probables = tuple(sorted({
+        (str(g.meta.get(key)), disp)
+        for g in mlb_games
+        for key, disp in (("away_pitcher", g.away_display), ("home_pitcher", g.home_display))
+        if g.meta.get(key) and str(g.meta.get(key)).upper() != "TBD"
+    }))
+    if probables:
+        pitcher_opps = cached_mlb_pitcher_opps(as_of_iso, probables)
+        slate_opps.extend(_stamp(pitcher_opps, mlb_games, get_adapter("MLB")))
+
+    slate_opps.sort(key=lambda o: o.sort_key, reverse=True)  # full set for the ledger
 
     if analysis_leagues:
         st.markdown(
@@ -215,6 +230,13 @@ def _render_opportunities(
             'Yesterday’s results →</a></div>',
             unsafe_allow_html=True,
         )
+        # Prop-type pills (batter hits / SP strikeouts / SP hits allowed / …) filter
+        # the DISPLAY only; the full population is still recorded below.
+        present = present_prop_types(slate_opps)
+        render_prop_type_filters(present)
+        chosen = selected_prop_types(present)
+        display_opps = [o for o in slate_opps if not chosen or prop_type_of(o) in chosen]
+        top_slate = display_opps[:8]
         if top_slate:
             st.markdown(opportunity_feed_html(top_slate), unsafe_allow_html=True)
         else:
