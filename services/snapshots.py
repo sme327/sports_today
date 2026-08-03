@@ -26,6 +26,21 @@ ENGINE_VERSIONS = {
 }
 
 
+# Grading columns (added after CREATE so both fresh and existing DBs gain them).
+_GRADING_COLUMNS = {
+    "result": "TEXT",          # 'hit' | 'miss' | 'void' | NULL (pending)
+    "actual_value": "REAL",    # the stat the player actually recorded that day
+    "graded_at": "TEXT",       # ISO timestamp when graded
+}
+
+
+def _ensure_grading_columns(conn: sqlite3.Connection) -> None:
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({_TABLE})")}
+    for col, col_type in _GRADING_COLUMNS.items():
+        if col not in existing:
+            conn.execute(f"ALTER TABLE {_TABLE} ADD COLUMN {col} {col_type}")
+
+
 def ensure_table(conn: sqlite3.Connection) -> None:
     conn.execute(
         f"""
@@ -57,6 +72,7 @@ def ensure_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    _ensure_grading_columns(conn)
 
 
 def _already_captured(conn: sqlite3.Connection, slate_token: str, captured_on: str) -> bool:

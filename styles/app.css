@@ -1102,3 +1102,51 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .games-toggle.collapsed:hover { background: var(--surface-2); color: var(--text-2) !important; }
 .games-toggle-count { color: var(--text-3); font-weight: 650; }
 .games-toggle-action { color: var(--brand-2); font-weight: 700; white-space: nowrap; }
+
+/* ============================================================================
+   RESULTS VIEW — graded prop outcomes (hit / miss / void)
+   ========================================================================== */
+.results-link { color: var(--brand-2) !important; text-decoration: none !important;
+  font-size: .8rem; font-weight: 650; white-space: nowrap; }
+.results-link:hover { color: var(--brand) !important; }
+
+.rz-stepper { display: flex; align-items: center; justify-content: flex-end; gap: .7rem; }
+.rz-step { color: var(--text-2) !important; text-decoration: none !important; font-size: .82rem;
+  font-weight: 650; padding: .25rem .5rem; border-radius: var(--r-sm); background: var(--surface-2);
+  box-shadow: var(--edge-hi); white-space: nowrap; }
+.rz-step:hover { color: var(--text-1) !important; background: var(--surface-3); }
+.rz-step.disabled { color: var(--text-4) !important; background: transparent; box-shadow: none; }
+.rz-date { color: var(--text-1); font-size: .86rem; font-weight: 750; white-space: nowrap; }
+
+/* Summary chips (overall + per league). */
+.result-summary { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+  padding: .55rem .8rem; margin-bottom: .5rem; border-radius: var(--r-md);
+  background: var(--surface-1); box-shadow: var(--edge-hi), var(--shadow-sm);
+  font-size: .82rem; font-variant-numeric: tabular-nums; }
+.result-summary .rs-label { color: var(--text-1); font-weight: 800; }
+.result-summary .rs-rate { color: var(--brand-2); font-weight: 800; }
+.result-summary .rs-rate.muted { color: var(--text-4); font-weight: 600; }
+.result-summary .rs-hit { color: var(--green); font-weight: 700; }
+.result-summary .rs-miss { color: var(--red); font-weight: 700; }
+.result-summary .rs-void { color: var(--text-4); }
+.result-summary .rs-dot { color: var(--text-4); margin: 0 -.1rem; }
+
+/* One graded prop row. */
+.result-feed { display: flex; flex-direction: column; gap: .4rem; margin-top: .8rem; }
+.result-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .8rem;
+  padding: .7rem .9rem; border-radius: var(--r-md); background: var(--surface-1);
+  box-shadow: var(--edge-hi), var(--shadow-sm); }
+.result-row.hit { border-left: 3px solid var(--green); }
+.result-row.miss { border-left: 3px solid var(--red); }
+.result-row.void { border-left: 3px solid var(--hairline-2); opacity: .72; }
+.result-mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .8rem; font-weight: 800; }
+.result-mark.hit { color: #0c2a17; background: var(--green); }
+.result-mark.miss { color: #2a1010; background: var(--red); }
+.result-mark.void { color: var(--text-3); background: var(--surface-3); }
+.result-player { color: var(--text-1); font-size: .95rem; font-weight: 750; letter-spacing: -.01em; }
+.result-team { color: var(--text-4); font-size: .72rem; font-weight: 600; margin-left: .3rem; }
+.result-market { color: var(--text-3); font-size: .76rem; margin-top: .05rem; }
+.result-meta { text-align: right; }
+.result-actual { color: var(--text-1); font-size: .86rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.result-score { color: var(--text-4); font-size: .68rem; font-variant-numeric: tabular-nums; }

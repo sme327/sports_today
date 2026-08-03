@@ -26,6 +26,9 @@ from services import snapshots
 
 # Leagues with connected opportunity analysis (others are schedule-only).
 _ANALYSIS_LEAGUES = {"MLB", "WNBA"}
+# Effectively-uncapped limit for the daily graded ledger (record every scored
+# player, not just the displayed top 8).
+_LEDGER_LIMIT = 100_000
 
 
 def _mlb_import_affordance() -> None:
@@ -186,6 +189,9 @@ def _render_opportunities(
     as_of_iso = nav.slate_date.isoformat()
 
     # --- Primary slate opportunities (only leagues with visible games) ---
+    # We score the FULL eligible population (not just the displayed top 8) so the
+    # daily ledger can later grade the whole score distribution — the dataset for
+    # calibration and finding signal we're missing. Display still shows the top 8.
     slate_opps: list[Opportunity] = []
     analysis_leagues: list[str] = []
     for league in _ANALYSIS_LEAGUES:
@@ -195,7 +201,8 @@ def _render_opportunities(
         adapter = get_adapter(league)
         analysis_leagues.append(league)
         team_ids = tuple(sorted({t for g in games for t in g.team_identifiers}))
-        opps = cached_opportunities(league, as_of_iso, OpportunityMode.SLATE.value, team_ids)
+        opps = cached_opportunities(league, as_of_iso, OpportunityMode.SLATE.value,
+                                    team_ids, limit=_LEDGER_LIMIT)
         slate_opps.extend(_stamp(opps, games, adapter))
 
     slate_opps.sort(key=lambda o: o.sort_key, reverse=True)
@@ -203,7 +210,9 @@ def _render_opportunities(
 
     if analysis_leagues:
         st.markdown(
-            '<div class="section-row"><h2>Top Opportunities</h2></div>',
+            '<div class="section-row"><h2>Top Opportunities</h2>'
+            '<a class="results-link" target="_self" href="?view=results">'
+            'Yesterday’s results →</a></div>',
             unsafe_allow_html=True,
         )
         if top_slate:
@@ -214,14 +223,15 @@ def _render_opportunities(
                 "requirements for the shown slate."
             )
 
-    # Persist the day's ranking with full context (once per day).
-    if top_slate:
+    # Persist the day's FULL scored population with context (once per day) — the
+    # graded ledger for long-term evaluation. Display used only the top 8 above.
+    if slate_opps:
         status_map = {lg: slates[lg][1] for lg in analysis_leagues if slates.get(lg)}
         try:
             snapshots.write_daily_snapshot(
                 slate_date=nav.slate_date,
                 as_of=nav.slate_date,
-                opportunities=top_slate,
+                opportunities=slate_opps,
                 schedule_status=status_map,
             )
         except Exception:
