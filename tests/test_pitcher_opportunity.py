@@ -5,9 +5,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.pitcher_opportunity import (
-    _choose_over, _choose_under, _per_start_lines, score_pitcher_opportunities,
-)
+from src.pitcher_opportunity import _best_direction, _per_start_lines, score_pitcher_opportunities
 
 
 def _pa(rows):
@@ -15,24 +13,28 @@ def _pa(rows):
                                        "game_id", "game_date", "inning", "is_strikeout", "is_hit"])
 
 
-def _start(pid, gid, day, ks, hits, bf=6):
-    """A start: a 1st-inning PA + filler, with `ks` strikeouts and `hits` hits."""
+def _start(pid, gid, day, ks, hits, bf=20):
+    """A realistic start: a 1st-inning PA + `bf`-1 more, with `ks` strikeouts and
+    `hits` hits (disjoint), the rest outs. bf ≥ MIN_START_BF so it counts."""
     rows = [(pid, "Ace", "Team", gid, day, "1T", 0, 0)]
     for i in range(bf - 1):
-        rows.append((pid, "Ace", "Team", gid, day, f"{(i % 8) + 1}T",
+        rows.append((pid, "Ace", "Team", gid, day, "3T",
                      1 if i < ks else 0, 1 if ks <= i < ks + hits else 0))
-    # make sure exactly ks strikeouts / hits regardless of bf
-    rows = [(pid, "Ace", "Team", gid, day, "1T", 0, 0)]
-    for i in range(max(ks, hits, 1)):
-        rows.append((pid, "Ace", "Team", gid, day, "3T", 1 if i < ks else 0, 1 if i < hits else 0))
     return rows
 
 
-def test_choose_thresholds():
-    assert _choose_over(6.4, (4, 5, 6, 7, 8)) == 6      # highest ≤ avg
-    assert _choose_over(3.0, (4, 5, 6, 7, 8)) == 4      # fallback lowest
-    assert _choose_under(5.2, (4, 5, 6, 7, 8)) == 6     # lowest ≥ avg
-    assert _choose_under(9.0, (4, 5, 6, 7, 8)) == 8     # fallback highest
+def test_best_direction_avoids_trivial_extremes():
+    import pandas as pd
+    g = (4, 5, 6, 7, 8)
+    # dominant K pitcher → a meaningful over (7+), not the trivial "≤ 8"
+    d = _best_direction(pd.Series([7, 8, 6, 7, 8]), g)
+    assert d["direction"] == "over" and 6 <= d["threshold"] <= 7
+    # stingy hits pitcher → a meaningful under (≤ low), not the trivial "4+"
+    d = _best_direction(pd.Series([2, 3, 1, 3, 2]), g)
+    assert d["direction"] == "under" and d["threshold"] <= 5
+    # vulnerable hits pitcher → a meaningful over
+    d = _best_direction(pd.Series([8, 7, 9, 6, 8]), g)
+    assert d["direction"] == "over" and d["threshold"] >= 6
 
 
 def test_per_start_lines_excludes_relief():
@@ -45,18 +47,29 @@ def test_per_start_lines_excludes_relief():
     assert int(lines.iloc[0]["k"]) == 6 and int(lines.iloc[0]["hits"]) == 5
 
 
-def test_scorer_markets_and_thresholds():
+def test_scorer_high_k_low_hits_gives_k_over_and_hits_under():
+    # a dominant starter: many K's, few hits → K over + hits under
+    ks, hits = [7, 8, 6, 7, 8], [2, 3, 1, 3, 2]
     rows = []
-    for i in range(5):                                  # 5 starts: 6 K, 5 hits each
-        rows += _start("1", f"g{i}", f"2026-06-0{i+1}", 6, 5)
-    scored = score_pitcher_opportunities(_pa(rows), ["1"])
-    by = {r["kind"]: r for _, r in scored.iterrows()}
-    assert set(by) == {"sp_k", "sp_hits"}
-    assert by["sp_k"]["market"] == "6+ Strikeouts (SP)" and by["sp_k"]["threshold"] == 6
-    assert by["sp_hits"]["market"] == "≤ 5 Hits Allowed (SP)" and by["sp_hits"]["threshold"] == 5
-    # both cleared in all 5 starts → high recent hit rate → strong score
-    assert by["sp_k"]["recent_hit_rate"] == 1.0 and by["sp_k"]["opportunity_score"] >= 70
-    assert "6.0 K per start over last 5" in by["sp_k"]["support"][0]
+    for i, (k, h) in enumerate(zip(ks, hits)):
+        rows += _start("1", f"g{i}", f"2026-06-0{i+1}", k, h)
+    by = {r["kind"]: r for _, r in score_pitcher_opportunities(_pa(rows), ["1"]).iterrows()}
+    assert by["sp_k"]["market"].endswith("Strikeouts (SP)") and "+" in by["sp_k"]["market"]  # over
+    assert by["sp_hits"]["market"].startswith("≤")                                            # under
+    assert "K per start over last 5" in by["sp_k"]["support"][0]
+
+
+def test_scorer_serves_hits_over_for_vulnerable_starter():
+    # a starter who gets tagged: high hits every start → hits-allowed OVER, not under
+    rows = []
+    for i, h in enumerate([8, 7, 9, 6, 8]):
+        rows += _start("1", f"g{i}", f"2026-06-0{i+1}", 3, h)
+    by = {r["kind"]: r for _, r in score_pitcher_opportunities(_pa(rows), ["1"]).iterrows()}
+    market = by["sp_hits"]["market"]
+    assert "Hits Allowed (SP)" in market and market[0].isdigit() and "+" in market  # OVER
+    assert not market.startswith("≤")
+    assert "Reached" in by["sp_hits"]["support"][1]                                  # over phrasing
+    assert by["sp_hits"]["opportunity_score"] >= 70
 
 
 def test_scorer_requires_minimum_starts():

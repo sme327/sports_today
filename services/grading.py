@@ -84,17 +84,18 @@ def _grade_row(r, mlb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, floa
     threshold = r["threshold"]
     pid = str(r["player_id"])
     if league == "MLB":
-        market = (r["market"] or "").lower()
-        if "strikeout" in market:          # SP strikeouts — over
+        market_raw = r["market"] or ""
+        market = market_raw.lower()
+        is_sp = "strikeout" in market or "hits allowed" in market
+        if is_sp:
             line = mlb_sp.get(pid)
             if line is None:
                 return "void", None        # did not start
-            return ("hit" if line["k"] >= (threshold or 0) else "miss"), float(line["k"])
-        if "hits allowed" in market:       # SP hits allowed — under
-            line = mlb_sp.get(pid)
-            if line is None:
-                return "void", None
-            return ("hit" if line["hits"] <= (threshold or 0) else "miss"), float(line["hits"])
+            actual = line["k"] if "strikeout" in market else line["hits"]
+            # Direction is encoded in the label: "≤ T …" is an under, "T+ …" an over.
+            under = market_raw.strip().startswith("≤")
+            hit = actual <= (threshold or 0) if under else actual >= (threshold or 0)
+            return ("hit" if hit else "miss"), float(actual)
         if pid not in mlb:                  # batter 1+ Hit
             return "void", None            # did not bat that day
         hits = mlb[pid]
