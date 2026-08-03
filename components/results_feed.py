@@ -51,6 +51,23 @@ def result_summary_html(summary: dict, label: str) -> str:
     return '<div class="result-summary">' + '<span class="rs-dot">·</span>'.join(parts) + '</div>'
 
 
+def market_breakdown_html(by_market: dict) -> str:
+    """A titled group of per-market hit-rate chips (which markets convert?).
+
+    ``by_market`` is ``{prop_type_key: tally}`` in canonical order (from
+    ``grading.summarize_by_market``). Renders nothing for a single market — the
+    overall summary already covers that case.
+    """
+    from domain.markets import LABELS
+
+    if len(by_market) <= 1:
+        return ""
+    chips = "".join(result_summary_html(t, LABELS.get(pt, pt)) for pt, t in by_market.items())
+    return ('<div class="rz-breakdown">'
+            '<div class="rz-breakdown-head">By market</div>'
+            f'{chips}</div>')
+
+
 def results_feed_html(rows: list[dict]) -> str:
     if not rows:
         return '<div class="mlb-empty">No graded props for this date and filter.</div>'
