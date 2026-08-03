@@ -191,17 +191,32 @@ def load_graded_slate(slate_date: date, *, min_score: float | None = None,
     return out
 
 
+def _tally(subset: list[dict]) -> dict:
+    hit = sum(1 for r in subset if r.get("result") == "hit")
+    miss = sum(1 for r in subset if r.get("result") == "miss")
+    void = sum(1 for r in subset if r.get("result") == "void")
+    pending = sum(1 for r in subset if r.get("result") in (None, "pending"))
+    decided = hit + miss
+    return {"hit": hit, "miss": miss, "void": void, "pending": pending,
+            "total": len(subset), "hit_rate": (hit / decided) if decided else None}
+
+
 def summarize(rows: list[dict]) -> dict:
     """Per-league and overall hit/miss/void counts + hit rate (voids excluded)."""
-    def tally(subset):
-        hit = sum(1 for r in subset if r.get("result") == "hit")
-        miss = sum(1 for r in subset if r.get("result") == "miss")
-        void = sum(1 for r in subset if r.get("result") == "void")
-        pending = sum(1 for r in subset if r.get("result") in (None, "pending"))
-        decided = hit + miss
-        return {"hit": hit, "miss": miss, "void": void, "pending": pending,
-                "total": len(subset), "hit_rate": (hit / decided) if decided else None}
-
     leagues = sorted({r.get("league") for r in rows if r.get("league")})
-    return {"overall": tally(rows),
-            "by_league": {lg: tally([r for r in rows if r.get("league") == lg]) for lg in leagues}}
+    return {"overall": _tally(rows),
+            "by_league": {lg: _tally([r for r in rows if r.get("league") == lg]) for lg in leagues}}
+
+
+def summarize_by_market(rows: list[dict]) -> dict:
+    """Per prop-type (batter hits, SP K, points, …) tallies, in canonical order.
+
+    This is the Phase 2 payoff: it answers "which markets actually convert?" —
+    hit rate broken out by market type rather than lumped together.
+    """
+    from domain.markets import ORDER, prop_type
+
+    buckets: dict[str, list[dict]] = {}
+    for r in rows:
+        buckets.setdefault(prop_type(r.get("league"), r.get("market")), []).append(r)
+    return {pt: _tally(buckets[pt]) for pt in ORDER if pt in buckets}

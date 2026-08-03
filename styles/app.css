@@ -1147,6 +1147,18 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .result-summary .rs-void { color: var(--text-4); }
 .result-summary .rs-dot { color: var(--text-4); margin: 0 -.1rem; }
 
+/* Score-threshold control label (sits above the band pills). */
+.rz-control-label { color: var(--text-4); font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; margin: .4rem 0 .3rem; }
+
+/* Per-market breakdown — which markets convert. Grouped + de-emphasized so the
+   headline summary stays primary. */
+.rz-breakdown { margin: .7rem 0 .2rem; padding-left: .1rem; }
+.rz-breakdown-head { color: var(--text-4); font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: .35rem; }
+.rz-breakdown .result-summary { background: var(--surface-2); font-size: .78rem;
+  padding: .42rem .7rem; }
+
 /* One graded prop row. */
 .result-feed { display: flex; flex-direction: column; gap: .4rem; margin-top: .8rem; }
 .result-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .8rem;

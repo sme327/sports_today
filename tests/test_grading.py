@@ -210,3 +210,46 @@ def test_prop_type_classification():
     assert prop_type_of(opp("WNBA", "15+ Points")) == "points"
     assert prop_type_of(opp("WNBA", "6+ Rebounds")) == "rebounds"
     assert prop_type_of(opp("WNBA", "3+ Assists")) == "assists"
+
+
+# --- Phase 2: market breakdown, row classification, threshold slicing ---------
+
+def _row(league, market, score, result):
+    return {"league": league, "market": market, "player_id": "1", "player_name": "P",
+            "opportunity_score": score, "result": result, "actual_value": 1.0}
+
+
+def test_prop_type_of_row_and_present_types():
+    from components.prop_filters import present_prop_types_rows, prop_type_of_row
+    rows = [_row("MLB", "1+ Hit", 90, "hit"),
+            _row("MLB", "6+ Strikeouts (SP)", 80, "miss"),
+            _row("WNBA", "15+ Points", 70, "hit")]
+    assert prop_type_of_row(rows[0]) == "hits"
+    assert prop_type_of_row(rows[1]) == "sp_k"
+    # canonical order: hits, sp_k, ..., points
+    assert present_prop_types_rows(rows) == ["hits", "sp_k", "points"]
+
+
+def test_summarize_by_market_splits_hit_rates():
+    rows = [
+        _row("MLB", "1+ Hit", 95, "hit"), _row("MLB", "1+ Hit", 90, "hit"),
+        _row("MLB", "1+ Hit", 88, "miss"), _row("MLB", "1+ Hit", 80, "void"),
+        _row("MLB", "6+ Strikeouts (SP)", 92, "miss"),
+        _row("MLB", "6+ Strikeouts (SP)", 85, "miss"),
+    ]
+    bm = grading.summarize_by_market(rows)
+    assert list(bm) == ["hits", "sp_k"]                 # canonical order preserved
+    assert bm["hits"]["hit_rate"] == 2 / 3               # void excluded (2 hit / 3 decided)
+    assert bm["hits"]["void"] == 1
+    assert bm["sp_k"]["hit_rate"] == 0.0                 # 0 of 2
+
+
+def test_market_breakdown_html_needs_two_markets():
+    from components.results_feed import market_breakdown_html
+    one = grading.summarize_by_market([_row("MLB", "1+ Hit", 90, "hit")])
+    assert market_breakdown_html(one) == ""             # single market → nothing
+    two = grading.summarize_by_market(
+        [_row("MLB", "1+ Hit", 90, "hit"), _row("MLB", "6+ Strikeouts (SP)", 90, "miss")])
+    html = market_breakdown_html(two)
+    assert "By market" in html and "Batter Hits" in html and "SP Strikeouts" in html
+    assert html.count("<div") == html.count("</div>")
