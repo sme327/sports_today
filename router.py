@@ -15,10 +15,29 @@ class NavState:
     league: str | None
     game_id: str | None
     games_collapsed: bool = False   # Today page: schedule grid collapsed (?games=off)
+    view: str = "today"             # "today" | "results"
+    results_date: date | None = None  # the graded slate being viewed (view == "results")
 
     @property
     def in_game_view(self) -> bool:
-        return bool(self.game_id and self.league)
+        return self.view != "results" and bool(self.game_id and self.league)
+
+    @property
+    def in_results_view(self) -> bool:
+        return self.view == "results"
+
+
+def _parse_results_date() -> date:
+    """The graded slate to show (default yesterday). Never today/future — results
+    aren't in yet — so it is clamped to at most yesterday."""
+    yesterday = date.today() - timedelta(days=1)
+    raw = st.query_params.get("date")
+    if raw:
+        try:
+            return min(date.fromisoformat(raw), yesterday)
+        except ValueError:
+            pass
+    return yesterday
 
 
 def read_nav() -> NavState:
@@ -26,10 +45,15 @@ def read_nav() -> NavState:
     if day not in {"today", "tomorrow"}:
         day = "today"
     slate = date.today() + (timedelta(days=1) if day == "tomorrow" else timedelta(0))
+    view = st.query_params.get("view", "today")
+    if view not in {"today", "results"}:
+        view = "today"
     return NavState(
         day=day,
         slate_date=slate,
         league=st.query_params.get("league"),
         game_id=st.query_params.get("game"),
         games_collapsed=st.query_params.get("games") == "off",
+        view=view,
+        results_date=_parse_results_date() if view == "results" else None,
     )

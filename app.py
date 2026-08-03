@@ -35,7 +35,10 @@ def main() -> None:
 
     ensure_schema()  # creates the DB + additive tables if missing (empty is fine)
     nav = read_nav()
-    if nav.in_game_view:
+    if nav.in_results_view:
+        from views import results
+        results.render(nav)
+    elif nav.in_game_view:
         game.render(nav)
     else:
         today.render(nav)
