@@ -39,7 +39,18 @@ def render(nav: NavState, game: SlateGame) -> None:
     if matchups:
         st.markdown(matchups, unsafe_allow_html=True)
 
-    st.markdown(C.player_trends_html(page.heating_up, page.cooling_off), unsafe_allow_html=True)
+    # Pitcher Trends (per-start form for both probables) right after the matchups.
+    pitcher_trends = C.pitcher_trends_html(page.pitcher_trends)
+    if pitcher_trends:
+        st.markdown(pitcher_trends, unsafe_allow_html=True)
+
+    # Enriched batter trends (high-conviction picks + heating/cooling movers); falls
+    # back to the plain heating/cooling section when the enriched build is empty.
+    batter_trends = C.batter_trends_html(page.batter_trends)
+    if batter_trends:
+        st.markdown(batter_trends, unsafe_allow_html=True)
+    else:
+        st.markdown(C.player_trends_html(page.heating_up, page.cooling_off), unsafe_allow_html=True)
 
     # Players Positioned to Succeed — the shared opportunity feed (same scores as the slate).
     st.markdown('<div class="mlb-section"><div class="mlb-section-head">'

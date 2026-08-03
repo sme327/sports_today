@@ -12,7 +12,8 @@ from html import escape
 from components.format import logo_img
 from components.icons import icon as _icon
 from domain.mlb_game_page import (
-    MLBGameHero, MLBGameShape, MLBKeyMatchup, MLBPlayerTrend, MLBStoryline, MLBTeamIdentity,
+    MLBBatterTrend, MLBGameHero, MLBGameShape, MLBKeyMatchup, MLBPitcherTrend,
+    MLBPlayerTrend, MLBStoryline, MLBTeamIdentity,
 )
 
 _DIM_ICON = {"Power": "power", "Contact": "contact", "Plate Discipline": "discipline",
@@ -194,6 +195,91 @@ def player_trends_html(heating: tuple[MLBPlayerTrend, ...], cooling: tuple[MLBPl
                         '<div class="mlb-empty">Not enough recent plate appearances to identify a reliable trend.</div>')
     cards = "".join(_trend_card(t) for t in list(heating) + list(cooling))
     return _section("Heating Up / Cooling Off", f'<div class="mlb-trend-grid">{cards}</div>', "recent_form")
+
+
+# ------------------------------------------------- TREND SPOTLIGHTS (V2) ------
+def _headshot_img(url: str | None, alt: str) -> str:
+    return (f'<img class="mlb-headshot" src="{escape(url or "", quote=True)}" '
+            f'alt="{escape(alt, quote=True)}" '
+            f'onerror="this.classList.add(\'img-fallback\');this.removeAttribute(\'src\')">')
+
+
+def _spark(values: tuple[int, ...]) -> str:
+    if len(values) < 2:
+        return '<span class="mlb-spark-flat"></span>'
+    lo, hi = min(values), max(values)
+    rng = (hi - lo) or 1.0
+    w, h, pad = 110, 24, 3
+    step = (w - 2 * pad) / (len(values) - 1)
+    pts = " ".join(f"{pad + i * step:.1f},{h - pad - (v - lo) / rng * (h - 2 * pad):.1f}"
+                   for i, v in enumerate(values))
+    lx = pad + (len(values) - 1) * step
+    ly = h - pad - (values[-1] - lo) / rng * (h - 2 * pad)
+    return (f'<svg class="mlb-spark" viewBox="0 0 {w} {h}" preserveAspectRatio="none">'
+            f'<polyline points="{pts}" fill="none" stroke="currentColor" stroke-width="1.6" '
+            f'stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2" fill="currentColor"/></svg>')
+
+
+def _dir_arrow(direction: str) -> str:
+    return _icon({"up": "form-up", "down": "form-down"}.get(direction, "form-steady"))
+
+
+def pitcher_trends_html(trends: tuple[MLBPitcherTrend, ...]) -> str:
+    if not trends:
+        return ""
+    cards = []
+    for t in trends:
+        props = "".join(f'<span class="mlb-chip">{escape(p)}</span>' for p in t.props)
+        kpct = f'<span class="mlb-ptrend-kpct">{t.k_pct:.0%} K rate</span>' if t.k_pct is not None else ""
+
+        def row(label, spark, avg, direction, tone):
+            return (f'<div class="mlb-ptrend-row {tone}"><span class="mlb-ptrend-k">{escape(label)}</span>'
+                    f'{_spark(spark)}<span class="mlb-ptrend-v">{avg}/start '
+                    f'<span class="mlb-ptrend-dir">{_dir_arrow(direction)}</span></span></div>')
+        cards.append(
+            f'<div class="mlb-ptrend-card">'
+            f'<div class="mlb-trend-head">{_headshot_img(t.headshot_url, t.name)}'
+            f'<div><div class="mlb-trend-name">{escape(t.name)}</div>'
+            f'<div class="mlb-trend-team">{escape(t.team)} · {t.starts} starts</div></div>'
+            f'<span class="mlb-trend-tag sp">SP</span></div>'
+            f'{row("Strikeouts", t.k_spark, t.k_avg, t.k_dir, "k")}'
+            f'{row("Hits allowed", t.hits_spark, t.hits_avg, t.hits_dir, "h")}'
+            f'<div class="mlb-ptrend-foot"><div class="mlb-chips">{props}</div>{kpct}</div>'
+            f'<div class="mlb-ptrend-caveat">{escape(t.caveat)}</div></div>')
+    return _section("Pitcher Trends", f'<div class="mlb-ptrend-grid">{"".join(cards)}</div>', "matchup")
+
+
+def _dot_row(dots: tuple[int, ...]) -> str:
+    cells = "".join(f'<span class="mlb-dot {"hit" if d else "miss"}"></span>' for d in dots)
+    return f'<span class="mlb-dot-row">{cells}</span>'
+
+
+def batter_trends_html(trends: tuple[MLBBatterTrend, ...]) -> str:
+    if not trends:
+        return ""
+    cards = []
+    for t in trends:
+        windows = "".join(f'<span class="mlb-win"><span class="k">{escape(lbl)}</span>'
+                          f'<span class="v">{escape(val)}</span></span>' for lbl, val in t.windows)
+        streak = (f'<span class="mlb-streak">{t.hit_streak}-game hit streak</span>'
+                  if t.hit_streak >= 2 else "")
+        ev = ""
+        if t.support:
+            ev += f'<div class="mlb-btrend-sup">{_icon("positive")} {escape(t.support[0])}</div>'
+        if t.risks:
+            ev += f'<div class="mlb-btrend-risk">{_icon("risk")} {escape(t.risks[0])}</div>'
+        cards.append(
+            f'<div class="mlb-btrend-card {escape(t.tone)}">'
+            f'<div class="mlb-trend-head">{_headshot_img(t.headshot_url, t.name)}'
+            f'<div><div class="mlb-trend-name">{escape(t.name)}</div>'
+            f'<div class="mlb-trend-team">{escape(t.team)} · {escape(t.line)}</div></div>'
+            f'<span class="mlb-cat {escape(t.tone)}">{escape(t.category)}</span></div>'
+            f'<div class="mlb-btrend-dots">{_dot_row(t.dots)}<span class="mlb-btrend-legend">'
+            f'recent games · 1+ hit</span></div>'
+            f'<div class="mlb-btrend-wins">{windows}{streak}</div>'
+            f'{ev}</div>')
+    return _section("Player Trends", f'<div class="mlb-btrend-grid">{"".join(cards)}</div>', "recent_form")
 
 
 # --------------------------------------------------------- GAME SHAPE --------
