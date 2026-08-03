@@ -162,16 +162,17 @@ def _seed_sp(tmp_path):
         # P3 pitched but never in the 1st inning → not a starter
         pas += [("3", SLATE, "7T", 1, 0), ("3", SLATE, "8T", 0, 1)]
         conn.executemany("INSERT INTO plate_appearances VALUES (?,?,?,?,?)", pas)
-        _snap(conn, "1", "MLB", "5+ Strikeouts (SP)", 5, 80)
-        _snap(conn, "1", "MLB", "≤ 5 Hits Allowed (SP)", 5, 78)
-        _snap(conn, "2", "MLB", "5+ Strikeouts (SP)", 5, 70)
-        _snap(conn, "2", "MLB", "≤ 5 Hits Allowed (SP)", 5, 72)
-        _snap(conn, "3", "MLB", "5+ Strikeouts (SP)", 5, 60)   # non-starter → void
+        _snap(conn, "1", "MLB", "5+ Strikeouts (SP)", 5, 80)      # over: 7 K → hit
+        _snap(conn, "1", "MLB", "≤ 5 Hits Allowed (SP)", 5, 78)   # under: 4 hits → hit
+        _snap(conn, "2", "MLB", "≤ 4 Strikeouts (SP)", 4, 70)     # under: 3 K → hit
+        _snap(conn, "2", "MLB", "6+ Hits Allowed (SP)", 6, 72)    # over: 8 hits → hit
+        _snap(conn, "1", "MLB", "6+ Hits Allowed (SP)", 6, 65)    # over: 4 hits → miss
+        _snap(conn, "3", "MLB", "5+ Strikeouts (SP)", 5, 60)      # non-starter → void
         conn.commit()
     return db
 
 
-def test_grade_sp_strikeouts_and_hits_allowed(tmp_path):
+def test_grade_sp_both_directions(tmp_path):
     db = _seed_sp(tmp_path)
     grading.grade_slate(date(2026, 6, 1), db_path=db)
     with sqlite3.connect(db) as conn:
@@ -179,10 +180,13 @@ def test_grade_sp_strikeouts_and_hits_allowed(tmp_path):
         rows = {(r["player_id"], r["market"]): (r["result"], r["actual_value"])
                 for r in conn.execute("SELECT player_id, market, result, actual_value "
                                       "FROM opportunity_snapshots")}
-    assert rows[("1", "5+ Strikeouts (SP)")] == ("hit", 7.0)       # 7 ≥ 5
-    assert rows[("1", "≤ 5 Hits Allowed (SP)")] == ("hit", 4.0)    # 4 ≤ 5 (under)
-    assert rows[("2", "5+ Strikeouts (SP)")] == ("miss", 3.0)      # 3 < 5
-    assert rows[("2", "≤ 5 Hits Allowed (SP)")] == ("miss", 8.0)   # 8 > 5 (under fails)
+    # P1: 7 K, 4 hits
+    assert rows[("1", "5+ Strikeouts (SP)")] == ("hit", 7.0)       # over: 7 ≥ 5
+    assert rows[("1", "≤ 5 Hits Allowed (SP)")] == ("hit", 4.0)    # under: 4 ≤ 5
+    assert rows[("1", "6+ Hits Allowed (SP)")] == ("miss", 4.0)    # over: 4 < 6 → miss
+    # P2: 3 K, 8 hits
+    assert rows[("2", "≤ 4 Strikeouts (SP)")] == ("hit", 3.0)      # under: 3 ≤ 4
+    assert rows[("2", "6+ Hits Allowed (SP)")] == ("hit", 8.0)     # over: 8 ≥ 6 (the missed-over win)
     assert rows[("3", "5+ Strikeouts (SP)")] == ("void", None)     # did not start
 
 
