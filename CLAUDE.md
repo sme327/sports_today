@@ -13,8 +13,12 @@ restating it. **Start with [`docs/README.md`](docs/README.md).**
 
 A personal **daily sports companion** — calm, explainable, curated. It answers
 *"what should I pay attention to today?"* It is an analysis/opportunity tool, **not**
-a sportsbook, dashboard, or fantasy platform. Supported today: MLB (1+ hit) and
-WNBA (points/rebounds/assists) opportunities, plus World Cup schedule.
+a sportsbook, dashboard, or fantasy platform. Supported today: MLB (1+ hit for
+batters; SP strikeouts and SP hits allowed, both over/under) and WNBA
+(points/rebounds/assists) opportunities, MLB/WNBA/MLS matchup pages, plus World
+Cup schedule. Picks are recorded and graded daily (hit/miss/void) with a dedicated
+**Results** view — see [Roadmap → After Games](docs/product/ROADMAP.md) and the
+[Decision Log](docs/engineering/DECISION_LOG.md).
 
 ## Read before you build
 
@@ -78,5 +82,8 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 
 - Current season only; plate-appearance grain (no Statcast/exit velo/pitch type).
 - Season-to-date feed must be replaced daily; schedules need internet.
-- Scoring does not yet include confirmed lineups, opposing-starter quality,
-  weather, or park context. Do not represent current scores as hit probabilities.
+- MLB batter scoring now uses **today's confirmed lineups** when posted (from MLB
+  StatsAPI): a confirmed slot adds evidence, a scratched batter is capped, and an
+  un-posted lineup is shown honestly (never guessed). Scoring still does **not**
+  include opposing-starter quality, weather, park, or bullpen context. Do not
+  represent scores as hit probabilities.

@@ -55,22 +55,29 @@ Reading flow is **summary → evidence → synthesis → matchups → players �
    headline questions ("Can Nola command the strike zone?"); the explanation keeps the
    exact analytics. Team-vs-team fallback when a starter isn't matched. *Why: the
    signature of a baseball page — the one-on-one battles.*
-5. **Heating Up / Cooling Off.** Up to 3 players each, gated by a minimum trend
-   magnitude (recent-10 vs. season baseline); shows fewer or none when unsupported.
-   *Why: who's actually trending, honestly gated — kept worded distinct from the
-   team-level "Trending Up/Down."*
-6. **Players Positioned to Succeed.** The shared **1+ Hit opportunity engine**,
+5. **Pitcher Trends.** Both probable starters: per-start **strikeout** and
+   **hits-allowed** sparklines (inline SVG) with a direction arrow and season K%,
+   plus the SP props we're serving with their clear-rate. *Why: a starter's recent
+   trajectory is what earns (or withholds) confidence in his props.* Built by
+   `services/mlb_trends.py`.
+6. **Player Trends (enriched).** Replaces plain Heating/Cooling: per-game **1+-hit
+   dot rows**, **L5 / L10 / L25** windows, current **hit streak**, and support/risk
+   evidence. Leads with **≥ 90-conviction** picks, then heating/cooling movers;
+   falls back to the plain Heating/Cooling section when the enriched build is empty.
+   *Why: the score alone doesn't build conviction — the trajectory behind it does.*
+7. **Players Positioned to Succeed.** The shared **1+ Hit opportunity engine**,
    filtered to the two teams, **same scores as the slate** (not rescaled), with team
-   logo + player headshot. *Why: reuse the one tested scorer; consistency with the
-   homepage feed.*
-7. **Expected Game Shape.** A multi-factor label (Starter-driven / Power-oriented /
+   logo + player headshot, and **today's confirmed-lineup awareness** (slot evidence,
+   bench-cap, honest not-posted state). *Why: reuse the one tested scorer; consistency
+   with the homepage feed.*
+8. **Expected Game Shape.** A multi-factor label (Starter-driven / Power-oriented /
    Contact-heavy / Balanced / Uncertain) + a plain-English narrative + inline facets.
    Never "pitcher's duel." *Why: sets expectations for the *kind* of game, without
    predicting a score.*
-8. **Storylines to Watch.** 2–3, only above a quality threshold, never padded;
+9. **Storylines to Watch.** 2–3, only above a quality threshold, never padded;
    editorial headlines with a small baseball icon. *Why: the "why this game is
    interesting," earned from data.*
-9. **Data context.** A compact line naming the `as_of` cutoff and what's excluded.
+10. **Data context.** A compact line naming the `as_of` cutoff and what's excluded.
 
 Small monochrome SVG icons (no emoji) mark identity dimensions, matchups, storylines,
 and insight roles to aid scanning.
@@ -95,11 +102,15 @@ All weights/thresholds are module constants in `services/mlb_analytics.py`:
 ## Data sources & constraints
 - **MLB StatsAPI schedule** (via the MLB adapter): teams, logos, venue, status,
   probable-pitcher names.
+- **MLB StatsAPI lineups** (`hydrate=lineups`, via `src/mlb_lineups.py`): today's
+  posted batting order, joined to batters by MLB player id (= the feed's
+  `batter_id`). Used to add confirmed-slot evidence and cap scratched batters.
 - **Stored plate appearances** (`plate_appearances`, `as_of`-bounded): all team,
   player, and pitcher metrics. Pitchers are matched to probable-starter names.
 - **Grain:** plate-appearance level, current season only. **No** Statcast (exit
-  velocity, pitch type), no confirmed lineups, no bullpen/park/weather/injuries. That
-  is the biggest honest limitation and the main gate on expansion (see below).
+  velocity, pitch type), no bullpen/park/weather/injuries; **confirmed lineups are
+  now used** (when posted), but matched-starter season lines and the rest remain the
+  honest limitations and the main gate on expansion (see below).
 
 ## Where the code lives
 ```
@@ -108,8 +119,11 @@ router → views/game.py (dispatch: league == "MLB")
        → services/app_cache.cached_mlb_game_page   # cache: game_id | as_of | engine
        → services/mlb_game_page.py    # build_mlb_game_page — assembles the model
        → services/mlb_analytics.py    # pure numeric engine (weights/thresholds here)
-       → src/opportunity.py           # the 1+ hit scorer (shared with the homepage)
-       → domain/mlb_game_page.py      # immutable MLBGamePage model (section shapes)
+       → services/mlb_trends.py       # pitcher per-start + batter per-game trend spotlights
+       → src/opportunity.py           # the 1+ hit scorer (shared with the homepage; lineups= overlay)
+       → src/mlb_lineups.py           # today's posted lineups (StatsAPI); Lineups model
+       → src/pitcher_opportunity.py   # SP strikeouts / hits-allowed scorer (two-directional)
+       → domain/mlb_game_page.py      # immutable MLBGamePage model (section shapes + trend models)
        → components/mlb_game.py       # pure HTML (mlb-* CSS in styles/app.css)
 ```
 Cached on `game_id | as_of | mlb-game-page-v1`. Calculations live in services;
@@ -129,12 +143,19 @@ Refinements that need **no new data** (safest, "refine before redesign"):
 - Sharpen **Key Matchups** selection/headlines, or the **Game Shape** narrative.
 - Improve the **descriptor language** (pitcher/form phrases) for precision + honesty.
 
-Expansions that need **new data** (each must follow "omit or label honestly"):
-- **Confirmed/projected lineups** → real matchup certainty (biggest single upgrade).
+Already shipped from this menu (kept here as reference for how they were done):
+- **Confirmed lineups** → slot evidence + bench-cap + honest not-posted state
+  (`src/mlb_lineups.py`; see the 2026-08-04 Decision Log entry).
+- **SP pitcher props** (strikeouts, hits allowed; two-directional) in the feed.
+- **Grade the opportunity picks** against results → the Results view + grading loop.
+
+Expansions that still need **new data** (each must follow "omit or label honestly"):
+- **Projected lineups** before official posting; **expected plate appearances** from
+  slot + pace.
 - **Matched-pitcher season lines** once a reliable source exists.
 - **Bullpen freshness, park factors, weather** → new services + matchup types.
-- **Grade the opportunity picks** against results (Roadmap → After Games).
-- **New opportunity markets** (e.g. total bases) plug into the existing scorer + section.
+- **New opportunity markets** (total bases, batter Ks, walks, HR) plug into the
+  existing scorer + section, each with an honest grader.
 
 **Do not** add win probability, score prediction, or Statcast-flavored claims until the
 data genuinely supports them — that's the line that keeps the page trustworthy.
