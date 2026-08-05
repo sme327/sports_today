@@ -366,8 +366,8 @@ def _build_trends(pa, teams) -> tuple[tuple[MLBPlayerTrend, ...], tuple[MLBPlaye
 
 
 # --------------------------------------------------------- OPPORTUNITIES -----
-def _build_opportunities(pa, game: SlateGame, teams: list[str]) -> tuple[Opportunity, ...]:
-    scored = score_hit_opportunities(pa, teams)
+def _build_opportunities(pa, game: SlateGame, teams: list[str], lineups=None) -> tuple[Opportunity, ...]:
+    scored = score_hit_opportunities(pa, teams, lineups=lineups)
     if scored.empty:
         return ()
     logos = {str(n): logo for n, logo in
@@ -540,8 +540,9 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
     a_disp = game.away_short or away
     h_disp = game.home_short or home
     hero = _hero(game)
-    context = (f"Based on plate appearances before {as_of.isoformat()}. Confirmed lineups, "
-               "injuries, weather, bullpen availability, and park factors are not yet included.")
+    context = (f"Based on plate appearances before {as_of.isoformat()}, with today's posted "
+               "lineups when available. Injuries, weather, bullpen availability, and park "
+               "factors are not yet included.")
     data_status = DataStatus(source="Plate-appearance feed", status=SourceStatus.LIVE,
                              fetched_at=datetime.now(), detail=context)
 
@@ -567,7 +568,13 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
     matchups = _build_matchups(pa, away, home, a_disp, h_disp, table, ptable, away_pid, home_pid,
                                game.meta.get("away_pitcher"), game.meta.get("home_pitcher"))
     heating, cooling = _build_trends(pa, [away, home])
-    opportunities = _build_opportunities(pa, game, [away, home])
+    lineups = None
+    try:
+        from services.app_cache import cached_lineups
+        lineups = cached_lineups(slate_date.isoformat())
+    except Exception:
+        lineups = None
+    opportunities = _build_opportunities(pa, game, [away, home], lineups)
     pitcher_trends, batter_trends = _build_spotlights(
         pa, away_pid, home_pid, opportunities, heating, cooling)
     away_dom, home_dom = _starter_dominance(ptable, away_pid), _starter_dominance(ptable, home_pid)

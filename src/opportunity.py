@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.mlb_lineups import Lineups
+
 
 _REQUIRED_COLUMNS = {
     "batting_team", "batter_id", "batter_name", "game_date", "game_id",
@@ -11,11 +13,34 @@ _REQUIRED_COLUMNS = {
 _RESULT_COLUMNS = [
     "batter_id", "player", "team", "market", "opportunity_score",
     "stability_score", "last_25_hit_rate", "last_50_hit_rate",
-    "pa_per_game", "k_rate", "support", "risks",
+    "pa_per_game", "k_rate", "lineup_slot", "support", "risks",
 ]
 
+# When a batter is confirmed out of today's lineup, cap the score so a strong
+# history can't float a benched player to the top of the slate.
+_BENCH_SCORE_CAP = 25
+_BENCH_STABILITY_CAP = 40
 
-def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30) -> pd.DataFrame:
+
+def _ordinal(n: int) -> str:
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def _slot_bonus(slot: int) -> int:
+    """Small, evidence-first nudge for lineup slot (top of the order sees more
+    plate appearances). Deliberately minor so recorded history stays dominant."""
+    if slot <= 2:
+        return 3
+    if slot <= 5:
+        return 2
+    if slot <= 6:
+        return 0
+    return -3
+
+
+def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30,
+                            lineups: Lineups | None = None) -> pd.DataFrame:
     # Guard: empty input or missing columns yields an empty result, never a crash.
     if pa.empty or not _REQUIRED_COLUMNS.issubset(pa.columns) or not teams:
         return pd.DataFrame(columns=_RESULT_COLUMNS)
@@ -42,7 +67,6 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
             + 10 * max(0, 1 - k_rate / 0.30)
             + 10 * min((pitches or 0) / 4.2, 1.15)
         )
-        score = max(0, min(round(score), 100))
         stability = max(0, min(round(55 + min(len(recent), 50) * 0.7 - abs(short_hit_rate - hit_rate) * 40), 100))
 
         support = []
@@ -54,12 +78,34 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         if short_hit_rate < hit_rate - 0.05: risks.append("Recent hit rate has cooled")
         if k_rate >= 0.28: risks.append("Elevated recent strikeout rate")
         if pa_per_game < 3.8: risks.append("Recent plate-appearance volume is limited")
-        if not risks: risks.append("Opponent and confirmed lineup context not yet included")
+
+        # --- Lineup overlay (today's posted lineup for today's game) -----------
+        team_name = recent["batting_team"].iloc[-1]
+        slot = lineups.slot.get(int(batter_id)) if lineups is not None else None
+        team_posted = lineups.is_posted(team_name) if lineups is not None else False
+        if slot is not None:
+            support.insert(0, f"Batting {_ordinal(slot)}, confirmed lineup")
+            score += _slot_bonus(slot)
+        elif team_posted:                       # lineup is out and this bat isn't in it
+            risks.insert(0, "Not in today's posted lineup")
+
+        score = max(0, min(round(score), 100))
+        if slot is None and team_posted:
+            score = min(score, _BENCH_SCORE_CAP)
+            stability = min(stability, _BENCH_STABILITY_CAP)
+
+        if not risks:
+            if slot is not None:
+                risks.append("Opponent starter and matchup context not yet included")
+            elif lineups is not None and not team_posted:
+                risks.append("Lineup not yet posted")
+            else:
+                risks.append("Opponent and confirmed lineup context not yet included")
 
         rows.append({
             "batter_id": int(batter_id),
             "player": recent["batter_name"].iloc[-1],
-            "team": recent["batting_team"].iloc[-1],
+            "team": team_name,
             "market": "1+ Hit",
             "opportunity_score": score,
             "stability_score": stability,
@@ -67,6 +113,7 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
             "last_50_hit_rate": hit_rate,
             "pa_per_game": pa_per_game,
             "k_rate": k_rate,
+            "lineup_slot": slot,
             "support": support[:3],
             "risks": risks[:2],
         })
