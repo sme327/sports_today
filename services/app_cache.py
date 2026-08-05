@@ -53,6 +53,17 @@ def cached_mls_game_page(cache_key: str, _game, as_of_iso: str):
     return build_mls_game_page(_game, d, d)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def cached_lineups(slate_iso: str):
+    """Today's posted MLB batting lineups, cached with a short TTL so late-posted
+    lineups get picked up on refresh. Degrades to empty on any network error."""
+    from src.mlb_lineups import EMPTY_LINEUPS, fetch_lineups
+    try:
+        return fetch_lineups(date.fromisoformat(slate_iso))
+    except Exception:
+        return EMPTY_LINEUPS
+
+
 @st.cache_data(ttl=900, show_spinner=False)
 def cached_mlb_pitcher_opps(as_of_iso: str, probables: tuple[tuple[str, str], ...]):
     """SP strikeout + hits-allowed opportunities for the slate's probable starters,

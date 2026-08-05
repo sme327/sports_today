@@ -108,7 +108,16 @@ class MLBAdapter:
         if not teams:
             return []
 
-        scored = score_hit_opportunities(pa, teams)
+        # Today's posted lineups (cached, degrades to empty offline). Slot + bench
+        # awareness lifts confirmed hitters and demotes anyone scratched pregame.
+        lineups = None
+        try:
+            from services.app_cache import cached_lineups
+            lineups = cached_lineups(as_of.isoformat())
+        except Exception:
+            lineups = None
+
+        scored = score_hit_opportunities(pa, teams, lineups=lineups)
         if scored.empty:
             return []
 
