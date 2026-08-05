@@ -8,7 +8,7 @@
 Run: `pip install -r requirements-dev.txt` then `python -m pytest`.
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (108 tests, all passing)
+## Test suites (151 tests, all passing)
 
 | File | Covers |
 | --- | --- |
@@ -17,7 +17,12 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_schedules.py` | Degraded ordering: live→LIVE(+cache), empty→EMPTY (no fallback), fail→CACHED, fail+no-cache→ERROR |
 | `test_schedule_cache.py` | Round-trip serde; empty result not usable; missing DB → None |
 | `test_snapshots.py` | Context captured (provenance, cutoff, engine, flags); idempotent per day; empty writes nothing |
-| `test_opportunities.py` | Empty/missing-column and no-matching-team inputs return empty frames (no crash) |
+| `test_opportunities.py` | Empty/missing-column and no-matching-team inputs return empty frames (no crash); **lineup overlay** — confirmed-slot evidence, bench-cap (≤25), honest not-posted state, and backward-compat with no `lineups` arg |
+| `test_scores.py` | MLB 1+ hit scorer components, score/stability bounds, support/risk rules |
+| `test_pitcher_opportunity.py` | SP props: per-start line extraction (inning `1T`/`1B` parse), opener exclusion, two-directional over/under selection, min-starts gate |
+| `test_grading.py` | Prop grading hit/miss/void (incl. DNP=void honesty), idempotency, no-grading-today guard, dedup/min-score reads, summary + **`summarize_by_market`**, row classification, market-breakdown render |
+| `test_mlb_trends.py` | MLB trend spotlights: pitcher per-start sparklines/direction/props/min-starts, batter dots/L5-L10-L25 windows/streak/min-games, rendering, empty states |
+| `test_deploy_boot.py` | App boots + degrades honestly against an empty DB (cloud-deploy path) |
 | `test_navigation.py` | Same-tab query-param hrefs; back link carries only `day` |
 | `test_registry.py` | All **four** adapters (MLB, WNBA, World Cup, MLS) registered in order; satisfy Protocol; deep-dive flags |
 | `test_wnba_parser.py` | ESPN boxscore parsing over a recorded-shape payload; stat helpers |
@@ -42,5 +47,8 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
   functions and Tomorrow's snapshot).
 - Recorded full ESPN/StatsAPI schedule payloads → adapter `fetch_schedule`
   (schema-drift regression guard).
-- Filter-toggle interaction test via `AppTest` (click a chip → visible set).
-- Snapshot review/evaluation once that feature is built.
+- Filter-toggle interaction test via `AppTest` (click a chip → visible set), incl.
+  the Results view's threshold band + prop-type sub-filter.
+- `src/mlb_lineups.py` payload parsing over a recorded StatsAPI `lineups` shape
+  (schema-drift guard); the scorer overlay is already covered offline via a fixture.
+- Results Phase 3 calibration analytics once that feature is built.

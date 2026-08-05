@@ -9,6 +9,114 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-04 — MLB confirmed-lineup awareness in the batter hit scorer
+
+**Decision.** Overlay **today's posted batting lineups** (MLB StatsAPI
+`hydrate=lineups`, the same free source as the schedule) onto the 1+ Hit scorer via
+`src/mlb_lineups.py` (fetch + `Lineups` model) and an optional `lineups=` parameter
+on `score_hit_opportunities`. Three honest states: (a) **in a posted lineup** → a
+"Batting Nth, confirmed lineup" support line + a small slot nudge (`_slot_bonus`,
+±3); (b) **team posted but batter absent** → a "Not in today's posted lineup" risk
+and the score **capped at 25** so a strong season can't float a benched player to
+the top; (c) **not posted yet** → an honest "Lineup not yet posted", no penalty.
+Joined by MLB player id (= the vendor feed's `batter_id`, verified 1:1; team names
+also match the feed exactly). Cached in `app_cache.cached_lineups` (300 s TTL);
+wired into both the slate feed (MLB adapter) and the MLB game page.
+**Reason.** "Confirmed lineup context not yet included" was the caveat on nearly
+every MLB card, and the single biggest quality gap was recommending a hitter who
+turns out to be resting. Lineups are the highest-value new input, from a source we
+already trust, and are leakage-safe (today's lineup for today's game; history stays
+`as_of`-bounded).
+**Tradeoffs.** Lineups post ~2–4 h before first pitch, so a morning open honestly
+shows "not yet posted" for most games. A player traded mid-season can read as "not
+in lineup" for his old club (harmless — he isn't a relevant pick there). The slot
+nudge is deliberately tiny so recorded hit-rate history stays dominant.
+**Future.** Projected lineups before official posting; expected plate appearances
+from slot + pace; the same overlay for SP-vs-opposing-lineup quality.
+
+## 2026-08-03 — Results Phase 2: score-threshold, market sub-filter, per-market rates
+
+**Decision.** Make the Results view a learning instrument. It now loads the **full
+scored population** and slices it three ways without changing what was stored:
+score-threshold band pills (All / 75+ / 85+ / 90+ / 95+), a per-market sub-filter
+(batter hits / SP K / SP hits allowed / points / rebounds / assists, namespaced so
+it's independent of the Today feed), and a **"By market" hit-rate breakdown**
+(`grading.summarize_by_market`). Market classification moved to `domain/markets.py`
+as the single source of truth shared by the feed filters and the grading breakdown.
+**Reason.** Phase 1 recorded and graded picks but showed them as one flat list;
+"which markets convert, and does a higher score bar actually pay off?" was
+unanswerable. Bands + per-market rates make the ledger legible.
+**Tradeoffs.** Real signal needs accumulated graded days — a single slate is noise;
+calibration *over time* (Phase 3) waits until the ledger has ~15–20 graded slates.
+**Future.** Phase 3: hit rate by score band across dates, signal usefulness,
+engine-version comparison.
+
+## 2026-08-03 — Two-up card grid for the opportunity feed (density, evidence stays visible)
+
+**Decision.** Replace the full-width opportunity row (a 4-column grid that stretched
+evidence across wasted whitespace on wide screens) with a **two-up card grid** — 2
+cards per row on wide, 1 on tablet, 1 with stacked evidence on phone — roughly
+doubling props-per-screen. Both the "why it stands out" and "what could go wrong"
+blocks stay on the surface. Scoped to `styles/app.css`; no logic changed.
+**Reason.** The user asked to use space better. A considered alternative — moving the
+red/green evidence into hover tooltips — was **rejected** because it violates the
+non-negotiable rule that negative evidence stays at least as prominent as supporting
+evidence, and tooltips break on touch. Density via layout keeps everything visible.
+**Tradeoffs.** Uneven card heights within a row when one card's evidence wraps.
+**Future.** Optional equal-height rows if the ragged bottom edge ever bothers.
+
+## 2026-08-03 — MLB player trend spotlights (starting pitchers + high-conviction hitters)
+
+**Decision.** Add per-player trend depth to the MLB matchup page (`services/mlb_trends.py`,
+models in `domain/mlb_game_page.py`): a **Pitcher Trends** section (per-start K and
+hits-allowed sparklines + direction + the SP props we serve + season K%), and an
+**enriched Player Trends** section replacing plain Heating/Cooling — per-game 1+-hit
+dot rows, L5/L10/L25 windows, current hit streak, and support/risk evidence. Leads
+with **≥ 90-conviction** picks, then heating/cooling movers (`_build_spotlights`,
+cap 6). All rendered with inline SVG (no charting library).
+**Reason.** The user wanted to *feel more confident* about specific players —
+especially starters and high-rated hitters. A score alone doesn't build conviction;
+the trajectory behind it does, kept honest with visible windows and evidence.
+**Tradeoffs.** More vertical space on the page (gated to real starters + movers).
+**Future.** Bring the same per-game depth to WNBA player trends (currently text-only).
+
+## 2026-08-03 — SP pitcher props (strikeouts + hits allowed), served two-directionally
+
+**Decision.** Add starting-pitcher props — **SP strikeouts** and **SP hits allowed** —
+scored in `src/pitcher_opportunity.py` from per-start lines (`services/mlb_pitcher_props.py`
+builds them for the slate's probable starters), surfaced in the same Top Opportunities
+feed, filterable by prop-type pills, and graded. Both markets are offered in **both
+directions** (over *and* under), chosen by an **impressiveness-weighted** value
+(rate × threshold-extremity) so a dominant strikeout pitcher surfaces a meaningful
+"7+ K" rather than a trivial "≤ 8 K". Openers are excluded (`MIN_START_BF = 10`
+batters faced) so they don't pollute the unders.
+**Reason.** Batter 1+ Hit was the only market; pitcher props are the highest-value MLB
+addition and the user watches them closely. A single fixed direction (e.g.
+hits-allowed only as an under) misses the strong-over cases, so both are served.
+**Tradeoffs.** `inning` is stored as `"1T"/"1B"` (parsed with a regex); starter
+detection keys on a first-inning plate appearance. Thresholds are heuristic.
+**Future.** More markets (total bases, batter Ks, walks, HR), each needing an honest
+scorer + grader before it ships.
+
+## 2026-08-02 — Prop grading + a dedicated Results view (Phase 1); DNP = void
+
+**Decision.** Close the after-games loop. The Today view now records the **full
+scored population** each day (not just a served top-N), and `services/grading.py`
+grades each recorded prop **hit / miss / void** against stored results (MLB from
+`plate_appearances`, WNBA from box scores), idempotently and only for dates strictly
+before today. A player who **did not play** is **void**, not a miss — excluded from
+the hit rate. A dedicated **Results** view (`?view=results`) shows a past slate's
+graded props with a sport pill and a hit-rate summary. Grading columns
+(`result`, `actual_value`, `graded_at`) were added additively to `opportunity_snapshots`.
+**Reason.** Without grading, every day's reasoning was lost and the system could never
+learn its own strengths and weaknesses. Recording the full population (per the user's
+choice over an arbitrary threshold) is what makes later calibration honest. Counting a
+scratch as a miss would understate the real hit rate — so voids are excluded.
+**Tradeoffs.** The ledger only becomes informative as graded days accumulate; the
+Results screen is deliberately read-only in Phase 1.
+**Future.** Phase 2 (threshold + per-market breakdown — shipped 08-03) and Phase 3
+(calibration over time). See [Roadmap → After Games](../product/ROADMAP.md).
+
 ## 2026-07-17 — MLS team-data integration + matchup analytics (Option A)
 
 **Decision.** Collect **MLS regular-season team box-score statistics** from ESPN and

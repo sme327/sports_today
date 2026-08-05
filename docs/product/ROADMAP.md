@@ -5,7 +5,8 @@
 > **Update when** — Priorities shift or a phase ships. Keep it experience-first.
 > **Related** — [Vision](VISION.md) · [Experience Principles](EXPERIENCE_PRINCIPLES.md) · [Architecture](../engineering/ARCHITECTURE.md) · [Docs index](../README.md)
 
-_Last updated: July 2026 (after the MLS team-data integration)._
+_Last updated: August 2026 (after prop grading + Results, SP pitcher props, MLB
+trend spotlights, and confirmed-lineup awareness)._
 
 ---
 
@@ -46,15 +47,20 @@ The user is planning their day. This is where the opportunity engine lives.
 
 - **Today's slate** — clickable game cards. *(shipped)*
 - **Top Opportunities** — ranked, explainable player opportunities. *(shipped: MLB
-  1+ hit; WNBA points/rebounds/assists)*
+  batter 1+ hit; MLB SP strikeouts and SP hits allowed, both over/under; WNBA
+  points/rebounds/assists — all filterable by prop-type pills)*
 - **Evidence & risk** — every opportunity shows why it stands out and what could
-  go wrong. *(shipped)*
+  go wrong. *(shipped; a two-up card grid keeps both blocks visible while doubling
+  density)*
 - **Game previews / deep dives** — editorial matchup pages. *(shipped: MLB, WNBA, and
   MLS — the latter with real collected team-stat analysis; see
-  [MLS Game Page](../engineering/MLS_GAME_PAGE.md))*
-- **Better inputs** — probable pitchers & handedness, confirmed lineups, expected
-  plate appearances / minutes, park & weather, bullpen/rest; for MLS, match-event
-  timing then confirmed lineups. *(next)*
+  [MLS Game Page](../engineering/MLS_GAME_PAGE.md)). The MLB page also carries
+  pitcher/player **trend spotlights** (per-start & per-game sparklines, windows,
+  streaks).*
+- **Better inputs** — *(shipped: confirmed lineups for MLB batter scoring — slot
+  evidence, bench-cap, honest not-posted state; probable pitchers & handedness).*
+  Still ahead: expected plate appearances / minutes, park & weather, bullpen/rest,
+  matched-starter season lines; for MLS, match-event timing then confirmed lineups.
 - **Watchability score, best matchup, closest games.**
 
 ### 🏟️ During Games — "What's happening right now that matters?"
@@ -79,10 +85,14 @@ cards (Final-score V1). This phase grows carefully.
 
 ### 🌙 After Games — "What just happened, and did it matter?"
 
-- **Result tracking** — did today's opportunities hit? *(foundation shipped: daily
-  snapshots capture the ranking; grading is next)*
+- **Result tracking** — did today's opportunities hit? *(shipped: the full scored
+  population is recorded and graded hit/miss/void — DNP = void — in a dedicated
+  **Results** view with sport + prop-type filters, a score-threshold control, and
+  per-market hit rates. See the [Decision Log](../engineering/DECISION_LOG.md).)*
 - **Evening recap** — "What mattered tonight."
 - **Signal evaluation** — which analytical signals were actually useful over time.
+  *(next: Results Phase 3 — calibration by score band across dates once the ledger
+  has accumulated enough graded slates.)*
 
 ### 📅 Season — "How is the bigger picture developing?"
 
@@ -152,13 +162,19 @@ If it scores poorly, it belongs later — or not at all.
 
 ## Current priorities (next major version)
 
-- **Before Games:** better opportunity inputs (probable pitchers, lineups,
-  expected volume) and cleaner game pages. For **MLS**, add match-event data
-  (goal/card/sub timing + scorers) to make the timeline and storylines richer, then
-  confirmed lineups; **MLS player data is deferred** until a richer source exists.
-- **After Games:** grade the daily snapshots (did opportunities hit?).
-- **Foundations:** NBA support; continued caching/startup improvements; continued
-  design refinement.
+- **Operate & accumulate:** run the daily update so the graded ledger builds up —
+  the learning loop (record → grade → read by band/market) is shipped but only
+  becomes informative with weeks of graded slates. This is the current bottleneck,
+  not more features.
+- **After Games:** **Results Phase 3** — calibration by score band over time, signal
+  usefulness, engine-version comparison (waits on ledger depth).
+- **Before Games:** further inputs beyond confirmed lineups (expected plate
+  appearances/minutes, matched-starter lines, park/weather/bullpen); more MLB
+  markets (total bases, batter Ks, walks, HR), each with an honest scorer + grader.
+  For **MLS**, projected/confirmed lineups next; **MLS player data is deferred**
+  until a richer source exists.
+- **Foundations:** NBA support; WNBA player-trend parity; continued caching/startup
+  and design refinement.
 
 ---
 
