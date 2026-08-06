@@ -8,10 +8,11 @@
 Run: `pip install -r requirements-dev.txt` then `python -m pytest`.
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (151 tests, all passing)
+## Test suites (173 tests, all passing)
 
 | File | Covers |
 | --- | --- |
+| `test_markets.py` | Market registry: canonical labels (byte-identical to scorer output), round-trip `resolve`, "hits allowed" vs bare "hit" ordering, league-optional resolution, grade rules per direction, `actual_display` units, and prop-type taxonomy back-compat |
 | `test_team_matching.py` | MLB canonicalization: names/abbrs/relocations, unknowns/blanks |
 | `test_data_access.py` | `as_of` excludes the slate date and later (leakage bound); missing DB → empty |
 | `test_schedules.py` | Degraded ordering: live→LIVE(+cache), empty→EMPTY (no fallback), fail→CACHED, fail+no-cache→ERROR |

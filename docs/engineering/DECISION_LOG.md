@@ -9,6 +9,30 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-05 — Structured market registry replaces market-text parsing
+
+**Decision.** Make `domain/markets.py` the single source of truth for every prop
+market. One `MarketSpec` per family (`batter_hit`, `sp_k`, `sp_hits`, `wnba_points`,
+`wnba_rebounds`, `wnba_assists`) declares label noun, unit, source table, direction
+rules, and prop-type, with behavior beside the data: `format_market` (canonical
+label), `grade` (hit/miss comparison), `actual_display`, and `resolve` (legacy market
+*text* → `(key, direction)`). `Opportunity` gains `market_key` + `direction`; scorers
+already knew these (`pitcher_opportunity.kind`+dir, the WNBA stat key) and stop
+discarding them at the adapter boundary. `opportunity_snapshots` gains additive
+`market_key`/`direction` columns, backfilled once from legacy text via `resolve()`.
+**Reason.** Grading, prop-type classification, and the results feed each parsed
+market **text** (`"≤"`-prefix → under, substring → stat) in three separate places —
+fragile, duplicated, and a blocker for adding NFL props. A registry centralizes the
+rules and makes adding a market one `MarketSpec` entry.
+**Tradeoffs.** The append-only ledger keys its PK on market text, so text stays the
+stored display form; `market_key` is additive and `resolve()` keeps historical rows
+gradeable. Labels are byte-identical to before (no visual change, no new PK values).
+Verified: force-regrading 07-05 + 08-03 is identical; the only diffs were 08-02
+`void→decided` from the data feed catching up, not the registry.
+**Future.** Register NFL/NCAAF markets as new `MarketSpec` entries; the registry is
+where a future structured void-rule / source-requirement per market would live.
+Prerequisite for `nfl_props_volume` in the seasonal calendar.
+
 ## 2026-08-04 — MLB confirmed-lineup awareness in the batter hit scorer
 
 **Decision.** Overlay **today's posted batting lineups** (MLB StatsAPI
