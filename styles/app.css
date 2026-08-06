@@ -306,7 +306,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 190px;
+  min-height: 200px;
   padding: 1rem 1.1rem .95rem;
   border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
@@ -369,7 +369,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .teams {
   display: flex;
   flex-direction: column;
-  gap: .34rem;
+  gap: .28rem;
   margin: auto 0;
 }
 .team-row {
@@ -377,6 +377,16 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   grid-template-columns: 34px 1fr auto;
   align-items: center;
   gap: .6rem;
+}
+/* Quiet "at" separator between the stacked away/home rows, indented to line up
+   with the team names (past the logo column). */
+.team-sep {
+  padding-left: calc(34px + .6rem);
+  color: var(--text-4);
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .01em;
 }
 .team-logo-wrap { width: 34px; height: 34px; display: grid; place-items: center; }
 .team-logo {

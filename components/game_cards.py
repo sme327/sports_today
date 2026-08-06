@@ -82,6 +82,7 @@ def game_card_html(game: SlateGame, day: str) -> str:
         f'{_status_badge(game, time)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls)}'
+        f'<div class="team-sep">at</div>'
         f'{_team_row(game, "home", home_logo, home, home_cls)}'
         f'</div>'
         f'<div class="game-meta"><span>{escape(meta)}</span>'
