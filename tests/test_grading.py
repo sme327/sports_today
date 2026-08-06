@@ -91,6 +91,25 @@ def test_grading_total_bases(tmp_path):
     assert _result(db, "3") == ("void", None)   # did not bat
 
 
+def test_grading_waits_for_results(tmp_path):
+    """A slate captured before its feed arrives must stay pending, not grade to
+    all-void (which idempotency would then freeze)."""
+    db = tmp_path / "wait.db"
+    with sqlite3.connect(db) as conn:
+        snapshots.ensure_table(conn)
+        conn.execute("CREATE TABLE plate_appearances (batter_id TEXT, game_date TEXT, is_hit INTEGER)")
+        _snap(conn, "1", "MLB", "1+ Hit", 1, 90)         # no PA rows for SLATE yet
+        conn.commit()
+    grading.grade_slate(date(2026, 6, 1), db_path=db)
+    assert _result(db, "1") == (None, None)              # pending, not void
+
+    with sqlite3.connect(db) as conn:                    # results now arrive
+        conn.execute("INSERT INTO plate_appearances VALUES ('1', ?, 1)", (SLATE,))
+        conn.commit()
+    grading.grade_slate(date(2026, 6, 1), db_path=db)
+    assert _result(db, "1") == ("hit", 1.0)              # graded once data is present
+
+
 def test_grading_idempotent_and_force(tmp_path):
     db = _seed(tmp_path)
     grading.grade_slate(date(2026, 6, 1), db_path=db)
