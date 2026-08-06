@@ -1125,6 +1125,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .results-link { color: var(--brand-2) !important; text-decoration: none !important;
   font-size: .8rem; font-weight: 650; white-space: nowrap; }
 .results-link:hover { color: var(--brand) !important; }
+.section-links { display: inline-flex; align-items: center; gap: 1.1rem; }
 
 .rz-stepper { display: flex; align-items: center; justify-content: flex-end; gap: .7rem; }
 .rz-step { color: var(--text-2) !important; text-decoration: none !important; font-size: .82rem;
@@ -1237,3 +1238,10 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 @media (max-width: 860px) {
   .mlb-ptrend-grid, .mlb-btrend-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------------------------------------------------- AUTH GATE ---------- */
+.auth-title {
+  font-size: 2rem; font-weight: 850; letter-spacing: -.02em;
+  color: var(--text-1); margin: 3rem 0 1rem;
+}
+.auth-title span { color: var(--brand); }
