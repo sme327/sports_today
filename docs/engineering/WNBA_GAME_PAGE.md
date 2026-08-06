@@ -45,7 +45,10 @@ supports_deep_dive = True`; cached on `game_id | as_of | wnba-game-page-v1`.
    Rebounding presence) with season line, trend, strengths, and why they matter.
 7. **Trending Players** — recent (last-5) vs. season baseline, categorized
    (Trending Up / Potential Breakout / Expanded Role / Recent Slump / Trending
-   Down); gated by a minimum magnitude; no player in both up and down.
+   Down); gated by a minimum magnitude; no player in both up and down. Each card
+   carries **per-game depth** (parity with the MLB batter spotlights): a points
+   sparkline, a double-figure (10+ pts) dot row, L5/L10 windows, and a streak,
+   from `services/wnba_game_page._player_depth`.
 8. **Team Trends** — inline-SVG sparklines per team (points, opp points, 3PT%,
    rebounds) over the last 8 games.
 9. **Strongest Player Opportunities** — the shared WNBA opportunity engine
