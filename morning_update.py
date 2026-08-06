@@ -78,6 +78,15 @@ def main() -> int:
         except Exception as exc:
             print(f"MLS update skipped: {exc}", file=sys.stderr)
 
+        # Publish the rebuilt DB to the cloud bucket when one is configured, so a
+        # not-always-on deploy and other devices pick it up. No-op locally.
+        try:
+            from services.data_store import is_configured, publish_db
+            if is_configured() and publish_db():
+                print("Published database to the cloud store.")
+        except Exception as exc:
+            print(f"Cloud publish skipped: {exc}", file=sys.stderr)
+
         if not args.no_launch:
             print("Launching Sports Today...")
             return subprocess.call(
