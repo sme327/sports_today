@@ -25,18 +25,28 @@ from services import grading
 
 _LEAGUE_NAMES = {"MLB": "MLB", "WNBA": "WNBA"}
 
-# Score-threshold bands. Default keeps the prior "what we'd have served" framing
-# (≥ 75) while letting you drop to the full population or raise the bar to test
-# whether conviction actually converts. (key, label, min_score).
-_BANDS: list[tuple[str, str, float]] = [
-    ("all", "All", 0.0),
-    ("75", "75+", 75.0),
-    ("85", "85+", 85.0),
-    ("90", "90+", 90.0),
-    ("95", "95+", 95.0),
+# Score bands as inclusive [lo, hi] ranges. Most are minimums ("75+" → 75–100);
+# the trailing two are *exact* scores (99, 100) so you can isolate how the very
+# top of the distribution actually converts. (key, label, lo, hi).
+_BANDS: list[tuple[str, str, float, float]] = [
+    ("all", "All", 0.0, 100.0),
+    ("75", "75+", 75.0, 100.0),
+    ("85", "85+", 85.0, 100.0),
+    ("90", "90+", 90.0, 100.0),
+    ("95", "95+", 95.0, 100.0),
+    ("99", "99", 99.0, 99.0),
+    ("100", "100", 100.0, 100.0),
 ]
 _DEFAULT_BAND = "75"
-_BAND_SCORE = {k: s for k, _, s in _BANDS}
+_BAND_RANGE = {k: (lo, hi) for k, _, lo, hi in _BANDS}
+
+
+def _band_label(lo: float, hi: float) -> str:
+    if lo <= 0 and hi >= 100:
+        return "all scores"
+    if lo == hi:
+        return f"scored exactly {int(lo)}"
+    return f"scored ≥ {int(lo)}"
 
 
 def _date_stepper(d: date) -> str:
@@ -53,19 +63,19 @@ def _date_stepper(d: date) -> str:
             f'<span class="rz-date">{label}</span>{next_link}</div>')
 
 
-def _threshold_control() -> float:
-    """Single-select band pills. Returns the active minimum score."""
+def _threshold_control() -> tuple[float, float]:
+    """Single-select band pills. Returns the active inclusive (lo, hi) score range."""
     st.session_state.setdefault("rz_threshold", _DEFAULT_BAND)
     active_key = st.session_state["rz_threshold"]
-    st.markdown('<div class="rz-control-label">Minimum score</div>', unsafe_allow_html=True)
+    st.markdown('<div class="rz-control-label">Score</div>', unsafe_allow_html=True)
     row = st.container(horizontal=True, gap="small")
-    for key, label, _score in _BANDS:
+    for key, label, _lo, _hi in _BANDS:
         if row.button(label, key=f"rz_band_{key}",
                       type="primary" if key == active_key else "secondary", width="content"):
             if key != active_key:
                 st.session_state["rz_threshold"] = key
                 st.rerun()
-    return _BAND_SCORE.get(st.session_state["rz_threshold"], 0.0)
+    return _BAND_RANGE.get(st.session_state["rz_threshold"], (0.0, 100.0))
 
 
 def render(nav: NavState) -> None:
@@ -109,15 +119,15 @@ def render(nav: NavState) -> None:
     by_market = [r for r in by_sport
                  if not chosen_types or prop_type_of_row(r) in chosen_types]
 
-    # Score-threshold control (applies last, on top of sport + market).
-    min_score = _threshold_control()
-    shown = [r for r in by_market if (r.get("opportunity_score") or 0) >= min_score]
+    # Score-band control (applies last, on top of sport + market).
+    lo, hi = _threshold_control()
+    shown = [r for r in by_market if lo <= (r.get("opportunity_score") or 0) <= hi]
 
-    band_label = "all scores" if min_score <= 0 else f"scored ≥ {int(min_score)}"
+    band_label = _band_label(lo, hi)
     if not shown:
         st.markdown(
             f'<div class="mlb-empty">No props match this filter ({band_label}). '
-            'Lower the minimum score or clear a filter.</div>', unsafe_allow_html=True)
+            'Widen the score band or clear a filter.</div>', unsafe_allow_html=True)
         return
 
     # Headline summary (respects every active filter), then per-league when >1 league.
