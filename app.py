@@ -29,10 +29,12 @@ load_css()
 
 def main() -> None:
     import leagues  # noqa: F401  (populates the adapter registry on import)
+    from services.data_store import ensure_db_available
     from services.migrations import ensure_schema
     from router import read_nav
     from views import today, game
 
+    ensure_db_available()  # cloud: fetch the DB from the bucket if local disk is empty
     ensure_schema()  # creates the DB + additive tables if missing (empty is fine)
     nav = read_nav()
     if nav.in_results_view:
