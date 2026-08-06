@@ -12,18 +12,18 @@
           "Inter", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
 
   /* Canvas + layered surfaces */
-  --bg: #0b0e12;
-  --surface-1: #161b21;      /* resting card */
-  --surface-1-top: #1a2027;  /* card gradient top */
-  --surface-2: #1c222a;      /* hover / secondary control */
-  --surface-3: #232a33;      /* elevated tile / badge track */
+  --bg: #090d11;
+  --surface-1: #181e25;      /* resting card */
+  --surface-1-top: #1e242c;  /* card gradient top */
+  --surface-2: #1f2630;      /* hover / secondary control */
+  --surface-3: #283039;      /* elevated tile / badge track */
 
-  /* Text ramp (grayscale) */
-  --text-1: #f4f3ef;
-  --text-2: #cdd2d9;
-  --text-3: #97a0aa;
-  --text-4: #6b747e;
-  --text-meta: #868e99;   /* dimmed metadata (arena, TV, league, team) */
+  /* Text ramp (grayscale) — brightened for ≥4.5:1 on the card surface. */
+  --text-1: #f7f7f5;
+  --text-2: #d3d8de;
+  --text-3: #b7bec8;   /* secondary: league labels, pitcher line, chips */
+  --text-4: #929ba7;   /* muted */
+  --text-meta: #a2abb6;   /* dimmed metadata (arena, TV, league, team) */
   --on-brand: #2a1103;
 
   /* Brand (orange) + semantics (green support, coral risk) */
@@ -36,8 +36,9 @@
   --red: #ef8e86;
 
   /* Hairlines + edge lighting (keep dark mode crisp) */
-  --hairline: rgba(255, 255, 255, .06);
-  --hairline-2: rgba(255, 255, 255, .10);
+  --hairline: rgba(255, 255, 255, .07);
+  --hairline-2: rgba(255, 255, 255, .12);
+  --divider: #303844;     /* solid, higher-contrast rule for card borders/separators */
   --edge-hi: inset 0 1px 0 rgba(255, 255, 255, .05);
 
   /* Radius scale */
@@ -132,11 +133,11 @@ header[data-testid="stHeader"] {
   white-space: nowrap;
 }
 
-/* Reusable uppercase micro-label. */
-.league-name, .analysis-chip {
-  font-size: .63rem;
-  font-weight: 700;
-  letter-spacing: .055em;
+/* League micro-label (MLB / WNBA) — caps are fine here; enlarged for legibility. */
+.league-name {
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .045em;
   text-transform: uppercase;
 }
 
@@ -147,7 +148,7 @@ div[data-testid="stButton"] > button {
   min-height: 2.3rem;
   height: 2.3rem;
   padding: 0 .95rem !important;
-  border: 1px solid var(--hairline) !important;
+  border: 1px solid var(--divider) !important;
   border-radius: var(--r-pill) !important;
   background: var(--surface-2) !important;
   color: var(--text-2) !important;
@@ -169,6 +170,10 @@ div[data-testid="stButton"] > button:hover {
   box-shadow: var(--edge-hi), var(--shadow-sm) !important;
 }
 div[data-testid="stButton"] > button:active { transform: translateY(0); }
+div[data-testid="stButton"] > button:focus-visible {
+  outline: 2px solid var(--brand) !important;
+  outline-offset: 2px;
+}
 div[data-testid="stButton"] > button p {
   font-size: inherit !important;
   font-weight: inherit !important;
@@ -253,6 +258,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   box-shadow: var(--shadow-brand);
 }
 .date-toggle a:not(.active):hover { background: var(--surface-3); color: var(--text-1) !important; }
+.date-toggle a:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; z-index: 5; }
 
 /* --------------------------------------------------------- STATUS CHIP --- */
 /* Retained as a primitive (used by degraded-mode / error notices elsewhere). */
@@ -300,19 +306,28 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 172px;
-  padding: 1rem 1.05rem .95rem;
+  min-height: 190px;
+  padding: 1rem 1.1rem .95rem;
   border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
+  border: 1px solid var(--divider);
   box-shadow: var(--edge-hi), var(--shadow-sm);
   transition: transform var(--dur) var(--ease-out),
               box-shadow var(--dur) var(--ease),
-              background var(--dur) var(--ease);
+              background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
 }
 .game-card:hover {
   transform: translateY(-2px);
-  background: linear-gradient(165deg, #1f252d, #171b20);
+  background: linear-gradient(165deg, #232a33, #191f26);
+  border-color: #3c4552;
   box-shadow: var(--edge-hi), var(--shadow-md);
+}
+/* Visible keyboard focus (a11y) — orange ring around the whole card. */
+.game-link:focus-visible { outline: none; }
+.game-link:focus-visible .game-card {
+  border-color: var(--brand);
+  box-shadow: var(--edge-hi), 0 0 0 2px var(--brand-ring), var(--shadow-md);
 }
 
 /* State treatments — same layout/size, color only (Homepage evolution). */
@@ -331,50 +346,63 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: .7rem;
+  margin-bottom: .55rem;
 }
 .league-name { color: var(--text-3); }
 
-/* Game time as a compact pill badge. */
+/* Game time — supporting, not competing with the matchup. Quiet pill. */
 .game-time {
-  padding: .2rem .5rem;
+  padding: .16rem .5rem;
   border-radius: var(--r-pill);
   background: var(--surface-3);
   box-shadow: var(--edge-hi);
-  color: var(--text-1);
-  font-size: .72rem;
-  font-weight: 650;
+  color: var(--text-2);
+  font-size: .82rem;
+  font-weight: 600;
   letter-spacing: -.005em;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
+/* Stacked matchup: away over home, each name with the full card width (no more
+   early truncation), logo in a fixed-size container, score at the row's end. */
 .teams {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: .65rem;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: .34rem;
   margin: auto 0;
 }
-.team { display: flex; align-items: center; gap: .58rem; min-width: 0; }
-.team.home { justify-content: flex-end; text-align: right; }
+.team-row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: .6rem;
+}
+.team-logo-wrap { width: 34px; height: 34px; display: grid; place-items: center; }
 .team-logo {
-  width: 44px;
-  height: 44px;
+  max-width: 34px; max-height: 34px;
   object-fit: contain;
-  flex: 0 0 44px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35));
 }
 .team-name {
   color: var(--text-1);
-  font-size: 1.02rem;
-  line-height: 1.15;
+  font-size: 1.3rem;
+  line-height: 1.25;
   font-weight: 800;
-  letter-spacing: -.017em;
+  letter-spacing: -.018em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.at-sign { color: var(--text-4); font-size: .8rem; font-weight: 600; }
+.team-score {
+  color: var(--text-3);
+  font-size: 1.24rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+.team-score.win { color: var(--text-1); font-weight: 850; }
+.team-score.loss { color: var(--text-4); }
 
 /* Live/final status badge (replaces the time pill) + score (Final-score V1). */
 .game-state {
@@ -389,44 +417,40 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   width: .42rem; height: .42rem; border-radius: 50%; background: #ff6b5e;
   box-shadow: 0 0 0 3px rgba(255, 107, 94, .18);
 }
-.game-score {
-  display: inline-flex; align-items: baseline; gap: .4rem;
-  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
-}
-.game-score .gs { color: var(--text-3); font-size: 1.24rem; font-weight: 750; }
-.game-score .gs.win { color: var(--text-1); font-weight: 850; }
-.game-score .gs.loss { color: var(--text-4); }
-.game-score .gs-sep { color: var(--text-4); font-size: .9rem; font-weight: 600; }
 /* Subtle winner emphasis on final cards. */
-.team.loss .team-name { color: var(--text-3); }
-.team.win .team-name { color: var(--text-1); }
+.team-row.loss .team-name { color: var(--text-3); }
+.team-row.win .team-name { color: var(--text-1); }
 
 .game-meta {
   margin-top: .7rem;
-  padding-top: .65rem;
-  border-top: 1px solid var(--hairline);
+  padding-top: .62rem;
+  border-top: 1px solid var(--divider);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: .7rem;
   color: var(--text-meta);
-  font-size: .7rem;
-  line-height: 1.28;
+  font-size: .9rem;
+  line-height: 1.45;
 }
 .game-meta > span:first-child {
   display: -webkit-box;
   overflow: hidden;
+  min-height: 2.6em;              /* reserve two lines so cards align */
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 .analysis-chip {
   flex: 0 0 auto;
-  padding: .2rem .46rem;
+  align-self: flex-start;
+  padding: .22rem .5rem;
   border-radius: var(--r-pill);
   background: var(--surface-2);
-  box-shadow: var(--edge-hi);
-  color: var(--text-3);
-  letter-spacing: .05em;
+  box-shadow: var(--edge-hi), inset 0 0 0 1px var(--hairline);
+  color: var(--text-2);
+  font-size: .78rem;
+  font-weight: 650;
+  letter-spacing: .005em;
   white-space: nowrap;
 }
 
@@ -644,7 +668,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .block-container { padding-left: .7rem; padding-right: .7rem; }
   .page-title { font-size: 1.65rem; }
   .date-toggle-wrap { justify-content: flex-start; margin-top: .55rem; }
-  .team-logo { width: 38px; height: 38px; flex-basis: 38px; }
   .op-avatar { width: 44px; height: 44px; flex-basis: 44px; }
   .op-badge { width: 20px; height: 20px; }
   /* Narrow phones: stack the two evidence blocks under the identity */
@@ -655,7 +678,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
       ".     good"
       ".     risk";
   }
-  .team-name { font-size: .94rem; }
+  .team-name { font-size: 1.2rem; }
   .detail-header { grid-template-columns: 1fr; text-align: left; }
   .detail-team.home { justify-content: flex-start; text-align: left; }
   .detail-at { display: none; }
@@ -1090,17 +1113,32 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* ---------------------------------------------- SCHEDULE COLLAPSE TOGGLE --- */
 /* Optional, sticky collapse of the Today schedule grid (?games=off), so the
    opportunity feed is one glance away on a busy slate. Default is expanded. */
-.games-toggle-row { display: flex; justify-content: flex-end; margin: 0 0 .5rem; }
+.games-toggle-row { display: flex; justify-content: flex-end; margin: 0 0 .55rem; }
+/* A proper button: real hit area, surface + border, brighter label. */
 .games-toggle {
-  color: var(--text-3) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--text-2) !important;
   text-decoration: none !important;
-  font-size: .78rem;
-  font-weight: 600;
+  font-size: .84rem;
+  font-weight: 650;
   letter-spacing: -.005em;
-  padding: .2rem .1rem;
-  transition: color var(--dur) var(--ease);
+  padding: .42rem .8rem;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  box-shadow: var(--edge-hi), inset 0 0 0 1px var(--hairline);
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease);
 }
-.games-toggle:hover { color: var(--brand-2) !important; }
+.games-toggle:hover {
+  color: var(--text-1) !important;
+  background: var(--surface-3);
+}
+.games-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 
 /* Collapsed: a full-width, inviting bar in place of the grid. */
 .games-toggle.collapsed {

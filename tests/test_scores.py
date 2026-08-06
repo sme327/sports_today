@@ -132,8 +132,8 @@ def _sg(**kw):
 
 def test_card_pregame_shows_time_not_score():
     html = game_card_html(_sg(state="pre"), "tomorrow")
-    assert "game-time" in html and "at-sign" in html
-    assert "game-score" not in html and "game-state" not in html
+    assert "game-time" in html and "team-name" in html
+    assert "team-score" not in html and "game-state" not in html   # no score cells pregame
 
 
 def test_card_live_shows_score_and_live_badge():
@@ -141,17 +141,16 @@ def test_card_live_shows_score_and_live_badge():
                               status_detail="3rd Inning"), "today")
     assert 'game-state live' in html and "LIVE" in html
     assert 'game-card--live' in html     # state class drives the accent bar
-    assert 'game-score' in html and ">2<" in html and ">3<" in html
+    assert 'team-score' in html and ">2<" in html and ">3<" in html   # per-row scores
 
 
 def test_card_final_shows_score_and_winner_emphasis():
     html = game_card_html(_sg(state="final", away_score=5, home_score=14, winner="home"), "today")
     assert 'game-state final' in html and "Final" in html
     assert 'game-card--final' in html
-    assert 'game-score' in html
-    assert 'class="gs win"' in html      # winner (home) score emphasized
-    assert 'class="team home loss"' not in html  # home is winner, not loss
-    assert 'class="team loss"' in html   # away side dimmed
+    assert 'team-score win' in html          # winner (home) score emphasized
+    assert 'team-row home loss' not in html  # home is winner, not loss
+    assert 'team-row away loss' in html       # away side dimmed
 
 
 def test_card_pregame_has_no_state_class():

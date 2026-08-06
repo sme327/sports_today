@@ -34,14 +34,20 @@ def group_games_by_state(games: list[SlateGame]) -> tuple[list[SlateGame], ...]:
     return live, upcoming, final
 
 
-def _center(game: SlateGame) -> str:
-    """Center of the teams row: '@' pregame, or the score once it exists."""
-    if game.state in ("live", "final") and game.has_score:
-        aw = " win" if game.winner == "away" else " loss" if game.winner == "home" else ""
-        hw = " win" if game.winner == "home" else " loss" if game.winner == "away" else ""
-        return (f'<div class="game-score"><span class="gs{aw}">{game.away_score}</span>'
-                f'<span class="gs-sep">–</span><span class="gs{hw}">{game.home_score}</span></div>')
-    return '<div class="at-sign">@</div>'
+def _score_cell(game: SlateGame, side: str) -> str:
+    """A single team's score at the end of its row (live/final only)."""
+    if game.state not in ("live", "final") or not game.has_score:
+        return ""
+    val = game.away_score if side == "away" else game.home_score
+    cls = " win" if game.winner == side else " loss" if (game.winner and game.winner != side) else ""
+    return f'<span class="team-score{cls}">{val}</span>'
+
+
+def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str) -> str:
+    return (f'<div class="team-row {side}{win_cls}">'
+            f'<span class="team-logo-wrap">{logo}</span>'
+            f'<span class="team-name">{escape(name)}</span>'
+            f'{_score_cell(game, side)}</div>')
 
 
 def game_card_html(game: SlateGame, day: str) -> str:
@@ -74,9 +80,10 @@ def game_card_html(game: SlateGame, day: str) -> str:
         f'<a class="game-link" href="{href}" target="_self"><div class="game-card{state_cls}">'
         f'<div class="game-top"><span class="league-name">{escape(league_label)}</span>'
         f'{_status_badge(game, time)}</div>'
-        f'<div class="teams"><div class="team{away_cls}">{away_logo}<span class="team-name">{escape(away)}</span></div>'
-        f'{_center(game)}'
-        f'<div class="team home{home_cls}"><span class="team-name">{escape(home)}</span>{home_logo}</div></div>'
+        f'<div class="teams">'
+        f'{_team_row(game, "away", away_logo, away, away_cls)}'
+        f'{_team_row(game, "home", home_logo, home, home_cls)}'
+        f'</div>'
         f'<div class="game-meta"><span>{escape(meta)}</span>'
         f'<span class="analysis-chip">{escape(chip)}</span></div>'
         f'</div></a>'
