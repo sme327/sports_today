@@ -44,8 +44,8 @@ def test_games_toggle_collapsed_offers_expand_with_count():
     html = games_toggle_html("tomorrow", collapsed=True, count=15)
     assert 'href="?day=tomorrow"' in html                    # expand drops the param
     assert "games=off" not in html
-    assert "15 games hidden" in html and "Show games" in html
+    assert "Show 15 games" in html
 
 
 def test_games_toggle_singular():
-    assert "1 game hidden" in games_toggle_html("today", collapsed=True, count=1)
+    assert "Show 1 game ▾" in games_toggle_html("today", collapsed=True, count=1)

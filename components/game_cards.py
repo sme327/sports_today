@@ -97,19 +97,13 @@ def schedule_grid_html(games: list[SlateGame], day: str) -> str:
 
 
 def games_toggle_html(day: str, collapsed: bool, count: int) -> str:
-    """A same-tab link that collapses/expands the schedule grid. Sticky via the
-    ``games`` query param (carried by the date switch; preserved on filter/refresh
-    reruns). When collapsed, it becomes a compact bar so the games never feel gone."""
+    """A same-tab pill that collapses/expands the schedule grid, sat on the filter
+    row (right-aligned). Sticky via the ``games`` query param (carried by the date
+    switch; preserved on filter/refresh reruns)."""
     d = quote_plus(day)
-    noun = "game" if count == 1 else "games"
     if collapsed:
-        return (
-            f'<a class="games-toggle collapsed" target="_self" href="?day={d}">'
-            f'<span class="games-toggle-count">{count} {noun} hidden</span>'
-            f'<span class="games-toggle-action">Show games ▾</span></a>'
-        )
-    return (
-        '<div class="games-toggle-row">'
-        f'<a class="games-toggle" target="_self" href="?day={d}&games=off">Hide games ▴</a>'
-        '</div>'
-    )
+        noun = "game" if count == 1 else "games"
+        return (f'<div class="games-toggle-row"><a class="games-toggle" target="_self" '
+                f'href="?day={d}">Show {count} {noun} ▾</a></div>')
+    return (f'<div class="games-toggle-row"><a class="games-toggle" target="_self" '
+            f'href="?day={d}&games=off">Hide games ▴</a></div>')
