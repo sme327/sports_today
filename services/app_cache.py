@@ -65,6 +65,14 @@ def cached_lineups(slate_iso: str):
 
 
 @st.cache_data(ttl=900, show_spinner=False)
+def cached_mlb_tb_opps(as_of_iso: str, team_ids: tuple[str, ...], limit: int = 100_000):
+    """Batter Total-Bases opportunities for the slate, cached by (as_of, teams)."""
+    adapter = get_adapter("MLB")
+    return adapter.tb_opportunities(
+        as_of=date.fromisoformat(as_of_iso), scheduled_team_ids=list(team_ids), limit=limit)
+
+
+@st.cache_data(ttl=900, show_spinner=False)
 def cached_mlb_pitcher_opps(as_of_iso: str, probables: tuple[tuple[str, str], ...]):
     """SP strikeout + hits-allowed opportunities for the slate's probable starters,
     cached by (as_of, probable pitchers)."""

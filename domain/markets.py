@@ -46,6 +46,9 @@ MARKETS: dict[str, MarketSpec] = {
     "batter_hit": MarketSpec(
         "batter_hit", "MLB", "hits", "Hit", "hit", True,
         "plate_appearances", OVER, allows_both=False),
+    "batter_tb": MarketSpec(
+        "batter_tb", "MLB", "tb", "Total Bases", "total bases", False,
+        "plate_appearances", OVER, allows_both=False),
     "sp_k": MarketSpec(
         "sp_k", "MLB", "sp_k", "Strikeouts", "K", False,
         "plate_appearances", OVER, allows_both=True, suffix=" (SP)"),
@@ -126,6 +129,8 @@ def resolve(league: str | None, market_text: str | None) -> tuple[str | None, st
         return "sp_k", direction
     if "hits allowed" in m:
         return "sp_hits", direction
+    if "total base" in m:
+        return "batter_tb", OVER
     if "point" in m:
         return "wnba_points", OVER
     if "rebound" in m:
@@ -146,6 +151,7 @@ def spec_for(league: str | None, market_text: str | None) -> MarketSpec | None:
 # Canonical order + display labels for the prop-type filter pills.
 PROP_TYPES: list[tuple[str, str]] = [
     ("hits", "Batter Hits"),
+    ("tb", "Total Bases"),
     ("sp_k", "SP Strikeouts"),
     ("sp_hits", "SP Hits Allowed"),
     ("points", "Points"),

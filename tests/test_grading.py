@@ -74,6 +74,23 @@ def test_grading_hit_miss_void(tmp_path):
     assert _result(db, "13") == ("void", None)  # WNBA DNP (0 minutes) → void, not miss
 
 
+def test_grading_total_bases(tmp_path):
+    db = tmp_path / "tb.db"
+    with sqlite3.connect(db) as conn:
+        snapshots.ensure_table(conn)
+        conn.execute("CREATE TABLE plate_appearances (batter_id TEXT, game_date TEXT, total_bases INTEGER)")
+        _snap(conn, "1", "MLB", "2+ Total Bases", 2, 85)   # 3 TB → hit
+        _snap(conn, "2", "MLB", "2+ Total Bases", 2, 80)   # 1 TB → miss
+        _snap(conn, "3", "MLB", "2+ Total Bases", 2, 70)   # did not bat → void
+        conn.executemany("INSERT INTO plate_appearances VALUES (?,?,?)",
+                         [("1", SLATE, 2), ("1", SLATE, 1), ("2", SLATE, 1)])
+        conn.commit()
+    grading.grade_slate(date(2026, 6, 1), db_path=db)
+    assert _result(db, "1") == ("hit", 3.0)     # 2 + 1 = 3 ≥ 2
+    assert _result(db, "2") == ("miss", 1.0)    # 1 < 2
+    assert _result(db, "3") == ("void", None)   # did not bat
+
+
 def test_grading_idempotent_and_force(tmp_path):
     db = _seed(tmp_path)
     grading.grade_slate(date(2026, 6, 1), db_path=db)
