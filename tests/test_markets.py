@@ -11,6 +11,7 @@ from domain import markets as M
 # (key, threshold, direction, canonical text) — text must match what scorers emit.
 CASES = [
     ("batter_hit", 1, "over", "1+ Hit"),
+    ("batter_tb", 2, "over", "2+ Total Bases"),
     ("sp_k", 7, "over", "7+ Strikeouts (SP)"),
     ("sp_k", 5, "under", "≤ 5 Strikeouts (SP)"),
     ("sp_hits", 6, "over", "6+ Hits Allowed (SP)"),
@@ -47,7 +48,15 @@ def test_resolve_without_league():
     # league is advisory — phrases are league-unique
     assert M.resolve(None, "7+ Strikeouts (SP)")[0] == "sp_k"
     assert M.resolve(None, "15+ Points")[0] == "wnba_points"
+    assert M.resolve(None, "3+ Total Bases")[0] == "batter_tb"
     assert M.resolve(None, "unknown market")[0] is None
+
+
+def test_total_bases_display_and_grade():
+    assert M.actual_display("batter_tb", 3) == "3 total bases"
+    assert M.grade("batter_tb", 3, 2, "over") == "hit"
+    assert M.grade("batter_tb", 1, 2, "over") == "miss"
+    assert M.prop_type("MLB", "2+ Total Bases") == "tb"
 
 
 def test_grade_directions():

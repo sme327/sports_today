@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src import lineup_overlay
 from src.mlb_lineups import Lineups
 
 
@@ -15,28 +16,6 @@ _RESULT_COLUMNS = [
     "stability_score", "last_25_hit_rate", "last_50_hit_rate",
     "pa_per_game", "k_rate", "lineup_slot", "support", "risks",
 ]
-
-# When a batter is confirmed out of today's lineup, cap the score so a strong
-# history can't float a benched player to the top of the slate.
-_BENCH_SCORE_CAP = 25
-_BENCH_STABILITY_CAP = 40
-
-
-def _ordinal(n: int) -> str:
-    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suffix}"
-
-
-def _slot_bonus(slot: int) -> int:
-    """Small, evidence-first nudge for lineup slot (top of the order sees more
-    plate appearances). Deliberately minor so recorded history stays dominant."""
-    if slot <= 2:
-        return 3
-    if slot <= 5:
-        return 2
-    if slot <= 6:
-        return 0
-    return -3
 
 
 def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30,
@@ -81,18 +60,8 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
 
         # --- Lineup overlay (today's posted lineup for today's game) -----------
         team_name = recent["batting_team"].iloc[-1]
-        slot = lineups.slot.get(int(batter_id)) if lineups is not None else None
-        team_posted = lineups.is_posted(team_name) if lineups is not None else False
-        if slot is not None:
-            support.insert(0, f"Batting {_ordinal(slot)}, confirmed lineup")
-            score += _slot_bonus(slot)
-        elif team_posted:                       # lineup is out and this bat isn't in it
-            risks.insert(0, "Not in today's posted lineup")
-
-        score = max(0, min(round(score), 100))
-        if slot is None and team_posted:
-            score = min(score, _BENCH_SCORE_CAP)
-            stability = min(stability, _BENCH_STABILITY_CAP)
+        score, stability, slot, team_posted = lineup_overlay.apply(
+            batter_id, team_name, score, stability, support, risks, lineups)
 
         if not risks:
             if slot is not None:

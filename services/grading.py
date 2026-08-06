@@ -55,12 +55,13 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
             return summary
 
         mlb = _mlb_hits(conn, token)          # {batter_id: total_hits}
+        mlb_tb = _mlb_total_bases(conn, token)  # {batter_id: total_bases}
         mlb_sp = _mlb_pitcher_lines(conn, token)  # {pitcher_id: {k, hits}} for starters
         wnba = _wnba_lines(conn, token)       # {player_id: {points, rebounds, assists, minutes}}
         graded_at = datetime.now().isoformat(timespec="seconds")
 
         for r in rows:
-            result, actual = _grade_row(r, mlb, mlb_sp, wnba)
+            result, actual = _grade_row(r, mlb, mlb_tb, mlb_sp, wnba)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
                 continue
@@ -73,7 +74,7 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
     return summary
 
 
-def _grade_row(r, mlb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, float | None]:
+def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, float | None]:
     """Grade one snapshot row via the market registry. Reads the stored
     ``market_key``/``direction`` when present, else resolves them from the legacy
     market text — so old ledger rows grade identically. Void (did-not-play) stays a
@@ -92,6 +93,10 @@ def _grade_row(r, mlb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, floa
         if pid not in mlb:                  # did not bat that day
             return "void", None
         actual = mlb[pid]
+    elif key == "batter_tb":
+        if pid not in mlb_tb:               # did not bat that day
+            return "void", None
+        actual = mlb_tb[pid]
     elif key in ("sp_k", "sp_hits"):
         line = mlb_sp.get(pid)
         if line is None:                    # did not start
@@ -133,6 +138,18 @@ def _mlb_hits(conn: sqlite3.Connection, token: str) -> dict:
     except sqlite3.OperationalError:
         return {}
     return {r["bid"]: int(r["hits"] or 0) for r in rows}
+
+
+def _mlb_total_bases(conn: sqlite3.Connection, token: str) -> dict:
+    if not _table_exists(conn, "plate_appearances"):
+        return {}
+    try:
+        rows = conn.execute(
+            "SELECT CAST(batter_id AS TEXT) AS bid, SUM(total_bases) AS tb "
+            "FROM plate_appearances WHERE game_date = ? GROUP BY batter_id", (token,)).fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    return {r["bid"]: int(r["tb"] or 0) for r in rows}
 
 
 def _mlb_pitcher_lines(conn: sqlite3.Connection, token: str) -> dict:
