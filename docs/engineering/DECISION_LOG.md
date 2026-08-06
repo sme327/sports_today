@@ -9,6 +9,31 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-05 — Multi-device cloud access (durable DB store + in-app uploader + gate)
+
+**Decision.** Make the app usable from phone/iPad/computer without the Mac on, by
+deploying to Streamlit Community Cloud with the SQLite DB in a private S3-compatible
+bucket. New pieces: `services/data_store.py` (fetch the DB from the bucket on boot,
+publish after a rebuild; no-op locally), `services/settings.py` (secrets→env reader),
+`services/auth.py` (optional password gate — required because the URL and uploader are
+public), `services/update_pipeline.py` (one shared "import feed → refresh WNBA+MLS →
+publish" used by both the CLI and the uploader), and `views/update_data.py`
+(`?view=update`) — upload the day's Big Data Ball xlsx from any device and rebuild in
+the cloud. Steps in [DEPLOY](DEPLOY.md).
+**Reason.** The optimization target was multi-device ease *including updates*. The
+bottleneck was never Streamlit — it was that the MLB data is a large, locally-sourced
+feed and Community Cloud's disk is ephemeral. A private bucket + an in-app uploader
+makes the data durable and the daily refresh device-independent, while the vendor feed
+stays out of the public repo.
+**Tradeoffs.** Cold starts (~30s wake); the in-app *cloud* rebuild may strain Community
+Cloud's ~1 GB RAM (documented fallbacks: rebuild on the Mac and auto-publish, or host
+on a small always-on box). Correctness never depends on the store — with no secrets set
+the app behaves exactly as the local build (all cloud paths are opt-in). boto3 is a new
+dependency but lazily imported (cloud-only). The final deploy step needs the owner's
+Cloudflare + Streamlit accounts, so it is handed off via DEPLOY.md rather than automated.
+**Future.** If cloud rebuilds prove too heavy, move hosting to Fly.io/Render; a
+"refresh from bucket" button could replace the download-if-missing boot policy.
+
 ## 2026-08-05 — Structured market registry replaces market-text parsing
 
 **Decision.** Make `domain/markets.py` the single source of truth for every prop
