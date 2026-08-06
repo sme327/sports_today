@@ -16,7 +16,7 @@
 | a new **component** (reusable UI/HTML) | `components/<name>.py` |
 | a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |
 | a new **domain object** | `domain/models.py`, or a league page model (`domain/<league>_game_page.py`) |
-| a new **prop market** (scoring) | a scorer in `src/` (e.g. `src/pitcher_opportunity.py`), classified in `domain/markets.py`, graded in `services/grading.py` |
+| a new **prop market** | a `MarketSpec` entry in `domain/markets.py` (label, unit, direction, grade rule, source) + a scorer in `src/`; grading/classification/display then work automatically |
 | **grading / Results** logic | `services/grading.py` (grade + summarize), `views/results.py`, `components/results_feed.py` |
 | a new **data collector** (fetch → normalize → SQLite) | `src/<league>_collector.py`, writing via a `services/<league>_store.py` |
 | a **schema table** | add DDL to the store module and call it from `services/migrations.ensure_schema` |
@@ -54,9 +54,14 @@ Everything else follows the layers below.
   results; a player who did not play is **void** (excluded from the hit rate), never
   a miss. Lives in `services/grading.py`; surfaced in the **Results** view.
 - **Prop market** — a market a prop is scored in (batter 1+ hit, SP strikeouts, SP
-  hits allowed, WNBA points/rebounds/assists). The taxonomy that maps
-  (league, market) → a stable prop-type key is `domain/markets.py`, shared by the
-  feed filters and the Results breakdown.
+  hits allowed, WNBA points/rebounds/assists). `domain/markets.py` is the **registry**
+  (one `MarketSpec` per family) and the single source of truth for a market's label,
+  unit, direction, grade rule, source, and prop-type — used by the scorers, grading,
+  the feed filters, and the Results breakdown. Legacy snapshot rows (which store market
+  *text*) are re-classified by `resolve()`.
+- **market_key / direction** — the structured identity of a prop (registry key +
+  over/under), stored on `Opportunity` and each snapshot so grading never re-parses
+  label text.
 
 ---
 

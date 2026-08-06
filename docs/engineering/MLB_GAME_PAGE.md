@@ -109,5 +109,6 @@ Still ahead:
 - Add bullpen/park/weather as new services + matchup types (guarded by
   availability, following the same "omit or label honestly" rule).
 - Projected lineups before official posting; expected plate appearances from slot + pace.
-- New opportunity markets (total bases, batter Ks, walks, HR) plug into the existing
-  scorer and the section reuses it, each with an honest grader.
+- New opportunity markets (total bases, batter Ks, walks, HR): register a
+  `MarketSpec` in `domain/markets.py` + add a scorer; grading/classification/display
+  follow automatically. The section reuses the existing feed.
