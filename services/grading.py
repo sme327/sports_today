@@ -20,20 +20,14 @@ import sqlite3
 from datetime import date, datetime
 from pathlib import Path
 
+from domain import markets
 from src.config import DB_PATH
 
 _SNAP = "opportunity_snapshots"
 
 
-def _wnba_stat_column(market: str) -> str | None:
-    m = (market or "").lower()
-    if "point" in m:
-        return "points"
-    if "rebound" in m:
-        return "rebounds"
-    if "assist" in m:
-        return "assists"
-    return None
+# WNBA registry key → box-score column.
+_WNBA_COL = {"wnba_points": "points", "wnba_rebounds": "rebounds", "wnba_assists": "assists"}
 
 
 def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = False) -> dict:
@@ -53,7 +47,7 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         try:
             where = "" if force else "AND (result IS NULL OR result = 'pending')"
             rows = conn.execute(
-                f"SELECT rowid, league, player_id, market, threshold "
+                f"SELECT rowid, league, player_id, market, market_key, direction, threshold "
                 f"FROM {_SNAP} WHERE snapshot_date = ? {where}", (token,)).fetchall()
         except sqlite3.OperationalError:
             return summary
@@ -80,38 +74,48 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
 
 
 def _grade_row(r, mlb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, float | None]:
-    league = r["league"]
+    """Grade one snapshot row via the market registry. Reads the stored
+    ``market_key``/``direction`` when present, else resolves them from the legacy
+    market text — so old ledger rows grade identically. Void (did-not-play) stays a
+    source-specific rule; the hit/miss comparison comes from the registry."""
+    key = _row_get(r, "market_key") or None
+    direction = _row_get(r, "direction") or None
+    if key is None:
+        key, direction = markets.resolve(r["league"], r["market"])
+    if key is None:
+        return None, None                   # unknown market → leave pending
+
     threshold = r["threshold"]
     pid = str(r["player_id"])
-    if league == "MLB":
-        market_raw = r["market"] or ""
-        market = market_raw.lower()
-        is_sp = "strikeout" in market or "hits allowed" in market
-        if is_sp:
-            line = mlb_sp.get(pid)
-            if line is None:
-                return "void", None        # did not start
-            actual = line["k"] if "strikeout" in market else line["hits"]
-            # Direction is encoded in the label: "≤ T …" is an under, "T+ …" an over.
-            under = market_raw.strip().startswith("≤")
-            hit = actual <= (threshold or 0) if under else actual >= (threshold or 0)
-            return ("hit" if hit else "miss"), float(actual)
-        if pid not in mlb:                  # batter 1+ Hit
-            return "void", None            # did not bat that day
-        hits = mlb[pid]
-        return ("hit" if hits >= (threshold or 1) else "miss"), float(hits)
-    if league == "WNBA":
-        line = wnba.get(pid)
-        col = _wnba_stat_column(r["market"])
-        if line is None or col is None:
-            return "void", None            # not in the box score
-        if not line.get("minutes"):        # zero/NULL minutes → did not play
+
+    if key == "batter_hit":
+        if pid not in mlb:                  # did not bat that day
             return "void", None
-        actual = line.get(col)
+        actual = mlb[pid]
+    elif key in ("sp_k", "sp_hits"):
+        line = mlb_sp.get(pid)
+        if line is None:                    # did not start
+            return "void", None
+        actual = line["k"] if key == "sp_k" else line["hits"]
+    elif key in _WNBA_COL:
+        line = wnba.get(pid)
+        if line is None or not line.get("minutes"):   # not in box score / did not play
+            return "void", None
+        actual = line.get(_WNBA_COL[key])
         if actual is None:
             return "void", None
-        return ("hit" if actual >= (threshold or 0) else "miss"), float(actual)
-    return None, None                       # unknown league → leave pending
+    else:
+        return None, None
+
+    return markets.grade(key, actual, threshold, direction), float(actual)
+
+
+def _row_get(r, col):
+    """sqlite3.Row has no .get(); tolerate rows that predate a column."""
+    try:
+        return r[col]
+    except (IndexError, KeyError):
+        return None
 
 
 def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
@@ -168,9 +172,9 @@ def load_graded_slate(slate_date: date, *, min_score: float | None = None,
     capture — sorted by score. ``min_score`` filters (default: all). Empty if the
     table/rows are absent."""
     token = slate_date.isoformat()
-    cols = ("league", "player_id", "player_name", "team_name", "market", "threshold",
-            "opportunity_score", "stability_score", "result", "actual_value",
-            "support_evidence", "risk_evidence", "captured_on")
+    cols = ("league", "player_id", "player_name", "team_name", "market", "market_key",
+            "direction", "threshold", "opportunity_score", "stability_score", "result",
+            "actual_value", "support_evidence", "risk_evidence", "captured_on")
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         try:

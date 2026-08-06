@@ -19,6 +19,16 @@ from src.config import DB_PATH
 
 _TABLE = "opportunity_snapshots"
 
+
+def _resolve_key(league: str, market: str) -> str | None:
+    from domain.markets import resolve
+    return resolve(league, market)[0]
+
+
+def _resolve_dir(league: str, market: str) -> str:
+    from domain.markets import resolve
+    return resolve(league, market)[1]
+
 # Engine versions per league (kept next to each adapter).
 ENGINE_VERSIONS = {
     "MLB": "mlb-1hit-v0.1",
@@ -26,19 +36,41 @@ ENGINE_VERSIONS = {
 }
 
 
-# Grading columns (added after CREATE so both fresh and existing DBs gain them).
-_GRADING_COLUMNS = {
+# Additive columns (added after CREATE so both fresh and existing DBs gain them).
+_ADDED_COLUMNS = {
     "result": "TEXT",          # 'hit' | 'miss' | 'void' | NULL (pending)
     "actual_value": "REAL",    # the stat the player actually recorded that day
     "graded_at": "TEXT",       # ISO timestamp when graded
+    "market_key": "TEXT",      # registry market-family key (resolved for legacy rows)
+    "direction": "TEXT",       # 'over' | 'under' — graded comparison direction
 }
 
 
-def _ensure_grading_columns(conn: sqlite3.Connection) -> None:
+def _ensure_added_columns(conn: sqlite3.Connection) -> None:
     existing = {row[1] for row in conn.execute(f"PRAGMA table_info({_TABLE})")}
-    for col, col_type in _GRADING_COLUMNS.items():
+    added = False
+    for col, col_type in _ADDED_COLUMNS.items():
         if col not in existing:
             conn.execute(f"ALTER TABLE {_TABLE} ADD COLUMN {col} {col_type}")
+            added = True
+    if added or col_null_exists(conn):
+        _backfill_market_keys(conn)
+
+
+def col_null_exists(conn: sqlite3.Connection) -> bool:
+    return conn.execute(
+        f"SELECT 1 FROM {_TABLE} WHERE market_key IS NULL LIMIT 1").fetchone() is not None
+
+
+def _backfill_market_keys(conn: sqlite3.Connection) -> None:
+    """Resolve legacy rows (market text only) to a market_key + direction, once."""
+    from domain.markets import resolve
+    rows = conn.execute(
+        f"SELECT rowid, league, market FROM {_TABLE} WHERE market_key IS NULL").fetchall()
+    for rowid, league, market in rows:
+        key, direction = resolve(league, market)
+        conn.execute(f"UPDATE {_TABLE} SET market_key=?, direction=? WHERE rowid=?",
+                     (key, direction, rowid))
 
 
 def ensure_table(conn: sqlite3.Connection) -> None:
@@ -72,7 +104,7 @@ def ensure_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
-    _ensure_grading_columns(conn)
+    _ensure_added_columns(conn)
 
 
 def _already_captured(conn: sqlite3.Connection, slate_token: str, captured_on: str) -> bool:
@@ -119,12 +151,13 @@ def write_daily_snapshot(
                 INSERT OR IGNORE INTO {_TABLE} (
                     snapshot_date, captured_on, calculated_at, league, game_id,
                     player_id, player_name, team_id, team_name, market, threshold,
+                    market_key, direction,
                     mode, opportunity_score, stability_score, component_values,
                     support_evidence, risk_evidence, schedule_source_status,
                     historical_data_cutoff, lineups_available,
                     matchup_context_available, injury_context_available,
                     scoring_engine_version
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     slate_token,
@@ -138,6 +171,8 @@ def write_daily_snapshot(
                     opp.team_name,
                     opp.market,
                     float(opp.threshold) if opp.threshold is not None else None,
+                    opp.market_key or _resolve_key(opp.league, opp.market),
+                    opp.direction or _resolve_dir(opp.league, opp.market),
                     opp.mode.value,
                     opp.opportunity_score,
                     opp.stability_score,

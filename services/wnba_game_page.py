@@ -12,6 +12,7 @@ from datetime import date, datetime
 import pandas as pd
 
 from components.format import format_game_time
+from domain.markets import market_key_from_scorer
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from domain.wnba_game_page import (
     WNBABattlefield, WNBAFeatured, WNBAGamePage, WNBAHero, WNBAMetric,
@@ -336,7 +337,9 @@ def _opportunities(logs, game: SlateGame, tt, a_id, h_id) -> tuple[Opportunity, 
         out.append(Opportunity(
             league="WNBA", player_id=str(row.player_id), player_name=str(row.player),
             team_id=str(row.team_id) if row.team_id else None, team_name=str(row.team),
-            market=str(row.display_market), threshold=row.threshold,
+            market=str(row.display_market),
+            market_key=market_key_from_scorer("WNBA", str(row.market)),
+            direction="over", threshold=row.threshold,
             opportunity_score=int(row.opportunity_score), stability_score=int(row.stability_score),
             supporting_evidence=support, negative_evidence=risks,
             image_url=logos.get(str(row.team_id)),

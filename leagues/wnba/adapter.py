@@ -11,6 +11,7 @@ from typing import Iterable
 
 import pandas as pd
 
+from domain.markets import market_key_from_scorer
 from domain.models import Opportunity, OpportunityMode, SlateGame
 from leagues.base import register
 from services.data_access import load_wnba_player_logs
@@ -117,6 +118,8 @@ class WNBAAdapter:
                     team_id=str(row.team_id) if row.team_id else None,
                     team_name=str(row.team),
                     market=str(row.display_market),
+                    market_key=market_key_from_scorer(self.league, str(row.market)),
+                    direction="over",
                     threshold=row.threshold,
                     opportunity_score=int(row.opportunity_score),
                     stability_score=int(row.stability_score),

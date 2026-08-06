@@ -377,7 +377,8 @@ def _build_opportunities(pa, game: SlateGame, teams: list[str], lineups=None) ->
         pid = str(int(row.batter_id))
         out.append(Opportunity(
             league="MLB", player_id=pid, player_name=str(row.player),
-            team_id=None, team_name=str(row.team), market="1+ Hit", threshold=1,
+            team_id=None, team_name=str(row.team), market="1+ Hit",
+            market_key="batter_hit", direction="over", threshold=1,
             opportunity_score=int(row.opportunity_score), stability_score=int(row.stability_score),
             supporting_evidence=list(row.support) if isinstance(row.support, list) else [],
             negative_evidence=list(row.risks) if isinstance(row.risks, list) else [],
