@@ -13,9 +13,9 @@ restating it. **Start with [`docs/README.md`](docs/README.md).**
 
 A personal **daily sports companion** — calm, explainable, curated. It answers
 *"what should I pay attention to today?"* It is an analysis/opportunity tool, **not**
-a sportsbook, dashboard, or fantasy platform. Supported today: MLB (1+ hit for
-batters; SP strikeouts and SP hits allowed, both over/under) and WNBA
-(points/rebounds/assists) opportunities, MLB/WNBA/MLS matchup pages, plus World
+a sportsbook, dashboard, or fantasy platform. Supported today: MLB (1+ hit and
+total bases for batters; SP strikeouts and SP hits allowed, both over/under) and
+WNBA (points/rebounds/assists) opportunities, MLB/WNBA/MLS matchup pages, plus World
 Cup schedule. Picks are recorded and graded daily (hit/miss/void) with a dedicated
 **Results** view — see [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).

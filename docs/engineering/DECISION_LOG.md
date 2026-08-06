@@ -9,6 +9,28 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-06 — Batter Total Bases market + WNBA trend-depth parity
+
+**Decision.** (1) Add an MLB **Total Bases** market as the first one built on the
+registry: `src/tb_opportunity.py` scores "N+ Total Bases" from per-game `total_bases`,
+choosing the threshold by impressiveness-weighted clear rate; a `batter_tb` MarketSpec
++ a "Total Bases" filter pill, wired into the feed/ledger/grading. The confirmed-lineup
+overlay was extracted to `src/lineup_overlay.py` so Total Bases and 1+ Hit share the
+slot-evidence + bench-cap logic (no duplication). (2) Bring **per-game trend depth** to
+WNBA matchup pages (parity with the MLB batter spotlights): a points sparkline, a
+double-figure (10+) dot row, L5/L10 windows, and a streak, computed from game logs.
+**Reason.** Total Bases proves the registry's promise — a new market is "one MarketSpec
++ a scorer," with grading/classification/display automatic. WNBA trends were text-only
+while MLB got the confidence-building depth; parity closes that gap on a live in-season
+league.
+**Tradeoffs.** Total Bases scores are honestly modest (it's a high-variance market), so
+those props sit below 1+ Hit in the ranking and are found via the filter pill. The WNBA
+dot row uses a fixed "double figures (10+ pts)" line rather than a per-player threshold —
+recognizable and honest, but scoring-only (a rebound/assist trend still shows the points
+trajectory).
+**Future.** The remaining MLB markets (batter Ks, walks, HR) follow the same one-spec
+recipe; WNBA depth could later key its dots to the player's actual points prop threshold.
+
 ## 2026-08-05 — Multi-device cloud access (durable DB store + in-app uploader + gate)
 
 **Decision.** Make the app usable from phone/iPad/computer without the Mac on, by

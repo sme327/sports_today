@@ -8,11 +8,12 @@
 Run: `pip install -r requirements-dev.txt` then `python -m pytest`.
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (186 tests, all passing)
+## Test suites (198 tests, all passing)
 
 | File | Covers |
 | --- | --- |
-| `test_markets.py` | Market registry: canonical labels (byte-identical to scorer output), round-trip `resolve`, "hits allowed" vs bare "hit" ordering, league-optional resolution, grade rules per direction, `actual_display` units, and prop-type taxonomy back-compat |
+| `test_markets.py` | Market registry: canonical labels (byte-identical to scorer output), round-trip `resolve`, "hits allowed" vs bare "hit" ordering, total-bases display/grade, league-optional resolution, grade rules per direction, `actual_display` units, and prop-type taxonomy back-compat |
+| `test_tb_opportunity.py` | Total-bases scorer: impressiveness-weighted threshold pick, min-games gate, shared lineup overlay (confirmed slot evidence + bench cap), empty/missing-column guards |
 | `test_data_store.py` | Durable DB store: unconfigured = no-op, `is_configured` needs all keys, download writes the file, `ensure_db_available` skips when present / fetches when missing, publish uploads (fake S3 client, no network) |
 | `test_auth.py` | Password gate: constant-time match; no-password bypass returns before any Streamlit call |
 | `test_update_pipeline.py` | Shared rebuild pipeline: MLB-only vs. with collectors, collector failures captured non-fatally, publish reflects config (all faked) |
