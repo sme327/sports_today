@@ -1245,3 +1245,22 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   color: var(--text-1); margin: 3rem 0 1rem;
 }
 .auth-title span { color: var(--brand); }
+
+/* ------------------------------------------- WNBA TREND DEPTH (per-game) --- */
+.wnba-depth { margin: .5rem 0 .1rem; padding-top: .5rem; border-top: 1px solid var(--hairline); }
+.wnba-depth.up { color: var(--green); }
+.wnba-depth.down { color: var(--red); }
+.wnba-depth-spark { display: flex; align-items: center; gap: .5rem; }
+.wnba-depth-spark .wnba-spark { width: 108px; flex: 0 0 108px; }
+.wnba-depth-cap { color: var(--text-4); font-size: .64rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; }
+.wnba-dot-row { display: inline-flex; gap: 3px; margin: .4rem 0; }
+.wnba-dot { width: 11px; height: 11px; border-radius: 50%; }
+.wnba-dot.hit { background: currentColor; box-shadow: var(--edge-hi); }
+.wnba-dot.miss { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--hairline-2); }
+.wnba-depth-meta { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.wnba-win { display: inline-flex; align-items: baseline; gap: .3rem; padding: .16rem .5rem;
+  border-radius: var(--r-sm); background: var(--surface-2); box-shadow: var(--edge-hi); }
+.wnba-win b { color: var(--text-1); font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wnba-win { color: var(--text-4); font-size: .6rem; font-weight: 700; text-transform: uppercase; }
+.wnba-streak { color: var(--brand-2); font-size: .7rem; font-weight: 750; }

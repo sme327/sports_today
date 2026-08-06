@@ -190,6 +190,27 @@ def shape_players_html(players: tuple[WNBAShapePlayer, ...]) -> str:
 
 
 # ------------------------------------------------------ TRENDING ------------
+def _dot_row(dots: tuple[int, ...]) -> str:
+    cells = "".join(f'<span class="wnba-dot {"hit" if d else "miss"}"></span>' for d in dots)
+    return f'<div class="wnba-dot-row">{cells}</div>'
+
+
+def _depth_html(t: WNBAPlayerTrend) -> str:
+    """Per-game scoring depth: points sparkline, double-figure dots + streak, windows."""
+    if not t.spark:
+        return ""
+    wins = "".join(f'<span class="wnba-win"><b>{escape(v)}</b>{escape(k)}</span>'
+                   for k, v in t.windows)
+    streak = (f'<span class="wnba-streak">{t.streak}-game 10+ streak</span>'
+              if t.streak >= 2 else "")
+    cls = "up" if t.direction == "up" else "down"
+    return (f'<div class="wnba-depth {cls}">'
+            f'<div class="wnba-depth-spark">{_sparkline(t.spark)}'
+            f'<span class="wnba-depth-cap">{escape(t.line)}</span></div>'
+            f'{_dot_row(t.dots)}'
+            f'<div class="wnba-depth-meta">{wins}{streak}</div></div>')
+
+
 def _trend_card(t: WNBAPlayerTrend) -> str:
     cls = "up" if t.direction == "up" else "down"
     return (
@@ -199,6 +220,7 @@ def _trend_card(t: WNBAPlayerTrend) -> str:
         f'<div class="mlb-trend-team">{escape(t.team)}</div></div>'
         f'<span class="mlb-trend-tag {cls}">{escape(t.category)}</span></div>'
         f'<div class="mlb-trend-expl">{escape(t.explanation)}</div>'
+        f'{_depth_html(t)}'
         f'<div class="mlb-trend-windows"><span>{escape(t.recent_summary)}</span>'
         f'<span>{escape(t.baseline_summary)}</span></div></div>')
 

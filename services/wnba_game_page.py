@@ -278,7 +278,36 @@ def _trend_category(r, direction) -> str:
     return "Recent Slump" if r.r_pts < r.b_pts - 4 else "Trending Down"
 
 
-def _player_trends(tf) -> tuple[tuple, tuple]:
+_TREND_GAMES = 10        # recent games shown in the sparkline / dot row
+_DOUBLE_FIGURES = 10     # points that count as a "double-figure" game
+
+
+def _player_depth(logs, player_id) -> dict:
+    """Per-game scoring depth for a player (parity with the MLB batter spotlight):
+    a points sparkline, double-figure dot row, L5/L10 averages, and streak."""
+    if logs is None or logs.empty or "points" not in logs.columns:
+        return {}
+    g = logs[logs["player_id"].astype(str) == str(player_id)].sort_values("game_date")
+    pts = [float(p) for p in g["points"].tail(_TREND_GAMES).tolist() if p == p]  # drop NaN
+    if len(pts) < 3:
+        return {}
+    dots = tuple(1 if p >= _DOUBLE_FIGURES else 0 for p in pts)
+    streak = 0
+    for d in reversed(dots):
+        if not d:
+            break
+        streak += 1
+
+    def avg(k: int) -> str:
+        s = pts[-k:]
+        return f"{sum(s) / len(s):.1f}" if s else "—"
+
+    return {"spark": tuple(pts), "dots": dots,
+            "windows": (("L5", avg(5)), ("L10", avg(10))),
+            "streak": streak, "line": f"Double figures ({_DOUBLE_FIGURES}+ pts)"}
+
+
+def _player_trends(tf, logs=None) -> tuple[tuple, tuple]:
     if tf.empty:
         return (), ()
 
@@ -295,7 +324,7 @@ def _player_trends(tf) -> tuple[tuple, tuple]:
             direction=direction, category=cat,
             recent_summary=f"L{int(r.recent_games)}: {r.r_pts:.1f}p {r.r_reb:.1f}r {r.r_ast:.1f}a",
             baseline_summary=f"Season: {r.b_pts:.1f}p {r.b_min:.1f} min",
-            explanation=expl)
+            explanation=expl, **_player_depth(logs, r.player_id))
     up = tf[tf.trend_score >= A.TREND_MAGNITUDE].sort_values("trend_score", ascending=False).head(3)
     down = tf[tf.trend_score <= -A.TREND_MAGNITUDE].sort_values("trend_score").head(3)
     return (tuple(mk(r, "up") for _, r in up.iterrows()),
@@ -407,7 +436,7 @@ def build_wnba_game_page(game: SlateGame, slate_date: date, as_of: date,
     away_snap = _snapshot(tt, tg, a_id, game.start_time, h_id)
     home_snap = _snapshot(tt, tg, h_id, game.start_time, a_id)
     shape = _shape_players(pf, trend_lookup, a_id, h_id)
-    up, down = _player_trends(tf)
+    up, down = _player_trends(tf, logs)
     away_tr = _team_trends(tg, a_id, tt.loc[a_id].team, game.away_logo)
     home_tr = _team_trends(tg, h_id, tt.loc[h_id].team, game.home_logo)
     opps = _opportunities(logs, game, tt, a_id, h_id)

@@ -193,3 +193,41 @@ def test_components_render_and_sparkline(logs, game):
     assert all(isinstance(x, str) for x in parts)
     assert "<svg class=\"wnba-spark\"" in joined     # sparkline rendered
     assert "wnba-dot" in joined                       # W/L form dots
+
+
+# --- WNBA trend depth (per-game parity with MLB batter spotlights) -----------
+
+def test_player_depth_series_dots_windows_streak():
+    from services.wnba_game_page import _player_depth
+    logs = pd.DataFrame({
+        "player_id": ["9"] * 10,
+        "game_date": [f"2026-06-{i+1:02d}" for i in range(10)],
+        "points": [8, 12, 6, 14, 16, 9, 18, 20, 22, 25],   # last 4 all 10+
+    })
+    d = _player_depth(logs, "9")
+    assert d["spark"] == (8, 12, 6, 14, 16, 9, 18, 20, 22, 25)
+    assert d["dots"] == (0, 1, 0, 1, 1, 0, 1, 1, 1, 1)
+    assert d["streak"] == 4                              # trailing 10+ games
+    assert dict(d["windows"])["L5"] == "18.8"           # (9+18+20+22+25)/5
+    assert "10+" in d["line"]
+
+
+def test_player_depth_needs_three_games():
+    from services.wnba_game_page import _player_depth
+    logs = pd.DataFrame({"player_id": ["9", "9"], "game_date": ["2026-06-01", "2026-06-02"],
+                         "points": [10, 12]})
+    assert _player_depth(logs, "9") == {}
+
+
+def test_depth_html_renders_and_empty():
+    from domain.wnba_game_page import WNBAPlayerTrend
+    t = WNBAPlayerTrend("1", "Star", "Team", None, "F", "up", "Trending Up",
+                        "L10: 20p", "Season: 18p", "up.", spark=(10.0, 14.0, 18.0),
+                        dots=(1, 1, 1), windows=(("L5", "14.0"),), streak=3,
+                        line="Double figures (10+ pts)")
+    html = C._trend_card(t)
+    assert "wnba-spark" in html and "wnba-dot-row" in html and "10+ streak" in html
+    assert html.count("<div") == html.count("</div>")
+    bare = WNBAPlayerTrend("1", "X", "T", None, None, "down", "Trending Down",
+                           "r", "b", "e")                # no depth
+    assert C._depth_html(bare) == ""

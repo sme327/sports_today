@@ -105,6 +105,12 @@ class WNBAPlayerTrend:
     recent_summary: str
     baseline_summary: str
     explanation: str
+    # Per-game depth (parity with the MLB batter trend spotlights).
+    spark: tuple[float, ...] = ()   # recent per-game points, oldest → newest
+    dots: tuple[int, ...] = ()      # 1 = double-figure scoring (10+), per game
+    windows: tuple[tuple[str, str], ...] = ()  # e.g. (("L5","18.2"),("L10","15.4"))
+    streak: int = 0                 # trailing double-figure games
+    line: str = ""                  # what the dots mean, e.g. "Double figures (10+ pts)"
 
 
 @dataclass(frozen=True)
