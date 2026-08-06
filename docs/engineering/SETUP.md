@@ -78,7 +78,10 @@ The program will:
 5. Rebuild:
    `database/sportshub.db`
 6. Print plate appearance, game, batter, and pitcher counts.
-7. Launch Sports Today in your default browser.
+7. Collect the latest **WNBA** game logs and **MLS** team stats + standings
+   (internet required; each is non-fatal — a failure prints a notice and the
+   update continues).
+8. Launch Sports Today in your default browser.
 
 ### 6. Verify the files
 
