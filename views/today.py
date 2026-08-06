@@ -142,7 +142,14 @@ def render(nav: NavState) -> None:
         for league, (games, status) in slates.items()
         if games
     ]
-    render_filters(leagues_with_games)
+    # Sport filters (left) and the games collapse toggle (right) share one row.
+    toggle_col = None
+    if leagues_with_games:
+        filter_col, toggle_col = st.columns([3, 1], vertical_alignment="center")
+        with filter_col:
+            render_filters(leagues_with_games)
+    else:
+        render_filters(leagues_with_games)  # no-op, preserves toggle state
     selected = selected_leagues(leagues_with_games)
     nothing_selected = not selected
 
@@ -161,8 +168,10 @@ def render(nav: NavState) -> None:
     if all_visible:
         # Optional, sticky collapse of the schedule grid so the opportunity feed
         # is one glance away on a busy slate. Default is expanded.
-        st.markdown(games_toggle_html(day, nav.games_collapsed, len(all_visible)),
-                    unsafe_allow_html=True)
+        if toggle_col is not None:
+            with toggle_col:
+                st.markdown(games_toggle_html(day, nav.games_collapsed, len(all_visible)),
+                            unsafe_allow_html=True)
         if not nav.games_collapsed:
             for group in group_games_by_state(all_visible):
                 if group:

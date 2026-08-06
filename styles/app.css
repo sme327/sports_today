@@ -1123,7 +1123,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* ---------------------------------------------- SCHEDULE COLLAPSE TOGGLE --- */
 /* Optional, sticky collapse of the Today schedule grid (?games=off), so the
    opportunity feed is one glance away on a busy slate. Default is expanded. */
-.games-toggle-row { display: flex; justify-content: flex-end; margin: 0 0 .55rem; }
+.games-toggle-row { display: flex; justify-content: flex-end; align-items: center; height: 100%; }
 /* A proper button: real hit area, surface + border, brighter label. */
 .games-toggle {
   display: inline-flex;
@@ -1149,23 +1149,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
-
-/* Collapsed: a full-width, inviting bar in place of the grid. */
-.games-toggle.collapsed {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 0 0 1rem;
-  padding: .7rem 1rem;
-  border-radius: var(--r-md);
-  background: var(--surface-1);
-  box-shadow: var(--edge-hi), var(--shadow-sm);
-  border: 1px dashed var(--hairline-2);
-}
-.games-toggle.collapsed:hover { background: var(--surface-2); color: var(--text-2) !important; }
-.games-toggle-count { color: var(--text-3); font-weight: 650; }
-.games-toggle-action { color: var(--brand-2); font-weight: 700; white-space: nowrap; }
 
 /* ============================================================================
    RESULTS VIEW — graded prop outcomes (hit / miss / void)
