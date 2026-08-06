@@ -161,6 +161,10 @@ class Opportunity:
     threshold: float | int | None
     opportunity_score: int
     stability_score: int
+    # Structured market identity (registry key + graded direction). Optional so
+    # legacy callers still construct; the registry resolves text when absent.
+    market_key: str | None = None
+    direction: str | None = None
     supporting_evidence: list[str] = field(default_factory=list)
     negative_evidence: list[str] = field(default_factory=list)
     image_url: str | None = None

@@ -45,6 +45,8 @@ def build_pitcher_opportunities(pa: pd.DataFrame, probable_names: list[tuple[str
             team_id=None,
             team_name=str(r.team),
             market=str(r.market),
+            market_key=str(r.kind),
+            direction=str(r.direction),
             threshold=int(r.threshold),
             opportunity_score=int(r.opportunity_score),
             stability_score=int(r.stability_score),

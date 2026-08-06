@@ -133,6 +133,8 @@ class MLBAdapter:
                     team_id=None,
                     team_name=str(row.team),
                     market="1+ Hit",
+                    market_key="batter_hit",
+                    direction="over",
                     threshold=1,
                     opportunity_score=int(row.opportunity_score),
                     stability_score=int(row.stability_score),

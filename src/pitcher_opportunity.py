@@ -23,8 +23,8 @@ RECENT_STARTS = 6
 MIN_START_BF = 10                      # batters faced to count as a start (excludes openers)
 
 _RESULT_COLUMNS = ["pitcher_id", "player", "team", "market", "threshold", "kind",
-                   "opportunity_score", "stability_score", "starts", "recent_avg",
-                   "recent_hit_rate", "support", "risks"]
+                   "direction", "opportunity_score", "stability_score", "starts",
+                   "recent_avg", "recent_hit_rate", "support", "risks"]
 
 
 def _per_start_lines(pa_pitcher: pd.DataFrame) -> pd.DataFrame:
@@ -135,13 +135,14 @@ def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds) -> d
     risk = ("Strikeout totals swing with the opposing lineup and pitch count"
             if kind == "sp_k" else
             "Hits allowed depends heavily on opponent and batted-ball luck")
-    return _row(pid, name, team, market, thr, kind, d["score"], _stability(hit, n),
-                n, avg, hit, support=support, risks=[risk])
+    return _row(pid, name, team, market, thr, kind, d["direction"], d["score"],
+                _stability(hit, n), n, avg, hit, support=support, risks=[risk])
 
 
-def _row(pid, name, team, market, threshold, kind, score, stability, starts,
+def _row(pid, name, team, market, threshold, kind, direction, score, stability, starts,
          avg, hit_rate, *, support, risks) -> dict:
     return {"pitcher_id": str(pid), "player": name, "team": team, "market": market,
-            "threshold": threshold, "kind": kind, "opportunity_score": score,
-            "stability_score": stability, "starts": starts, "recent_avg": round(avg, 2),
-            "recent_hit_rate": round(hit_rate, 3), "support": support[:3], "risks": risks[:2]}
+            "threshold": threshold, "kind": kind, "direction": direction,
+            "opportunity_score": score, "stability_score": stability, "starts": starts,
+            "recent_avg": round(avg, 2), "recent_hit_rate": round(hit_rate, 3),
+            "support": support[:3], "risks": risks[:2]}

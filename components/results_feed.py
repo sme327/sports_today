@@ -5,32 +5,20 @@ from __future__ import annotations
 
 from html import escape
 
+from domain import markets
+
 _MARK = {"hit": "✓", "miss": "✗", "void": "∅", None: "…", "pending": "…"}
 
 
 def _actual_display(row: dict) -> str:
-    """The stat the player actually put up, phrased per market."""
-    result = row.get("result")
-    if result == "void":
+    """The stat the player actually put up, phrased per market (via the registry)."""
+    if row.get("result") == "void":
         return "did not play"
     val = row.get("actual_value")
     if val is None:
         return "pending"
-    market = (row.get("market") or "").lower()
-    n = int(val) if float(val).is_integer() else val
-    if "strikeout" in market:
-        return f"{n} K"
-    if "hits allowed" in market:
-        return f"{n} hits allowed"
-    if "hit" in market:
-        return f"{n} hit" if n == 1 else f"{n} hits"
-    if "point" in market:
-        return f"{n} pts"
-    if "rebound" in market:
-        return f"{n} reb"
-    if "assist" in market:
-        return f"{n} ast"
-    return str(n)
+    key = row.get("market_key") or markets.resolve(row.get("league"), row.get("market"))[0]
+    return markets.actual_display(key, val)
 
 
 def result_summary_html(summary: dict, label: str) -> str:
