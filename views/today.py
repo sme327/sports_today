@@ -224,10 +224,16 @@ def _render_opportunities(
     slate_opps.sort(key=lambda o: o.sort_key, reverse=True)  # full set for the ledger
 
     if analysis_leagues:
+        from services.data_store import is_configured
+        # The in-app updater is only meaningful on a cloud deploy (a bucket to
+        # publish to); locally the daily refresh is update.command.
+        update_link = ('<a class="results-link" target="_self" href="?view=update">'
+                       'Update data</a>') if is_configured() else ""
         st.markdown(
             '<div class="section-row"><h2>Top Opportunities</h2>'
+            f'<span class="section-links">{update_link}'
             '<a class="results-link" target="_self" href="?view=results">'
-            'Yesterday’s results →</a></div>',
+            'Yesterday’s results →</a></span></div>',
             unsafe_allow_html=True,
         )
         # Prop-type pills (batter hits / SP strikeouts / SP hits allowed / …) filter

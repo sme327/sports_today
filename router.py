@@ -26,6 +26,10 @@ class NavState:
     def in_results_view(self) -> bool:
         return self.view == "results"
 
+    @property
+    def in_update_view(self) -> bool:
+        return self.view == "update"
+
 
 def _parse_results_date() -> date:
     """The graded slate to show (default yesterday). Never today/future — results
@@ -46,7 +50,7 @@ def read_nav() -> NavState:
         day = "today"
     slate = date.today() + (timedelta(days=1) if day == "tomorrow" else timedelta(0))
     view = st.query_params.get("view", "today")
-    if view not in {"today", "results"}:
+    if view not in {"today", "results", "update"}:
         view = "today"
     return NavState(
         day=day,

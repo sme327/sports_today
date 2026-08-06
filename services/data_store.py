@@ -15,9 +15,9 @@ hard-coded and local runs need no setup.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
+from services.settings import secret as _cfg
 from src.config import DB_PATH
 
 # Secret / env keys. Set these in Streamlit secrets for a cloud deploy.
@@ -27,17 +27,6 @@ _REGION = "SPORTS_TODAY_S3_REGION"        # "auto" for R2
 _KEY_ID = "SPORTS_TODAY_S3_KEY_ID"
 _SECRET = "SPORTS_TODAY_S3_SECRET"
 _OBJECT = "SPORTS_TODAY_DB_OBJECT"        # object key; defaults to the DB filename
-
-
-def _cfg(name: str, default: str | None = None) -> str | None:
-    """Read a setting from Streamlit secrets first, then the environment."""
-    try:
-        import streamlit as st
-        if name in st.secrets:
-            return str(st.secrets[name])
-    except Exception:
-        pass  # no Streamlit runtime / no secrets file → fall back to env
-    return os.environ.get(name, default)
 
 
 def is_configured() -> bool:
