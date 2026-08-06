@@ -40,6 +40,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
 | [Setup](engineering/SETUP.md) | One-time install and the daily data/run workflow. |
+| [Deploy](engineering/DEPLOY.md) | Put it on the web for phone/iPad/computer: Streamlit Cloud + private bucket + in-app uploader + password gate. |
 
 ## AI
 
