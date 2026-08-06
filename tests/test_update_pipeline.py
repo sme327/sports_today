@@ -11,8 +11,13 @@ from services import update_pipeline as P
 _MLB = {"plate_appearances": 10, "games": 2, "batters": 5, "pitchers": 4}
 
 
+_ZERO = {"graded": 0, "hit": 0, "miss": 0, "void": 0, "pending": 0}
+
+
 def _fake_import(monkeypatch):
     monkeypatch.setattr("src.ingest.import_feed", lambda p, **k: (Path("db"), _MLB))
+    # Don't touch the real ledger during the pipeline's regrade step.
+    monkeypatch.setattr("services.grading.grade_slate", lambda d, **k: dict(_ZERO))
 
 
 def test_rebuild_mlb_only(monkeypatch):

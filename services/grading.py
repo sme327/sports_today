@@ -58,10 +58,15 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         mlb_tb = _mlb_total_bases(conn, token)  # {batter_id: total_bases}
         mlb_sp = _mlb_pitcher_lines(conn, token)  # {pitcher_id: {k, hits}} for starters
         wnba = _wnba_lines(conn, token)       # {player_id: {points, rebounds, assists, minutes}}
+        # Data-availability gate: only grade a source once that date's results are
+        # actually loaded. Otherwise a slate captured in the morning would grade to
+        # all-void before its feed arrives, and idempotency would freeze that mistake.
+        avail = {"mlb": _date_has_rows(conn, "plate_appearances", token),
+                 "wnba": _date_has_rows(conn, "wnba_player_game_logs", token)}
         graded_at = datetime.now().isoformat(timespec="seconds")
 
         for r in rows:
-            result, actual = _grade_row(r, mlb, mlb_tb, mlb_sp, wnba)
+            result, actual = _grade_row(r, mlb, mlb_tb, mlb_sp, wnba, avail)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
                 continue
@@ -74,11 +79,15 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
     return summary
 
 
-def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict) -> tuple[str | None, float | None]:
+def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict,
+               avail: dict) -> tuple[str | None, float | None]:
     """Grade one snapshot row via the market registry. Reads the stored
     ``market_key``/``direction`` when present, else resolves them from the legacy
     market text — so old ledger rows grade identically. Void (did-not-play) stays a
-    source-specific rule; the hit/miss comparison comes from the registry."""
+    source-specific rule; the hit/miss comparison comes from the registry.
+
+    ``avail`` gates by source: if the date's results for a market's source are not
+    yet loaded, the row stays **pending** (None) rather than being marked void."""
     key = _row_get(r, "market_key") or None
     direction = _row_get(r, "direction") or None
     if key is None:
@@ -90,19 +99,27 @@ def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict) -> tuple[st
     pid = str(r["player_id"])
 
     if key == "batter_hit":
+        if not avail["mlb"]:                 # results not loaded yet → pending, not void
+            return None, None
         if pid not in mlb:                  # did not bat that day
             return "void", None
         actual = mlb[pid]
     elif key == "batter_tb":
+        if not avail["mlb"]:
+            return None, None
         if pid not in mlb_tb:               # did not bat that day
             return "void", None
         actual = mlb_tb[pid]
     elif key in ("sp_k", "sp_hits"):
+        if not avail["mlb"]:
+            return None, None
         line = mlb_sp.get(pid)
         if line is None:                    # did not start
             return "void", None
         actual = line["k"] if key == "sp_k" else line["hits"]
     elif key in _WNBA_COL:
+        if not avail["wnba"]:
+            return None, None
         line = wnba.get(pid)
         if line is None or not line.get("minutes"):   # not in box score / did not play
             return "void", None
@@ -126,6 +143,18 @@ def _row_get(r, col):
 def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     return conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone() is not None
+
+
+def _date_has_rows(conn: sqlite3.Connection, table: str, token: str) -> bool:
+    """Whether ``table`` has any results for ``game_date == token`` — i.e. that
+    day's feed has been loaded. Missing table/column → treat as not-available."""
+    if not _table_exists(conn, table):
+        return False
+    try:
+        return conn.execute(
+            f"SELECT 1 FROM {table} WHERE game_date = ? LIMIT 1", (token,)).fetchone() is not None
+    except sqlite3.OperationalError:
+        return False
 
 
 def _mlb_hits(conn: sqlite3.Connection, token: str) -> dict:

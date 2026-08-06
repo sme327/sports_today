@@ -58,6 +58,8 @@ def main() -> int:
                   f"{result['mls']['standings']:,} standings rows.")
         elif "mls_error" in result:
             print(f"MLS update skipped: {result['mls_error']}", file=sys.stderr)
+        for iso, g in (result.get("regraded") or {}).items():
+            print(f"Re-graded {iso}: {g['hit']} hit, {g['miss']} miss, {g['void']} void.")
         if result.get("published"):
             print("Published database to the cloud store.")
 

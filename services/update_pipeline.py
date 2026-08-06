@@ -9,8 +9,10 @@ MLB import is the required step. Publishing is a no-op unless a bucket is config
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
+
+_REGRADE_DAYS = 4       # force-regrade this many recent days after an import
 
 
 def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
@@ -35,6 +37,22 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
             out["mls"] = {"matches": m.events_collected, "standings": m.standings_rows}
         except Exception as exc:
             out["mls_error"] = str(exc)
+
+    # Re-grade the last few days now that fresh results are loaded — corrects any
+    # slate that was graded against partial data (the availability gate leaves such
+    # rows pending, but a force pass also fixes any already frozen as void).
+    try:
+        from services import grading
+        today = date.today()
+        regraded = {}
+        for i in range(1, _REGRADE_DAYS + 1):
+            d = today - timedelta(days=i)
+            s = grading.grade_slate(d, force=True)
+            if s["graded"]:
+                regraded[d.isoformat()] = {"hit": s["hit"], "miss": s["miss"], "void": s["void"]}
+        out["regraded"] = regraded
+    except Exception as exc:
+        out["regrade_error"] = str(exc)
 
     try:
         from services.data_store import is_configured, publish_db
