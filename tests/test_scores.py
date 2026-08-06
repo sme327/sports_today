@@ -158,6 +158,38 @@ def test_card_pregame_has_no_state_class():
     assert "game-card--live" not in html and "game-card--final" not in html
 
 
+def test_strength_badge_tiers():
+    from components.game_cards import _strength_badge
+    assert "game-strength s3" in _strength_badge(99) and ">99<" in _strength_badge(99)
+    assert "game-strength s2" in _strength_badge(95)
+    assert "game-strength s1" in _strength_badge(80)
+    assert _strength_badge(None) == ""
+
+
+def test_pregame_card_shows_strength_upper_right():
+    html = game_card_html(_sg(state="pre"), "today", strength=99)
+    assert "game-strength s3" in html and ">99<" in html
+    assert "game-time" in html                 # time now sits beside the league
+    # live/final states show their badge instead of a strength score
+    live = game_card_html(_sg(state="live", away_score=1, home_score=2), "today", strength=99)
+    assert "game-strength" not in live and "LIVE" in live
+
+
+def test_game_strength_is_top3_average():
+    from views.today import _game_strength
+    from domain.models import Opportunity
+
+    def opp(gid, score):
+        return Opportunity(league="MLB", player_id="1", player_name="X", team_id=None,
+                           team_name="T", market="1+ Hit", threshold=1,
+                           opportunity_score=score, stability_score=50, game_id=gid)
+    opps = [opp("g1", 100), opp("g1", 96), opp("g1", 92), opp("g1", 50),   # top3 → 96
+            opp("g2", 80), opp("g2", 70),                                   # avg → 75
+            opp(None, 100)]                                                 # no game id → ignored
+    s = _game_strength(opps)
+    assert s == {"g1": 96, "g2": 75}
+
+
 # ---------------------------------------------- state grouping / ordering ----
 def test_group_games_by_state_orders_live_upcoming_final():
     from components.game_cards import group_games_by_state

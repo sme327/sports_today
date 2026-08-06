@@ -98,6 +98,56 @@ def _stamp(opps: list[Opportunity], games: list[SlateGame], adapter: LeagueAdapt
     return stamped
 
 
+def _build_slate_opps(nav: NavState, visible: dict[str, list[SlateGame]]):
+    """The full stamped slate opportunity population (batter hits + SP props + total
+    bases), sorted. Built once and shared by the game-card strength scores and the
+    Top Opportunities feed (underlying scorer calls are cached, so this is cheap)."""
+    as_of_iso = nav.slate_date.isoformat()
+    slate_opps: list[Opportunity] = []
+    analysis_leagues: list[str] = []
+    for league in _ANALYSIS_LEAGUES:
+        games = visible.get(league) or []
+        if not games:
+            continue
+        adapter = get_adapter(league)
+        analysis_leagues.append(league)
+        team_ids = tuple(sorted({t for g in games for t in g.team_identifiers}))
+        opps = cached_opportunities(league, as_of_iso, OpportunityMode.SLATE.value,
+                                    team_ids, limit=_LEDGER_LIMIT)
+        slate_opps.extend(_stamp(opps, games, adapter))
+
+    mlb_games = visible.get("MLB") or []
+    probables = tuple(sorted({
+        (str(g.meta.get(key)), disp)
+        for g in mlb_games
+        for key, disp in (("away_pitcher", g.away_display), ("home_pitcher", g.home_display))
+        if g.meta.get(key) and str(g.meta.get(key)).upper() != "TBD"
+    }))
+    if probables:
+        slate_opps.extend(_stamp(cached_mlb_pitcher_opps(as_of_iso, probables),
+                                 mlb_games, get_adapter("MLB")))
+    if mlb_games:
+        mlb_team_ids = tuple(sorted({t for g in mlb_games for t in g.team_identifiers}))
+        slate_opps.extend(_stamp(cached_mlb_tb_opps(as_of_iso, mlb_team_ids),
+                                 mlb_games, get_adapter("MLB")))
+
+    slate_opps.sort(key=lambda o: o.sort_key, reverse=True)
+    return slate_opps, analysis_leagues
+
+
+def _game_strength(slate_opps: list[Opportunity]) -> dict[str, int]:
+    """Per-game strength = the average of the game's top-3 opportunity scores (both
+    teams). The single-best pick saturates at 100 for most games, so a top-3 average
+    discriminates how *loaded* a matchup is and keeps the orange tier genuinely rare."""
+    from collections import defaultdict
+    pools: dict[str, list[int]] = defaultdict(list)
+    for o in slate_opps:
+        if o.game_id:
+            pools[o.game_id].append(int(o.opportunity_score))
+    return {gid: round(sum(sorted(v, reverse=True)[:3]) / min(len(v), 3))
+            for gid, v in pools.items() if v}
+
+
 def render(nav: NavState) -> None:
     day = nav.day
     slate_date = nav.slate_date
@@ -165,6 +215,10 @@ def render(nav: NavState) -> None:
     # carry the meaning. Empty groups are skipped, so the page reorganizes itself
     # as games transition — no filters, no user interaction.
     all_visible = [g for games in visible.values() for g in games]
+    # Build the slate opportunities once — powers both the per-game strength scores
+    # on the cards and the Top Opportunities feed below.
+    slate_opps, analysis_leagues = _build_slate_opps(nav, visible)
+    game_scores = _game_strength(slate_opps)
     if all_visible:
         # Optional, sticky collapse of the schedule grid so the opportunity feed
         # is one glance away on a busy slate. Default is expanded.
@@ -175,7 +229,8 @@ def render(nav: NavState) -> None:
         if not nav.games_collapsed:
             for group in group_games_by_state(all_visible):
                 if group:
-                    st.markdown(schedule_grid_html(group, day), unsafe_allow_html=True)
+                    st.markdown(schedule_grid_html(group, day, game_scores),
+                                unsafe_allow_html=True)
     else:
         empty_states.no_games(day_label(day))
 
@@ -189,56 +244,17 @@ def render(nav: NavState) -> None:
         if status.status is SourceStatus.ERROR:
             empty_states.schedule_unavailable(status.source, status.detail)
 
-    _render_opportunities(nav, slates, visible, nothing_selected, selected)
+    _render_opportunities(nav, slates, slate_opps, analysis_leagues)
 
 
 def _render_opportunities(
     nav: NavState,
     slates: dict[str, tuple[list[SlateGame], DataStatus]],
-    visible: dict[str, list[SlateGame]],
-    nothing_selected: bool,
-    selected: list[str],
+    slate_opps: list[Opportunity],
+    analysis_leagues: list[str],
 ) -> None:
-    as_of_iso = nav.slate_date.isoformat()
-
-    # --- Primary slate opportunities (only leagues with visible games) ---
-    # We score the FULL eligible population (not just the displayed top 8) so the
-    # daily ledger can later grade the whole score distribution — the dataset for
-    # calibration and finding signal we're missing. Display still shows the top 8.
-    slate_opps: list[Opportunity] = []
-    analysis_leagues: list[str] = []
-    for league in _ANALYSIS_LEAGUES:
-        games = visible.get(league) or []
-        if not games:
-            continue
-        adapter = get_adapter(league)
-        analysis_leagues.append(league)
-        team_ids = tuple(sorted({t for g in games for t in g.team_identifiers}))
-        opps = cached_opportunities(league, as_of_iso, OpportunityMode.SLATE.value,
-                                    team_ids, limit=_LEDGER_LIMIT)
-        slate_opps.extend(_stamp(opps, games, adapter))
-
-    # MLB starting-pitcher props (SP strikeouts + SP hits allowed) for the slate's
-    # probable starters — same feed / ledger / grading path as the batter props.
-    mlb_games = visible.get("MLB") or []
-    probables = tuple(sorted({
-        (str(g.meta.get(key)), disp)
-        for g in mlb_games
-        for key, disp in (("away_pitcher", g.away_display), ("home_pitcher", g.home_display))
-        if g.meta.get(key) and str(g.meta.get(key)).upper() != "TBD"
-    }))
-    if probables:
-        pitcher_opps = cached_mlb_pitcher_opps(as_of_iso, probables)
-        slate_opps.extend(_stamp(pitcher_opps, mlb_games, get_adapter("MLB")))
-
-    # MLB batter Total-Bases props — same feed / ledger / grading path.
-    if mlb_games:
-        mlb_team_ids = tuple(sorted({t for g in mlb_games for t in g.team_identifiers}))
-        tb_opps = cached_mlb_tb_opps(as_of_iso, mlb_team_ids)
-        slate_opps.extend(_stamp(tb_opps, mlb_games, get_adapter("MLB")))
-
-    slate_opps.sort(key=lambda o: o.sort_key, reverse=True)  # full set for the ledger
-
+    # ``slate_opps`` is the full eligible population (already stamped + sorted),
+    # built in render(); display shows the top 8, the ledger records everything.
     if analysis_leagues:
         from services.data_store import is_configured
         # The in-app updater is only meaningful on a cloud deploy (a bucket to
