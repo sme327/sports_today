@@ -11,23 +11,34 @@ from domain.models import SlateGame
 from leagues.base import get_adapter
 
 
-def _strength_badge(strength: int | None) -> str:
-    """The game's strength score in the upper-right — the top opportunity score among
-    its players, so a matchup worth attention is discoverable at a glance. Tiers carry
-    meaning beyond color (dim gray → bright white → glowing orange)."""
-    if strength is None:
+def _strength_bars(scores: tuple[int, ...] | None) -> str:
+    """A tiny bar chart of the game's top opportunity scores (upper-right). The shape
+    shows both frequency (how many strong picks) and distribution (the spread); bars
+    ≥ 95 glow orange so a loaded matchup is discoverable at a glance."""
+    if not scores:
         return ""
-    tier = "s3" if strength >= 99 else "s2" if strength >= 92 else "s1"
-    return f'<span class="game-strength {tier}">{int(strength)}</span>'
+    scores = tuple(scores)[:6]
+    n = len(scores)
+    w, h, gap = 56.0, 24.0, 3.0
+    bw = (w - gap * (n - 1)) / n
+    rects = []
+    for i, s in enumerate(scores):
+        bh = max(2.5, (min(s, 100) - 50) / 50 * h)   # baseline 50 → visible spread
+        x, y = i * (bw + gap), h - bh
+        cls = "b3" if s >= 95 else "b2" if s >= 85 else "b1"
+        rects.append(f'<rect class="{cls}" x="{x:.1f}" y="{y:.1f}" '
+                     f'width="{bw:.1f}" height="{bh:.1f}" rx="1"/>')
+    return (f'<span class="game-bars"><svg viewBox="0 0 56 24" preserveAspectRatio="none" '
+            f'aria-hidden="true">{"".join(rects)}</svg></span>')
 
 
-def _top_right(game: SlateGame, strength: int | None) -> str:
-    """Upper-right: live/final badge for those states, else the strength score."""
+def _top_right(game: SlateGame, bars: tuple[int, ...] | None) -> str:
+    """Upper-right: live/final badge for those states, else the strength bar chart."""
     if game.state == "final":
         return '<span class="game-state final">Final</span>'
     if game.state == "live":
         return '<span class="game-state live"><span class="live-dot"></span>LIVE</span>'
-    return _strength_badge(strength)
+    return _strength_bars(bars)
 
 
 def group_games_by_state(games: list[SlateGame]) -> tuple[list[SlateGame], ...]:
@@ -60,18 +71,22 @@ def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str) ->
             f'{_score_cell(game, side)}</div>')
 
 
-def game_card_html(game: SlateGame, day: str, strength: int | None = None) -> str:
+def _focus_href(day: str, game: SlateGame) -> str:
+    return f"?day={quote_plus(day)}&focus={quote_plus(str(game.game_id))}"
+
+
+def game_card_html(game: SlateGame, day: str, bars: tuple[int, ...] | None = None) -> str:
     adapter = get_adapter(game.league)
     away = game.away_display
     home = game.home_display
     away_logo = logo_img(game.away_logo, away, "team-logo")
     home_logo = logo_img(game.home_logo, home, "team-logo")
     time = format_game_time(game.start_time)
-    href = game_href(day, game)
+    matchup_href = game_href(day, game)
+    focus_href = _focus_href(day, game)
 
     league_label = adapter.label if adapter else game.league
     meta = adapter.describe_game(game) if adapter else (game.venue or "")
-    chip = adapter.chip_label if adapter else ""
 
     # Subtly emphasize the winner (final games only) by dimming the loser's side.
     away_cls = home_cls = ""
@@ -90,26 +105,30 @@ def game_card_html(game: SlateGame, day: str, strength: int | None = None) -> st
     # strength score takes the upper-right on its own.
     time_html = (f'<span class="game-time">{escape(time)}</span>'
                  if game.state not in ("live", "final") else "")
+    # The card body links to a props filter for this game; a separate Matchup link
+    # opens the deep-dive (two sibling links — never an <a> nested in an <a>).
     return (
-        f'<a class="game-link" href="{href}" target="_self"><div class="game-card{state_cls}">'
+        f'<div class="game-card{state_cls}">'
+        f'<a class="game-filter-link" href="{focus_href}" target="_self" '
+        f'title="Show this game\'s player props below">'
         f'<div class="game-top"><span class="game-top-left">'
         f'<span class="league-name">{escape(league_label)}</span>{time_html}</span>'
-        f'{_top_right(game, strength)}</div>'
+        f'{_top_right(game, bars)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls)}'
         f'<div class="team-sep">at</div>'
         f'{_team_row(game, "home", home_logo, home, home_cls)}'
-        f'</div>'
-        f'<div class="game-meta"><span>{escape(meta)}</span>'
-        f'<span class="analysis-chip">{escape(chip)}</span></div>'
         f'</div></a>'
+        f'<div class="game-meta"><span>{escape(meta)}</span>'
+        f'<a class="matchup-link" href="{matchup_href}" target="_self">Matchup →</a></div>'
+        f'</div>'
     )
 
 
 def schedule_grid_html(games: list[SlateGame], day: str,
-                       scores: dict[str, int] | None = None) -> str:
-    scores = scores or {}
-    cards = "".join(game_card_html(game, day, scores.get(game.game_id)) for game in games)
+                       bars: dict[str, tuple[int, ...]] | None = None) -> str:
+    bars = bars or {}
+    cards = "".join(game_card_html(game, day, bars.get(game.game_id)) for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
 
 

@@ -158,36 +158,35 @@ def test_card_pregame_has_no_state_class():
     assert "game-card--live" not in html and "game-card--final" not in html
 
 
-def test_strength_badge_tiers():
-    from components.game_cards import _strength_badge
-    assert "game-strength s3" in _strength_badge(99) and ">99<" in _strength_badge(99)
-    assert "game-strength s2" in _strength_badge(95)
-    assert "game-strength s1" in _strength_badge(80)
-    assert _strength_badge(None) == ""
+def test_strength_bars_render_and_tier():
+    from components.game_cards import _strength_bars
+    html = _strength_bars((100, 96, 88, 84))
+    assert "game-bars" in html and html.count("<rect") == 4
+    assert 'class="b3"' in html and 'class="b2"' in html and 'class="b1"' in html  # ≥95 / 85-94 / <85
+    assert _strength_bars(None) == "" and _strength_bars(()) == ""
 
 
-def test_pregame_card_shows_strength_upper_right():
-    html = game_card_html(_sg(state="pre"), "today", strength=99)
-    assert "game-strength s3" in html and ">99<" in html
-    assert "game-time" in html                 # time now sits beside the league
-    # live/final states show their badge instead of a strength score
-    live = game_card_html(_sg(state="live", away_score=1, home_score=2), "today", strength=99)
-    assert "game-strength" not in live and "LIVE" in live
+def test_pregame_card_shows_bars_and_matchup_link():
+    html = game_card_html(_sg(state="pre"), "today", bars=(99, 95, 90))
+    assert "game-bars" in html and "<rect" in html
+    assert "game-filter-link" in html and "focus=" in html      # card body filters props
+    assert "matchup-link" in html and "&game=" in html          # separate deep-dive link
+    # live/final states show their badge instead of the bar chart
+    live = game_card_html(_sg(state="live", away_score=1, home_score=2), "today", bars=(99,))
+    assert "game-bars" not in live and "LIVE" in live
 
 
-def test_game_strength_is_top3_average():
-    from views.today import _game_strength
+def test_game_bars_top6_descending():
+    from views.today import _game_bars
     from domain.models import Opportunity
 
     def opp(gid, score):
         return Opportunity(league="MLB", player_id="1", player_name="X", team_id=None,
                            team_name="T", market="1+ Hit", threshold=1,
                            opportunity_score=score, stability_score=50, game_id=gid)
-    opps = [opp("g1", 100), opp("g1", 96), opp("g1", 92), opp("g1", 50),   # top3 → 96
-            opp("g2", 80), opp("g2", 70),                                   # avg → 75
-            opp(None, 100)]                                                 # no game id → ignored
-    s = _game_strength(opps)
-    assert s == {"g1": 96, "g2": 75}
+    opps = [opp("g1", s) for s in (70, 100, 88, 96, 92, 60, 84)] + [opp(None, 100)]
+    bars = _game_bars(opps)
+    assert bars == {"g1": (100, 96, 92, 88, 84, 70)}            # top 6, descending; no-id ignored
 
 
 # ---------------------------------------------- state grouping / ordering ----

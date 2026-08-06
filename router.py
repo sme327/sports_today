@@ -17,6 +17,7 @@ class NavState:
     games_collapsed: bool = False   # Today page: schedule grid collapsed (?games=off)
     view: str = "today"             # "today" | "results"
     results_date: date | None = None  # the graded slate being viewed (view == "results")
+    focus_game: str | None = None   # Today page: filter props to one game (?focus=<id>)
 
     @property
     def in_game_view(self) -> bool:
@@ -60,4 +61,5 @@ def read_nav() -> NavState:
         games_collapsed=st.query_params.get("games") == "off",
         view=view,
         results_date=_parse_results_date() if view == "results" else None,
+        focus_game=st.query_params.get("focus"),
     )

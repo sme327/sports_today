@@ -135,17 +135,15 @@ def _build_slate_opps(nav: NavState, visible: dict[str, list[SlateGame]]):
     return slate_opps, analysis_leagues
 
 
-def _game_strength(slate_opps: list[Opportunity]) -> dict[str, int]:
-    """Per-game strength = the average of the game's top-3 opportunity scores (both
-    teams). The single-best pick saturates at 100 for most games, so a top-3 average
-    discriminates how *loaded* a matchup is and keeps the orange tier genuinely rare."""
+def _game_bars(slate_opps: list[Opportunity]) -> dict[str, tuple[int, ...]]:
+    """Per-game top-6 opportunity scores (descending) — the mini bar chart on each
+    card, showing both how many strong picks a matchup has and their spread."""
     from collections import defaultdict
     pools: dict[str, list[int]] = defaultdict(list)
     for o in slate_opps:
         if o.game_id:
             pools[o.game_id].append(int(o.opportunity_score))
-    return {gid: round(sum(sorted(v, reverse=True)[:3]) / min(len(v), 3))
-            for gid, v in pools.items() if v}
+    return {gid: tuple(sorted(v, reverse=True)[:6]) for gid, v in pools.items() if v}
 
 
 def render(nav: NavState) -> None:
@@ -218,7 +216,7 @@ def render(nav: NavState) -> None:
     # Build the slate opportunities once — powers both the per-game strength scores
     # on the cards and the Top Opportunities feed below.
     slate_opps, analysis_leagues = _build_slate_opps(nav, visible)
-    game_scores = _game_strength(slate_opps)
+    game_bars = _game_bars(slate_opps)
     if all_visible:
         # Optional, sticky collapse of the schedule grid so the opportunity feed
         # is one glance away on a busy slate. Default is expanded.
@@ -229,7 +227,7 @@ def render(nav: NavState) -> None:
         if not nav.games_collapsed:
             for group in group_games_by_state(all_visible):
                 if group:
-                    st.markdown(schedule_grid_html(group, day, game_scores),
+                    st.markdown(schedule_grid_html(group, day, game_bars),
                                 unsafe_allow_html=True)
     else:
         empty_states.no_games(day_label(day))
@@ -244,7 +242,7 @@ def render(nav: NavState) -> None:
         if status.status is SourceStatus.ERROR:
             empty_states.schedule_unavailable(status.source, status.detail)
 
-    _render_opportunities(nav, slates, slate_opps, analysis_leagues)
+    _render_opportunities(nav, slates, slate_opps, analysis_leagues, all_visible)
 
 
 def _render_opportunities(
@@ -252,6 +250,7 @@ def _render_opportunities(
     slates: dict[str, tuple[list[SlateGame], DataStatus]],
     slate_opps: list[Opportunity],
     analysis_leagues: list[str],
+    all_visible: list[SlateGame],
 ) -> None:
     # ``slate_opps`` is the full eligible population (already stamped + sorted),
     # built in render(); display shows the top 8, the ledger records everything.
@@ -268,13 +267,25 @@ def _render_opportunities(
             'Yesterday’s results →</a></span></div>',
             unsafe_allow_html=True,
         )
+        # Focus filter: clicking a game card narrows the feed to that game's players.
+        focus = nav.focus_game
+        game_label = {g.game_id: f"{g.away_display} @ {g.home_display}" for g in all_visible}
+        if focus and focus in game_label:
+            st.markdown(
+                f'<div class="focus-chip"><span>Filtered to <b>{game_label[focus]}</b></span>'
+                f'<a class="focus-clear" target="_self" href="?day={nav.day}">Clear ✕</a></div>',
+                unsafe_allow_html=True)
+
         # Prop-type pills (batter hits / SP strikeouts / SP hits allowed / …) filter
         # the DISPLAY only; the full population is still recorded below.
         present = present_prop_types(slate_opps)
         render_prop_type_filters(present)
         chosen = selected_prop_types(present)
-        display_opps = [o for o in slate_opps if not chosen or prop_type_of(o) in chosen]
-        top_slate = display_opps[:8]
+        display_opps = [o for o in slate_opps
+                        if (not chosen or prop_type_of(o) in chosen)
+                        and (not focus or o.game_id == focus)]
+        # Full slate shows the top 8; a focused single game shows all its players.
+        top_slate = display_opps if focus else display_opps[:8]
         if top_slate:
             st.markdown(opportunity_feed_html(top_slate), unsafe_allow_html=True)
         else:
