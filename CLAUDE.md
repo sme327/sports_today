@@ -75,8 +75,8 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 - The app reads `data/current/mlb_pbp_current.xlsx` and `database/sportshub.db`.
 - Daily: drop the dated vendor feed in `~/Downloads`, run `update.command` — it
   archives, atomically replaces the current workbook, rebuilds SQLite, collects
-  WNBA, and launches. `NO_CHANGE` is handled safely. Full steps:
-  [Setup](docs/engineering/SETUP.md).
+  WNBA **and MLS** (both non-fatal on failure), and launches. `NO_CHANGE` is handled
+  safely. Full steps: [Setup](docs/engineering/SETUP.md).
 
 ## Known limitations
 

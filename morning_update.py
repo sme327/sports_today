@@ -9,6 +9,7 @@ from pathlib import Path
 from scripts.sync_mlb_download import sync_latest
 from src.config import CURRENT_FEED, DOWNLOADS_DIR
 from src.ingest import import_feed
+from src.mls_collector import collect as collect_mls
 from src.wnba_collector import collect_wnba_season
 
 
@@ -62,6 +63,20 @@ def main() -> int:
             )
         except Exception as exc:
             print(f"WNBA update skipped: {exc}", file=sys.stderr)
+
+        # MLS: incremental team-stat + standings collection (internet required).
+        # Folded into the daily update so MLS never silently goes stale while the
+        # other leagues refresh. Failures are non-fatal, like WNBA.
+        try:
+            mls = collect_mls(season=date.today().year, verbose=False)
+            print(
+                "MLS updated: "
+                f"{mls.events_collected:,} new matches, "
+                f"{mls.standings_rows:,} standings rows "
+                f"({mls.events_skipped:,} already stored)."
+            )
+        except Exception as exc:
+            print(f"MLS update skipped: {exc}", file=sys.stderr)
 
         if not args.no_launch:
             print("Launching Sports Today...")
