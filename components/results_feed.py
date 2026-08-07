@@ -312,6 +312,36 @@ def over_under_html(over_t: dict, under_t: dict, by_market: list) -> str:
     return f'<div class="ou-wrap">{line("Over", over_t)}{line("Under", under_t)}{diff}{mtable}</div>'
 
 
+def consistency_html(windows: list) -> str:
+    """Side-by-side window cards (label, record, hit rate + sample). ``windows`` is
+    an ordered list of (label, tally)."""
+    cards = []
+    for label, t in windows:
+        dec = t["hit"] + t["miss"]
+        sample = f'<span class="ds-sub">n={dec}</span>' if dec else ""
+        cards.append(
+            f'<div class="cons-card"><div class="cons-label">{escape(label)}</div>'
+            f'<div class="cons-rate">{_rate(t)}</div>'
+            f'<div class="cons-rec">{t["hit"]}–{t["miss"]} {sample}</div></div>')
+    return f'<div class="cons-row">{"".join(cards)}</div>'
+
+
+def monthly_table_html(months: list, overall_rate: float | None) -> str:
+    """Chronological monthly table (record, hit rate, sample, diff-vs-overall) — is
+    accuracy improving or deteriorating, without over-weighting single days."""
+    if not months:
+        return '<div class="mlb-empty">No graded months in range yet.</div>'
+    head = ('<div class="et-row et-head"><span>Month</span><span>Record</span>'
+            '<span>Hit rate</span><span>vs overall</span><span></span></div>')
+    body = "".join(
+        f'<div class="et-row"><span class="et-seg">{escape(label)}</span>'
+        f'<span>{t["hit"]}–{t["miss"]}</span>'
+        f'<span class="cal-rate">{_rate(t)} <span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
+        f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span><span></span></div>'
+        for label, t in months)
+    return f'<div class="et-table">{head}{body}</div>'
+
+
 def period_comparison_html(current: dict, prior: dict, prior_label: str,
                            min_sample: int) -> str:
     """"X% hit rate, up N.N percentage points vs previous 30 days" — hidden when the

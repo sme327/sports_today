@@ -15,8 +15,9 @@ import streamlit as st
 
 from components.filter_bar import active_filters, apply_filters, filter_bar_html
 from components.results_feed import (calibration_interpretation, calibration_table_html,
-                                     edge_table_html, over_under_html,
-                                     period_comparison_html, period_summary_html)
+                                     consistency_html, edge_table_html, monthly_table_html,
+                                     over_under_html, period_comparison_html,
+                                     period_summary_html)
 from domain import markets
 from domain.markets import LABELS, ORDER
 from router import NavState
@@ -161,6 +162,28 @@ def render(nav: NavState) -> None:
     prev = {k: t["hit_rate"] for k, t in grading.summarize_by(p30, key_fn).items()}
     st.markdown(edge_table_html(by_segment, overall["hit_rate"], min_sample, recent, prev),
                 unsafe_allow_html=True)
+
+    # --- Consistency & monthly trend (absolute windows + all-time months) ---
+    st.markdown('<div class="rz-section-head">Consistency</div>', unsafe_allow_html=True)
+    yday2 = date.today() - timedelta(days=1)
+
+    def _win(s, e):
+        return grading.summarize(apply_filters(grading.load_graded_range(s, e), active))["overall"]
+    windows = [
+        ("Last 7", _win(yday2 - timedelta(days=6), yday2)),
+        ("Last 30", _win(yday2 - timedelta(days=29), yday2)),
+        ("Prev 30", _win(yday2 - timedelta(days=59), yday2 - timedelta(days=30))),
+        ("Season", _win(date(yday2.year, 3, 1), yday2)),
+        ("All time", _win(date(2020, 1, 1), yday2)),
+    ]
+    st.markdown(consistency_html(windows), unsafe_allow_html=True)
+
+    st.markdown('<div class="rz-section-head">By month</div>', unsafe_allow_html=True)
+    all_rows = apply_filters(grading.load_graded_range(date(2020, 1, 1), yday2), active)
+    by_month = grading.summarize_by(all_rows, lambda r: (r.get("snapshot_date") or "")[:7] or None)
+    all_overall = grading.summarize(all_rows)["overall"]["hit_rate"]
+    months = sorted(by_month.items())
+    st.markdown(monthly_table_html(months, all_overall), unsafe_allow_html=True)
 
     st.markdown(
         '<div class="opp-disclaimer">Observed hit rates only — Score is a 0–100 ranking '
