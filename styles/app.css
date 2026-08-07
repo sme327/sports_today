@@ -1343,3 +1343,73 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .wnba-win b { color: var(--text-1); font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .wnba-win { color: var(--text-4); font-size: .6rem; font-weight: 700; text-transform: uppercase; }
 .wnba-streak { color: var(--brand-2); font-size: .7rem; font-weight: 750; }
+
+/* ============================================================================
+   R2 — DAILY RESULTS v2 (summary, by-market table, expandable prop list)
+   ========================================================================== */
+.daily-summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: .6rem; margin: .4rem 0 .4rem; }
+.ds-tile { padding: .55rem .7rem; border-radius: var(--r-md); background: var(--surface-1);
+  border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
+.ds-label { color: var(--text-4); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.ds-value { color: var(--text-1); font-size: 1.35rem; font-weight: 820; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; margin-top: .1rem; }
+.ds-sub { color: var(--text-4); font-size: .7rem; font-weight: 600; margin-left: .3rem; }
+.ds-status { color: var(--text-3); font-size: .8rem; margin: .1rem 0 1rem; font-variant-numeric: tabular-nums; }
+.rz-section-head { color: var(--text-2); font-size: 1rem; font-weight: 800; margin: 1.1rem 0 .5rem; }
+
+/* By-market table (div grid; whole row links to filter the props). */
+.mkt-table { display: flex; flex-direction: column; gap: 2px; margin-bottom: .3rem; }
+.mkt-row { display: grid; grid-template-columns: 1.5fr 1.3fr .9fr .55fr .7fr; gap: .8rem; align-items: center;
+  padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
+  color: var(--text-2) !important; text-decoration: none !important; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.mkt-row:hover { background: var(--surface-2); }
+.mkt-row.selected { background: var(--brand-soft); box-shadow: var(--edge-hi), inset 0 0 0 1px var(--brand-ring); }
+.mkt-head { background: transparent; box-shadow: none; padding: 0 .8rem .1rem; }
+.mkt-h { color: var(--text-4) !important; text-decoration: none !important; font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; }
+.mkt-h.sortable:hover { color: var(--brand-2) !important; }
+.mkt-name { color: var(--text-1); font-weight: 750; }
+.mkt-rate { color: var(--text-1); font-weight: 700; }
+.mkt-num { color: var(--text-3); }
+
+/* Expandable prop rows (native <details>). */
+.prop-list { display: flex; flex-direction: column; gap: 3px; }
+.prop-item { border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
+.prop-item[open] { box-shadow: var(--edge-hi), var(--shadow-sm); }
+.prop-item.r-hit { border-left: 3px solid var(--green); }
+.prop-item.r-miss { border-left: 3px solid var(--red); }
+.prop-item.r-void { border-left: 3px solid var(--hairline-2); opacity: .82; }
+.prop-item.r-pending { border-left: 3px solid #e0a63a; }
+.prop-summary { display: grid; grid-template-columns: 88px 1.7fr 1.3fr auto auto; gap: .85rem;
+  align-items: center; padding: .55rem .85rem; cursor: pointer; list-style: none; font-size: .86rem; }
+.prop-summary::-webkit-details-marker { display: none; }
+.prop-summary:hover { background: var(--surface-2); border-radius: var(--r-sm); }
+.prop-grade { display: inline-flex; align-items: center; gap: .3rem; font-weight: 800; font-size: .7rem; letter-spacing: .03em; }
+.pg-icon { font-size: .9rem; }
+.prop-grade.r-hit { color: var(--green); }
+.prop-grade.r-miss { color: var(--red); }
+.prop-grade.r-void { color: var(--text-4); }
+.prop-grade.r-pending { color: #e0a63a; }
+.prop-id b { color: var(--text-1); font-weight: 800; }
+.prop-vs { display: block; color: var(--text-4); font-size: .72rem; }
+.prop-mkt { color: var(--text-2); }
+.prop-rec { display: block; color: var(--brand-2); font-size: .76rem; font-weight: 700; }
+.prop-score { color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prop-actual { color: var(--text-1); font-weight: 650; white-space: nowrap; }
+.prop-why { padding: .1rem .85rem .7rem 96px; }
+.why-head { color: var(--text-4); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
+.why-list { margin: 0 0 .35rem; padding-left: 1.1rem; color: var(--text-2); font-size: .82rem; line-height: 1.5; }
+.why-risk { color: var(--red); font-size: .82rem; }
+
+@media (max-width: 760px) {
+  .daily-summary { grid-template-columns: repeat(3, 1fr); }
+  .mkt-row { grid-template-columns: 1.4fr 1fr .8fr; }
+  .mkt-row .mkt-num:last-child, .mkt-head .mkt-h:nth-child(4), .mkt-head .mkt-h:nth-child(5),
+  .mkt-row .mkt-num:nth-of-type(1) { display: none; }
+  .prop-summary { grid-template-columns: auto 1fr auto; grid-template-areas:
+    "grade id score" "grade mkt actual"; row-gap: .2rem; }
+  .prop-grade { grid-area: grade; align-self: start; }
+  .prop-id { grid-area: id; } .prop-mkt { grid-area: mkt; }
+  .prop-score { grid-area: score; text-align: right; } .prop-actual { grid-area: actual; text-align: right; }
+  .prop-why { padding-left: .85rem; }
+}
