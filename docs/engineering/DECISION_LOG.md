@@ -9,6 +9,36 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-07 — Total-bases v2, WNBA grading fix, WNBA props v2
+
+**Decision.**
+- **Batter total-bases (`batter-tb-v2`).** Same failure as the SP overs: the
+  impressiveness weighting chose the impressive bar over the reachable one — 83% of
+  TB picks had a recent clear-rate < 0.35 and hit ~21% (4+ TB, the most-recommended,
+  hit 20%). v2 offers a TB over only on the highest bar cleared in ≥50% of recent
+  games and skips batters who clear none. Hold-out backtest next-game clear:
+  17%→39%, volume 546→46 honest picks.
+- **WNBA grading was silently broken (bug).** Box-score logs store `game_date` as a
+  UTC timestamp (a night game rolls to the next UTC day), but grading matched the
+  plain slate date → zero matches, so every WNBA prop sat pending/void and the
+  learning loop was dead. Now matched by **(game_id, player_id)** (exact,
+  timezone-proof), availability gated per game_id. Backfilled: 102 hit / 85 miss.
+- **WNBA props (`wnba-pra-v2`).** With grading fixed, the scorer discriminates well
+  (corr 0.39) but the mean-based anchor picked bars players clear <50% of the time
+  (those hit 18–44%; rebounds worst at 40%). v2 offers a prop only on the highest bar
+  cleared in ≥60% of the last 10. Hold-out next-game clear: points 37%→64%,
+  rebounds 33%→68%, assists 32%→58%.
+
+**Reason.** The fixed Performance/grading harness turned "the score feels off" into
+measured, per-market clear-rate evidence — every refit here is validated against the
+ledger or a leakage-safe hold-out before adoption, never hand-tuned.
+**Tradeoffs.** All three refits trade volume for reliability (fewer, better picks) —
+correct for over-only / low-base-rate markets, and the Today curation floor filters
+further. Reliability floors (0.50 TB, 0.60 WNBA) are tuned to current data and may
+need revisiting as more slates accrue.
+**Future.** WNBA score top-end is still slightly noisy (80+ bands); revisit once more
+graded slates exist. A shared "reachable-bar" selector could unify TB/SP/WNBA.
+
 ## 2026-08-07 — NFL schedule-only league + Today-screen curation/hierarchy
 
 **Decision.**
