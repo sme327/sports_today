@@ -24,7 +24,7 @@ def test_daily_summary_record_and_not_graded():
 
 def test_market_table_rows_sort_and_select():
     by_market = {"hits": _tally(66, 60), "sp_k": _tally(4, 9), "points": _tally(0, 0, void=5)}
-    html = F.market_table_html(by_market, selected="hits", sort_key="sample", date_iso="2026-08-03")
+    html = F.market_table_html(by_market, selected="hits", sort_key="sample")
     assert "Batter Hits" in html and "66–60" in html
     assert "mkt=hits" in html and "mkt-row selected" in html   # clickable + highlighted
     assert "Not graded" in html                               # points, 0 decided

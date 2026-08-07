@@ -44,6 +44,9 @@ def main() -> None:
     if nav.in_update_view:
         from views import update_data
         update_data.render()
+    elif nav.in_performance_view:
+        from views import performance
+        performance.render(nav)
     elif nav.in_results_view:
         from views import results
         results.render(nav)

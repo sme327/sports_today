@@ -242,6 +242,29 @@ def load_graded_slate(slate_date: date, *, min_score: float | None = None,
     return out
 
 
+def load_graded_range(start: date, end: date, db_path: Path = DB_PATH) -> list[dict]:
+    """All graded props with ``snapshot_date`` in ``[start, end]`` (inclusive), one
+    row per (date, league, player, market) keeping the latest capture. Powers the
+    Performance view. Each row carries its ``snapshot_date``."""
+    cols = ("snapshot_date", "league", "game_id", "player_id", "player_name", "team_name",
+            "opponent", "market", "market_key", "direction", "threshold",
+            "opportunity_score", "result", "actual_value", "void_reason",
+            "scoring_engine_version", "captured_on")
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                f"SELECT {', '.join(cols)} FROM {_SNAP} "
+                f"WHERE snapshot_date BETWEEN ? AND ? ORDER BY captured_on ASC",
+                (start.isoformat(), end.isoformat())).fetchall()
+        except sqlite3.OperationalError:
+            return []
+    latest: dict[tuple, dict] = {}
+    for r in rows:
+        latest[(r["snapshot_date"], r["league"], r["player_id"], r["market"])] = dict(r)
+    return list(latest.values())
+
+
 def _tally(subset: list[dict]) -> dict:
     hit = sum(1 for r in subset if r.get("result") == "hit")
     miss = sum(1 for r in subset if r.get("result") == "miss")
