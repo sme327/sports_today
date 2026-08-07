@@ -153,15 +153,17 @@ Never "sports bar."
 
 Sports Today Orange
 
-Used for:
+Used for **two things only** — selection and opportunity identity:
 
 - the accent word in the hero title (e.g. "Today's" — the rest of the title is white)
-- selected controls (active segmented-control side, selected filter pills)
-- opportunity score numerals and the market line
-- highlights and active state
+- **selection**: active segmented-control side, selected filter pills, active threshold
+- **opportunity identity**: the score numerals + their outline
 
-Orange should attract attention naturally. Do not overuse — the title itself is
-white so the orange accent word carries the brand without shouting.
+Explicitly **not** orange (so the accent doesn't compete on a dense screen): the
+market line (neutral), secondary navigation (neutral until hover), and body/metadata.
+Orange should attract attention naturally. Do not overuse — on the opportunity
+screen especially, repeated orange on markets/nav/score at once reads as a toolbar,
+not curation.
 
 ---
 
