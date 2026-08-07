@@ -9,6 +9,35 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-07 — NFL schedule-only league + Today-screen curation/hierarchy
+
+**Decision.**
+- **NFL as a schedule-only league** (`leagues/nfl/adapter.py`, `src/nfl_api.py`,
+  ESPN scoreboard), preseason included. It appears in the daily slate for
+  awareness — no player analysis, no matchup deep-dive, no props. Same pattern as
+  World Cup. Schedule-only cards (no analysis footer) now render **compact**
+  (shorter), since the reader only needs to know the game is on.
+- **Top Opportunities is a curated shortlist, not a database.** The full slate
+  shows only genuinely-strong picks (score ≥ `_CURATION_FLOOR` = 70, capped at 8),
+  framed "Today's N strongest · curated from N scored" — not "914 opportunities".
+  The whole scored population still feeds the ledger; this governs display only. A
+  focused single game still lists every player.
+- **Orange discipline on the opportunity screen.** Orange is reserved for the score
+  (opportunity identity) and selection (active filters/threshold). The market label
+  is now neutral, and secondary navigation is neutral until hover. Plus a hierarchy
+  pass: lighter evidence-header/market weight, brighter team-metadata/evidence body,
+  softer game-card borders, a shorter date control, and smaller prop-type pills.
+
+**Reason.** With Scoring v2 the score finally spreads, so a hard curation floor is
+now meaningful and "914 opportunities" read as dumping rather than curation. The
+screen had also drifted toward a dashboard-y, orange-heavy, uniformly-bold look.
+**Tradeoffs.** The curation floor (70) is tuned to the current v2 distribution
+(~10% of props clear it) and will need revisiting if scoring changes materially.
+NFL depends on ESPN's public endpoint (no fallback); an outage simply shows no NFL
+games. Compact cards also apply to World Cup (consistent, intended).
+**Future.** Batter total-bases is still v1 (unrefit), so it can dominate the
+curated top until it's refit; segment-edge annotations on picks are the next lever.
+
 ## 2026-08-06 — Scoring v2: ledger-refit batter score + SP-over fix
 
 **Decision.** Refit two scorers from the graded ledger (764 batter, 80 SP props),
