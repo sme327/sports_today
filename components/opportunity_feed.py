@@ -13,15 +13,16 @@ from html import escape
 from components.icons import icon
 from domain.models import Opportunity
 
-# Fallback evidence copy for empty-evidence cases.
+# Fallback evidence copy for empty-evidence cases. The risk side is performance-
+# framed, never a data-completeness caveat (those live in a section-level note, so a
+# high score is never paired with an "we didn't model X" apology).
 _FALLBACKS = {
-    "MLB": ("Current-season profile supports further review",
-            "Opponent and lineup context are incomplete"),
-    "WNBA": ("Recent role and production support further review",
-             "Injury and matchup context are not yet included"),
+    "MLB": ("Recent form supports the pick", "No standout red flags in recent form"),
+    "WNBA": ("Recent role and production support the pick",
+             "No standout red flags in recent form"),
 }
-_DEFAULT_FALLBACK = ("Recent profile supports further review",
-                     "Matchup and availability context are not yet included")
+_DEFAULT_FALLBACK = ("Recent profile supports the pick",
+                     "No standout red flags in recent form")
 
 # Broken/lost images fall to a neutral silhouette, never a broken-image glyph.
 _ON_ERR = "this.classList.add('op-ph-fallback');this.removeAttribute('src')"
@@ -79,7 +80,7 @@ def _row_html(opp: Opportunity) -> str:
         f'<div class="op-team">{escape(opp.team_name or "")}</div>'
         '</div></div>'
         f'{_evidence("good", "Why it stands out", support)}'
-        f'{_evidence("risk", "What could go wrong", risk)}'
+        f'{_evidence("risk", "Main risk", risk)}'
         '</div>'
     )
 

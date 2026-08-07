@@ -11,14 +11,13 @@ from domain.models import SlateGame
 from leagues.base import get_adapter
 
 
-def _state_badge(game: SlateGame) -> str:
-    """Upper-right badge for live/final; pregame carries nothing there (the strong-
-    pick count lives in the footer)."""
+def _status_badge(game: SlateGame, time: str) -> str:
+    """Top-right of the card: time pill (pre), live badge, or Final badge."""
     if game.state == "final":
         return '<span class="game-state final">Final</span>'
     if game.state == "live":
         return '<span class="game-state live"><span class="live-dot"></span>LIVE</span>'
-    return ""
+    return f'<span class="game-time">{escape(time)}</span>'
 
 
 def group_games_by_state(games: list[SlateGame]) -> tuple[list[SlateGame], ...]:
@@ -51,37 +50,18 @@ def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str) ->
             f'{_score_cell(game, side)}</div>')
 
 
-def _focus_href(day: str, game: SlateGame) -> str:
-    return f"?day={quote_plus(day)}&focus={quote_plus(str(game.game_id))}#opps"
-
-
-def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
-            threshold: int, deep_dive: bool) -> str:
-    """Footer = a strong-pick filter link (left) + a Matchup link (right). Distinct
-    treatments: the fire link filters the props below; the pill opens the deep-dive."""
-    fire = ""
-    if count > 0:
-        noun = "prop" if count == 1 else "props"
-        fire = (f'<a class="fire-link" target="_self" href="{_focus_href(day, game)}" '
-                f'title="Show these props below">🔥 {count} {noun} {threshold}+ →</a>')
-    matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}">Matchup →</a>'
-               if deep_dive else "")
-    if not fire and not matchup:
-        return ""
-    return f'<div class="game-meta">{fire}{matchup}</div>'
-
-
-def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90) -> str:
+def game_card_html(game: SlateGame, day: str) -> str:
     adapter = get_adapter(game.league)
     away = game.away_display
     home = game.home_display
     away_logo = logo_img(game.away_logo, away, "team-logo")
     home_logo = logo_img(game.home_logo, home, "team-logo")
     time = format_game_time(game.start_time)
-    matchup_href = game_href(day, game)
-    deep_dive = bool(adapter and getattr(adapter, "supports_deep_dive", False))
+    href = game_href(day, game)
 
     league_label = adapter.label if adapter else game.league
+    meta = adapter.describe_game(game) if adapter else (game.venue or "")
+    chip = adapter.chip_label if adapter else ""
 
     # Subtly emphasize the winner (final games only) by dimming the loser's side.
     away_cls = home_cls = ""
@@ -96,42 +76,40 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     elif game.state == "final":
         state_cls = " game-card--final"
 
-    # Time sits next to the league (game identity), so it's near the matchup; the
-    # strength score takes the upper-right on its own.
-    time_html = (f'<span class="game-time">{escape(time)}</span>'
-                 if game.state not in ("live", "final") else "")
-    # The card body isn't clickable — only the footer links act (filter / deep-dive).
     return (
-        f'<div class="game-card{state_cls}">'
-        f'<div class="game-top"><span class="game-top-left">'
-        f'<span class="league-name">{escape(league_label)}</span>{time_html}</span>'
-        f'{_state_badge(game)}</div>'
+        f'<a class="game-link" href="{href}" target="_self"><div class="game-card{state_cls}">'
+        f'<div class="game-top"><span class="league-name">{escape(league_label)}</span>'
+        f'{_status_badge(game, time)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls)}'
         f'<div class="team-sep">at</div>'
         f'{_team_row(game, "home", home_logo, home, home_cls)}'
         f'</div>'
-        f'{_footer(game, day, matchup_href, count, threshold, deep_dive)}'
-        f'</div>'
+        f'<div class="game-meta"><span>{escape(meta)}</span>'
+        f'<span class="analysis-chip">{escape(chip)}</span></div>'
+        f'</div></a>'
     )
 
 
-def schedule_grid_html(games: list[SlateGame], day: str,
-                       counts: dict[str, int] | None = None, threshold: int = 90) -> str:
-    counts = counts or {}
-    cards = "".join(game_card_html(game, day, counts.get(game.game_id, 0), threshold)
-                    for game in games)
+def schedule_grid_html(games: list[SlateGame], day: str) -> str:
+    cards = "".join(game_card_html(game, day) for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
 
 
 def games_toggle_html(day: str, collapsed: bool, count: int) -> str:
-    """A same-tab pill that collapses/expands the schedule grid, sat on the filter
-    row (right-aligned). Sticky via the ``games`` query param (carried by the date
-    switch; preserved on filter/refresh reruns)."""
+    """A same-tab link that collapses/expands the schedule grid. Sticky via the
+    ``games`` query param (carried by the date switch; preserved on filter/refresh
+    reruns). When collapsed, it becomes a compact bar so the games never feel gone."""
     d = quote_plus(day)
+    noun = "game" if count == 1 else "games"
     if collapsed:
-        noun = "game" if count == 1 else "games"
-        return (f'<div class="games-toggle-row"><a class="games-toggle" target="_self" '
-                f'href="?day={d}">Show {count} {noun} ▾</a></div>')
-    return (f'<div class="games-toggle-row"><a class="games-toggle" target="_self" '
-            f'href="?day={d}&games=off">Hide games ▴</a></div>')
+        return (
+            f'<a class="games-toggle collapsed" target="_self" href="?day={d}">'
+            f'<span class="games-toggle-count">{count} {noun} hidden</span>'
+            f'<span class="games-toggle-action">Show games ▾</span></a>'
+        )
+    return (
+        '<div class="games-toggle-row">'
+        f'<a class="games-toggle" target="_self" href="?day={d}&games=off">Hide games ▴</a>'
+        '</div>'
+    )

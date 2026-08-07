@@ -168,7 +168,7 @@ def score_wnba_opportunities(
             if avg_l5 < avg_l10 - .75:
                 risks.append("Recent production is below the 10-game baseline")
             if not risks:
-                risks.append("Injuries, projected starters, and matchup context are not yet included")
+                risks.append("No standout red flags in recent form")
 
             player_rows.append({
                 "player_id": str(player_id),

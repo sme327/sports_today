@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import leagues  # noqa: F401  (register adapters so get_adapter("MLB") resolves)
 from components.game_cards import game_card_html
 from domain.models import SlateGame
 from services.schedule_cache import game_from_dict, game_to_dict
@@ -158,35 +159,29 @@ def test_card_pregame_has_no_state_class():
     assert "game-card--live" not in html and "game-card--final" not in html
 
 
-def test_strength_bars_render_and_tier():
-    from components.game_cards import _strength_bars
-    html = _strength_bars((100, 96, 88, 84))
-    assert "game-bars" in html and html.count("<rect") == 4
-    assert 'class="b3"' in html and 'class="b2"' in html and 'class="b1"' in html  # ≥95 / 85-94 / <85
-    assert _strength_bars(None) == "" and _strength_bars(()) == ""
+def test_footer_fire_and_matchup_links():
+    html = game_card_html(_sg(state="pre"), "today", count=4, threshold=90)
+    assert "fire-link" in html and "🔥 4 props 90+" in html and "focus=" in html  # filter
+    assert "matchup-link" in html and "&game=" in html                            # deep-dive
+    assert "#opps" in html                                                        # fire scrolls to feed
+    # no strong picks → no fire link, but the Matchup link remains
+    z = game_card_html(_sg(state="pre"), "today", count=0, threshold=90)
+    assert "fire-link" not in z and "matchup-link" in z
+    # singular noun
+    assert "🔥 1 prop 95+" in game_card_html(_sg(state="pre"), "today", count=1, threshold=95)
 
 
-def test_pregame_card_shows_bars_and_matchup_link():
-    html = game_card_html(_sg(state="pre"), "today", bars=(99, 95, 90))
-    assert "game-bars" in html and "<rect" in html
-    assert "game-filter-link" in html and "focus=" in html      # card body filters props
-    assert "matchup-link" in html and "&game=" in html          # separate deep-dive link
-    # live/final states show their badge instead of the bar chart
-    live = game_card_html(_sg(state="live", away_score=1, home_score=2), "today", bars=(99,))
-    assert "game-bars" not in live and "LIVE" in live
-
-
-def test_game_bars_top6_descending():
-    from views.today import _game_bars
+def test_game_counts_by_threshold():
+    from views.today import _game_counts
     from domain.models import Opportunity
 
-    def opp(gid, score):
+    def opp(gid, s):
         return Opportunity(league="MLB", player_id="1", player_name="X", team_id=None,
                            team_name="T", market="1+ Hit", threshold=1,
-                           opportunity_score=score, stability_score=50, game_id=gid)
-    opps = [opp("g1", s) for s in (70, 100, 88, 96, 92, 60, 84)] + [opp(None, 100)]
-    bars = _game_bars(opps)
-    assert bars == {"g1": (100, 96, 92, 88, 84, 70)}            # top 6, descending; no-id ignored
+                           opportunity_score=s, stability_score=50, game_id=gid)
+    opps = [opp("g1", s) for s in (100, 95, 92, 88, 70)] + [opp("g2", 91), opp(None, 100)]
+    assert _game_counts(opps, 90) == {"g1": 3, "g2": 1}        # ≥ 90
+    assert _game_counts(opps, 95) == {"g1": 2}                 # ≥ 95, g2 drops out
 
 
 # ---------------------------------------------- state grouping / ordering ----

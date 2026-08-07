@@ -121,17 +121,17 @@ def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
 
 
 def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds) -> dict:
+    from domain.markets import format_market
     d = _best_direction(values, thresholds)
     thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
     cleared = int(round(hit * n))
+    market = format_market(kind, thr, d["direction"])   # one label source of truth
     if d["direction"] == "over":
-        market = f"{thr}+ {stat_label} (SP)"
         support = [f"{avg:.1f} {unit} per start over last {n}",
                    f"Reached {thr}+ in {cleared} of {n} starts"]
     else:
-        market = f"≤ {thr} {stat_label} (SP)"
         support = [f"{avg:.1f} {unit} per start over last {n}",
-                   f"Held to ≤{thr} in {cleared} of {n} starts"]
+                   f"Held to {thr} or fewer in {cleared} of {n} starts"]
     risk = ("Strikeout totals swing with the opposing lineup and pitch count"
             if kind == "sp_k" else
             "Hits allowed depends heavily on opponent and batted-ball luck")

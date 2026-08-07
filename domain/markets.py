@@ -51,10 +51,10 @@ MARKETS: dict[str, MarketSpec] = {
         "plate_appearances", OVER, allows_both=False),
     "sp_k": MarketSpec(
         "sp_k", "MLB", "sp_k", "Strikeouts", "K", False,
-        "plate_appearances", OVER, allows_both=True, suffix=" (SP)"),
+        "plate_appearances", OVER, allows_both=True),
     "sp_hits": MarketSpec(
         "sp_hits", "MLB", "sp_hits", "Hits Allowed", "hits allowed", False,
-        "plate_appearances", UNDER, allows_both=True, suffix=" (SP)"),
+        "plate_appearances", UNDER, allows_both=True),
     "wnba_points": MarketSpec(
         "wnba_points", "WNBA", "points", "Points", "pts", False,
         "wnba_player_game_logs", OVER, allows_both=False),
@@ -86,12 +86,13 @@ def market_key_from_scorer(league: str, scorer_key: str) -> str | None:
 
 
 def format_market(key: str, threshold, direction: str | None = None) -> str:
-    """Canonical market label — byte-identical to what the scorers emit today."""
+    """Canonical, user-facing market label (e.g. "6+ Strikeouts", "4 or fewer Hits
+    Allowed") — the plain language a reader would expect, not machine syntax."""
     spec = MARKETS[key]
     direction = direction or spec.default_direction
     thr = _fmt_threshold(threshold)
     if direction == UNDER:
-        return f"≤ {thr} {spec.noun}{spec.suffix}"
+        return f"{thr} or fewer {spec.noun}{spec.suffix}"
     return f"{thr}+ {spec.noun}{spec.suffix}"
 
 
@@ -124,7 +125,8 @@ def resolve(league: str | None, market_text: str | None) -> tuple[str | None, st
     is advisory — resolution still works on a row that lost its league. Order matters:
     "hits allowed" must be tested before the bare "hit"."""
     m = (market_text or "").strip().lower()
-    direction = UNDER if m.startswith("≤") else OVER
+    # Under phrasing: legacy "≤ N …" or the current "N or fewer …" / "under …".
+    direction = UNDER if (m.startswith("≤") or "or fewer" in m or "under" in m) else OVER
     if "strikeout" in m:
         return "sp_k", direction
     if "hits allowed" in m:
