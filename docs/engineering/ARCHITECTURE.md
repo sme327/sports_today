@@ -17,7 +17,7 @@
 | a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |
 | a new **domain object** | `domain/models.py`, or a league page model (`domain/<league>_game_page.py`) |
 | a new **prop market** | a `MarketSpec` entry in `domain/markets.py` (label, unit, direction, grade rule, source) + a scorer in `src/`; grading/classification/display then work automatically |
-| **grading / Results** logic | `services/grading.py` (grade + summarize), `views/results.py`, `components/results_feed.py` |
+| **grading / Results & Performance** logic | `services/grading.py` (grade + summarize by band/segment), `views/results.py` (Daily Results), `views/performance.py` (Performance dashboard), `components/results_feed.py`, `components/filter_bar.py` (shared query-param filter bar) |
 | a new **data collector** (fetch → normalize → SQLite) | `src/<league>_collector.py`, writing via a `services/<league>_store.py` |
 | a **schema table** | add DDL to the store module and call it from `services/migrations.ensure_schema` |
 | a **style/token** | `styles/app.css` (one stylesheet) |

@@ -86,13 +86,14 @@ cards (Final-score V1). This phase grows carefully.
 ### 🌙 After Games — "What just happened, and did it matter?"
 
 - **Result tracking** — did today's opportunities hit? *(shipped: the full scored
-  population is recorded and graded hit/miss/void — DNP = void — in a dedicated
-  **Results** view with sport + prop-type filters, a score-threshold control, and
-  per-market hit rates. See the [Decision Log](../engineering/DECISION_LOG.md).)*
+  population is recorded and graded hit/miss/void — DNP = void — split into two
+  views: **Daily Results** (one slate, shared filter bar, per-market hit rates) and
+  a **Performance** dashboard (calibration by score band, over-time trend, over-vs-
+  under, edge finder by segment, consistency windows, by-month, model-version
+  comparison). See the [Decision Log](../engineering/DECISION_LOG.md).)*
 - **Evening recap** — "What mattered tonight."
 - **Signal evaluation** — which analytical signals were actually useful over time.
-  *(next: Results Phase 3 — calibration by score band across dates once the ledger
-  has accumulated enough graded slates.)*
+  *(shipped as the Performance dashboard; used to drive Scoring v2 — see below.)*
 
 ### 📅 Season — "How is the bigger picture developing?"
 
@@ -166,8 +167,10 @@ If it scores poorly, it belongs later — or not at all.
   the learning loop (record → grade → read by band/market) is shipped but only
   becomes informative with weeks of graded slates. This is the current bottleneck,
   not more features.
-- **After Games:** **Results Phase 3** — calibration by score band over time, signal
-  usefulness, engine-version comparison (waits on ledger depth).
+- **After Games:** the Performance dashboard (calibration by band, edge finder,
+  version comparison) is shipped; it now needs **ledger depth** to sharpen — most
+  segment bands are still small-sample. Next: segment-edge annotations on today's
+  picks and a proven-edge confidence tier (Scoring v2 follow-ups).
 - **Before Games:** further inputs beyond confirmed lineups (expected plate
   appearances/minutes, matched-starter lines, park/weather/bullpen); more MLB
   markets (total bases, batter Ks, walks, HR), each with an honest scorer + grader.

@@ -9,6 +9,58 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-06 — Scoring v2: ledger-refit batter score + SP-over fix
+
+**Decision.** Refit two scorers from the graded ledger (764 batter, 80 SP props),
+validated offline before adoption, with per-market model versions bumped.
+- **Batter (`batter-hit-v2`, `src/opportunity.py`).** Replace the hand-tuned
+  weighted blend with the estimated 1+ hit chance `1-(1-p)^PA` (p = recent per-PA
+  hit rate, PA = expected at-bats), rescaled to a spread 0–100 ranking signal with
+  a small high-K penalty. The old blend spent 20/100 of its weight on last-25 hit
+  rate — which the ledger shows is **noise** (corr ≈ 0) — and saturated near
+  90–100, giving a flat calibration (~54–62% every band). Playing time
+  (`pa_per_game`) was the strongest predictor (corr 0.14).
+- **SP (`sp-v2`, `src/pitcher_opportunity.py`).** Penalize the **over** direction
+  in `_best_direction` (×0.70 K, ×0.45 hits allowed). Recommended overs
+  underperformed badly — hits-allowed overs hit 20% off a 60% recent clear rate
+  (the stat is too variance-driven), K overs regressed to ~43% — while unders
+  converted 57–61%.
+
+**Reason.** The Performance dashboard surfaced that the score didn't discriminate
+and that SP overs were unreliable. The fix had to be data-driven and measurable,
+not another hand-tune. `component_values` stored per snapshot made the offline
+refit/validation possible.
+**Tradeoffs.** The batter score now spreads across 0–100 instead of clustering at
+90–100 — a visible UX shift (fewer "90+" fire-lines). Still an **Opportunity
+Score, not a probability** (rescaled and uncalibrated). The SP over-samples are
+small (10/7); overs are penalized, not removed, so extreme cases still surface.
+**Future.** New calibration (~52%→66% across bands) needs fresh `v2` slates to
+confirm live. Follow-ups: segment-edge annotations on today's picks, a proven-edge
+tier, shrunk segment priors, a post-hoc calibration map.
+
+## 2026-08-06 — Results split into Daily Results + Performance (R1–R8)
+
+**Decision.** Split the single Results view into **Daily Results** (`views/results.py`
+— one slate, date nav, search/sort) and a **Performance** dashboard
+(`views/performance.py`), over a shared query-param **filter bar**
+(`components/filter_bar.py`) and shared grading definitions (`services/grading.py`).
+Additive snapshot columns (`opponent`, `opposing_sp`, `start_time`, `void_reason`);
+half-point over/under line reframe in the market registry ("1+ Hit" → "Over 0.5",
+never a push); six finer score bands (75–79 … 99–100, MIN_SAMPLE=30); Altair charts;
+**per-market** model versions (`MODEL_VERSIONS` in `services/snapshots.py`) replacing
+the flat per-league string. Performance sections: period summary + comparison,
+over-time trend, calibration, over-vs-under, edge finder by segment (team/opponent/
+opposing-SP/player/month), consistency windows, by-month, model-version table.
+
+**Reason.** One view couldn't answer both "what should I watch today?" and "is the
+model any good over time?". Separating them let the second become a real evaluation
+harness — which then drove Scoring v2.
+**Tradeoffs.** More surface area; several additive columns and a filter-state
+convention carried in the URL. Model-version comparison can't be reconstructed
+retroactively (history keeps whatever it was stamped with) — honest only forward.
+**Future.** Publication-time immutability (pin first capture per prop) deferred;
+row-click drilldown on edge-finder segments deferred.
+
 ## 2026-08-06 — Batter Total Bases market + WNBA trend-depth parity
 
 **Decision.** (1) Add an MLB **Total Bases** market as the first one built on the
