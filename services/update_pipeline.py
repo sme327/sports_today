@@ -12,7 +12,9 @@ from __future__ import annotations
 from datetime import date, timedelta
 from pathlib import Path
 
-_REGRADE_DAYS = 4       # force-regrade this many recent days after an import
+_REGRADE_DAYS = 7       # force-regrade this many recent days after an import
+                        # (a week's buffer so a skipped update day can't strand a
+                        #  still-pending slate outside the window)
 
 
 def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
