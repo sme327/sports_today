@@ -15,9 +15,30 @@ import streamlit as st
 
 from components.filter_bar import active_filters, apply_filters, filter_bar_html
 from components.results_feed import (calibration_interpretation, calibration_table_html,
+                                     edge_table_html, over_under_html,
                                      period_comparison_html, period_summary_html)
+from domain import markets
+from domain.markets import LABELS, ORDER
 from router import NavState
 from services import grading
+
+
+def _dir(r: dict) -> str:
+    return r.get("direction") or markets.resolve(r.get("league"), r.get("market"))[1]
+
+
+# Edge-finder groupings: key → (label, row-key function). None keys are dropped.
+_GROUPINGS = {
+    "market": ("Market", lambda r: LABELS.get(markets.prop_type(r.get("league"), r.get("market")))),
+    "league": ("League", lambda r: r.get("league")),
+    "direction": ("Direction", lambda r: _dir(r).title()),
+    "band": ("Score band", lambda r: grading.band_of(r.get("opportunity_score"))),
+    "team": ("Team", lambda r: r.get("team_name")),
+    "opponent": ("Opponent", lambda r: r.get("opponent")),
+    "opp_sp": ("Opposing SP", lambda r: r.get("opposing_sp")),
+    "player": ("Player", lambda r: r.get("player_name")),
+    "month": ("Month", lambda r: (r.get("snapshot_date") or "")[:7] or None),
+}
 
 # (key, label). Period back from yesterday (the latest gradeable day).
 _PERIODS = [("7", "7 days"), ("30", "30 days"), ("90", "90 days"),
@@ -110,10 +131,41 @@ def render(nav: NavState) -> None:
     _calibration_chart(bands)
     st.markdown(calibration_table_html(bands, overall["hit_rate"]), unsafe_allow_html=True)
 
+    # --- Over vs Under ---
+    st.markdown('<div class="rz-section-head">Over vs Under</div>', unsafe_allow_html=True)
+    empty = grading.tally([])
+    ou = grading.summarize_by(rows, _dir)
+    by_market_ou = []
+    for pt in ORDER:
+        mrows = [r for r in rows if markets.prop_type(r.get("league"), r.get("market")) == pt]
+        if mrows:
+            mo = grading.summarize_by(mrows, _dir)
+            by_market_ou.append((LABELS[pt], mo.get("over", empty), mo.get("under", empty)))
+    st.markdown(over_under_html(ou.get("over", empty), ou.get("under", empty), by_market_ou),
+                unsafe_allow_html=True)
+
+    # --- Edge finder ---
+    st.markdown('<div class="rz-section-head">Edge finder</div>', unsafe_allow_html=True)
+    by = st.query_params.get("by", "market")
+    if by not in _GROUPINGS:
+        by = "market"
+    by_pills = _pill_row("by", [(k, lbl) for k, (lbl, _) in _GROUPINGS.items()], by, "Group by")
+    st.markdown(f'<div class="perf-controls">{by_pills}</div>', unsafe_allow_html=True)
+    key_fn = _GROUPINGS[by][1]
+    by_segment = grading.summarize_by(rows, key_fn)
+    yday = date.today() - timedelta(days=1)
+    r30 = apply_filters(grading.load_graded_range(yday - timedelta(days=29), yday), active)
+    p30 = apply_filters(grading.load_graded_range(yday - timedelta(days=59),
+                                                  yday - timedelta(days=30)), active)
+    recent = {k: t["hit_rate"] for k, t in grading.summarize_by(r30, key_fn).items()}
+    prev = {k: t["hit_rate"] for k, t in grading.summarize_by(p30, key_fn).items()}
+    st.markdown(edge_table_html(by_segment, overall["hit_rate"], min_sample, recent, prev),
+                unsafe_allow_html=True)
+
     st.markdown(
-        '<div class="opp-disclaimer">Observed hit rates only — no “expected” rate is '
-        'shown, because Score is a 0–100 ranking signal, not a win probability. Bands '
-        'below the minimum sample are marked and de-emphasized.</div>',
+        '<div class="opp-disclaimer">Observed hit rates only — Score is a 0–100 ranking '
+        'signal, not a win probability. Segments below the minimum sample are separated '
+        'and marked; a small perfect record never outranks a larger, reliable one.</div>',
         unsafe_allow_html=True)
 
 

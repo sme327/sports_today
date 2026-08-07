@@ -288,6 +288,18 @@ def summarize(rows: list[dict]) -> dict:
             "by_league": {lg: _tally([r for r in rows if r.get("league") == lg]) for lg in leagues}}
 
 
+def summarize_by(rows: list[dict], key_fn) -> dict:
+    """Group rows by ``key_fn(row)`` (None keys dropped) → {segment: tally}. Powers
+    the edge finder and over/under breakdowns with one consistent tally."""
+    buckets: dict = {}
+    for r in rows:
+        k = key_fn(r)
+        if k is None or k == "":
+            continue
+        buckets.setdefault(k, []).append(r)
+    return {k: _tally(v) for k, v in buckets.items()}
+
+
 def summarize_by_market(rows: list[dict]) -> dict:
     """Per prop-type (batter hits, SP K, points, …) tallies, in canonical order.
 

@@ -237,6 +237,81 @@ def period_summary_html(overall: dict, avg_score: float | None, label: str) -> s
             f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg}</span></div>')
 
 
+def _diff_html(rate: float | None, overall: float | None) -> str:
+    if rate is None or overall is None:
+        return ""
+    pp = (rate - overall) * 100
+    return f'<span class="cal-diff {"pos" if pp >= 0 else "neg"}">{"+" if pp >= 0 else ""}{pp:.1f} pp</span>'
+
+
+def edge_table_html(by_segment: dict, overall_rate: float | None, min_sample: int,
+                    recent: dict, prev: dict) -> str:
+    """Reliability-first edge table: segments meeting the min sample first (sorted by
+    hit rate), then a separated, marked 'below minimum sample' group — so a 3–0 never
+    outranks a 55–40. Columns include diff-vs-overall and a 30-day trend."""
+    if not by_segment:
+        return '<div class="mlb-empty">No graded props to segment in this period.</div>'
+
+    def dec(t):
+        return t["hit"] + t["miss"]
+    meets = sorted(((k, t) for k, t in by_segment.items() if dec(t) >= min_sample),
+                   key=lambda kt: kt[1]["hit_rate"] or 0, reverse=True)
+    small = sorted(((k, t) for k, t in by_segment.items() if 0 < dec(t) < min_sample),
+                   key=lambda kt: dec(kt[1]), reverse=True)
+
+    def trend_cell(label):
+        rc, pv = recent.get(label), prev.get(label)
+        if rc is not None and pv is not None:
+            dd = (rc - pv) * 100
+            arrow = "↑" if dd > 3 else "↓" if dd < -3 else "→"
+            return (f'<span class="et-trend">{arrow} {rc:.0%} '
+                    f'<span class="et-prev">from {pv:.0%}</span></span>')
+        if rc is not None:
+            return f'<span class="et-trend">{rc:.0%} <span class="et-prev">30d</span></span>'
+        return '<span class="et-prev">—</span>'
+
+    def row(label, t, small_flag=False):
+        badge = '<span class="cal-small">Small</span>' if small_flag else ""
+        return (f'<div class="et-row"><span class="et-seg">{escape(str(label))}{badge}</span>'
+                f'<span>{t["hit"]}–{t["miss"]}</span>'
+                f'<span class="cal-rate">{_rate(t)} <span class="ds-sub">n={dec(t)}</span></span>'
+                f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span>'
+                f'<span>{trend_cell(label)}</span></div>')
+
+    head = ('<div class="et-row et-head"><span>Segment</span><span>Record</span>'
+            '<span>Hit rate</span><span>vs overall</span><span>30-day trend</span></div>')
+    body = "".join(row(k, t) for k, t in meets)
+    if small:
+        body += ('<div class="et-divider">Below minimum sample</div>'
+                 + "".join(row(k, t, True) for k, t in small))
+    return f'<div class="et-table">{head}{body}</div>'
+
+
+def over_under_html(over_t: dict, under_t: dict, by_market: list) -> str:
+    """Over-vs-Under comparison + a per-market breakdown."""
+    def line(label, t):
+        return (f'<div class="ou-line"><span class="ou-dir">{label}</span>'
+                f'<span class="ou-rec">{t["hit"]}–{t["miss"]}</span>'
+                f'<span class="ou-rate">{_rate(t)}</span>'
+                f'<span class="ds-sub">n={t["hit"] + t["miss"]}</span></div>')
+    diff = ""
+    if over_t["hit_rate"] is not None and under_t["hit_rate"] is not None:
+        pp = (over_t["hit_rate"] - under_t["hit_rate"]) * 100
+        stronger = "Over stronger" if pp >= 0 else "Under stronger"
+        diff = (f'<div class="ou-diff">Difference: <b>{"+" if pp >= 0 else ""}{pp:.1f} pp</b> '
+                f'· {stronger}</div>')
+    mrows = ""
+    for label, ot, ut in by_market:
+        if (ot["hit"] + ot["miss"] + ut["hit"] + ut["miss"]) == 0:
+            continue
+        mrows += (f'<div class="ou-mrow"><span class="ou-mname">{escape(label)}</span>'
+                  f'<span>{_rate(ot)} <span class="ds-sub">n={ot["hit"] + ot["miss"]}</span></span>'
+                  f'<span>{_rate(ut)} <span class="ds-sub">n={ut["hit"] + ut["miss"]}</span></span></div>')
+    mtable = (f'<div class="ou-mtable"><div class="ou-mrow ou-mhead"><span>Market</span>'
+              f'<span>Over</span><span>Under</span></div>{mrows}</div>') if mrows else ""
+    return f'<div class="ou-wrap">{line("Over", over_t)}{line("Under", under_t)}{diff}{mtable}</div>'
+
+
 def period_comparison_html(current: dict, prior: dict, prior_label: str,
                            min_sample: int) -> str:
     """"X% hit rate, up N.N percentage points vs previous 30 days" — hidden when the
