@@ -20,6 +20,12 @@ _REQUIRED = {"batting_team", "batter_id", "batter_name", "game_date", "game_id",
 TB_THRESHOLDS = (1, 2, 3, 4)     # over only; 1 is excluded as trivial (any hit clears it)
 RECENT_GAMES = 20
 MIN_GAMES = 8
+# v2 (ledger-refit): the old impressiveness-weighting chose the *impressive* bar over
+# the *reachable* one — 83% of TB picks had a recent clear-rate < 0.35 and hit only
+# ~21%, while picks cleared in ≥half of recent games hit far better. So a TB over is
+# only offered on a bar the batter actually reaches often; batters who reach none are
+# skipped rather than handed a low-probability pick.
+MIN_CLEAR = 0.50
 
 _RESULT_COLUMNS = ["batter_id", "player", "team", "market_key", "direction", "threshold",
                    "opportunity_score", "stability_score", "recent_avg", "recent_hit_rate",
@@ -27,20 +33,25 @@ _RESULT_COLUMNS = ["batter_id", "player", "team", "market_key", "direction", "th
 
 
 def _score(hit_rate: float, impressiveness: float, n: int) -> int:
-    s = 100 * (0.60 * hit_rate + 0.25 * impressiveness + 0.15 * min(n / RECENT_GAMES, 1.0))
+    # Reliability-first: the recent clear-rate carries most of the score, with a
+    # modest bonus for a higher (more impressive) bar and for sample depth.
+    s = 100 * (0.70 * hit_rate + 0.15 * impressiveness + 0.15 * min(n / RECENT_GAMES, 1.0))
     return max(0, min(round(s), 100))
 
 
-def _best_threshold(values: pd.Series) -> dict:
-    """Pick the over threshold with the strongest clear-rate × impressiveness — so a
-    slugger surfaces a meaningful "3+ TB" and a contact hitter a solid "2+ TB",
-    never the trivial "1+"."""
+def _best_threshold(values: pd.Series) -> dict | None:
+    """The highest TB bar the batter clears in at least ``MIN_CLEAR`` of recent games —
+    a meaningful *and reachable* over. Returns ``None`` when no bar clears the floor
+    (no honest TB over for this batter), so the market simply skips him."""
     lo, hi = min(TB_THRESHOLDS), max(TB_THRESHOLDS)
     span = (hi - lo) or 1
     n = len(values)
-    scored = [(float((values >= t).mean()), t, (t - lo) / span) for t in TB_THRESHOLDS if t > lo]
-    rate, thr, imp = max(scored, key=lambda x: x[0] * x[2], default=(0.0, 2, 0.0))
-    return {"threshold": thr, "hit_rate": rate, "impressiveness": imp,
+    reliable = [(t, float((values >= t).mean())) for t in TB_THRESHOLDS if t > lo
+                if float((values >= t).mean()) >= MIN_CLEAR]
+    if not reliable:
+        return None
+    thr, rate = max(reliable, key=lambda x: x[0])   # highest reliably-cleared bar
+    return {"threshold": thr, "hit_rate": rate, "impressiveness": (thr - lo) / span,
             "avg": float(values.mean()), "n": n}
 
 
@@ -57,6 +68,8 @@ def score_tb_opportunities(pa: pd.DataFrame, teams: list[str], minimum_games: in
         if len(recent) < minimum_games:
             continue
         d = _best_threshold(recent["total_bases"])
+        if d is None:            # no reachable TB bar → not a TB opportunity
+            continue
         thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
         cleared = int(round(hit * n))
         name = str(x.loc[x["batter_id"] == batter_id, "batter_name"].iloc[-1])
@@ -66,10 +79,7 @@ def score_tb_opportunities(pa: pd.DataFrame, teams: list[str], minimum_games: in
         stability = max(0, min(round(45 + min(n, RECENT_GAMES) * 1.2 + hit * 15), 100))
         support = [f"{avg:.1f} total bases per game over last {n}",
                    f"Reached {thr}+ in {cleared} of {n} games"]
-        risks = []
-        if hit < 0.5:
-            risks.append("Cleared this in fewer than half of recent games")
-
+        risks: list[str] = []
         team_name = team
         score, stability, slot, team_posted = lineup_overlay.apply(
             batter_id, team_name, score, stability, support, risks, lineups)
