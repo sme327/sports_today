@@ -24,6 +24,10 @@ _FALLBACKS = {
 _DEFAULT_FALLBACK = ("Recent profile supports the pick",
                      "No standout red flags in recent form")
 
+# Risk copy that means "nothing concerning" — rendered visually neutral (calm gray),
+# not in the coral risk treatment, so a clean pick doesn't read as a warning.
+_NEUTRAL_RISKS = {"No standout red flags in recent form"}
+
 # Broken/lost images fall to a neutral silhouette, never a broken-image glyph.
 _ON_ERR = "this.classList.add('op-ph-fallback');this.removeAttribute('src')"
 
@@ -59,7 +63,7 @@ def _avatar(headshot: str | None, team_logo: str | None, alt: str, league: str) 
 
 
 def _evidence(kind: str, heading: str, body: str) -> str:
-    ic = icon("positive") if kind == "good" else icon("risk")
+    ic = icon("positive") if kind == "good" else icon("neutral") if kind == "flat" else icon("risk")
     return (f'<div class="op-evidence op-{kind}">'
             f'<div class="op-ev-head">{ic}<span>{escape(heading)}</span></div>'
             f'<div class="op-ev-body">{escape(body)}</div></div>')
@@ -69,6 +73,10 @@ def _row_html(opp: Opportunity) -> str:
     support_fb, risk_fb = _FALLBACKS.get(opp.league, _DEFAULT_FALLBACK)
     support = opp.primary_support or support_fb
     risk = opp.primary_risk or risk_fb
+    if risk in _NEUTRAL_RISKS:
+        risk_html = _evidence("flat", "No notable risk", "Nothing concerning in recent form")
+    else:
+        risk_html = _evidence("risk", "Main risk", risk)
     return (
         '<div class="op-row">'
         f'<div class="op-score">{opp.opportunity_score}</div>'
@@ -80,7 +88,7 @@ def _row_html(opp: Opportunity) -> str:
         f'<div class="op-team">{escape(opp.team_name or "")}</div>'
         '</div></div>'
         f'{_evidence("good", "Why it stands out", support)}'
-        f'{_evidence("risk", "Main risk", risk)}'
+        f'{risk_html}'
         '</div>'
     )
 
