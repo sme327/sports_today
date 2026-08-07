@@ -17,7 +17,7 @@ from components.filter_bar import active_filters, apply_filters, filter_bar_html
 from components.results_feed import (calibration_interpretation, calibration_table_html,
                                      consistency_html, edge_table_html, monthly_table_html,
                                      over_under_html, period_comparison_html,
-                                     period_summary_html)
+                                     period_summary_html, version_table_html)
 from domain import markets
 from domain.markets import LABELS, ORDER
 from router import NavState
@@ -184,6 +184,22 @@ def render(nav: NavState) -> None:
     all_overall = grading.summarize(all_rows)["overall"]["hit_rate"]
     months = sorted(by_month.items())
     st.markdown(monthly_table_html(months, all_overall), unsafe_allow_html=True)
+
+    # --- Model versions ---
+    st.markdown('<div class="rz-section-head">Model versions</div>', unsafe_allow_html=True)
+    ver_rows: dict = {}
+    ver_dates: dict = {}
+    for r in all_rows:
+        v = r.get("scoring_engine_version") or "unversioned"
+        ver_rows.setdefault(v, []).append(r)
+        d = r.get("snapshot_date")
+        if d:
+            lo, hi = ver_dates.get(v, (d, d))
+            ver_dates[v] = (min(lo, d), max(hi, d))
+    ver_items = sorted(
+        ((v, grading.tally(rs), *ver_dates.get(v, ("—", "—"))) for v, rs in ver_rows.items()),
+        key=lambda it: it[3])   # by first active date
+    st.markdown(version_table_html(ver_items, all_overall), unsafe_allow_html=True)
 
     st.markdown(
         '<div class="opp-disclaimer">Observed hit rates only — Score is a 0–100 ranking '

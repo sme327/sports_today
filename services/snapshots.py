@@ -58,11 +58,28 @@ def _game_context(opp: Opportunity, games: dict) -> tuple[str | None, str | None
     start = g.start_time.isoformat() if g.start_time else None
     return opponent, sp, start
 
-# Engine versions per league (kept next to each adapter).
+# Engine versions per league (fallback for props without a mapped market).
 ENGINE_VERSIONS = {
     "MLB": "mlb-1hit-v0.1",
     "WNBA": "wnba-pra-v0.1",
 }
+
+# Per-market model version — BUMP the string whenever that scorer changes, so the
+# Performance version-comparison can measure whether a change actually helped.
+# (Cannot be reconstructed retroactively; history keeps whatever it was stamped with.)
+MODEL_VERSIONS = {
+    "batter_hit": "batter-hit-v1",
+    "batter_tb": "batter-tb-v1",
+    "sp_k": "sp-v1",
+    "sp_hits": "sp-v1",
+    "wnba_points": "wnba-pra-v1",
+    "wnba_rebounds": "wnba-pra-v1",
+    "wnba_assists": "wnba-pra-v1",
+}
+
+
+def _model_version(market_key: str | None, league: str) -> str | None:
+    return MODEL_VERSIONS.get(market_key) or ENGINE_VERSIONS.get(league)
 
 
 # Additive columns (added after CREATE so both fresh and existing DBs gain them).
@@ -183,6 +200,7 @@ def write_daily_snapshot(
         for opp in opportunities:
             status = schedule_status.get(opp.league)
             opponent, opposing_sp, start_time = _game_context(opp, games)
+            mkey = opp.market_key or _resolve_key(opp.league, opp.market)
             conn.execute(
                 f"""
                 INSERT OR IGNORE INTO {_TABLE} (
@@ -208,7 +226,7 @@ def write_daily_snapshot(
                     opp.team_name,
                     opp.market,
                     float(opp.threshold) if opp.threshold is not None else None,
-                    opp.market_key or _resolve_key(opp.league, opp.market),
+                    mkey,
                     opp.direction or _resolve_dir(opp.league, opp.market),
                     opponent,
                     opposing_sp,
@@ -224,7 +242,7 @@ def write_daily_snapshot(
                     int(lineups_available),
                     int(matchup_context_available),
                     int(injury_context_available),
-                    ENGINE_VERSIONS.get(opp.league),
+                    _model_version(mkey, opp.league),
                 ),
             )
             written += 1

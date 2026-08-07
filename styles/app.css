@@ -1523,3 +1523,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   font-variant-numeric: tabular-nums; margin: .1rem 0; }
 .cons-rec { color: var(--text-3); font-size: .82rem; font-variant-numeric: tabular-nums; }
 @media (max-width: 760px) { .cons-row { grid-template-columns: repeat(2, 1fr); } }
+
+.ver-row { display: grid; grid-template-columns: 1.3fr 1.4fr .8fr 1fr .8fr; gap: .8rem; align-items: center;
+  padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
+  font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
