@@ -274,6 +274,7 @@ def _render_opportunities(
         st.markdown(
             '<div id="opps" class="section-row"><h2>Top Opportunities</h2>'
             f'<span class="section-links">{_threshold_control_html(nav)}{update_link}'
+            '<a class="results-link" target="_self" href="?view=performance">Performance</a>'
             '<a class="results-link" target="_self" href="?view=results">'
             'Yesterday’s results →</a></span></div>',
             unsafe_allow_html=True,

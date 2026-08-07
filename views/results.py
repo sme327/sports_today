@@ -57,8 +57,10 @@ def _date_nav(d: date) -> None:
 def render(nav: NavState) -> None:
     d = nav.results_date or (date.today() - timedelta(days=1))
 
-    st.markdown('<a class="back-link" target="_self" href="?">← Back to today’s slate</a>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-row">'
+                '<a class="back-link" target="_self" href="?">← Back to today’s slate</a>'
+                '<a class="results-link" target="_self" href="?view=performance">Performance →</a>'
+                '</div>', unsafe_allow_html=True)
     _date_nav(d)
 
     try:
@@ -76,7 +78,7 @@ def render(nav: NavState) -> None:
 
     # Shared filter bar — drives the summary, the by-market table, and the prop list.
     active = active_filters()
-    st.markdown(filter_bar_html(d.isoformat(), active), unsafe_allow_html=True)
+    st.markdown(filter_bar_html(active), unsafe_allow_html=True)
     filtered = apply_filters(rows, active)
 
     # Day summary (neutral hit-rate styling) over the filtered set.
@@ -89,7 +91,7 @@ def render(nav: NavState) -> None:
     msort = st.query_params.get("msort", "sample")
     st.markdown('<div class="rz-section-head">By market</div>', unsafe_allow_html=True)
     st.markdown(market_table_html(grading.summarize_by_market(filtered), active.get("mkt"),
-                                  msort, d.isoformat()), unsafe_allow_html=True)
+                                  msort), unsafe_allow_html=True)
 
     # Prop list controls: search + sort (the filter bar already narrowed the set).
     st.markdown('<div class="rz-section-head">Props</div>', unsafe_allow_html=True)

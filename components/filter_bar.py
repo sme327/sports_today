@@ -31,19 +31,21 @@ _SPECS = [
 _LABEL_OF = {p: dict(opts) for p, _, opts in _SPECS}
 
 
-def filter_href(date_iso: str, **overrides) -> str:
-    """A results URL preserving the current filters/sort, with ``overrides`` applied
-    (a value of ``"all"``/``None`` removes that param)."""
-    params = {"view": "results", "date": date_iso}
-    for k, v in st.query_params.to_dict().items():
-        if k not in ("view", "date"):
-            params[k] = v
+def filter_href(**overrides) -> str:
+    """A URL preserving the *current* view + all current params (filters, sort,
+    date/period), with ``overrides`` applied (``"all"``/``None`` removes a param).
+    View-agnostic, so the same bar works on Daily Results and Performance."""
+    params = st.query_params.to_dict()
     for p, v in overrides.items():
         if v in (None, "all"):
             params.pop(p, None)
         else:
             params[p] = v
     return "?" + urlencode(params)
+
+
+def _clear_href() -> str:
+    return filter_href(**{p: "all" for p, _, _ in _SPECS})
 
 
 def active_filters() -> dict:
@@ -71,32 +73,33 @@ def apply_filters(rows: list[dict], active: dict) -> list[dict]:
     return out
 
 
-def filter_bar_html(date_iso: str, active: dict) -> str:
-    """The pill-group filter bar + active-filter chips + Clear all."""
+def filter_bar_html(active: dict, *, exclude: tuple[str, ...] = ()) -> str:
+    """The pill-group filter bar + active-filter chips + Clear all. ``exclude`` hides
+    filters that don't apply on a given view (e.g. the score band on the calibration
+    view, which breaks down *by* band)."""
+    specs = [s for s in _SPECS if s[0] not in exclude]
     groups = []
-    for param, label, opts in _SPECS:
+    for param, label, opts in specs:
         cur = active.get(param, "all")
         pills = "".join(
             f'<a class="fb-pill{" active" if v == cur else ""}" target="_self" '
-            f'href="{filter_href(date_iso, **{param: v})}">{escape(disp)}</a>'
+            f'href="{filter_href(**{param: v})}">{escape(disp)}</a>'
             for v, disp in opts)
         groups.append(f'<div class="fb-group"><span class="fb-label">{label}</span>'
                       f'<span class="fb-pills">{pills}</span></div>')
 
     chips, n_active = [], 0
-    for param, label, _opts in _SPECS:
+    for param, label, _opts in specs:
         v = active.get(param, "all")
         if v != "all":
             n_active += 1
             chips.append(
                 f'<span class="fb-chip">{escape(label)}: <b>{escape(_LABEL_OF[param].get(v, v))}</b>'
-                f'<a class="fb-x" target="_self" href="{filter_href(date_iso, **{param: "all"})}">✕</a>'
-                '</span>')
+                f'<a class="fb-x" target="_self" href="{filter_href(**{param: "all"})}">✕</a></span>')
     chip_row = ""
     if n_active:
         chip_row = (f'<div class="fb-chips"><span class="fb-active-count">{n_active} active</span>'
                     f'{"".join(chips)}'
-                    f'<a class="fb-clear" target="_self" href="?view=results&date={date_iso}">'
-                    'Clear all</a></div>')
+                    f'<a class="fb-clear" target="_self" href="{_clear_href()}">Clear all</a></div>')
 
     return f'<div class="filter-bar">{"".join(groups)}</div>{chip_row}'
