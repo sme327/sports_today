@@ -334,6 +334,9 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* Final: recede with a slightly darker surface; readability/scores unchanged. */
 .game-card--final { background: linear-gradient(165deg, #141820, #0f1319); }
 .game-card--final:hover { background: linear-gradient(165deg, #181d25, #12161c); }
+/* Compact: schedule-only cards (no analysis footer) sit shorter — just enough for
+   the matchup + time. The reader only needs awareness that the game is on. */
+.game-card--compact { min-height: 132px; padding-bottom: 1rem; }
 
 .game-top {
   display: flex;

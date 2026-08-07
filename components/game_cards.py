@@ -100,9 +100,13 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     # there instead. Only one of the two is ever present, so the corner is consistent.
     time_html = (f'<span class="game-time">{escape(time)}</span>'
                  if game.state not in ("live", "final") else "")
+    footer = _footer(game, day, matchup_href, count, threshold, deep_dive)
+    # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
+    # reader just needs to know the game is happening, so it needn't be as tall.
+    compact_cls = "" if footer else " game-card--compact"
     # The card body isn't clickable — only the footer links act (filter / deep-dive).
     return (
-        f'<div class="game-card{state_cls}">'
+        f'<div class="game-card{state_cls}{compact_cls}">'
         f'<div class="game-top"><span class="game-top-left">'
         f'<span class="league-name">{escape(league_label)}</span></span>'
         f'{time_html}{_state_badge(game)}</div>'
@@ -111,7 +115,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         f'<div class="team-sep">at</div>'
         f'{_team_row(game, "home", home_logo, home, home_cls)}'
         f'</div>'
-        f'{_footer(game, day, matchup_href, count, threshold, deep_dive)}'
+        f'{footer}'
         f'</div>'
     )
 
