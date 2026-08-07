@@ -66,13 +66,14 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         graded_at = datetime.now().isoformat(timespec="seconds")
 
         for r in rows:
-            result, actual = _grade_row(r, mlb, mlb_tb, mlb_sp, wnba, avail)
+            result, actual, reason = _grade_row(r, mlb, mlb_tb, mlb_sp, wnba, avail)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
                 continue
             conn.execute(
-                f"UPDATE {_SNAP} SET result = ?, actual_value = ?, graded_at = ? WHERE rowid = ?",
-                (result, actual, graded_at, r["rowid"]))
+                f"UPDATE {_SNAP} SET result = ?, actual_value = ?, void_reason = ?, "
+                f"graded_at = ? WHERE rowid = ?",
+                (result, actual, reason, graded_at, r["rowid"]))
             summary["graded"] += 1
             summary[result] += 1
         conn.commit()
@@ -80,11 +81,10 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
 
 
 def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict,
-               avail: dict) -> tuple[str | None, float | None]:
-    """Grade one snapshot row via the market registry. Reads the stored
-    ``market_key``/``direction`` when present, else resolves them from the legacy
-    market text — so old ledger rows grade identically. Void (did-not-play) stays a
-    source-specific rule; the hit/miss comparison comes from the registry.
+               avail: dict) -> tuple[str | None, float | None, str | None]:
+    """Grade one snapshot row via the market registry. Returns
+    ``(result, actual_value, void_reason)``. Reads the stored ``market_key`` /
+    ``direction`` when present, else resolves them from the legacy market text.
 
     ``avail`` gates by source: if the date's results for a market's source are not
     yet loaded, the row stays **pending** (None) rather than being marked void."""
@@ -93,43 +93,43 @@ def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict,
     if key is None:
         key, direction = markets.resolve(r["league"], r["market"])
     if key is None:
-        return None, None                   # unknown market → leave pending
+        return None, None, None             # unknown market → leave pending
 
     threshold = r["threshold"]
     pid = str(r["player_id"])
 
     if key == "batter_hit":
         if not avail["mlb"]:                 # results not loaded yet → pending, not void
-            return None, None
-        if pid not in mlb:                  # did not bat that day
-            return "void", None
+            return None, None, None
+        if pid not in mlb:
+            return "void", None, "did not bat"
         actual = mlb[pid]
     elif key == "batter_tb":
         if not avail["mlb"]:
-            return None, None
-        if pid not in mlb_tb:               # did not bat that day
-            return "void", None
+            return None, None, None
+        if pid not in mlb_tb:
+            return "void", None, "did not bat"
         actual = mlb_tb[pid]
     elif key in ("sp_k", "sp_hits"):
         if not avail["mlb"]:
-            return None, None
+            return None, None, None
         line = mlb_sp.get(pid)
-        if line is None:                    # did not start
-            return "void", None
+        if line is None:
+            return "void", None, "did not start"
         actual = line["k"] if key == "sp_k" else line["hits"]
     elif key in _WNBA_COL:
         if not avail["wnba"]:
-            return None, None
+            return None, None, None
         line = wnba.get(pid)
-        if line is None or not line.get("minutes"):   # not in box score / did not play
-            return "void", None
+        if line is None or not line.get("minutes"):
+            return "void", None, "did not play"
         actual = line.get(_WNBA_COL[key])
         if actual is None:
-            return "void", None
+            return "void", None, "no box score"
     else:
-        return None, None
+        return None, None, None
 
-    return markets.grade(key, actual, threshold, direction), float(actual)
+    return markets.grade(key, actual, threshold, direction), float(actual), None
 
 
 def _row_get(r, col):
@@ -218,9 +218,10 @@ def load_graded_slate(slate_date: date, *, min_score: float | None = None,
     capture — sorted by score. ``min_score`` filters (default: all). Empty if the
     table/rows are absent."""
     token = slate_date.isoformat()
-    cols = ("league", "player_id", "player_name", "team_name", "market", "market_key",
-            "direction", "threshold", "opportunity_score", "stability_score", "result",
-            "actual_value", "support_evidence", "risk_evidence", "captured_on")
+    cols = ("league", "game_id", "player_id", "player_name", "team_name", "opponent",
+            "opposing_sp", "market", "market_key", "direction", "threshold",
+            "opportunity_score", "stability_score", "result", "actual_value",
+            "void_reason", "support_evidence", "risk_evidence", "captured_on")
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         try:
@@ -270,3 +271,51 @@ def summarize_by_market(rows: list[dict]) -> dict:
     for r in rows:
         buckets.setdefault(prop_type(r.get("league"), r.get("market")), []).append(r)
     return {pt: _tally(buckets[pt]) for pt in ORDER if pt in buckets}
+
+
+# --- Score bands (mutually-exclusive; the finer six) + sample gating -----------
+MIN_SAMPLE = 30          # graded props below this = "small sample", don't over-trust
+
+# (lo, hi, label) — inclusive, non-overlapping. Below 75 is not a served band.
+SCORE_BANDS: list[tuple[int, int, str]] = [
+    (75, 79, "75–79"), (80, 84, "80–84"), (85, 89, "85–89"),
+    (90, 94, "90–94"), (95, 98, "95–98"), (99, 100, "99–100"),
+]
+
+
+def band_of(score) -> str | None:
+    s = score or 0
+    for lo, hi, label in SCORE_BANDS:
+        if lo <= s <= hi:
+            return label
+    return None
+
+
+def decided(tally: dict) -> int:
+    return tally["hit"] + tally["miss"]
+
+
+def is_small_sample(tally: dict, min_sample: int = MIN_SAMPLE) -> bool:
+    return decided(tally) < min_sample
+
+
+def record(tally: dict) -> str:
+    """Record as "H–M"."""
+    return f"{tally['hit']}–{tally['miss']}"
+
+
+def summarize_by_band(rows: list[dict], *, min_sample: int = MIN_SAMPLE) -> dict:
+    """Per score band (the finer six), in order — the calibration signal. Each tally
+    is flagged ``small_sample`` when its graded count is below ``min_sample``."""
+    buckets: dict[str, list[dict]] = {}
+    for r in rows:
+        b = band_of(r.get("opportunity_score"))
+        if b:
+            buckets.setdefault(b, []).append(r)
+    out = {}
+    for _lo, _hi, label in SCORE_BANDS:
+        if label in buckets:
+            t = _tally(buckets[label])
+            t["small_sample"] = is_small_sample(t, min_sample)
+            out[label] = t
+    return out

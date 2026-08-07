@@ -45,3 +45,32 @@ def test_no_opportunities_writes_nothing(tmp_path):
         slate_date=date(2026, 7, 15), as_of=date(2026, 7, 15),
         opportunities=[], db_path=db,
     ) == 0
+
+
+def test_game_context_opponent_and_opposing_sp():
+    from datetime import timezone
+    from domain.models import SlateGame
+    from services.snapshots import _game_context
+
+    g = SlateGame(league="MLB", game_id="G1",
+                  start_time=datetime(2026, 8, 6, 23, 5, tzinfo=timezone.utc),
+                  away_name="Los Angeles Dodgers", home_name="San Diego Padres",
+                  away_short="Dodgers", home_short="Padres",
+                  meta={"away_pitcher": "Tyler Glasnow", "home_pitcher": "Yu Darvish"})
+    games = {"G1": g}
+
+    def opp(league, team, market="1+ Hit", thr=1):
+        return Opportunity(league=league, player_id="1", player_name="X", team_id=None,
+                           team_name=team, market=market, threshold=thr,
+                           opportunity_score=90, stability_score=50, game_id="G1")
+
+    opponent, sp, start = _game_context(opp("MLB", "Los Angeles Dodgers"), games)
+    assert opponent == "Padres" and sp == "Yu Darvish"          # faces the home starter
+    assert start.startswith("2026-08-06")
+    # home team faces the away starter
+    assert _game_context(opp("MLB", "San Diego Padres"), games)[1] == "Tyler Glasnow"
+    # WNBA prop → no opposing SP, opponent still resolves via name
+    _, wnba_sp, _ = _game_context(opp("WNBA", "Los Angeles Dodgers", "15+ Points", 15), games)
+    assert wnba_sp is None
+    # unknown game → all None
+    assert _game_context(opp("MLB", "Dodgers"), {}) == (None, None, None)

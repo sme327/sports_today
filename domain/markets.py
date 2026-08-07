@@ -96,6 +96,22 @@ def format_market(key: str, threshold, direction: str | None = None) -> str:
     return f"{thr}+ {spec.noun}{spec.suffix}"
 
 
+def recommendation(key: str, threshold, direction: str | None = None) -> tuple[str, float]:
+    """The pick as a book-style ``(side, half-point line)`` — e.g. batter "1+ Hit"
+    → ("Over", 0.5), SP "4 or fewer Strikeouts" → ("Under", 4.5). Our inclusive
+    integer thresholds map exactly onto half-point lines (and so never push)."""
+    spec = MARKETS[key]
+    direction = direction or spec.default_direction
+    thr = float(threshold if threshold is not None else (1 if key == "batter_hit" else 0))
+    return ("Under", thr + 0.5) if direction == UNDER else ("Over", thr - 0.5)
+
+
+def recommendation_label(key: str, threshold, direction: str | None = None) -> str:
+    """e.g. "Over 0.5" — the recommendation, unambiguous next to the actual result."""
+    side, line = recommendation(key, threshold, direction)
+    return f"{side} {line:g}"
+
+
 def grade(key: str, actual: float, threshold, direction: str | None = None) -> str:
     """"hit" or "miss" for a recorded ``actual`` against ``threshold``."""
     spec = MARKETS[key]

@@ -29,6 +29,35 @@ def _resolve_dir(league: str, market: str) -> str:
     from domain.markets import resolve
     return resolve(league, market)[1]
 
+
+def _side_of(team: str | None, g) -> str | None:
+    """Which side of a game a team is on, matched by any of its name forms."""
+    if not team:
+        return None
+    t = team.strip().lower()
+    away = {x.strip().lower() for x in (g.away_name, g.away_short, g.away_display) if x}
+    home = {x.strip().lower() for x in (g.home_name, g.home_short, g.home_display) if x}
+    return "away" if t in away else "home" if t in home else None
+
+
+def _game_context(opp: Opportunity, games: dict) -> tuple[str | None, str | None, str | None]:
+    """(opponent, opposing_sp, start_time) for a prop from its game record. Opposing
+    SP is MLB-only; start_time is stored for later use (no sort UI yet)."""
+    g = games.get(opp.game_id) if (games and opp.game_id) else None
+    if g is None:
+        return None, None, None
+    side = _side_of(opp.team_name, g)
+    if side == "away":
+        opponent, sp = g.home_display, g.meta.get("home_pitcher")
+    elif side == "home":
+        opponent, sp = g.away_display, g.meta.get("away_pitcher")
+    else:
+        opponent, sp = None, None
+    if opp.league != "MLB" or (sp and str(sp).upper() == "TBD"):
+        sp = None
+    start = g.start_time.isoformat() if g.start_time else None
+    return opponent, sp, start
+
 # Engine versions per league (kept next to each adapter).
 ENGINE_VERSIONS = {
     "MLB": "mlb-1hit-v0.1",
@@ -43,6 +72,10 @@ _ADDED_COLUMNS = {
     "graded_at": "TEXT",       # ISO timestamp when graded
     "market_key": "TEXT",      # registry market-family key (resolved for legacy rows)
     "direction": "TEXT",       # 'over' | 'under' — graded comparison direction
+    "opponent": "TEXT",        # the other team in the game (display name)
+    "opposing_sp": "TEXT",     # MLB: the starting pitcher the player faces (else NULL)
+    "start_time": "TEXT",      # scheduled first-pitch/tip ISO (stored; no sort UI yet)
+    "void_reason": "TEXT",     # why a void was recorded (e.g. "did not play")
 }
 
 
@@ -121,6 +154,7 @@ def write_daily_snapshot(
     as_of: date,
     opportunities: list[Opportunity],
     schedule_status: dict[str, DataStatus] | None = None,
+    games: dict | None = None,
     db_path: Path = DB_PATH,
     # Context availability — all False in this pass (honestly not yet included).
     lineups_available: bool = False,
@@ -129,8 +163,9 @@ def write_daily_snapshot(
 ) -> int:
     """Write one snapshot per opportunity for ``slate_date``.
 
-    Idempotent per day: if a snapshot already exists for this slate date and
-    today's capture date, nothing is written. Returns rows written.
+    ``games`` (game_id → SlateGame) supplies opponent / opposing-SP / start-time
+    context. Idempotent per day: if a snapshot already exists for this slate date
+    and today's capture date, nothing is written. Returns rows written.
     """
     if not opportunities:
         return 0
@@ -138,6 +173,7 @@ def write_daily_snapshot(
     slate_token = slate_date.isoformat()
     captured_on = now.date().isoformat()
     schedule_status = schedule_status or {}
+    games = games or {}
 
     with sqlite3.connect(db_path) as conn:
         ensure_table(conn)
@@ -146,18 +182,19 @@ def write_daily_snapshot(
         written = 0
         for opp in opportunities:
             status = schedule_status.get(opp.league)
+            opponent, opposing_sp, start_time = _game_context(opp, games)
             conn.execute(
                 f"""
                 INSERT OR IGNORE INTO {_TABLE} (
                     snapshot_date, captured_on, calculated_at, league, game_id,
                     player_id, player_name, team_id, team_name, market, threshold,
-                    market_key, direction,
+                    market_key, direction, opponent, opposing_sp, start_time,
                     mode, opportunity_score, stability_score, component_values,
                     support_evidence, risk_evidence, schedule_source_status,
                     historical_data_cutoff, lineups_available,
                     matchup_context_available, injury_context_available,
                     scoring_engine_version
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     slate_token,
@@ -173,6 +210,9 @@ def write_daily_snapshot(
                     float(opp.threshold) if opp.threshold is not None else None,
                     opp.market_key or _resolve_key(opp.league, opp.market),
                     opp.direction or _resolve_dir(opp.league, opp.market),
+                    opponent,
+                    opposing_sp,
+                    start_time,
                     opp.mode.value,
                     opp.opportunity_score,
                     opp.stability_score,
