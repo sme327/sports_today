@@ -68,10 +68,10 @@ ENGINE_VERSIONS = {
 # Performance version-comparison can measure whether a change actually helped.
 # (Cannot be reconstructed retroactively; history keeps whatever it was stamped with.)
 MODEL_VERSIONS = {
-    "batter_hit": "batter-hit-v1",
+    "batter_hit": "batter-hit-v2",   # ledger-refit: estimate-based, discriminating
     "batter_tb": "batter-tb-v1",
-    "sp_k": "sp-v1",
-    "sp_hits": "sp-v1",
+    "sp_k": "sp-v2",         # ledger-refit: overs penalized (unders convert, overs regress)
+    "sp_hits": "sp-v2",
     "wnba_points": "wnba-pra-v1",
     "wnba_rebounds": "wnba-pra-v1",
     "wnba_assists": "wnba-pra-v1",

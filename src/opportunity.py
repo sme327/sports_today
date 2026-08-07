@@ -38,14 +38,16 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         pitches = recent["pitch_count_pa"].mean()
         pa_per_game = len(recent) / max(games, 1)
 
-        score = (
-            30 * min(hit_rate / 0.28, 1.25)
-            + 20 * min(short_hit_rate / 0.30, 1.25)
-            + 15 * min(reach_rate / 0.38, 1.25)
-            + 15 * min(pa_per_game / 4.4, 1.15)
-            + 10 * max(0, 1 - k_rate / 0.30)
-            + 10 * min((pitches or 0) / 4.2, 1.15)
-        )
+        # v2 (ledger-refit): the estimated chance of a 1+ hit — 1-(1-p)^PA, where p is
+        # the recent per-PA hit rate and PA the expected at-bats — rescaled to a 0-100
+        # ranking signal. Playing time (pa_per_game) was the strongest predictor in the
+        # graded ledger and last-25 hit rate was noise, so this drops the noisy term and
+        # lets the score actually spread/discriminate (calibration: ~52% low → ~66% high).
+        p = min(max(hit_rate, 0.03), 0.60)
+        exp_pa = max(pa_per_game, 0.5)
+        est = 1.0 - (1.0 - p) ** exp_pa
+        est -= 0.12 * max(0.0, k_rate - 0.25)      # small penalty for high recent K rate
+        score = (est - 0.45) / 0.37 * 100          # spread ~[0,100]; clamped by the overlay
         stability = max(0, min(round(55 + min(len(recent), 50) * 0.7 - abs(short_hit_rate - hit_rate) * 40), 100))
 
         support = []
