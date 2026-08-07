@@ -64,12 +64,10 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
             batter_id, team_name, score, stability, support, risks, lineups)
 
         if not risks:
-            if slot is not None:
-                risks.append("Opponent starter and matchup context not yet included")
-            elif lineups is not None and not team_posted:
-                risks.append("Lineup not yet posted")
+            if lineups is not None and slot is None and not team_posted:
+                risks.append("Lineup not yet posted")     # actionable, keep
             else:
-                risks.append("Opponent and confirmed lineup context not yet included")
+                risks.append("No standout red flags in recent form")
 
         rows.append({
             "batter_id": int(batter_id),

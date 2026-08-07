@@ -54,8 +54,8 @@ def test_scorer_high_k_low_hits_gives_k_over_and_hits_under():
     for i, (k, h) in enumerate(zip(ks, hits)):
         rows += _start("1", f"g{i}", f"2026-06-0{i+1}", k, h)
     by = {r["kind"]: r for _, r in score_pitcher_opportunities(_pa(rows), ["1"]).iterrows()}
-    assert by["sp_k"]["market"].endswith("Strikeouts (SP)") and "+" in by["sp_k"]["market"]  # over
-    assert by["sp_hits"]["market"].startswith("≤")                                            # under
+    assert by["sp_k"]["market"].endswith("Strikeouts") and "+" in by["sp_k"]["market"]        # over
+    assert "or fewer" in by["sp_hits"]["market"]                                              # under
     assert "K per start over last 5" in by["sp_k"]["support"][0]
 
 
@@ -66,8 +66,8 @@ def test_scorer_serves_hits_over_for_vulnerable_starter():
         rows += _start("1", f"g{i}", f"2026-06-0{i+1}", 3, h)
     by = {r["kind"]: r for _, r in score_pitcher_opportunities(_pa(rows), ["1"]).iterrows()}
     market = by["sp_hits"]["market"]
-    assert "Hits Allowed (SP)" in market and market[0].isdigit() and "+" in market  # OVER
-    assert not market.startswith("≤")
+    assert "Hits Allowed" in market and market[0].isdigit() and "+" in market        # OVER
+    assert "or fewer" not in market
     assert "Reached" in by["sp_hits"]["support"][1]                                  # over phrasing
     assert by["sp_hits"]["opportunity_score"] >= 70
 

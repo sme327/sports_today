@@ -77,7 +77,7 @@ def test_no_lineups_is_backward_compatible():
     row = r.iloc[0]
     assert row.lineup_slot is None
     assert not any("posted" in s for s in row.support)
-    assert "Opponent and confirmed lineup context not yet included" in row.risks
+    assert "No standout red flags in recent form" in row.risks   # performance-framed, not a data caveat
 
 
 def test_wnba_empty_logs_returns_empty_frame():

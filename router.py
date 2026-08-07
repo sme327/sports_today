@@ -18,6 +18,7 @@ class NavState:
     view: str = "today"             # "today" | "results"
     results_date: date | None = None  # the graded slate being viewed (view == "results")
     focus_game: str | None = None   # Today page: filter props to one game (?focus=<id>)
+    prop_threshold: int = 90        # global "strong pick" bar for card counts (?thr=)
 
     @property
     def in_game_view(self) -> bool:
@@ -62,4 +63,13 @@ def read_nav() -> NavState:
         view=view,
         results_date=_parse_results_date() if view == "results" else None,
         focus_game=st.query_params.get("focus"),
+        prop_threshold=_parse_threshold(),
     )
+
+
+def _parse_threshold() -> int:
+    raw = st.query_params.get("thr")
+    try:
+        return int(raw) if raw and int(raw) in (85, 90, 95) else 90
+    except ValueError:
+        return 90

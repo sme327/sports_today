@@ -34,30 +34,41 @@ def present_prop_types_rows(rows: list[dict]) -> list[str]:
     return present_types([(r.get("league"), r.get("market")) for r in rows])
 
 
-def _state_key(prop_type_key: str, prefix: str = "") -> str:
-    return f"{prefix}proptype_{prop_type_key}"
+def _sel_key(prefix: str) -> str:
+    return f"{prefix}proptype_sel"
 
 
 def render_prop_type_filters(present: list[str], *, key_prefix: str = "") -> None:
-    """Render a pill per present prop type. Nothing when only one type exists.
+    """Single-select category pills with an explicit **All** (the default, active when
+    nothing else is chosen). The selected category is clearly highlighted. Nothing is
+    shown when there's only one category to choose from.
 
-    ``key_prefix`` namespaces the session-state keys so two surfaces (the Today
-    feed and the Results view) keep independent selections.
+    ``key_prefix`` namespaces the session-state key so two surfaces (the Today feed
+    and the Results view) keep independent selections.
     """
-    for pt in present:
-        st.session_state.setdefault(_state_key(pt, key_prefix), False)
-    if len(present) <= 1:
+    key = _sel_key(key_prefix)
+    st.session_state.setdefault(key, "all")
+    # A category that's no longer present (e.g. after focusing a game) → back to All.
+    if st.session_state[key] != "all" and st.session_state[key] not in present:
+        st.session_state[key] = "all"
+    if len(present) < 2:
         return
+    active = st.session_state[key]
     row = st.container(horizontal=True, gap="small")
-    for pt in present:
-        key = _state_key(pt, key_prefix)
-        active = bool(st.session_state.get(key, False))
-        if row.button(LABELS.get(pt, pt), key=f"toggle_{key}",
-                      type="primary" if active else "secondary", width="content"):
-            st.session_state[key] = not active
+    if row.button("All", key=f"{key_prefix}pt_all",
+                  type="primary" if active == "all" else "secondary", width="content"):
+        if active != "all":
+            st.session_state[key] = "all"
             st.rerun()
+    for pt in present:
+        if row.button(LABELS.get(pt, pt), key=f"{key_prefix}pt_{pt}",
+                      type="primary" if active == pt else "secondary", width="content"):
+            if active != pt:
+                st.session_state[key] = pt
+                st.rerun()
 
 
 def selected_prop_types(present: list[str], *, key_prefix: str = "") -> list[str]:
-    """Prop types explicitly toggled on. Empty means 'show all'."""
-    return [pt for pt in present if st.session_state.get(_state_key(pt, key_prefix), False)]
+    """The chosen category as a one-item list, or empty for 'All'."""
+    sel = st.session_state.get(_sel_key(key_prefix), "all")
+    return [] if (sel == "all" or sel not in present) else [sel]

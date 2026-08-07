@@ -135,15 +135,26 @@ def _build_slate_opps(nav: NavState, visible: dict[str, list[SlateGame]]):
     return slate_opps, analysis_leagues
 
 
-def _game_bars(slate_opps: list[Opportunity]) -> dict[str, tuple[int, ...]]:
-    """Per-game top-6 opportunity scores (descending) — the mini bar chart on each
-    card, showing both how many strong picks a matchup has and their spread."""
+def _threshold_control_html(nav: NavState) -> str:
+    """Global 'strong pick' bar (85+/90+/95+) near Top Opportunities. Changing it
+    updates the 🔥 counts on every card (via the ?thr query param)."""
+    pills = []
+    for t in (85, 90, 95):
+        active = " active" if nav.prop_threshold == t else ""
+        q = f"?day={nav.day}&thr={t}" + (f"&focus={nav.focus_game}" if nav.focus_game else "")
+        pills.append(f'<a class="thr-pill{active}" target="_self" href="{q}">{t}+</a>')
+    return f'<span class="thr-control"><span class="thr-label">Strong pick</span>{"".join(pills)}</span>'
+
+
+def _game_counts(slate_opps: list[Opportunity], threshold: int) -> dict[str, int]:
+    """Per-game count of strong picks (score ≥ threshold) — the "🔥 N props X+" line
+    on each card. Controlled by the global threshold near Top Opportunities."""
     from collections import defaultdict
-    pools: dict[str, list[int]] = defaultdict(list)
+    counts: dict[str, int] = defaultdict(int)
     for o in slate_opps:
-        if o.game_id:
-            pools[o.game_id].append(int(o.opportunity_score))
-    return {gid: tuple(sorted(v, reverse=True)[:6]) for gid, v in pools.items() if v}
+        if o.game_id and o.opportunity_score >= threshold:
+            counts[o.game_id] += 1
+    return dict(counts)
 
 
 def render(nav: NavState) -> None:
@@ -216,7 +227,7 @@ def render(nav: NavState) -> None:
     # Build the slate opportunities once — powers both the per-game strength scores
     # on the cards and the Top Opportunities feed below.
     slate_opps, analysis_leagues = _build_slate_opps(nav, visible)
-    game_bars = _game_bars(slate_opps)
+    game_counts = _game_counts(slate_opps, nav.prop_threshold)
     if all_visible:
         # Optional, sticky collapse of the schedule grid so the opportunity feed
         # is one glance away on a busy slate. Default is expanded.
@@ -227,7 +238,7 @@ def render(nav: NavState) -> None:
         if not nav.games_collapsed:
             for group in group_games_by_state(all_visible):
                 if group:
-                    st.markdown(schedule_grid_html(group, day, game_bars),
+                    st.markdown(schedule_grid_html(group, day, game_counts, nav.prop_threshold),
                                 unsafe_allow_html=True)
     else:
         empty_states.no_games(day_label(day))
@@ -261,13 +272,13 @@ def _render_opportunities(
         update_link = ('<a class="results-link" target="_self" href="?view=update">'
                        'Update data</a>') if is_configured() else ""
         st.markdown(
-            '<div class="section-row"><h2>Top Opportunities</h2>'
-            f'<span class="section-links">{update_link}'
+            '<div id="opps" class="section-row"><h2>Top Opportunities</h2>'
+            f'<span class="section-links">{_threshold_control_html(nav)}{update_link}'
             '<a class="results-link" target="_self" href="?view=results">'
             'Yesterday’s results →</a></span></div>',
             unsafe_allow_html=True,
         )
-        # Focus filter: clicking a game card narrows the feed to that game's players.
+        # Focus filter: clicking a game card's 🔥 line narrows the feed to that game.
         focus = nav.focus_game
         game_label = {g.game_id: f"{g.away_display} @ {g.home_display}" for g in all_visible}
         if focus and focus in game_label:
@@ -276,16 +287,18 @@ def _render_opportunities(
                 f'<a class="focus-clear" target="_self" href="?day={nav.day}">Clear ✕</a></div>',
                 unsafe_allow_html=True)
 
-        # Prop-type pills (batter hits / SP strikeouts / SP hits allowed / …) filter
-        # the DISPLAY only; the full population is still recorded below.
-        present = present_prop_types(slate_opps)
-        render_prop_type_filters(present)
+        # Category pills classify the FOCUS-filtered set, so a single-game view never
+        # offers dead-end categories (e.g. Points in a baseball game).
+        base = [o for o in slate_opps if not focus or o.game_id == focus]
+        present = present_prop_types(base)
+        render_prop_type_filters(present)          # single-select, "All" default
         chosen = selected_prop_types(present)
-        display_opps = [o for o in slate_opps
-                        if (not chosen or prop_type_of(o) in chosen)
-                        and (not focus or o.game_id == focus)]
+        display_opps = [o for o in base if not chosen or prop_type_of(o) in chosen]
         # Full slate shows the top 8; a focused single game shows all its players.
         top_slate = display_opps if focus else display_opps[:8]
+        st.markdown(f'<div class="opp-count">{len(display_opps)} '
+                    f'{"opportunity" if len(display_opps) == 1 else "opportunities"}</div>',
+                    unsafe_allow_html=True)
         if top_slate:
             st.markdown(opportunity_feed_html(top_slate), unsafe_allow_html=True)
         else:
@@ -293,6 +306,12 @@ def _render_opportunities(
                 "No qualifying opportunities cleared the current role and sample "
                 "requirements for the shown slate."
             )
+        # Data-quality caveat lives here (section level), separate from per-pick risk,
+        # so a high score is never paired with a "we didn't model X" apology.
+        st.markdown(
+            '<div class="opp-disclaimer">Scores reflect recent player performance only. '
+            'Opposing starter, park, weather, and bullpen are not modeled yet.</div>',
+            unsafe_allow_html=True)
 
     # Persist the day's FULL scored population with context (once per day) — the
     # graded ledger for long-term evaluation. Display used only the top 8 above.
