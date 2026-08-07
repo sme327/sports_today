@@ -28,7 +28,7 @@ You should see:
 - `update_only.command`
 - `run.command`
 - `app.py`
-- `morning_update.py`
+- `scripts/` (`morning_update.py`, `collect_wnba.py`, `diagnostics.py`, `import_feed.py`, `sync_mlb_download.py`)
 - `data`
 - `database`
 - `logs`
@@ -150,25 +150,25 @@ From the project folder:
 
 ```bash
 source .venv/bin/activate
-python morning_update.py
+python -m scripts.morning_update
 ```
 
 Update without launching:
 
 ```bash
-python morning_update.py --no-launch
+python -m scripts.morning_update --no-launch
 ```
 
 Use a different Downloads folder:
 
 ```bash
-python morning_update.py --downloads "/some/other/folder"
+python -m scripts.morning_update --downloads "/some/other/folder"
 ```
 
 Force the newest file to be recopied:
 
 ```bash
-python morning_update.py --force
+python -m scripts.morning_update --force
 ```
 
 ## League data collectors (WNBA, MLS)
@@ -188,7 +188,7 @@ python -m src.mls_collector --season 2026 --start 2026-03-07
 python -m src.mls_collector --force            # re-collect everything
 
 # WNBA — player game logs (powers the WNBA opportunity feed + matchup page).
-python collect_wnba.py                         # see the script for options
+python -m scripts.collect_wnba                         # see the script for options
 ```
 
 The MLS collector is **incremental** (skips already-collected matches), validated

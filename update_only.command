@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "$0")"
 source .venv/bin/activate
-python morning_update.py --no-launch
+python -m scripts.morning_update --no-launch
 
 echo
 echo "Sports Today data is updated."

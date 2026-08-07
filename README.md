@@ -47,11 +47,11 @@ python -m streamlit run app.py
 
 The app needs `database/sportshub.db`, which is **not** in the repo (data is
 gitignored). On a fresh clone, build it via the daily pipeline — drop a dated MLB
-feed in `~/Downloads` and run `update.command` (or `python morning_update.py`).
+feed in `~/Downloads` and run `update.command` (or `python -m scripts.morning_update`).
 Exact steps and the macOS double-click workflow: [Setup](docs/engineering/SETUP.md).
 
 - Tests (offline): `pip install -r requirements-dev.txt && python -m pytest`
-- Data diagnostics: `python diagnostics.py`
+- Data diagnostics: `python -m scripts.diagnostics`
 
 ## Add a new league
 

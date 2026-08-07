@@ -43,7 +43,7 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 - Snapshots persisted for today (WNBA) and tomorrow (MLB + WNBA) with engine
   versions.
 - Migration verified non-destructive on the real DB (113,056 PA rows preserved).
-- `diagnostics.py` reports 30 MLB teams / 1,444 games and 16 WNBA teams / 187 games.
+- `scripts/diagnostics.py` reports 30 MLB teams / 1,444 games and 16 WNBA teams / 187 games.
 
 ## Tests still worth adding
 
