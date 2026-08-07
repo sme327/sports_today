@@ -60,14 +60,22 @@ def _stability(hit_rate: float, starts: int) -> int:
     return max(0, min(round(45 + starts * 6 + hit_rate * 15), 100))
 
 
-def _best_direction(values: pd.Series, thresholds) -> dict:
+# Ledger-refit (sp-v2): recommended SP *overs* badly underperformed (hits-allowed
+# overs hit only 20% off a 60% recent clear rate — the stat is too variance-driven —
+# and K overs regressed to ~43%), while *unders* converted 57–61%. So overs are
+# penalized in the direction choice: an over must be clearly stronger than the under
+# to be served, strongly so for hits allowed.
+_OVER_PENALTY = {"sp_k": 0.70, "sp_hits": 0.45}
+
+
+def _best_direction(values: pd.Series, thresholds, over_penalty: float = 1.0) -> dict:
     """The stronger of an over vs. an under opportunity for a stat.
 
     Each threshold has an "impressiveness": for an over, a *high* threshold is
     impressive (``norm``); for an under, a *low* threshold is impressive
-    (``1-norm``). A direction's value = clear-rate × impressiveness, so a dominant
-    starter surfaces as a high-threshold **over** and a stingy one as a low-threshold
-    **under** — never as the trivial "≤ max" / "min+" bet. Returns the winner."""
+    (``1-norm``). A direction's value = clear-rate × impressiveness (× ``over_penalty``
+    for overs, which the ledger shows are unreliable). A dominant starter still
+    surfaces a strong over; otherwise the under wins. Never a trivial "≤ max"/"min+"."""
     lo, hi = min(thresholds), max(thresholds)
     span = (hi - lo) or 1
     n = len(values)
@@ -83,7 +91,7 @@ def _best_direction(values: pd.Series, thresholds) -> dict:
     under = [(float((values <= t).mean()), t, 1 - norm(t)) for t in thresholds if (1 - norm(t)) > 0]
     u_rate, u_thr, u_imp = max(under, key=lambda x: x[0] * x[2], default=(0.0, lo, 0.0))
 
-    if o_rate * o_imp >= u_rate * u_imp:
+    if o_rate * o_imp * over_penalty >= u_rate * u_imp:
         return {"direction": "over", "threshold": o_thr, "hit_rate": o_rate,
                 "score": _score(o_rate, o_imp, n), "avg": avg, "n": n}
     return {"direction": "under", "threshold": u_thr, "hit_rate": u_rate,
@@ -122,7 +130,7 @@ def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
 
 def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds) -> dict:
     from domain.markets import format_market
-    d = _best_direction(values, thresholds)
+    d = _best_direction(values, thresholds, _OVER_PENALTY.get(kind, 1.0))
     thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
     cleared = int(round(hit * n))
     market = format_market(kind, thr, d["direction"])   # one label source of truth
