@@ -72,9 +72,9 @@ MODEL_VERSIONS = {
     "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
     "sp_k": "sp-v2",         # ledger-refit: overs penalized (unders convert, overs regress)
     "sp_hits": "sp-v2",
-    "wnba_points": "wnba-pra-v1",
-    "wnba_rebounds": "wnba-pra-v1",
-    "wnba_assists": "wnba-pra-v1",
+    "wnba_points": "wnba-pra-v2",   # ledger-refit: reliability-floor threshold (clear ≥ .60)
+    "wnba_rebounds": "wnba-pra-v2",
+    "wnba_assists": "wnba-pra-v2",
 }
 
 
