@@ -137,6 +137,28 @@ def test_card_pregame_shows_time_not_score():
     assert "team-score" not in html and "game-state" not in html   # no score cells pregame
 
 
+def test_card_pregame_time_sits_in_top_right():
+    # Time is a direct child of .game-top after the (closed) left group → upper-right.
+    html = game_card_html(_sg(state="pre"), "tomorrow")
+    assert '</span></span><span class="game-time"' in html
+
+
+def test_neutral_risk_renders_calm_not_coral():
+    from components.opportunity_feed import opportunity_feed_html
+    from domain.models import Opportunity, OpportunityMode
+    base = dict(league="MLB", player_id="1", player_name="B", team_id=None,
+                team_name="Mariners", market="Over 0.5", threshold=1,
+                opportunity_score=88, stability_score=70,
+                supporting_evidence=["Strong recent volume"], components={},
+                mode=OpportunityMode.SLATE, game_id="1")
+    neutral = opportunity_feed_html([Opportunity(
+        **base, negative_evidence=["No standout red flags in recent form"])])
+    assert "op-flat" in neutral and "No notable risk" in neutral and "op-risk" not in neutral
+    real = opportunity_feed_html([Opportunity(
+        **base, negative_evidence=["Recent hit rate has cooled"])])
+    assert "op-risk" in real and "Main risk" in real and "op-flat" not in real
+
+
 def test_card_live_shows_score_and_live_badge():
     html = game_card_html(_sg(state="live", away_score=2, home_score=3,
                               status_detail="3rd Inning"), "today")
@@ -161,14 +183,14 @@ def test_card_pregame_has_no_state_class():
 
 def test_footer_fire_and_matchup_links():
     html = game_card_html(_sg(state="pre"), "today", count=4, threshold=90)
-    assert "fire-link" in html and "🔥 4 props 90+" in html and "focus=" in html  # filter
+    assert "fire-link" in html and "🎯 4 props 90+" in html and "focus=" in html  # filter
     assert "matchup-link" in html and "&game=" in html                            # deep-dive
     assert "#opps" in html                                                        # fire scrolls to feed
     # no strong picks → no fire link, but the Matchup link remains
     z = game_card_html(_sg(state="pre"), "today", count=0, threshold=90)
     assert "fire-link" not in z and "matchup-link" in z
     # singular noun
-    assert "🔥 1 prop 95+" in game_card_html(_sg(state="pre"), "today", count=1, threshold=95)
+    assert "🎯 1 prop 95+" in game_card_html(_sg(state="pre"), "today", count=1, threshold=95)
 
 
 def test_game_counts_by_threshold():

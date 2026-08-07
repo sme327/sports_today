@@ -210,7 +210,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 268px;
-  height: 46px;
+  height: 40px;
   overflow: hidden;
   border-radius: var(--r-lg);
   background: var(--surface-2);
@@ -220,10 +220,10 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   content: "";
   position: absolute;
   z-index: 4;
-  top: -10px;
+  top: -9px;
   left: 50%;
   width: 1.5px;
-  height: 66px;
+  height: 58px;
   background: var(--hairline-2);
   transform: rotate(22deg);
   transform-origin: center;
@@ -310,7 +310,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   padding: 1rem 1.1rem .95rem;
   border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
-  border: 1px solid #384150;
+  border: 1px solid var(--hairline);        /* softer edge — layered surface + shadow carry the card */
   box-shadow: var(--edge-hi), var(--shadow-md);
   transition: transform var(--dur) var(--ease-out),
               box-shadow var(--dur) var(--ease),
@@ -319,8 +319,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 }
 /* Card body isn't clickable — only a subtle surface lift on hover. */
 .game-card:hover {
-  border-color: #46505f;
-  box-shadow: var(--edge-hi), var(--shadow-md);
+  border-color: var(--hairline-2);
+  box-shadow: var(--edge-hi), var(--shadow-lg);
 }
 
 /* State treatments — same layout/size, color only (Homepage evolution). */
@@ -594,19 +594,23 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   line-height: 1.12; letter-spacing: -.017em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.op-market { color: var(--brand-2); font-size: .9rem; font-weight: 800; margin-top: .1rem; }
+/* Market: identity, but neutral — orange is reserved for the score + selection, so
+   it isn't repeated on every row. Slightly lighter weight for hierarchy. */
+.op-market { color: var(--text-2); font-size: .9rem; font-weight: 650; margin-top: .1rem; }
 .op-team {
-  color: var(--text-meta); font-size: .72rem; margin-top: .12rem;
+  color: var(--text-3); font-size: .72rem; margin-top: .12rem;   /* brightened metadata */
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Evidence — larger colored heading with an icon, neutral body */
+/* Evidence — colored heading with an icon, neutral body. Heading weight reduced so
+   the player/score stay the loudest things on the row. */
 .op-evidence { min-width: 0; }
-.op-ev-head { display: inline-flex; align-items: center; gap: .34rem; font-size: .82rem; font-weight: 750; letter-spacing: -.005em; margin-bottom: .22rem; }
+.op-ev-head { display: inline-flex; align-items: center; gap: .34rem; font-size: .82rem; font-weight: 640; letter-spacing: -.005em; margin-bottom: .22rem; }
 .op-ev-head .mlb-ic { width: 15px; height: 15px; flex: 0 0 auto; }
 .op-good .op-ev-head { color: var(--green); }
 .op-risk .op-ev-head { color: var(--red); }
-.op-ev-body { color: var(--text-2); font-size: .8rem; line-height: 1.4; }
+.op-flat .op-ev-head { color: var(--text-3); }        /* no notable risk — calm, neutral */
+.op-ev-body { color: #dee3e9; font-size: .8rem; line-height: 1.42; }   /* brighter body for low-light legibility */
 
 /* ---------------------------------------------------- GAME DEEP DIVE ----- */
 .back-link {
@@ -1201,8 +1205,11 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* ============================================================================
    RESULTS VIEW — graded prop outcomes (hit / miss / void)
    ========================================================================== */
-.results-link { color: var(--brand-2) !important; text-decoration: none !important;
-  font-size: .8rem; font-weight: 650; white-space: nowrap; }
+/* Secondary navigation: neutral until hover — orange stays reserved for selection
+   and opportunity identity, so the nav doesn't compete with the cards/score. */
+.results-link { color: var(--text-3) !important; text-decoration: none !important;
+  font-size: .8rem; font-weight: 600; white-space: nowrap;
+  transition: color var(--dur) var(--ease); }
 .results-link:hover { color: var(--brand) !important; }
 .section-links { display: inline-flex; align-items: center; gap: 1.1rem; }
 
@@ -1527,3 +1534,17 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .ver-row { display: grid; grid-template-columns: 1.3fr 1.4fr .8fr 1fr .8fr; gap: .8rem; align-items: center;
   padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
   font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
+
+/* ---- Refinements (opportunity screen hierarchy) ------------------------- */
+/* Item 6: the prop-type category pills read as a heavy toolbar row. Scope-shrink
+   just those (keyed pt_*) — not the league filters — for less height/padding. */
+[class*="st-key-pt_"] div[data-testid="stButton"] > button {
+  min-height: 2.0rem !important;
+  height: 2.0rem !important;
+  padding: 0 .72rem !important;
+  font-size: .84rem !important;
+  font-weight: 550 !important;
+}
+/* Curation subtext beside "Today's N strongest picks" — muted, so the honest total
+   is context, not the headline. */
+.opp-count-sub { color: var(--text-4); font-weight: 500; }

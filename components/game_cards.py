@@ -63,7 +63,7 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
     if count > 0:
         noun = "prop" if count == 1 else "props"
         fire = (f'<a class="fire-link" target="_self" href="{_focus_href(day, game)}" '
-                f'title="Show these props below">🔥 {count} {noun} {threshold}+ →</a>')
+                f'title="Show these props below">🎯 {count} {noun} {threshold}+ →</a>')
     matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}">Matchup →</a>'
                if deep_dive else "")
     if not fire and not matchup:
@@ -96,16 +96,16 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     elif game.state == "final":
         state_cls = " game-card--final"
 
-    # Time sits next to the league (game identity), so it's near the matchup; the
-    # strength score takes the upper-right on its own.
+    # Time sits in the upper-right corner (pregame); live/final show a state badge
+    # there instead. Only one of the two is ever present, so the corner is consistent.
     time_html = (f'<span class="game-time">{escape(time)}</span>'
                  if game.state not in ("live", "final") else "")
     # The card body isn't clickable — only the footer links act (filter / deep-dive).
     return (
         f'<div class="game-card{state_cls}">'
         f'<div class="game-top"><span class="game-top-left">'
-        f'<span class="league-name">{escape(league_label)}</span>{time_html}</span>'
-        f'{_state_badge(game)}</div>'
+        f'<span class="league-name">{escape(league_label)}</span></span>'
+        f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls)}'
         f'<div class="team-sep">at</div>'

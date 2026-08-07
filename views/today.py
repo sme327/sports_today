@@ -34,6 +34,12 @@ _ANALYSIS_LEAGUES = {"MLB", "WNBA"}
 # player, not just the displayed top 8).
 _LEDGER_LIMIT = 100_000
 
+# Top Opportunities is a *curated shortlist*, not a searchable database: on the full
+# slate we surface only genuinely-strong picks (score floor) and cap the count. The
+# whole scored population still feeds the daily ledger — this only governs display.
+_CURATION_FLOOR = 70   # v2 scores spread 0–100; ~70+ is where the hit-rate edge shows
+_CURATION_MAX = 8
+
 
 def _mlb_import_affordance() -> None:
     """Optional, non-blocking MLB workbook import (sidebar). Shown only when no MLB
@@ -295,13 +301,33 @@ def _render_opportunities(
         render_prop_type_filters(present)          # single-select, "All" default
         chosen = selected_prop_types(present)
         display_opps = [o for o in base if not chosen or prop_type_of(o) in chosen]
-        # Full slate shows the top 8; a focused single game shows all its players.
-        top_slate = display_opps if focus else display_opps[:8]
-        st.markdown(f'<div class="opp-count">{len(display_opps)} '
-                    f'{"opportunity" if len(display_opps) == 1 else "opportunities"}</div>',
-                    unsafe_allow_html=True)
+        if focus:
+            # Single game: show every player in that game (the count is useful here).
+            top_slate = display_opps
+            count_html = (f'<div class="opp-count">{len(display_opps)} '
+                          f'{"opportunity" if len(display_opps) == 1 else "opportunities"} '
+                          f'in this game</div>')
+        else:
+            # Full slate: curate hard — only genuinely-strong picks, capped, framed as
+            # a shortlist. Never a dump of the whole scored population.
+            top_slate = [o for o in display_opps
+                         if o.opportunity_score >= _CURATION_FLOOR][:_CURATION_MAX]
+            if top_slate:
+                n = len(top_slate)
+                count_html = (f'<div class="opp-count">Today’s {n} strongest '
+                              f'{"pick" if n == 1 else "picks"}'
+                              f'<span class="opp-count-sub"> · curated from '
+                              f'{len(display_opps):,} scored</span></div>')
+            else:
+                count_html = ""
+        st.markdown(count_html, unsafe_allow_html=True)
         if top_slate:
             st.markdown(opportunity_feed_html(top_slate), unsafe_allow_html=True)
+        elif not focus and display_opps:
+            empty_states.note(
+                "No standout opportunities on the shown slate today — nothing cleared "
+                "the curation bar. The full scored population still feeds the ledger."
+            )
         else:
             empty_states.note(
                 "No qualifying opportunities cleared the current role and sample "
