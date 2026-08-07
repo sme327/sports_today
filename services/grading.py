@@ -275,6 +275,12 @@ def _tally(subset: list[dict]) -> dict:
             "total": len(subset), "hit_rate": (hit / decided) if decided else None}
 
 
+def tally(rows: list[dict]) -> dict:
+    """Public: hit/miss/void/pending counts + hit rate (voids+pending excluded) for a
+    row subset. The single definition of a record/hit-rate, reused everywhere."""
+    return _tally(rows)
+
+
 def summarize(rows: list[dict]) -> dict:
     """Per-league and overall hit/miss/void counts + hit rate (voids excluded)."""
     leagues = sorted({r.get("league") for r in rows if r.get("league")})

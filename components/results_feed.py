@@ -237,6 +237,20 @@ def period_summary_html(overall: dict, avg_score: float | None, label: str) -> s
             f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg}</span></div>')
 
 
+def period_comparison_html(current: dict, prior: dict, prior_label: str,
+                           min_sample: int) -> str:
+    """"X% hit rate, up N.N percentage points vs previous 30 days" — hidden when the
+    prior period has too few graded props to compare."""
+    cr, pr = current.get("hit_rate"), prior.get("hit_rate")
+    if cr is None or pr is None or (prior["hit"] + prior["miss"]) < min_sample:
+        return ""
+    pp = (cr - pr) * 100
+    direction = "up" if pp >= 0 else "down"
+    return (f'<div class="perf-compare">{cr:.1%} hit rate, '
+            f'<span class="pc-{direction}">{direction} {abs(pp):.1f} percentage points</span> '
+            f'vs {escape(prior_label)}</div>')
+
+
 def results_feed_html(rows: list[dict]) -> str:
     if not rows:
         return '<div class="mlb-empty">No graded props for this date and filter.</div>'
