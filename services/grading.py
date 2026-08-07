@@ -47,7 +47,7 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         try:
             where = "" if force else "AND (result IS NULL OR result = 'pending')"
             rows = conn.execute(
-                f"SELECT rowid, league, player_id, market, market_key, direction, threshold "
+                f"SELECT rowid, league, game_id, player_id, market, market_key, direction, threshold "
                 f"FROM {_SNAP} WHERE snapshot_date = ? {where}", (token,)).fetchall()
         except sqlite3.OperationalError:
             return summary
@@ -57,16 +57,19 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         mlb = _mlb_hits(conn, token)          # {batter_id: total_hits}
         mlb_tb = _mlb_total_bases(conn, token)  # {batter_id: total_bases}
         mlb_sp = _mlb_pitcher_lines(conn, token)  # {pitcher_id: {k, hits}} for starters
-        wnba = _wnba_lines(conn, token)       # {player_id: {points, rebounds, assists, minutes}}
+        # WNBA is matched by game_id, not date: the logs store game_date as a UTC
+        # timestamp (a night game rolls to the next UTC day), so a date match never
+        # aligns. {(game_id, player_id): line} plus the set of games actually loaded.
+        wnba_lines, wnba_games = _wnba_lines_by_game(conn)
         # Data-availability gate: only grade a source once that date's results are
         # actually loaded. Otherwise a slate captured in the morning would grade to
         # all-void before its feed arrives, and idempotency would freeze that mistake.
-        avail = {"mlb": _date_has_rows(conn, "plate_appearances", token),
-                 "wnba": _date_has_rows(conn, "wnba_player_game_logs", token)}
+        avail = {"mlb": _date_has_rows(conn, "plate_appearances", token)}
         graded_at = datetime.now().isoformat(timespec="seconds")
 
         for r in rows:
-            result, actual, reason = _grade_row(r, mlb, mlb_tb, mlb_sp, wnba, avail)
+            result, actual, reason = _grade_row(r, mlb, mlb_tb, mlb_sp,
+                                                wnba_lines, wnba_games, avail)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
                 continue
@@ -80,14 +83,15 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
     return summary
 
 
-def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict,
-               avail: dict) -> tuple[str | None, float | None, str | None]:
+def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba_lines: dict,
+               wnba_games: set, avail: dict) -> tuple[str | None, float | None, str | None]:
     """Grade one snapshot row via the market registry. Returns
     ``(result, actual_value, void_reason)``. Reads the stored ``market_key`` /
     ``direction`` when present, else resolves them from the legacy market text.
 
-    ``avail`` gates by source: if the date's results for a market's source are not
-    yet loaded, the row stays **pending** (None) rather than being marked void."""
+    Availability gates keep a row **pending** (None) rather than void when results
+    aren't in yet: MLB by ``avail`` (date has a feed), WNBA by whether that specific
+    game's box scores are loaded (``wnba_games``)."""
     key = _row_get(r, "market_key") or None
     direction = _row_get(r, "direction") or None
     if key is None:
@@ -118,9 +122,10 @@ def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba: dict,
             return "void", None, "did not start"
         actual = line["k"] if key == "sp_k" else line["hits"]
     elif key in _WNBA_COL:
-        if not avail["wnba"]:
-            return None, None, None
-        line = wnba.get(pid)
+        gid = str(_row_get(r, "game_id") or "")
+        if gid not in wnba_games:            # this game's box scores not loaded yet
+            return None, None, None          # → pending, not void
+        line = wnba_lines.get((gid, pid))
         if line is None or not line.get("minutes"):
             return "void", None, "did not play"
         actual = line.get(_WNBA_COL[key])
@@ -201,14 +206,22 @@ def _mlb_pitcher_lines(conn: sqlite3.Connection, token: str) -> dict:
             for r in rows if r["pid"] in started}
 
 
-def _wnba_lines(conn: sqlite3.Connection, token: str) -> dict:
+def _wnba_lines_by_game(conn: sqlite3.Connection) -> tuple[dict, set]:
+    """All WNBA box-score lines keyed by ``(game_id, player_id)``, plus the set of
+    game_ids that have any loaded rows. Matching by game_id is timezone-proof — the
+    logs' ``game_date`` is a UTC timestamp that can roll a night game to the next day,
+    so a slate-date match fails. Missing table/column → empty (nothing gradeable)."""
     if not _table_exists(conn, "wnba_player_game_logs"):
-        return {}
-    rows = conn.execute(
-        "SELECT CAST(player_id AS TEXT) AS pid, points, rebounds, assists, minutes "
-        "FROM wnba_player_game_logs WHERE game_date = ?", (token,)).fetchall()
-    return {r["pid"]: {"points": r["points"], "rebounds": r["rebounds"],
-                       "assists": r["assists"], "minutes": r["minutes"]} for r in rows}
+        return {}, set()
+    try:
+        rows = conn.execute(
+            "SELECT CAST(game_id AS TEXT) AS gid, CAST(player_id AS TEXT) AS pid, "
+            "points, rebounds, assists, minutes FROM wnba_player_game_logs").fetchall()
+    except sqlite3.OperationalError:
+        return {}, set()
+    lines = {(r["gid"], r["pid"]): {"points": r["points"], "rebounds": r["rebounds"],
+                                    "assists": r["assists"], "minutes": r["minutes"]} for r in rows}
+    return lines, {r["gid"] for r in rows}
 
 
 # ------------------------------------------------------------ READS (view) ----

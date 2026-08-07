@@ -17,13 +17,13 @@ from services import grading, snapshots
 SLATE = "2026-06-01"
 
 
-def _snap(conn, pid, league, market, threshold, score):
+def _snap(conn, pid, league, market, threshold, score, game_id=None):
     conn.execute(
         f"""INSERT INTO opportunity_snapshots
-        (snapshot_date, captured_on, calculated_at, league, player_id, player_name,
+        (snapshot_date, captured_on, calculated_at, league, game_id, player_id, player_name,
          team_name, market, threshold, opportunity_score, stability_score)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-        (SLATE, "2026-06-02", "2026-06-01T12:00:00", league, pid, f"Player {pid}",
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (SLATE, "2026-06-02", "2026-06-01T12:00:00", league, game_id, pid, f"Player {pid}",
          "Team", market, threshold, score, 70))
 
 
@@ -33,7 +33,7 @@ def _seed(tmp_path):
         snapshots.ensure_table(conn)
         conn.executescript(
             """CREATE TABLE plate_appearances (batter_id TEXT, game_date TEXT, is_hit INTEGER);
-               CREATE TABLE wnba_player_game_logs (player_id TEXT, game_date TEXT,
+               CREATE TABLE wnba_player_game_logs (game_id TEXT, player_id TEXT, game_date TEXT,
                    points REAL, rebounds REAL, assists REAL, minutes REAL);""")
         # MLB: A got 1 hit (hit), B 0 hits (miss), C did not bat (void)
         _snap(conn, "1", "MLB", "1+ Hit", 1, 90)
@@ -41,14 +41,17 @@ def _seed(tmp_path):
         _snap(conn, "3", "MLB", "1+ Hit", 1, 60)
         conn.executemany("INSERT INTO plate_appearances VALUES (?,?,?)",
                          [("1", SLATE, 1), ("1", SLATE, 0), ("2", SLATE, 0), ("2", SLATE, 0)])
-        # WNBA: D 18 pts (hit≥15), E 10 pts (miss), F no log (void), G DNP 0 min (void)
-        _snap(conn, "10", "WNBA", "15+ Points", 15, 91)
-        _snap(conn, "11", "WNBA", "15+ Points", 15, 80)
-        _snap(conn, "12", "WNBA", "15+ Points", 15, 77)
-        _snap(conn, "13", "WNBA", "6+ Rebounds", 6, 79)
-        conn.executemany("INSERT INTO wnba_player_game_logs VALUES (?,?,?,?,?,?)",
-                         [("10", SLATE, 18, 5, 3, 30), ("11", SLATE, 10, 4, 2, 28),
-                          ("13", SLATE, 0, 0, 0, 0)])
+        # WNBA (matched by game_id "g1", whose box scores ARE loaded): D 18 pts (hit≥15),
+        # E 10 pts (miss), F no log row (void), G DNP 0 min (void). Log game_date is a
+        # UTC timestamp on the *next* day to prove the grader no longer matches on date.
+        _snap(conn, "10", "WNBA", "15+ Points", 15, 91, game_id="g1")
+        _snap(conn, "11", "WNBA", "15+ Points", 15, 80, game_id="g1")
+        _snap(conn, "12", "WNBA", "15+ Points", 15, 77, game_id="g1")
+        _snap(conn, "13", "WNBA", "6+ Rebounds", 6, 79, game_id="g1")
+        conn.executemany("INSERT INTO wnba_player_game_logs VALUES (?,?,?,?,?,?,?)",
+                         [("g1", "10", SLATE + "T02:00Z", 18, 5, 3, 30),
+                          ("g1", "11", SLATE + "T02:00Z", 10, 4, 2, 28),
+                          ("g1", "13", SLATE + "T02:00Z", 0, 0, 0, 0)])
         conn.commit()
     return db
 
@@ -72,6 +75,24 @@ def test_grading_hit_miss_void(tmp_path):
     assert _result(db, "11") == ("miss", 10.0)  # WNBA 10 < 15
     assert _result(db, "12") == ("void", None)  # WNBA no log
     assert _result(db, "13") == ("void", None)  # WNBA DNP (0 minutes) → void, not miss
+
+
+def test_wnba_pending_until_its_game_is_loaded(tmp_path):
+    """A WNBA prop whose game has no loaded box scores stays pending (not void),
+    even though other games that day are loaded — the gate is per game_id."""
+    db = tmp_path / "wp.db"
+    with sqlite3.connect(db) as conn:
+        snapshots.ensure_table(conn)
+        conn.execute("""CREATE TABLE wnba_player_game_logs (game_id TEXT, player_id TEXT,
+            game_date TEXT, points REAL, rebounds REAL, assists REAL, minutes REAL)""")
+        _snap(conn, "20", "WNBA", "15+ Points", 15, 90, game_id="loaded")
+        _snap(conn, "21", "WNBA", "15+ Points", 15, 90, game_id="not_loaded")
+        conn.execute("INSERT INTO wnba_player_game_logs VALUES ('loaded','20',?,20,4,3,30)",
+                     (SLATE + "T02:00Z",))
+        conn.commit()
+    grading.grade_slate(date(2026, 6, 1), db_path=db)
+    assert _result(db, "20") == ("hit", 20.0)       # its game is loaded → graded
+    assert _result(db, "21") == (None, None)         # its game isn't → pending, not void
 
 
 def test_grading_total_bases(tmp_path):
