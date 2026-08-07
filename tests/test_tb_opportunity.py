@@ -27,6 +27,20 @@ def test_threshold_picks_meaningful_bar():
     assert "total bases per game" in row.support[0]
 
 
+def test_picks_highest_reachable_bar_not_most_impressive():
+    # Clears 2+ and 3+ nearly always, 4+ only ~20% → 3+ is the highest *reachable*
+    # bar; the old impressiveness weighting would have chased the rarely-hit 4+.
+    pa = _tb_pa(1, "Team", [3, 3, 4, 3, 2, 3, 3, 4, 3, 3])
+    row = score_tb_opportunities(pa, ["Team"]).iloc[0]
+    assert row.threshold == 3
+
+
+def test_skips_batter_with_no_reachable_bar():
+    # Rarely reaches even 2+ (clear-rate well below the floor) → no honest TB over.
+    pa = _tb_pa(1, "Team", [0, 1, 0, 1, 0, 2, 0, 1, 0, 1])
+    assert score_tb_opportunities(pa, ["Team"]).empty
+
+
 def test_requires_minimum_games():
     pa = _tb_pa(1, "Team", [2, 3, 2, 4, 2])       # 5 < MIN_GAMES
     assert score_tb_opportunities(pa, ["Team"]).empty

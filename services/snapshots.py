@@ -69,7 +69,7 @@ ENGINE_VERSIONS = {
 # (Cannot be reconstructed retroactively; history keeps whatever it was stamped with.)
 MODEL_VERSIONS = {
     "batter_hit": "batter-hit-v2",   # ledger-refit: estimate-based, discriminating
-    "batter_tb": "batter-tb-v1",
+    "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
     "sp_k": "sp-v2",         # ledger-refit: overs penalized (unders convert, overs regress)
     "sp_hits": "sp-v2",
     "wnba_points": "wnba-pra-v1",
