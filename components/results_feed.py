@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 from html import escape
-from urllib.parse import quote_plus
 
 from domain import markets
 from domain.markets import LABELS
@@ -97,8 +96,10 @@ def daily_summary_html(overall: dict, avg_score: float | None, total: int) -> st
 
 def market_table_html(by_market: dict, selected: str | None, sort_key: str,
                       date_iso: str) -> str:
-    """Sortable 'By market' table; each row links to filter the prop list. Sort by
-    graded sample (default) or hit rate; sample stays visible either way."""
+    """Sortable 'By market' table; each row links to filter the prop list (preserving
+    the other active filters). Sort by graded sample (default) or hit rate."""
+    from components.filter_bar import filter_href
+
     if not by_market:
         return ""
     items = list(by_market.items())
@@ -111,7 +112,7 @@ def market_table_html(by_market: dict, selected: str | None, sort_key: str,
     def hdr(key, label):
         arrow = " ↓" if sort_key == key else ""
         return (f'<a class="mkt-h sortable" target="_self" '
-                f'href="?view=results&date={date_iso}&msort={key}">{label}{arrow}</a>')
+                f'href="{filter_href(date_iso, msort=key)}">{label}{arrow}</a>')
 
     head = (f'<div class="mkt-row mkt-head">'
             f'<span class="mkt-h">Market</span>{hdr("sample", "Record / sample")}'
@@ -121,9 +122,8 @@ def market_table_html(by_market: dict, selected: str | None, sort_key: str,
     for pt, t in items:
         decided = t["hit"] + t["miss"]
         sel = " selected" if pt == selected else ""
-        base = f"?view=results&date={date_iso}&mkt={quote_plus(pt)}"
         rows.append(
-            f'<a class="mkt-row{sel}" target="_self" href="{base}">'
+            f'<a class="mkt-row{sel}" target="_self" href="{filter_href(date_iso, mkt=pt)}">'
             f'<span class="mkt-name">{escape(LABELS.get(pt, pt))}</span>'
             f'<span class="mkt-rec">{t["hit"]}–{t["miss"]} <span class="ds-sub">'
             f'n={decided}</span></span>'

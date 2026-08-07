@@ -13,7 +13,7 @@ from datetime import date, timedelta
 
 import streamlit as st
 
-from components.prop_filters import prop_type_of_row
+from components.filter_bar import active_filters, apply_filters, filter_bar_html
 from components.results_feed import (daily_summary_html, market_table_html,
                                      prop_list_html)
 from router import NavState
@@ -74,35 +74,31 @@ def render(nav: NavState) -> None:
             'following day’s results are in.</div>', unsafe_allow_html=True)
         return
 
-    # Day summary (neutral hit-rate styling).
-    overall = grading.summarize(rows)["overall"]
-    scores = [r["opportunity_score"] for r in rows if r.get("opportunity_score") is not None]
+    # Shared filter bar — drives the summary, the by-market table, and the prop list.
+    active = active_filters()
+    st.markdown(filter_bar_html(d.isoformat(), active), unsafe_allow_html=True)
+    filtered = apply_filters(rows, active)
+
+    # Day summary (neutral hit-rate styling) over the filtered set.
+    overall = grading.summarize(filtered)["overall"]
+    scores = [r["opportunity_score"] for r in filtered if r.get("opportunity_score") is not None]
     avg_score = sum(scores) / len(scores) if scores else None
-    st.markdown(daily_summary_html(overall, avg_score, len(rows)), unsafe_allow_html=True)
+    st.markdown(daily_summary_html(overall, avg_score, len(filtered)), unsafe_allow_html=True)
 
-    # By-market table — click a row to filter the prop list.
+    # By-market table — click a row to filter the prop list (preserves other filters).
     msort = st.query_params.get("msort", "sample")
-    mkt = st.query_params.get("mkt")
     st.markdown('<div class="rz-section-head">By market</div>', unsafe_allow_html=True)
-    st.markdown(market_table_html(grading.summarize_by_market(rows), mkt, msort, d.isoformat()),
-                unsafe_allow_html=True)
+    st.markdown(market_table_html(grading.summarize_by_market(filtered), active.get("mkt"),
+                                  msort, d.isoformat()), unsafe_allow_html=True)
 
-    # Prop list controls: market-filter chip, search, sort.
+    # Prop list controls: search + sort (the filter bar already narrowed the set).
     st.markdown('<div class="rz-section-head">Props</div>', unsafe_allow_html=True)
-    if mkt:
-        from domain.markets import LABELS
-        st.markdown(
-            f'<div class="focus-chip"><span>Filtered to <b>{LABELS.get(mkt, mkt)}</b></span>'
-            f'<a class="focus-clear" target="_self" href="?view=results&date={d.isoformat()}">'
-            'Clear ✕</a></div>', unsafe_allow_html=True)
     c_search, c_sort = st.columns([3, 1.4], vertical_alignment="center")
     query = c_search.text_input("Search", placeholder="Search player or team…",
                                 label_visibility="collapsed").strip().lower()
     sort = c_sort.selectbox("Sort", list(_SORTS), label_visibility="collapsed")
 
-    props = rows
-    if mkt:
-        props = [r for r in props if prop_type_of_row(r) == mkt]
+    props = filtered
     if query:
         props = [r for r in props
                  if query in str(r.get("player_name") or "").lower()
