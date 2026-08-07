@@ -3,7 +3,7 @@
 > **Purpose** — How the MLS matchup page is built: its sections, the real team-data pipeline behind them, the exact analytical definitions, and what is honestly deferred.
 > **Audience** — Engineers and AI assistants extending the MLS page (and a template for a future NBA/soccer page).
 > **Update when** — Sections, data states, formulas, thresholds, collected data, or the pipeline change.
-> **Related** — [Architecture](ARCHITECTURE.md) · [MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [Philosophy](../MLS_MATCHUP_PHILOSOPHY.md) · [Blueprint](../MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
+> **Related** — [Architecture](ARCHITECTURE.md) · [MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [Philosophy](MLS_MATCHUP_PHILOSOPHY.md) · [Blueprint](MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
 
 A soccer-designed matchup preview that answers **"what kind of match am I about to
 watch?"** It reuses the shared architecture (router → view → cached builder →
