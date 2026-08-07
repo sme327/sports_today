@@ -1513,3 +1513,13 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .et-row > span:nth-child(4), .et-row > span:nth-child(5),
   .et-head > span:nth-child(4), .et-head > span:nth-child(5) { display: none; }
 }
+
+/* --------------------------------------------- R7 — CONSISTENCY / MONTHLY --- */
+.cons-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; margin: .4rem 0 .4rem; }
+.cons-card { padding: .6rem .75rem; border-radius: var(--r-md); background: var(--surface-1);
+  border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
+.cons-label { color: var(--text-4); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.cons-rate { color: var(--text-1); font-size: 1.3rem; font-weight: 820; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; margin: .1rem 0; }
+.cons-rec { color: var(--text-3); font-size: .82rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .cons-row { grid-template-columns: repeat(2, 1fr); } }
