@@ -52,6 +52,14 @@ def test_resolve_without_league():
     assert M.resolve(None, "unknown market")[0] is None
 
 
+def test_recommendation_over_under_half_lines():
+    assert M.recommendation_label("batter_hit", 1, "over") == "Over 0.5"
+    assert M.recommendation_label("sp_k", 7, "over") == "Over 6.5"
+    assert M.recommendation_label("sp_hits", 5, "under") == "Under 5.5"
+    assert M.recommendation_label("wnba_points", 15, "over") == "Over 14.5"
+    assert M.recommendation("batter_tb", 2, "over") == ("Over", 1.5)
+
+
 def test_total_bases_display_and_grade():
     assert M.actual_display("batter_tb", 3) == "3 total bases"
     assert M.grade("batter_tb", 3, 2, "over") == "hit"

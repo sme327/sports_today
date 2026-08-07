@@ -323,6 +323,7 @@ def _render_opportunities(
                 as_of=nav.slate_date,
                 opportunities=slate_opps,
                 schedule_status=status_map,
+                games={g.game_id: g for g in all_visible},
             )
         except Exception:
             pass  # snapshotting must never break the page

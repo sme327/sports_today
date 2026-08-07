@@ -110,6 +110,35 @@ def test_grading_waits_for_results(tmp_path):
     assert _result(db, "1") == ("hit", 1.0)              # graded once data is present
 
 
+def test_void_reason_recorded(tmp_path):
+    db = tmp_path / "vr.db"
+    with sqlite3.connect(db) as conn:
+        snapshots.ensure_table(conn)
+        conn.execute("CREATE TABLE plate_appearances (batter_id TEXT, game_date TEXT, is_hit INTEGER)")
+        _snap(conn, "1", "MLB", "1+ Hit", 1, 90)     # bats
+        _snap(conn, "2", "MLB", "1+ Hit", 1, 88)     # did not bat → void with a reason
+        conn.execute("INSERT INTO plate_appearances VALUES ('1', ?, 1)", (SLATE,))
+        conn.commit()
+    grading.grade_slate(date(2026, 6, 1), db_path=db)
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        vr = {r["player_id"]: r["void_reason"]
+              for r in conn.execute("SELECT player_id, void_reason FROM opportunity_snapshots")}
+    assert vr["1"] is None and vr["2"] == "did not bat"
+
+
+def test_score_bands_and_small_sample():
+    from services.grading import band_of, record, summarize_by_band
+    assert band_of(77) == "75–79" and band_of(99) == "99–100" and band_of(70) is None
+    rows = [{"opportunity_score": s, "result": r} for s, r in
+            [(77, "hit"), (77, "miss"), (99, "hit"), (99, "hit"), (91, "void")]]
+    bands = summarize_by_band(rows, min_sample=2)
+    assert record(bands["75–79"]) == "1–1" and bands["75–79"]["hit_rate"] == 0.5
+    assert bands["99–100"]["small_sample"] is False       # 2 decided ≥ 2
+    assert bands["90–94"]["small_sample"] is True          # 0 decided (1 void) < 2
+    assert list(bands) == ["75–79", "90–94", "99–100"]     # canonical order, present only
+
+
 def test_grading_idempotent_and_force(tmp_path):
     db = _seed(tmp_path)
     grading.grade_slate(date(2026, 6, 1), db_path=db)
