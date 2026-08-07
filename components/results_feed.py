@@ -342,6 +342,26 @@ def monthly_table_html(months: list, overall_rate: float | None) -> str:
     return f'<div class="et-table">{head}{body}</div>'
 
 
+def version_table_html(items: list, overall_rate: float | None) -> str:
+    """Model-version comparison: version, active dates, record, hit rate, sample,
+    diff-vs-overall. ``items`` = [(version, tally, first_date, last_date)]."""
+    if not items:
+        return '<div class="mlb-empty">No versioned props yet.</div>'
+    note = ('<div class="opp-disclaimer">Only one model version in range so far — a '
+            'comparison appears once scoring changes and new props accrue under a new '
+            'version. History is never re-stamped.</div>') if len(items) == 1 else ""
+    head = ('<div class="ver-row et-head"><span>Version</span><span>Active</span>'
+            '<span>Record</span><span>Hit rate</span><span>vs overall</span></div>')
+    body = "".join(
+        f'<div class="ver-row"><span class="et-seg">{escape(str(ver))}</span>'
+        f'<span class="ds-sub">{escape(first)}→{escape(last)}</span>'
+        f'<span>{t["hit"]}–{t["miss"]}</span>'
+        f'<span class="cal-rate">{_rate(t)} <span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
+        f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span></div>'
+        for ver, t, first, last in items)
+    return f'<div class="et-table">{head}{body}</div>{note}'
+
+
 def period_comparison_html(current: dict, prior: dict, prior_label: str,
                            min_sample: int) -> str:
     """"X% hit rate, up N.N percentage points vs previous 30 days" — hidden when the

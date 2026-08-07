@@ -35,7 +35,7 @@ def test_write_captures_context_once_per_day(tmp_path):
             "SELECT schedule_source_status, historical_data_cutoff, "
             "lineups_available, scoring_engine_version FROM opportunity_snapshots"
         ).fetchone()
-    assert row == ("live", "2026-07-15", 0, "mlb-1hit-v0.1")
+    assert row == ("live", "2026-07-15", 0, "batter-hit-v1")   # per-market model version
 
 
 def test_no_opportunities_writes_nothing(tmp_path):
