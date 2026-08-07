@@ -51,3 +51,27 @@ def test_prop_void_shows_reason():
          "opportunity_score": 90, "result": "void", "void_reason": "did not bat"}
     html = F.prop_list_html([r])
     assert "VOID" in html and "did not bat" in html
+
+
+def _fr(league="MLB", market="1+ Hit", key="batter_hit", score=90, direction="over", result="hit"):
+    return {"league": league, "market": market, "market_key": key,
+            "opportunity_score": score, "direction": direction, "result": result}
+
+
+def test_apply_filters_each_dimension_and_combined():
+    from components.filter_bar import apply_filters
+    rows = [
+        _fr(result="hit", score=97),
+        _fr(result="miss", score=82),
+        _fr(league="WNBA", market="15+ Points", key="wnba_points", result="hit", score=91),
+        _fr(market="5 or fewer Hits Allowed", key="sp_hits", direction="under",
+            result="void", score=88),
+    ]
+    A = apply_filters
+    assert len(A(rows, {"flg": "MLB"})) == 3
+    assert len(A(rows, {"res": "hit"})) == 2
+    assert len(A(rows, {"dir": "under"})) == 1
+    assert len(A(rows, {"bnd": "95-98"})) == 1          # only the 97
+    assert len(A(rows, {"mkt": "points"})) == 1
+    assert len(A(rows, {"flg": "MLB", "res": "hit"})) == 1   # combined
+    assert len(A(rows, {})) == 4                        # empty = no-op

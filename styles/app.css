@@ -1413,3 +1413,35 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   .prop-score { grid-area: score; text-align: right; } .prop-actual { grid-area: actual; text-align: right; }
   .prop-why { padding-left: .85rem; }
 }
+
+/* ---------------------------------------------------- SHARED FILTER BAR --- */
+.filter-bar { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; align-items: center;
+  padding: .55rem .8rem; margin: .4rem 0 .5rem; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
+.fb-group { display: inline-flex; align-items: center; gap: .4rem; min-width: 0; }
+.fb-label { color: var(--text-4); font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; white-space: nowrap; }
+.fb-pills { display: inline-flex; flex-wrap: wrap; gap: .25rem; }
+.fb-pill { color: var(--text-2) !important; text-decoration: none !important; white-space: nowrap;
+  font-size: .76rem; font-weight: 650; padding: .12rem .5rem; border-radius: var(--r-pill);
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hairline);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.fb-pill:hover { color: var(--text-1) !important; background: var(--surface-3); }
+.fb-pill.active { color: var(--on-brand) !important; background: var(--brand-grad); box-shadow: var(--shadow-brand); }
+.fb-pill:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.fb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: 0 0 .8rem; }
+.fb-active-count { color: var(--text-4); font-size: .74rem; font-weight: 700; }
+.fb-chip { display: inline-flex; align-items: center; gap: .35rem; font-size: .76rem;
+  color: var(--text-2); padding: .16rem .5rem; border-radius: var(--r-pill);
+  background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand-ring); }
+.fb-chip b { color: var(--text-1); font-weight: 750; }
+.fb-x { color: var(--brand-2) !important; text-decoration: none !important; font-weight: 700; }
+.fb-x:hover { color: var(--brand) !important; }
+.fb-clear { color: var(--brand-2) !important; text-decoration: none !important; font-size: .76rem; font-weight: 700; }
+.fb-clear:hover { color: var(--brand) !important; }
+
+@media (max-width: 760px) {
+  .filter-bar { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .fb-group { justify-content: space-between; }
+}
