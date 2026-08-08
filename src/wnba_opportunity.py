@@ -8,6 +8,7 @@ from typing import Iterable
 import pandas as pd
 
 from src.config import DB_PATH
+from src.reliability import highest_reachable_over
 
 
 MARKETS = {
@@ -52,8 +53,8 @@ def _choose_threshold(values: pd.Series, thresholds: tuple[int, ...]) -> int | N
     if len(clean) < 5:
         return None
     recent = clean.head(10)      # newest-first; the recent clear-rate is the signal
-    reliable = [t for t in thresholds if float((recent >= t).mean()) >= MIN_CLEAR]
-    return max(reliable) if reliable else None   # highest reliably-cleared bar, else skip
+    picked = highest_reachable_over(recent, thresholds, MIN_CLEAR)
+    return picked[0] if picked else None   # highest reliably-cleared bar, else skip
 
 
 def _hit_rate(values: pd.Series, threshold: float, games: int) -> float:

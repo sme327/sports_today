@@ -14,6 +14,7 @@ import pandas as pd
 
 from src import lineup_overlay
 from src.mlb_lineups import Lineups
+from src.reliability import highest_reachable_over
 
 _REQUIRED = {"batting_team", "batter_id", "batter_name", "game_date", "game_id", "total_bases"}
 
@@ -45,14 +46,13 @@ def _best_threshold(values: pd.Series) -> dict | None:
     (no honest TB over for this batter), so the market simply skips him."""
     lo, hi = min(TB_THRESHOLDS), max(TB_THRESHOLDS)
     span = (hi - lo) or 1
-    n = len(values)
-    reliable = [(t, float((values >= t).mean())) for t in TB_THRESHOLDS if t > lo
-                if float((values >= t).mean()) >= MIN_CLEAR]
-    if not reliable:
+    # 1+ TB is trivial (any hit clears it), so it's excluded from the candidate bars.
+    picked = highest_reachable_over(values, [t for t in TB_THRESHOLDS if t > lo], MIN_CLEAR)
+    if picked is None:
         return None
-    thr, rate = max(reliable, key=lambda x: x[0])   # highest reliably-cleared bar
+    thr, rate = picked
     return {"threshold": thr, "hit_rate": rate, "impressiveness": (thr - lo) / span,
-            "avg": float(values.mean()), "n": n}
+            "avg": float(values.mean()), "n": len(values)}
 
 
 def score_tb_opportunities(pa: pd.DataFrame, teams: list[str], minimum_games: int = MIN_GAMES,
