@@ -56,6 +56,7 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
 
         mlb = _mlb_hits(conn, token)          # {batter_id: total_hits}
         mlb_tb = _mlb_total_bases(conn, token)  # {batter_id: total_bases}
+        mlb_kbb = _mlb_batter_kbb(conn, token)  # {batter_id: {k, bb}}
         mlb_sp = _mlb_pitcher_lines(conn, token)  # {pitcher_id: {k, hits}} for starters
         # WNBA is matched by game_id, not date: the logs store game_date as a UTC
         # timestamp (a night game rolls to the next UTC day), so a date match never
@@ -68,7 +69,7 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         graded_at = datetime.now().isoformat(timespec="seconds")
 
         for r in rows:
-            result, actual, reason = _grade_row(r, mlb, mlb_tb, mlb_sp,
+            result, actual, reason = _grade_row(r, mlb, mlb_tb, mlb_kbb, mlb_sp,
                                                 wnba_lines, wnba_games, avail)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
@@ -83,7 +84,7 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
     return summary
 
 
-def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba_lines: dict,
+def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_kbb: dict, mlb_sp: dict, wnba_lines: dict,
                wnba_games: set, avail: dict) -> tuple[str | None, float | None, str | None]:
     """Grade one snapshot row via the market registry. Returns
     ``(result, actual_value, void_reason)``. Reads the stored ``market_key`` /
@@ -114,6 +115,13 @@ def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_sp: dict, wnba_lines: dict,
         if pid not in mlb_tb:
             return "void", None, "did not bat"
         actual = mlb_tb[pid]
+    elif key in ("batter_k", "batter_bb"):
+        if not avail["mlb"]:
+            return None, None, None
+        line = mlb_kbb.get(pid)
+        if line is None:
+            return "void", None, "did not bat"
+        actual = line["k"] if key == "batter_k" else line["bb"]
     elif key in ("sp_k", "sp_hits"):
         if not avail["mlb"]:
             return None, None, None
@@ -184,6 +192,19 @@ def _mlb_total_bases(conn: sqlite3.Connection, token: str) -> dict:
     except sqlite3.OperationalError:
         return {}
     return {r["bid"]: int(r["tb"] or 0) for r in rows}
+
+
+def _mlb_batter_kbb(conn: sqlite3.Connection, token: str) -> dict:
+    """Per-batter strikeouts and walks that day. ``{batter_id: {k, bb}}``."""
+    if not _table_exists(conn, "plate_appearances"):
+        return {}
+    try:
+        rows = conn.execute(
+            "SELECT CAST(batter_id AS TEXT) AS bid, SUM(is_strikeout) AS k, SUM(is_walk) AS bb "
+            "FROM plate_appearances WHERE game_date = ? GROUP BY batter_id", (token,)).fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    return {r["bid"]: {"k": int(r["k"] or 0), "bb": int(r["bb"] or 0)} for r in rows}
 
 
 def _mlb_pitcher_lines(conn: sqlite3.Connection, token: str) -> dict:

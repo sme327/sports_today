@@ -23,8 +23,8 @@ from components.prop_filters import (
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
-from services.app_cache import (cached_mlb_pitcher_opps, cached_mlb_tb_opps,
-                                 cached_opportunities, cached_slate)
+from services.app_cache import (cached_mlb_kbb_opps, cached_mlb_pitcher_opps,
+                                 cached_mlb_tb_opps, cached_opportunities, cached_slate)
 from services.freshness import get_freshness
 from services import snapshots
 
@@ -135,6 +135,8 @@ def _build_slate_opps(nav: NavState, visible: dict[str, list[SlateGame]]):
     if mlb_games:
         mlb_team_ids = tuple(sorted({t for g in mlb_games for t in g.team_identifiers}))
         slate_opps.extend(_stamp(cached_mlb_tb_opps(as_of_iso, mlb_team_ids),
+                                 mlb_games, get_adapter("MLB")))
+        slate_opps.extend(_stamp(cached_mlb_kbb_opps(as_of_iso, mlb_team_ids),
                                  mlb_games, get_adapter("MLB")))
 
     slate_opps.sort(key=lambda o: o.sort_key, reverse=True)

@@ -10,28 +10,31 @@ from __future__ import annotations
 
 import streamlit as st
 
-from domain.markets import LABELS, present_types, prop_type
+from domain.markets import LABELS, ORDER, prop_type_for
 from domain.models import Opportunity
 
 
 def prop_type_of(opp: Opportunity) -> str:
-    """Classify an opportunity by (league, market). Stable keys for filtering."""
-    return prop_type(opp.league, opp.market)
+    """Classify an opportunity for filtering — by its stored market_key (structural),
+    falling back to (league, market) text only when no key is present."""
+    return prop_type_for(opp.market_key, opp.league, opp.market)
 
 
 def prop_type_of_row(row: dict) -> str:
-    """Classify a graded results row (dict with ``league``/``market``)."""
-    return prop_type(row.get("league"), row.get("market"))
+    """Classify a graded results row (dict with ``market_key``/``league``/``market``)."""
+    return prop_type_for(row.get("market_key"), row.get("league"), row.get("market"))
 
 
 def present_prop_types(opps: list[Opportunity]) -> list[str]:
     """Prop types present in these opportunities, in canonical order."""
-    return present_types([(o.league, o.market) for o in opps])
+    have = {prop_type_of(o) for o in opps}
+    return [k for k in ORDER if k in have]
 
 
 def present_prop_types_rows(rows: list[dict]) -> list[str]:
     """Prop types present in these graded rows, in canonical order."""
-    return present_types([(r.get("league"), r.get("market")) for r in rows])
+    have = {prop_type_of_row(r) for r in rows}
+    return [k for k in ORDER if k in have]
 
 
 def _sel_key(prefix: str) -> str:

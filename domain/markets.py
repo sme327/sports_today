@@ -49,6 +49,12 @@ MARKETS: dict[str, MarketSpec] = {
     "batter_tb": MarketSpec(
         "batter_tb", "MLB", "tb", "Total Bases", "total bases", False,
         "plate_appearances", OVER, allows_both=False),
+    "batter_k": MarketSpec(
+        "batter_k", "MLB", "batter_k", "Strikeouts", "K", False,
+        "plate_appearances", OVER, allows_both=False),
+    "batter_bb": MarketSpec(
+        "batter_bb", "MLB", "batter_bb", "Walks", "walk", True,
+        "plate_appearances", OVER, allows_both=False),
     "sp_k": MarketSpec(
         "sp_k", "MLB", "sp_k", "Strikeouts", "K", False,
         "plate_appearances", OVER, allows_both=True),
@@ -149,6 +155,11 @@ def resolve(league: str | None, market_text: str | None) -> tuple[str | None, st
         return "sp_hits", direction
     if "total base" in m:
         return "batter_tb", OVER
+    if "walk" in m:
+        return "batter_bb", direction
+    # NB: batter strikeouts also read "Strikeouts"; they're disambiguated from SP by
+    # the stored market_key (see prop_type_for), not by text — a legacy row without a
+    # key resolves to sp_k, which is fine (no legacy batter_k rows exist).
     if "point" in m:
         return "wnba_points", OVER
     if "rebound" in m:
@@ -170,6 +181,8 @@ def spec_for(league: str | None, market_text: str | None) -> MarketSpec | None:
 PROP_TYPES: list[tuple[str, str]] = [
     ("hits", "Batter Hits"),
     ("tb", "Total Bases"),
+    ("batter_k", "Batter Ks"),
+    ("batter_bb", "Walks"),
     ("sp_k", "SP Strikeouts"),
     ("sp_hits", "SP Hits Allowed"),
     ("points", "Points"),
@@ -180,8 +193,19 @@ LABELS: dict[str, str] = dict(PROP_TYPES)
 ORDER: list[str] = [k for k, _ in PROP_TYPES]
 
 
+def prop_type_for(market_key: str | None, league: str | None = None,
+                  market_text: str | None = None) -> str:
+    """Filter-pill key for a prop, **preferring the stored ``market_key``** (structural,
+    so batter strikeouts vs SP strikeouts never collide) and falling back to text
+    resolution only for legacy rows that lack a key. ``"other"`` if unknown."""
+    if market_key and market_key in MARKETS:
+        return MARKETS[market_key].prop_type
+    return prop_type(league, market_text)
+
+
 def prop_type(league: str | None, market: str | None) -> str:
-    """Classify a (league, market-text) into a filter-pill key. ``"other"`` if unknown."""
+    """Classify a (league, market-text) into a filter-pill key. ``"other"`` if unknown.
+    Prefer ``prop_type_for`` when a stored market_key is available."""
     spec = spec_for(league, market)
     return spec.prop_type if spec else "other"
 
