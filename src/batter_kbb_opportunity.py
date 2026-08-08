@@ -21,6 +21,7 @@ import pandas as pd
 
 from src import lineup_overlay
 from src.mlb_lineups import Lineups
+from src.reliability import highest_reachable_over
 
 _REQUIRED = {"batting_team", "batter_id", "batter_name", "game_date", "game_id",
              "is_strikeout", "is_walk"}
@@ -40,10 +41,11 @@ _RESULT_COLUMNS = ["batter_id", "player", "team", "market_key", "direction", "th
 
 def _reliable_over(values: pd.Series, thresholds, floor: float):
     """(threshold, clear_rate, impressiveness) for the highest bar cleared ≥ floor."""
-    hi = max(thresholds)
-    ok = [(t, float((values >= t).mean()), t / hi) for t in thresholds
-          if float((values >= t).mean()) >= floor]
-    return max(ok, key=lambda x: x[0]) if ok else None
+    picked = highest_reachable_over(values, thresholds, floor)
+    if picked is None:
+        return None
+    thr, clear = picked
+    return thr, clear, thr / max(thresholds)
 
 
 def _score(clear: float, impressiveness: float, n: int, imp_weight: float = 0.25) -> int:
