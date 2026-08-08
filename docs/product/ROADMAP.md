@@ -172,8 +172,9 @@ If it scores poorly, it belongs later — or not at all.
   segment bands are still small-sample. Next: segment-edge annotations on today's
   picks and a proven-edge confidence tier (Scoring v2 follow-ups).
 - **Before Games:** further inputs beyond confirmed lineups (expected plate
-  appearances/minutes, matched-starter lines, park/weather/bullpen); more MLB
-  markets (total bases, batter Ks, walks, HR), each with an honest scorer + grader.
+  appearances/minutes, matched-starter lines, park/weather/bullpen). MLB batter
+  markets (total bases, strikeouts, walks) are shipped; home runs are out of scope
+  (a "1+ HR" pick is only ever a ~25% longshot — poor fit for the reliability bar).
   For **MLS**, projected/confirmed lineups next; **MLS player data is deferred**
   until a richer source exists.
 - **Foundations:** NBA support; WNBA player-trend parity; continued caching/startup

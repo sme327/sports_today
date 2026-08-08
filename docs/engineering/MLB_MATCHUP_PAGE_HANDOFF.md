@@ -154,8 +154,9 @@ Expansions that still need **new data** (each must follow "omit or label honestl
   slot + pace.
 - **Matched-pitcher season lines** once a reliable source exists.
 - **Bullpen freshness, park factors, weather** → new services + matchup types.
-- **New opportunity markets** (batter Ks, walks, HR; **total bases already shipped**
-  — `src/tb_opportunity.py`): a `MarketSpec` entry in `domain/markets.py` + a scorer —
+- **New opportunity markets** (total bases, batter strikeouts, walks **already
+  shipped** — `src/tb_opportunity.py`, `src/batter_kbb_opportunity.py`): a `MarketSpec`
+  entry in `domain/markets.py` + a scorer —
   grading, classification, and display then work automatically (see the 2026-08-05 and
   08-06 [Decision Log](DECISION_LOG.md) entries).
 
