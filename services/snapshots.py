@@ -70,6 +70,8 @@ ENGINE_VERSIONS = {
 MODEL_VERSIONS = {
     "batter_hit": "batter-hit-v2",   # ledger-refit: estimate-based, discriminating
     "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
+    "batter_k": "batter-k-v1",     # two-directional, reachable-bar
+    "batter_bb": "batter-bb-v1",   # over-only, reachable-bar
     "sp_k": "sp-v2",         # ledger-refit: overs penalized (unders convert, overs regress)
     "sp_hits": "sp-v2",
     "wnba_points": "wnba-pra-v2",   # ledger-refit: reliability-floor threshold (clear ≥ .60)
