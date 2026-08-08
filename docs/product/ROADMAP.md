@@ -118,10 +118,19 @@ These support every phase of the journey.
 
 Adding a league should feel routine, not like a project (one adapter + one
 registry entry — see [Architecture](../engineering/ARCHITECTURE.md)). Shipped: MLB,
-WNBA, World Cup (schedule), and **MLS** (first soccer league with a full matchup page
-and collected team-stat analysis). Planned: NBA, NFL, NHL, College Football/Basketball,
-MLB postseason, and beyond. The MLS soccer client + collector + repository + analytics
-form a reusable template for the next soccer or box-score league.
+WNBA, World Cup (schedule), **NFL** (schedule), and **MLS** (first soccer league with a
+full matchup page and collected team-stat analysis).
+
+Expansion is **tiered** (each tier is an independent chip-away unit) and organized by
+**sport family** so a foundation is built once and reused: **schedule-only** (an ESPN
+adapter, ~hours) → **player props** (a game-log collector + a reachable-bar scorer) →
+**matchup deep-dive**. Families: football (NFL → NCAA FB → UFL/spring), basketball
+(WNBA → NBA → NCAA → March Madness), hockey (NHL — counting-stat props reuse the
+reachable-bar model directly), soccer (MLS/World Cup → more leagues schedule-only,
+props deferred). Postseasons/tournaments get a **Top Today** spotlight. Deliberately
+out of the model: individual/event sports (golf, tennis, motorsport, combat) and
+fantasy/bracket-pool management. Full sequenced plan + capability matrix live in the
+project tracker.
 
 ### Intelligence & explainability
 
