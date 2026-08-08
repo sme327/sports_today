@@ -34,8 +34,8 @@ def _parse_start(raw: str | None) -> datetime | None:
 
 class MLSAdapter:
     league = "MLS"
-    emoji = "🇺🇸"
-    label = "🇺🇸 MLS"
+    emoji = "⚽"
+    label = "⚽ MLS"
     source_name = "ESPN MLS"
     supports_deep_dive = True
     chip_label = "Matchup"

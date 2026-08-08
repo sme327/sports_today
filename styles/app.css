@@ -541,7 +541,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .op-score { grid-area: score; align-self: center; }
 .op-identity { grid-area: identity; align-self: center; }
 .op-good { grid-area: good; }
-.op-risk { grid-area: risk; }
+.op-risk, .op-flat { grid-area: risk; }   /* neutral "no notable risk" occupies the risk slot too */
 
 /* Score — compact rounded rect, thin orange border, dark interior, orange number */
 .op-score {
