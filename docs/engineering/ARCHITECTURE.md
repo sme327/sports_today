@@ -11,7 +11,7 @@
 
 | To add… | Put it in… |
 | --- | --- |
-| a new **league** | `leagues/<name>/adapter.py` implementing `LeagueAdapter`, then `register(...)` and import it in `leagues/__init__.py` |
+| a new **league** | `leagues/<name>/adapter.py` implementing `LeagueAdapter`, then `register(...)` and import it in `leagues/__init__.py`. **Schedule-only + ESPN-covered?** subclass `leagues/_espn_schedule.ScheduleOnlyESPN` (set `espn_path`, emoji/label) — ~8 lines; the shared `src/espn_scoreboard.py` does fetch/parse |
 | a new **screen/view** | `views/<name>.py`, dispatched from `router.py` |
 | a new **component** (reusable UI/HTML) | `components/<name>.py` |
 | a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |

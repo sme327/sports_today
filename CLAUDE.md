@@ -17,8 +17,9 @@ a sportsbook, dashboard, or fantasy platform. Supported today: MLB (for batters:
 1+ hit, total bases, strikeouts 2+/3+, walks 1+/2+; SP strikeouts and SP hits
 allowed, both over/under) and
 WNBA (points/rebounds/assists) opportunities, MLB/WNBA/MLS matchup pages, plus
-**schedule-only** leagues (World Cup, NFL — preseason included) that appear in the
-slate for awareness with no analysis. Picks are recorded and graded daily
+**schedule-only** leagues (World Cup, NFL, NHL, NBA, NCAA Football — via the shared
+`src/espn_scoreboard.py` client) that appear in the slate for awareness with no
+analysis. Picks are recorded and graded daily
 (hit/miss/void) split across a **Daily Results** view and a **Performance**
 dashboard — see [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
