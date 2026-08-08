@@ -9,6 +9,31 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-07 — Batter strikeout + walk markets (and why not home runs)
+
+**Decision.** Add two MLB batter markets — **batter_k** ("2+/3+ Strikeouts") and
+**batter_bb** ("1+/2+ Walk") — on the shared reachable-bar discipline, feed, ledger,
+grading, and lineup overlay. Both **over-only and distinctive by construction**:
+- batter_k excludes "1+ K" (≈58% league-wide — not a signal) and offers no under (a
+  contact hitter's "few Ks" overlaps the 1+ Hit market). ~16 high-whiff picks.
+- batter_bb surfaces patient hitters. ~31 picks.
+- Registry gains `prop_type_for(market_key, …)` so classification prefers the stored
+  **market_key** — batter Ks and SP Ks both render "Strikeouts", so text alone would
+  collide in the filter pills; text resolution is now a legacy-only fallback.
+- **Home runs deliberately not added.** 0 batters homer in ≥50% of games (best
+  sluggers ~25–30%), so "1+ HR" could only ever be a ~25% longshot — the exact
+  low-probability-over anti-pattern the TB/SP/WNBA refits removed. Forcing it in
+  would contradict the reliability discipline; revisit only as a separate,
+  clearly-labeled "power watch" surface, never as a graded reliable pick.
+
+**Reason.** The user asked for batter K / BB / HR. The data decided which fit: K and
+BB have distinctive, reachable bars; HR does not. Both new markets sit mostly below
+the Today curation floor, so they accrue graded data without crowding the shortlist.
+**Tradeoffs.** batter_k is a small market (~16). Both are v1 (unvalidated) until
+graded slates accrue — they join the same accumulate-then-assess plan.
+**Future.** Reassess floors once graded; the duplicated reachable-bar logic (now in
+tb / wnba / batter_kbb) is ripe for the shared selector.
+
 ## 2026-08-07 — Total-bases v2, WNBA grading fix, WNBA props v2
 
 **Decision.**
