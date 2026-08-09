@@ -119,6 +119,17 @@ class SlateGame:
     round_name: str | None = None      # human round/stage, e.g. "Preseason · Wk 2"
     competition: str | None = None     # tournament/competition when not league play
     neutral_site: bool = False
+    conference_game: bool = False
+
+    # Team standing going into this game — the raw material for editorial signals in
+    # leagues that have no player props. Records are the source's own summary strings
+    # ("8-3", "9-0-1"); rank is a poll/curated rank where the sport has one. Absent
+    # for leagues that do not publish them (the NHL scoreboard omits records), which
+    # is why every one is optional and unset means "not offered", never zero.
+    away_record: str | None = None
+    home_record: str | None = None
+    away_rank: int | None = None
+    home_rank: int | None = None
 
     # League-specific extras (probable pitchers, broadcast, etc.).
     meta: dict[str, Any] = field(default_factory=dict)
