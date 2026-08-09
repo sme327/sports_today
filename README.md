@@ -87,6 +87,12 @@ without reading why it was made.
   [WNBA Game Page](docs/engineering/WNBA_GAME_PAGE.md), and
   [MLS Game Page](docs/engineering/MLS_GAME_PAGE.md)); World Cup, NHL, NBA, NCAA
   Football, and the live NFL slate are schedule-only.
+- **Schedule-only doesn't mean uncurated.** Those games carry a team-level read —
+  records, ranks, conference and postseason stakes — as a chip on the card and a
+  "The read" section on the game page (`services/editorial.py`). Cards also show
+  competition context (a football week, a neutral site, "Elimination game", or where
+  a baseball game sits in its series) whenever it says something the reader doesn't
+  already assume.
 - **NFL has a deep-dive matchup page reached through the season archive**, not the
   daily slate — `?view=nfl` browses ingested seasons by week and opens any matchup
   ([NFL Game Page](docs/engineering/NFL_GAME_PAGE.md)).

@@ -21,6 +21,8 @@
 | a new **data collector** (fetch → normalize → SQLite) | `src/<league>_collector.py`, writing via a `src/<league>_store.py` (DDL + upserts; keep it a leaf so the collector stays runnable headless) |
 | a new **vendor season-feed ingest** (workbook → SQLite) | `src/<league>_ingest.py` + a `scripts/import_<league>_feed.py` CLI. Write **additively per season** so loading a new year keeps the others (see `src/nfl_ingest.py`) |
 | a new **archive browser** (browse ingested history, not today's slate) | `views/<league>_archive.py` + a `view` value in `router.py` and a dispatch branch in `app.py` (see `?view=nfl`) |
+| a new **editorial signal** (team-level curation, no player props needed) | a rule in `services/editorial.py` returning a `Signal` with its evidence **and** caveats; add it to `_CARD_WORTHY` only if it belongs on a card. Rendering is `components/editorial.py` |
+| **competition context** for a league (season, phase, week, round, series) | populate the typed `SlateGame` fields in that league's adapter; `notable_context` decides what is worth showing |
 | a **schema table** | add DDL to the store module and call it from `services/migrations.ensure_schema` |
 | a **style/token** | `styles/app.css` (one stylesheet) |
 | a **test** | `tests/test_<area>.py` (offline; no network) |
@@ -64,6 +66,17 @@ Everything else follows the layers below.
 - **market_key / direction** — the structured identity of a prop (registry key +
   over/under), stored on `Opportunity` and each snapshot so grading never re-parses
   label text.
+- **Competition context** — where a game sits in its competition: season, **phase**
+  (`preseason`/`regular`/`postseason` — one vocabulary shared with the ingested NFL
+  feed), week, round, competition, neutral site, and series position. Typed fields on
+  `SlateGame`; unknown stays `None` and is omitted rather than guessed.
+- **Editorial signal** — a team-level observation (`marquee`, `upset_setup`,
+  `ranked_pair`, …) for leagues with no player props, each carrying its evidence and
+  caveats. Lives in `services/editorial.py`.
+- **Game Interest score** — ranks a slate for **attention**. Not a probability, and
+  deliberately unrelated to a prop's Opportunity Score. Only comparable across
+  leagues after `LeagueNorm` normalisation, because win percentage means different
+  things in different sports.
 
 ---
 

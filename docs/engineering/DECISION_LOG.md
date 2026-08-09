@@ -57,6 +57,68 @@ St (2-8) scoring 45; competitiveness is now weighted by quality.
 cross-league best-game pick honest. `best_game()` exists and is tested but is not yet
 surfaced anywhere for that reason.
 
+> **Resolved the same day** — see *Cross-sport normalisation* below. `best_game()` is
+> now honest; where (or whether) to surface it on the Today screen is still open, as
+> that is a page-hierarchy decision rather than a correctness one.
+
+## 2026-08-09 — Series position, and clinch/elimination without a bracket
+
+**Decision.** Carry where a game sits in its series on `SlateGame` (`series_game`,
+`series_total`, `series_summary`, and the leading/trailing tallies), from MLB
+StatsAPI's `seriesStatus` — one hydrate, no extra calls. Derive **clinch and
+elimination stakes** from the series shape alone: in a best-of-N, wins-needed is
+`N // 2 + 1`, so a leader one short can clinch while the trailing side plays to
+survive.
+
+What is shown depends on the stakes, not the position: the postseason shows
+"Elimination game" over "Game 6 of 7", and a level decider shows "Winner takes the
+series" over "Series tied 1-1".
+
+**Reason.** Baseball plays its regular season in series and every postseason is one,
+so this is year-round context, not an October feature — all 15 MLB games on the day
+this shipped were game 3 of 3. More importantly, **playoff leverage had been deferred
+twice** (from `series_model` and from the editorial signals) on the assumption it
+needed a bracket. Most of it does not; only seeds, slots and advancement wiring do.
+
+**Tradeoffs.**
+- `seriesStatus` describes the series **going into** a scheduled or live game and the
+  finished result for a completed one. That was verified before building on it — the
+  opposite convention would have leaked an outcome into a preview.
+- The source words the standing as "WSH wins 3-0", which on a final card sits beside
+  that game's own score and reads like one; anything not already saying "series" is
+  labelled.
+- The same 1-0 shape means different things in different months, so the regular
+  season says "Series on the line" where the postseason says "Elimination game".
+  Once a series is decided, stakes go silent — a dead rubber cannot eliminate anyone.
+
+**Future.** Bracket structure proper — seeds, slots, TBD participants, advancement —
+remains unbuilt and genuinely wants a live postseason to verify against.
+
+## 2026-08-09 — Cross-sport normalisation: judge a team against its own league
+
+**Decision.** Rank a mixed slate using each team's standing **within its own league**,
+measured from the teams present on that slate (`LeagueNorm`), rather than raw win
+percentage. A league needs **8 distinct teams** on the slate before its spread is
+measured; below that it stays on raw win percentage and `cross_league_comparable()`
+reports false so callers can withhold a cross-league claim.
+
+**Reason.** Win percentage measures the sport as much as the team. Measured on a real
+slate: MLB `sd = 0.062` against NFL `0.229` and NCAAF `0.242` — a 162-game season
+pulls everyone toward .500 while a 17-game one lets teams reach .900. The consequence
+was concrete: **every MLB game ranked below every WNBA game**, and MLB peaked at 57
+where football reached 86. After normalising, Braves (71-47) at Yankees (66-52) tops
+the slate at 77, which is the right answer.
+
+**Tradeoffs.** The spread is measured from the slate, not hardcoded per sport — no
+tuning, but it needs enough teams present, hence the gate. Within-league ordering is
+provably unchanged (tested); only cross-sport comparison moves. **The signal
+thresholds remain absolute** — `.650` for "marquee" — so a baseball game cannot earn
+that label however dominant both sides are; normalising those too would change the
+card-density calibration and was left for a deliberate pass.
+
+**Future.** Surfacing a single "best game of the day" is now defensible; where it
+belongs on the Today screen is an open hierarchy question.
+
 ## 2026-08-09 — `src/` is a leaf layer, enforced by a test
 
 **Decision.** State the `src/` ↔ `services/` boundary as a **dependency direction** and

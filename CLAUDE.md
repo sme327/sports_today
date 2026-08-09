@@ -18,8 +18,10 @@ opportunities** for MLB (batters: 1+ hit, total bases, strikeouts 2+/3+, walks 1
 SP strikeouts and SP hits allowed, both over/under) and WNBA
 (points/rebounds/assists), with **matchup pages for MLB, WNBA, and MLS**. The
 remaining leagues (World Cup, NHL, NBA, NCAA Football — via the shared
-`src/espn_scoreboard.py` client) are **schedule-only**: they appear in the slate for
-awareness with no analysis. Picks are recorded and graded daily (hit/miss/void) split
+`src/espn_scoreboard.py` client) are **schedule-only**: no player props, but not
+uncurated — `services/editorial.py` gives every game a team-level read (records,
+ranks, stakes) shown as a card chip and a "The read" section on the game page.
+Picks are recorded and graded daily (hit/miss/void) split
 across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
@@ -105,3 +107,10 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 - **1+ hit is a hard ~55% event.** `batter-hit-v3` shrinks the recent per-PA hit rate
   toward the league mean to fix a saturated, *inverted* top band; overall
   discrimination is still modest by design. Don't read a 100 as near-certainty.
+- **Editorial signals are records, not forecasts.** They use no odds (a deliberate
+  product decision, enforced by a test), no injuries and no weather. A "Game Interest"
+  score ranks a slate for attention — it is **not** a win probability and not
+  comparable to a prop's Opportunity Score.
+- **Win percentage isn't comparable across sports.** MLB's spread is ~4× tighter than
+  football's, so cross-league ranking normalises each team against its own league and
+  refuses the comparison when a league has too few teams on the slate.
