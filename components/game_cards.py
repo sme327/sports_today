@@ -100,6 +100,12 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     # there instead. Only one of the two is ever present, so the corner is consistent.
     time_html = (f'<span class="game-time">{escape(time)}</span>'
                  if game.state not in ("live", "final") else "")
+    # Competition context rides on the existing league line — no extra card height.
+    # Only shown when it is notable (playoffs, a football week, a neutral site);
+    # ordinary regular-season games say nothing, which is the common case.
+    context = game.notable_context
+    context_html = (f'<span class="game-context">{escape(context)}</span>'
+                    if context else "")
     footer = _footer(game, day, matchup_href, count, threshold, deep_dive)
     # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
     # reader just needs to know the game is happening, so it needn't be as tall.
@@ -108,7 +114,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     return (
         f'<div class="game-card{state_cls}{compact_cls}">'
         f'<div class="game-top"><span class="game-top-left">'
-        f'<span class="league-name">{escape(league_label)}</span></span>'
+        f'<span class="league-name">{escape(league_label)}</span>{context_html}</span>'
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls)}'
