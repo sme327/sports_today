@@ -33,10 +33,10 @@ _FIELD_RENAME = {
     "bigdataball_dataset": "dataset", "player_id": "player_id",
     "1_0": "q1", "2_0": "q2", "3_0": "q3", "4_0": "q4",   # quarter scores (headers read as floats)
     "1_downs_first_downs": "first_downs",
-    "third_downs_third_down_s_made": "third_downs_made",
-    "third_downs_third_down_s_attempted": "third_downs_att",
-    "fourth_downs_fourth_down_s_made": "fourth_downs_made",
-    "fourth_downs_fourth_down_s_attempted": "fourth_downs_att",
+    "third_downs_third_downs_made": "third_downs_made",
+    "third_downs_third_downs_attempted": "third_downs_att",
+    "fourth_downs_fourth_downs_made": "fourth_downs_made",
+    "fourth_downs_fourth_downs_attempted": "fourth_downs_att",
     "total_plays_total_plays": "total_plays",
     "possession_time_of_possession": "time_of_possession",
 }
