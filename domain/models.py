@@ -131,6 +131,15 @@ class SlateGame:
     away_rank: int | None = None
     home_rank: int | None = None
 
+    # Position within a multi-game series. Baseball plays the regular season in
+    # series and every postseason is one, so this is context year-round, not just in
+    # October. ``series_summary`` is the source's own wording for the state going
+    # into the game ("Series tied 1-1", "TB leads 2-0") and is absent before the
+    # opener, when there is nothing to report.
+    series_game: int | None = None
+    series_total: int | None = None
+    series_summary: str | None = None
+
     # League-specific extras (probable pitchers, broadcast, etc.).
     meta: dict[str, Any] = field(default_factory=dict)
 
@@ -155,14 +164,44 @@ class SlateGame:
             or self.neutral_site
             or bool(self.round_name and self.phase != "regular")
         )
-        if not notable:
-            return None
         if ordinary_week and not self.competition:
             # In the regular season the week is the whole story; "Regular Season ·
             # Wk 1" spends words to say what the reader already assumes.
-            label = f"Week {self.week}"
-            return f"{label} · Neutral site" if self.neutral_site else label
-        return self.context_label
+            base = f"Week {self.week}"
+            if self.neutral_site:
+                base = f"{base} · Neutral site"
+        else:
+            base = self.context_label if notable else None
+
+        parts = [p for p in (base, self.series_note) if p]
+        return " · ".join(parts) or None
+
+    @property
+    def series_label(self) -> str | None:
+        """"Game 3 of 7", or None outside a real multi-game series."""
+        if self.series_game and self.series_total and self.series_total > 1:
+            return f"Game {self.series_game} of {self.series_total}"
+        return None
+
+    @property
+    def series_note(self) -> str | None:
+        """The series detail worth showing, or None.
+
+        Which detail depends on the stakes. In a postseason series the game number is
+        the story — "Game 6 of 7" carries the tension by itself. In the regular season
+        the position is dull ("Game 2 of 3" is most of baseball) while the standing
+        within it is not, so the source's summary is used instead. Before the opener
+        there is no state either way, so nothing is shown.
+        """
+        if self.is_postseason:
+            return self.series_label
+        if self.series_summary and (self.series_game or 0) >= 2:
+            # The source's wording is "TB leads 2-0" / "WSH wins 3-0", which sits a
+            # few centimetres from the game's own score on a card and reads exactly
+            # like one. Name it unless the phrasing already does ("Series tied 1-1").
+            summary = self.series_summary
+            return summary if "series" in summary.lower() else f"Series · {summary}"
+        return None
 
     @property
     def context_label(self) -> str | None:
