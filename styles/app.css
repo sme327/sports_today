@@ -315,7 +315,23 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   min-height: 30px;
 }
 .game-top-left { display: inline-flex; align-items: center; gap: .55rem; min-width: 0; }
-.league-name { color: var(--text-2); }
+.league-name { color: var(--text-2); flex: 0 0 auto; }
+
+/* Competition context (e.g. "Week 2", "Preseason · Wk 2", "World Series") — rides on
+   the league line so it costs no card height. Deliberately quiet: it is orienting
+   detail, not the headline, and it only renders when notable. Truncates rather than
+   wrapping, so the card's top row never grows to two lines. */
+.game-context {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-4);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.game-context::before { content: "·"; margin-right: .4rem; opacity: .6; }
 
 /* Game time — sits beside the league (game identity), close to the matchup. */
 .game-time {

@@ -93,6 +93,59 @@ def test_context_label_collapses_an_overlapping_competition():
     assert g.context_label == "MLS Regular Season"
 
 
+# --- what actually reaches the card ------------------------------------------
+
+def test_ordinary_regular_season_shows_no_context():
+    """The common case. Most games are ordinary; "Regular Season" on every card is
+    noise, so the card omits it entirely."""
+    g = SlateGame(league="MLB", game_id="1", phase="regular", round_name="Regular Season")
+    assert g.context_label == "Regular Season"     # the full label still exists
+    assert g.notable_context is None               # …but nothing is shown
+
+
+def test_postseason_and_preseason_are_always_notable():
+    assert SlateGame(league="MLB", game_id="1", phase="postseason",
+                     round_name="World Series").notable_context == "World Series"
+    assert SlateGame(league="NFL", game_id="1", phase="preseason", week=2,
+                     round_name="Preseason · Wk 2").notable_context == "Preseason · Wk 2"
+
+
+def test_regular_season_week_is_shortened_to_just_the_week():
+    """Football's week matters; "Regular Season · Wk 1" spends words on what the
+    reader already assumes."""
+    g = SlateGame(league="NFL", game_id="1", phase="regular", week=1,
+                  round_name="Regular Season · Wk 1")
+    assert g.notable_context == "Week 1"
+
+
+def test_neutral_site_is_notable_and_still_shortens_the_week():
+    """Real NCAAF week-1 shape. The week shortening applies here too — a neutral
+    site is worth saying, "Regular Season" still isn't."""
+    g = SlateGame(league="NCAAF", game_id="1", phase="regular", week=1,
+                  round_name="Regular Season · Wk 1", neutral_site=True)
+    assert g.notable_context == "Week 1 · Neutral site"
+
+
+def test_tournament_round_is_notable_even_without_a_phase():
+    g = SlateGame(league="World Cup", game_id="1", round_name="Round of 16",
+                  competition="FIFA World Cup")
+    assert g.notable_context == "FIFA World Cup · Round of 16"
+
+
+def test_unknown_context_shows_nothing():
+    assert SlateGame(league="MLS", game_id="1").notable_context is None
+
+
+def test_card_renders_context_only_when_notable():
+    from components.game_cards import game_card_html
+    playoff = SlateGame(league="MLB", game_id="1", away_name="A", home_name="B",
+                        phase="postseason", round_name="World Series")
+    ordinary = SlateGame(league="MLB", game_id="2", away_name="A", home_name="B",
+                         phase="regular", round_name="Regular Season")
+    assert "World Series" in game_card_html(playoff, "today")
+    assert "game-context" not in game_card_html(ordinary, "today")
+
+
 def test_is_postseason_flag():
     assert SlateGame(league="MLB", game_id="1", phase="postseason").is_postseason
     assert not SlateGame(league="MLB", game_id="1", phase="regular").is_postseason

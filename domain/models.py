@@ -128,6 +128,32 @@ class SlateGame:
         return self.phase == "postseason"
 
     @property
+    def notable_context(self) -> str | None:
+        """The competition line, but only when it tells the reader something new.
+
+        Most games are ordinary regular-season fixtures, so stamping "Regular Season"
+        on every card would add noise and no information. This returns a label only
+        when the context is genuinely worth knowing — a preseason or postseason game,
+        a football week, a neutral site, or a named tournament round — and ``None``
+        otherwise, so the card simply omits it.
+        """
+        ordinary_week = self.phase == "regular" and self.week is not None
+        notable = (
+            self.phase in ("preseason", "postseason")
+            or self.week is not None
+            or self.neutral_site
+            or bool(self.round_name and self.phase != "regular")
+        )
+        if not notable:
+            return None
+        if ordinary_week and not self.competition:
+            # In the regular season the week is the whole story; "Regular Season ·
+            # Wk 1" spends words to say what the reader already assumes.
+            label = f"Week {self.week}"
+            return f"{label} · Neutral site" if self.neutral_site else label
+        return self.context_label
+
+    @property
     def context_label(self) -> str | None:
         """One short human line for the competition context, or None when the source
         gave us nothing. Prefers the explicit round label the league built."""
