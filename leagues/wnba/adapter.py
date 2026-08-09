@@ -70,6 +70,8 @@ class WNBAAdapter:
                     state=g.get("state"),
                     winner=g.get("winner"),
                     status_detail=g.get("status_detail"),
+                    season=g.get("season"),
+                    phase=g.get("phase"),
                     meta={"broadcast": g.get("broadcast")},
                 )
             )

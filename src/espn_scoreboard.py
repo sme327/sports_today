@@ -14,6 +14,16 @@ import requests
 
 _BASE = "https://site.api.espn.com/apis/site/v2/sports/{path}/scoreboard"
 _TYPE_LABEL = {1: "Preseason", 2: "Regular Season", 3: "Postseason", 4: "Postseason"}
+# ESPN's numeric season type → our normalized phase vocabulary.
+_PHASE_BY_TYPE = {1: "preseason", 2: "regular", 3: "postseason", 4: "postseason"}
+
+
+def _int(value: object) -> int | None:
+    """A clean int, or None — ESPN sends numbers as ints, strings, or not at all."""
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
 
 
 def _logo(team: dict) -> str | None:
@@ -87,9 +97,29 @@ def parse_events(payload: dict) -> list[dict]:
             "status_detail": stype.get("shortDetail") or stype.get("detail"),
             "season_type": season.get("type"),
             "season_slug": season.get("slug"),
-            "week": (event.get("week") or {}).get("number"),
+            "season": _int(season.get("year")),
+            "phase": season_phase(season.get("slug"), season.get("type")),
+            "week": _int((event.get("week") or {}).get("number")),
         })
     return games
+
+
+def season_phase(slug: object, type_code: object) -> str | None:
+    """Normalized season phase — ``preseason`` | ``regular`` | ``postseason``.
+
+    The same vocabulary the ingested NFL feed uses (``nfl_team_games.season_type``), so
+    a live game and a stored one can be compared without translating. Prefers ESPN's
+    slug (more reliable) and falls back to its numeric type code. ``None`` when the
+    source says nothing — never guessed.
+    """
+    text = str(slug or "").lower()
+    if "pre" in text:
+        return "preseason"
+    if "post" in text:
+        return "postseason"
+    if "regular" in text:
+        return "regular"
+    return _PHASE_BY_TYPE.get(type_code)
 
 
 def round_label(game: dict, *, with_week: bool = False) -> str:

@@ -62,6 +62,8 @@ class WorldCupAdapter:
                     state=g.get("state"),
                     winner=g.get("winner"),
                     status_detail=g.get("status_detail"),
+                    round_name=g.get("round"),
+                    competition="FIFA World Cup",
                     meta={
                         "round": g.get("round"),
                         "broadcast": g.get("broadcast"),

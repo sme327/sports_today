@@ -29,6 +29,21 @@ def _state(abstract_game_state: str | None) -> str:
     return {"Preview": "pre", "Live": "live", "Final": "final"}.get(abstract_game_state, "pre")
 
 
+# StatsAPI gameType → our normalized phase. Postseason rounds (Wild Card, Division,
+# League Championship, World Series, generic Playoff) all collapse to "postseason";
+# the specific round is carried separately by seriesDescription. Unknown/All-Star and
+# exhibition codes map to None rather than being forced into a phase.
+_GAME_TYPE_PHASE = {
+    "S": "preseason", "R": "regular",
+    "F": "postseason", "D": "postseason", "L": "postseason",
+    "W": "postseason", "P": "postseason",
+}
+
+
+def _phase(game_type: object) -> str | None:
+    return _GAME_TYPE_PHASE.get(str(game_type or "").upper().strip())
+
+
 def _parse_schedule(payload: dict) -> list[dict]:
     games = []
     for day in payload.get("dates", []):
@@ -43,6 +58,10 @@ def _parse_schedule(payload: dict) -> list[dict]:
             games.append({
                 "game_pk": game.get("gamePk"),
                 "game_date": game.get("gameDate"),
+                "season": int(game["season"]) if str(game.get("season", "")).isdigit() else None,
+                "phase": _phase(game.get("gameType")),
+                # e.g. "Regular Season", "World Series" — MLB's own round wording.
+                "series_description": game.get("seriesDescription"),
                 "status": status.get("detailedState"),
                 "away": away["name"],
                 "home": home["name"],
