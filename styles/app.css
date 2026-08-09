@@ -1551,3 +1551,88 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 /* Curation subtext beside "Today's N strongest picks" — muted, so the honest total
    is context, not the headline. */
 .opp-count-sub { color: var(--text-4); font-weight: 500; }
+
+/* ============================================================================
+   NFL MATCHUP PAGE + SEASON ARCHIVE
+   ========================================================================== */
+.nfl-section-head { font-size: .82rem; font-weight: 650; color: var(--text-3); letter-spacing: .02em;
+  text-transform: uppercase; margin: 1.4rem 0 .6rem; }
+.nfl-section-head span { text-transform: none; letter-spacing: 0; color: var(--text-4); font-weight: 500; }
+
+/* Hero */
+.nfl-hero { padding: 1.1rem 1.2rem; border-radius: var(--r-lg);
+  background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
+  border: 1px solid var(--hairline); box-shadow: var(--edge-hi), var(--shadow-md); }
+.nfl-hero-round { color: var(--text-4); font-size: .78rem; font-weight: 600; text-align: center;
+  letter-spacing: .02em; margin-bottom: .7rem; }
+.nfl-hero-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; }
+.nfl-hero-team { text-align: center; }
+.nfl-hero-name { font-size: 1.32rem; font-weight: 800; letter-spacing: -.02em; color: var(--text-2); }
+.nfl-hero-team.win .nfl-hero-name { color: var(--text-1); }
+.nfl-hero-rec { color: var(--text-4); font-size: .82rem; font-weight: 600; margin-top: .12rem;
+  font-variant-numeric: tabular-nums; }
+.nfl-score { display: block; font-size: 2rem; font-weight: 850; color: var(--text-3);
+  font-variant-numeric: tabular-nums; margin-top: .2rem; letter-spacing: -.02em; }
+.nfl-score.win { color: var(--brand); }
+.nfl-hero-at { color: var(--text-4); font-size: .84rem; font-weight: 600; text-align: center; }
+.nfl-hero-final { display: block; font-size: .64rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text-4); margin-top: .2rem; }
+.nfl-note { color: var(--red); font-size: .78rem; font-weight: 500; margin: .6rem 0 0; text-align: center; }
+
+/* Team identity comparison */
+.nfl-id { display: flex; flex-direction: column; gap: .18rem; }
+.nfl-id-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .8rem;
+  padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
+.nfl-id-head { background: transparent; box-shadow: none; padding-bottom: .1rem; }
+.nfl-id-head span { color: var(--text-3); font-weight: 700; font-size: .82rem; }
+.nfl-id-head .nfl-id-label { color: var(--text-4); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .68rem; }
+.nfl-id-val { font-size: .92rem; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; gap: .35rem; }
+.nfl-id-row .nfl-id-val:first-child { justify-content: flex-start; }
+.nfl-id-row .nfl-id-val:last-child { justify-content: flex-end; }
+.nfl-id-val.better { color: var(--brand-2); font-weight: 750; }
+.nfl-id-label { text-align: center; color: var(--text-4); font-size: .74rem; font-weight: 500; }
+.nfl-pct { font-size: .62rem; font-weight: 700; padding: .06rem .3rem; border-radius: var(--r-pill);
+  background: var(--surface-3); color: var(--text-4); font-variant-numeric: tabular-nums; }
+.nfl-pct sup { font-size: .5rem; }
+.nfl-pct.hi { color: var(--green); background: rgba(107, 198, 143, .12); }
+.nfl-pct.lo { color: var(--red); background: rgba(239, 142, 134, .12); }
+
+/* Battlefields */
+.nfl-bfs { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.nfl-bf { padding: .6rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
+.nfl-bf-label { font-size: .8rem; font-weight: 600; color: var(--text-2); margin-bottom: .2rem; }
+.nfl-bf-nums { font-size: .78rem; color: var(--text-4); font-variant-numeric: tabular-nums; }
+.nfl-bf-nums b { color: var(--text-2); font-weight: 700; }
+.nfl-bf-edge { display: inline-block; margin-left: .4rem; font-size: .7rem; font-weight: 700; padding: .05rem .4rem;
+  border-radius: var(--r-pill); }
+.nfl-bf-edge.edge { color: var(--on-brand); background: var(--brand-grad); }
+.nfl-bf-edge.even { color: var(--text-4); background: var(--surface-3); }
+
+/* Recent form */
+.nfl-form { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.nfl-form-col { padding: .6rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); text-align: center; }
+.nfl-form-dots { display: inline-flex; gap: .3rem; }
+.nfl-fdot { width: 1.4rem; height: 1.4rem; display: grid; place-items: center; border-radius: 50%;
+  font-size: .72rem; font-weight: 750; }
+.nfl-fdot.w { color: var(--green); background: rgba(107, 198, 143, .14); }
+.nfl-fdot.l { color: var(--red); background: rgba(239, 142, 134, .14); }
+.nfl-form-sub { color: var(--text-4); font-size: .72rem; margin-top: .35rem; font-variant-numeric: tabular-nums; }
+
+/* Archive browser */
+.nfl-weeks { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+.nfl-arc-list { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.nfl-arc-game { display: grid; grid-template-columns: 1fr auto 1fr auto auto; align-items: center; gap: .5rem;
+  padding: .6rem .85rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
+  text-decoration: none !important; transition: background var(--dur) var(--ease); }
+.nfl-arc-game:hover { background: var(--surface-2); }
+.nfl-arc-team { color: var(--text-2) !important; font-size: .84rem; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.nfl-arc-team.home { text-align: right; }
+.nfl-arc-team.win { color: var(--text-1) !important; font-weight: 750; }
+.nfl-arc-at { color: var(--text-4); font-size: .72rem; }
+.nfl-arc-score { color: var(--text-3); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nfl-arc-go { color: var(--text-4); font-weight: 700; }
+@media (max-width: 720px) {
+  .nfl-bfs, .nfl-form, .nfl-arc-list { grid-template-columns: 1fr; }
+}
