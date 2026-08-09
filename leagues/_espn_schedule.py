@@ -81,6 +81,11 @@ class ScheduleOnlyESPN:
                 round_name=espn_scoreboard.round_label(g, with_week=self.with_week)
                            or self.default_round or None,
                 neutral_site=bool(g.get("neutral_site")),
+                conference_game=bool(g.get("conference_game")),
+                away_record=g.get("away_record"),
+                home_record=g.get("home_record"),
+                away_rank=g.get("away_rank"),
+                home_rank=g.get("home_rank"),
                 meta={
                     # `round` kept for backward compatibility with cached rows and any
                     # caller still reading meta; `round_name` is the field to use.

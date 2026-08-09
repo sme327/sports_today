@@ -18,6 +18,21 @@ _TYPE_LABEL = {1: "Preseason", 2: "Regular Season", 3: "Postseason", 4: "Postsea
 _PHASE_BY_TYPE = {1: "preseason", 2: "regular", 3: "postseason", 4: "postseason"}
 
 
+def _records(competitor: dict) -> dict[str, str]:
+    """A competitor's record summaries keyed by ESPN's record type.
+
+    Availability varies by league and is never assumed: NFL and college football
+    supply them, the NHL scoreboard omits the block entirely. Absent → empty dict,
+    and callers show nothing rather than a zero.
+    """
+    out: dict[str, str] = {}
+    for rec in competitor.get("records") or []:
+        summary, kind = rec.get("summary"), rec.get("type")
+        if summary and kind:
+            out[str(kind)] = str(summary)
+    return out
+
+
 def _int(value: object) -> int | None:
     """A clean int, or None — ESPN sends numbers as ints, strings, or not at all."""
     try:
@@ -100,6 +115,11 @@ def parse_events(payload: dict) -> list[dict]:
             "season": _int(season.get("year")),
             "phase": season_phase(season.get("slug"), season.get("type")),
             "week": _int((event.get("week") or {}).get("number")),
+            "away_record": _records(away).get("total"),
+            "home_record": _records(home).get("total"),
+            "away_home_away_record": _records(away).get("awayrecord"),
+            "home_home_away_record": _records(home).get("homerecord"),
+            "conference_game": bool(comp.get("conferenceCompetition")),
         })
     return games
 
