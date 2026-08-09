@@ -7,7 +7,7 @@ from __future__ import annotations
 import pandas as pd
 
 from services.nfl_analytics import (
-    battlefields, player_game_frame, team_game_frame, team_season_table,
+    battlefields, player_game_frame, rest_days, team_game_frame, team_season_table,
 )
 
 
@@ -58,6 +58,41 @@ def test_battlefields_pair_offense_vs_defense():
     first = bfs[0]
     assert "pass offense vs" in first.label
     assert first.edge in {"Edge A", "Edge B", "Even"}
+
+
+def _rest_frame() -> pd.DataFrame:
+    """One team on a normal week, then a short week, then off a bye."""
+    return pd.DataFrame([
+        {"team": "A", "game_date": "2025-09-07"},   # opener
+        {"team": "A", "game_date": "2025-09-14"},   # +7 — normal week
+        {"team": "A", "game_date": "2025-09-18"},   # +4 — short week (Thursday)
+        {"team": "A", "game_date": "2025-10-05"},   # +17 — off a bye
+        {"team": "B", "game_date": "2025-09-28"},   # another team, must not leak in
+    ])
+
+
+def test_rest_days_counts_from_the_previous_game():
+    tg = _rest_frame()
+    assert rest_days(tg, "A", "2025-09-14") == 7
+    assert rest_days(tg, "A", "2025-09-18") == 4     # short week
+    assert rest_days(tg, "A", "2025-10-05") == 17    # off a bye
+
+
+def test_rest_days_is_none_for_a_season_opener():
+    # Nothing strictly before the opener → no rest figure to report (never 0).
+    assert rest_days(_rest_frame(), "A", "2025-09-07") is None
+
+
+def test_rest_days_ignores_other_teams_and_later_games():
+    tg = _rest_frame()
+    # B's only game sits between two of A's; it must not become A's "previous game".
+    assert rest_days(tg, "A", "2025-10-05") == 17
+    # A team with no games at all has no rest figure.
+    assert rest_days(tg, "Z", "2025-10-05") is None
+
+
+def test_rest_days_none_on_unparseable_date():
+    assert rest_days(_rest_frame(), "A", "not-a-date") is None
 
 
 def test_player_frame_types_and_filters():

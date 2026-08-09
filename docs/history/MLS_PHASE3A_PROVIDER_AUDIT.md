@@ -3,7 +3,7 @@
 > **Purpose** — What real MLS data ESPN provides, how reliable each field is, and what is absent — the reference behind the MLS team-data integration and the plan for what to collect next.
 > **Audience** — Engineers extending MLS collection (events, players, lineups).
 > **Update when** — The provider's coverage changes, or a new endpoint/field is adopted.
-> **Related** — [MLS Game Page](MLS_GAME_PAGE.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [Decision Log](DECISION_LOG.md)
+> **Related** — [MLS Game Page](../engineering/MLS_GAME_PAGE.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [Decision Log](../engineering/DECISION_LOG.md)
 
 _Findings from a read-only audit of ~18 completed 2026 MLS matches (24 clubs, varied
 scorelines/draws/cards), verified against the live endpoints. No new provider was

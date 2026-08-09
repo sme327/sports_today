@@ -21,14 +21,15 @@ opportunities on merit (no per-league quota), explains **why** each stands out a
 
 ```
 app.py            # thin shell: config, styles, migration, router, error boundary
-router.py         # query-param navigation → Today or Game view (same tab)
+router.py         # query-param navigation → Today, Game, Results, Performance, NFL archive
 domain/           # normalized models: SlateGame, Opportunity, Evidence, DataStatus
-leagues/          # one adapter per league (MLB, WNBA, World Cup) + registry
-services/         # data access (as_of), schedules, cache, snapshots, migrations, freshness
-views/            # Today and Game screens
+leagues/          # one adapter per league (8: MLB, WNBA, MLS, World Cup, NFL, NHL, NBA, NCAAF) + registry
+services/         # data access (as_of), schedules, cache, snapshots, migrations, freshness, analytics
+views/            # screens: Today, Game, Results, Performance, NFL archive, Update
 components/       # reusable UI/HTML (cards, feed, filters, date switch, …)
 styles/app.css    # the single design-system stylesheet
-src/              # ingestion + lower-level data (kept from the original build)
+src/              # ingestion + scorers (kept from the original build)
+scripts/          # CLI entry points (daily update, collectors, feed imports, diagnostics)
 tests/            # offline pytest suite
 docs/             # product / design / engineering / history knowledge base
 data/ database/ logs/   # persistent local data (gitignored, not in the repo)
@@ -84,8 +85,11 @@ without reading why it was made.
 - Click a game card to open its view. **MLB, WNBA, and MLS games open dedicated
   editorial matchup pages** (see [MLB Game Page](docs/engineering/MLB_GAME_PAGE.md),
   [WNBA Game Page](docs/engineering/WNBA_GAME_PAGE.md), and
-  [MLS Game Page](docs/engineering/MLS_GAME_PAGE.md)); World Cup is schedule-only
-  for now.
+  [MLS Game Page](docs/engineering/MLS_GAME_PAGE.md)); World Cup, NHL, NBA, NCAA
+  Football, and the live NFL slate are schedule-only.
+- **NFL has a deep-dive matchup page reached through the season archive**, not the
+  daily slate — `?view=nfl` browses ingested seasons by week and opens any matchup
+  ([NFL Game Page](docs/engineering/NFL_GAME_PAGE.md)).
 - If a league's live schedule is briefly unavailable, the most recent **cached**
   slate is shown; a genuinely empty slate shows no fallback
   ([degraded mode](docs/engineering/DECISION_LOG.md)).

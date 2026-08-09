@@ -11,7 +11,8 @@ import sqlite3
 from pathlib import Path
 
 from src.config import DB_PATH
-from services import mls_store, schedule_cache, snapshots
+from services import schedule_cache, snapshots
+from src import mls_store
 
 SCHEMA_VERSION = 1
 

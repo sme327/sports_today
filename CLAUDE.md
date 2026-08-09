@@ -13,22 +13,29 @@ restating it. **Start with [`docs/README.md`](docs/README.md).**
 
 A personal **daily sports companion** — calm, explainable, curated. It answers
 *"what should I pay attention to today?"* It is an analysis/opportunity tool, **not**
-a sportsbook, dashboard, or fantasy platform. Supported today: MLB (for batters:
-1+ hit, total bases, strikeouts 2+/3+, walks 1+/2+; SP strikeouts and SP hits
-allowed, both over/under) and
-WNBA (points/rebounds/assists) opportunities, MLB/WNBA/MLS matchup pages, plus
-**schedule-only** leagues (World Cup, NFL, NHL, NBA, NCAA Football — via the shared
-`src/espn_scoreboard.py` client) that appear in the slate for awareness with no
-analysis. Picks are recorded and graded daily
-(hit/miss/void) split across a **Daily Results** view and a **Performance**
-dashboard — see [Roadmap → After Games](docs/product/ROADMAP.md) and the
+a sportsbook, dashboard, or fantasy platform. Today's slate carries **daily
+opportunities** for MLB (batters: 1+ hit, total bases, strikeouts 2+/3+, walks 1+/2+;
+SP strikeouts and SP hits allowed, both over/under) and WNBA
+(points/rebounds/assists), with **matchup pages for MLB, WNBA, and MLS**. The
+remaining leagues (World Cup, NHL, NBA, NCAA Football — via the shared
+`src/espn_scoreboard.py` client) are **schedule-only**: they appear in the slate for
+awareness with no analysis. Picks are recorded and graded daily (hit/miss/void) split
+across a **Daily Results** view and a **Performance** dashboard — see
+[Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
+
+**NFL is a separate surface.** Its live slate is schedule-only like the others, but a
+full deep-dive — season-feed ingest, team analytics, player props, matchup pages —
+runs off ingested Big Data Ball seasons and is browsed through the **season archive**
+(`?view=nfl`), not the day's slate. The split is deliberate; see
+[NFL Game Page](docs/engineering/NFL_GAME_PAGE.md) before changing it.
 
 ## Read before you build
 
 - **Product** — [Vision](docs/product/VISION.md) · [Experience Principles](docs/product/EXPERIENCE_PRINCIPLES.md) · [Roadmap](docs/product/ROADMAP.md) · [Sport Plans](docs/product/SPORT_PLANS.md) (by-sport tiers + NFL deep-dive spec)
 - **Design** — [Design System](docs/design/DESIGN_SYSTEM.md) (mirrors `styles/app.css`)
 - **Engineering** — [Architecture](docs/engineering/ARCHITECTURE.md) (structure, "where to add X", glossary) · [Decision Log](docs/engineering/DECISION_LOG.md) · [Testing](docs/engineering/TESTING.md) · [Setup](docs/engineering/SETUP.md)
+- **Per-league pages** — [MLB](docs/engineering/MLB_GAME_PAGE.md) · [WNBA](docs/engineering/WNBA_GAME_PAGE.md) · [MLS](docs/engineering/MLS_GAME_PAGE.md) · [NFL](docs/engineering/NFL_GAME_PAGE.md)
 
 ## How to contribute (the short version)
 
@@ -81,13 +88,20 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   archives, atomically replaces the current workbook, rebuilds SQLite, collects
   WNBA **and MLS** (both non-fatal on failure), and launches. `NO_CHANGE` is handled
   safely. Full steps: [Setup](docs/engineering/SETUP.md).
+- **NFL is not part of the daily loop.** Its seasons are loaded one-off with
+  `python -m scripts.import_nfl_feed` (team + player workbooks per season, written
+  additively — a new year replaces only that year).
 
 ## Known limitations
 
-- Current season only; plate-appearance grain (no Statcast/exit velo/pitch type).
+- MLB is current-season only, at plate-appearance grain (no Statcast/exit velo/pitch
+  type). NFL is the exception: it holds **multiple ingested seasons**.
 - Season-to-date feed must be replaced daily; schedules need internet.
 - MLB batter scoring now uses **today's confirmed lineups** when posted (from MLB
   StatsAPI): a confirmed slot adds evidence, a scratched batter is capped, and an
   un-posted lineup is shown honestly (never guessed). Scoring still does **not**
   include opposing-starter quality, weather, park, or bullpen context. Do not
   represent scores as hit probabilities.
+- **1+ hit is a hard ~55% event.** `batter-hit-v3` shrinks the recent per-PA hit rate
+  toward the league mean to fix a saturated, *inverted* top band; overall
+  discrimination is still modest by design. Don't read a 100 as near-certainty.
