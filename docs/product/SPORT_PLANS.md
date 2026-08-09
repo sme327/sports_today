@@ -93,13 +93,24 @@ that drop straight into the reachable-bar model.
   ESPN client is ~an hour each; player props stay deferred until a soccer stats pipeline
   exists. The MLS soccer client/collector/analytics is the reusable template.
 
+## Future consideration (fits, but later)
+
+- **Tennis** — a match *is* head-to-head, so it fits the matchup model surprisingly well:
+  match preview (surface, form, H2H history, ranking), props (match winner as a pick, sets,
+  games, aces), and Grand Slams as **Top Today** tournament spotlights (draw/bracket reuse).
+  Real challenges: the draw/bracket structure, tour breadth (ATP/WTA), and a reliable stat
+  source. A legit future **family**, not a one-off. Medium priority.
+- **Golf** — **lowest priority** and a genuine model departure: no head-to-head matchup — a
+  *field* of 100+ over four rounds, so it's a leaderboard/field model (props: make-cut,
+  top-10, finish position, round scores), not a slate of matchups. Revisit only if the core
+  is mature and there's appetite for a distinct "field event" surface.
+
 ## Deliberately out of scope
 
-Individual/event sports — **golf, tennis, motorsport (F1/NASCAR), combat (UFC/boxing)** —
-don't fit the head-to-head daily-slate + player-prop model. Revisit only as a distinct
-"event" treatment, never the core slate. **Fantasy/DFS optimization** and **bracket-pool
-management** are also out. International events (Olympics, WBC) are Top Today spotlight
-candidates (schedule + editorial), like the World Cup.
+**Motorsport (F1/NASCAR)** and **combat (UFC/boxing)** — don't fit the model; out.
+**Fantasy/DFS optimization** and **bracket-pool management** are also out. International
+events (Olympics, WBC) are Top Today spotlight candidates (schedule + editorial), like the
+World Cup.
 
 ---
 
@@ -156,6 +167,27 @@ schedule/context (rest, travel, weather, injuries).
 
 8. **Stakes & standings.** Playoff/division leverage, seeding, clinching/elimination (the
    competition-context + bracket models), so a Week 14 division game *reads* like one.
+
+## Historical season browser (build + validate against a full past season)
+
+A completed season is the *ideal* thing to build NFL against — every matchup, playoff
+game, and the Super Bowl already exists, so we don't wait for live games to accrue (the
+pain the current markets hit). The plan is to make the whole season **browsable**:
+
+- **Ingest a full completed season** → team-game + player-game tables.
+- **A season/week browser** (extends the existing slate date-nav): jump to any week or
+  game in the archive.
+- **Two views per past game:** the **leakage-safe pre-game deep-dive** (analysis as it
+  would have appeared, using only data before kickoff) *and* the **final result / box
+  score** (what actually happened, and how any prop edges would have graded).
+- **Bonus: an instant season-long backtest** — see how the props/edges graded across an
+  entire season at once, not one live slate at a time.
+
+**Data note (honest):** the feed on hand (pulled 2026-01-12) has the full 2025 **regular
+season + Wild Card round** (weeks 1–19), but not the divisional/conference/Super Bowl games
+— those were played after that pull. A fresh re-download of the now-completed 2025 season
+feed includes the entire playoffs + Super Bowl. So "browse last season incl. playoffs/SB"
+is fully possible; it just needs the completed-season file, not the mid-January snapshot.
 
 ## Build order (tiers within NFL)
 
