@@ -16,7 +16,8 @@ from pathlib import Path
 import pandas as pd
 
 from services import nfl_analytics as A
-from services.nfl_repository import load_team_games
+from services.nfl_repository import load_player_games, load_team_games
+from src import nfl_opportunity
 from src.config import DB_PATH
 
 ENGINE_VERSION = "nfl-matchup-v1"
@@ -66,12 +67,24 @@ class NFLFormLine:
 
 
 @dataclass(frozen=True)
+class NFLSpotlight:
+    player: str
+    position: str
+    market: str                 # e.g. "75+ Rush Yards"
+    support: str                # e.g. "96.8 avg · cleared 60% (6/10)"
+    actual: float | None        # what the player did in this game
+    result: str | None          # "hit" | "miss" | None (backtest of the leakage-safe pick)
+
+
+@dataclass(frozen=True)
 class NFLGamePage:
     hero: NFLHero
     identity: tuple[NFLIdentityRow, ...]
     battlefields: tuple[A.Battlefield, ...]
     away_form: NFLFormLine | None
     home_form: NFLFormLine | None
+    away_spotlights: tuple[NFLSpotlight, ...]
+    home_spotlights: tuple[NFLSpotlight, ...]
     note: str                   # honest small-sample / season-opener language
 
 
@@ -101,6 +114,32 @@ def _form(frame: pd.DataFrame, team: str, n: int = 5) -> NFLFormLine | None:
 
 def _short(name: str) -> str:
     return name.split()[-1] if name else name
+
+
+def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str) -> tuple[NFLSpotlight, ...]:
+    """Key players' leakage-safe prop picks (from prior games) + how they actually did
+    in this game — a per-player backtest of the pick."""
+    if pg.empty:
+        return ()
+    prior = pg[pg["game_date"].astype("string") < game_date]
+    this = pg[pg["game_id"].astype("string") == str(game_id)]
+    out: list[NFLSpotlight] = []
+    for pid, name, pos in nfl_opportunity.key_players(prior[prior["team"] == team]):
+        prop = nfl_opportunity.best_prop(prior[prior["player_id"] == pid], pos)
+        if not prop:
+            continue
+        actual, result = None, None
+        arow = this[this["player_id"] == pid]
+        if not arow.empty:
+            val = pd.to_numeric(arow.iloc[0].get(prop["stat"]), errors="coerce")
+            if pd.notna(val):
+                actual = float(val)
+                result = "hit" if actual >= prop["threshold"] else "miss"
+        cleared = int(round(prop["clear_rate"] * prop["games"]))
+        support = f"{prop['avg']} avg · cleared {prop['clear_rate']:.0%} ({cleared}/{prop['games']})"
+        out.append(NFLSpotlight(name, str(pos), f"{prop['threshold']}+ {prop['label']}",
+                                support, actual, result))
+    return tuple(out)
 
 
 def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | None:
@@ -158,8 +197,13 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
     note = ("Season opener — no prior-form data yet." if games_in == 0 else
             "Early-season sample — form is thin." if games_in < 4 else "")
 
+    pg = load_player_games(db_path=db_path)
+    away_spot = _spotlights(pg, game_id, game_date, away)
+    home_spot = _spotlights(pg, game_id, game_date, home)
+
     return NFLGamePage(hero, tuple(identity), battlefields,
-                       _form(frame, away), _form(frame, home), note)
+                       _form(frame, away), _form(frame, home),
+                       away_spot, home_spot, note)
 
 
 def list_weeks(db_path: Path = DB_PATH) -> list[dict]:
