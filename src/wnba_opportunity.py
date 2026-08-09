@@ -185,9 +185,15 @@ def score_wnba_opportunities(
                 support.append(f"{minutes_l5:.1f} minutes per game over the last 5")
             elif minutes_l5 >= 22:
                 support.append(f"Usable recent role at {minutes_l5:.1f} minutes")
+            # How often she actually clears the bar is the single most important
+            # number about a prop, and it must always be visible. It used to appear
+            # only when strong (L5 >= .8 / L10 >= .7) or poor (L5 <= .4), so props
+            # sitting exactly on the MIN_CLEAR floor — the ones that *barely*
+            # qualified — showed nothing at all: 6 of 19 on the slate this was found
+            # on, every one of them at .60/.60.
             if hit_l5 >= .8:
                 support.append(f"Cleared {threshold}+ in {round(hit_l5 * 5)}/5")
-            elif hit_l10 >= .7:
+            else:
                 support.append(f"Cleared {threshold}+ in {round(hit_l10 * 10)}/10")
             if avg_l5 > avg_l10 + .75:
                 support.append("Recent production is above the 10-game baseline")
