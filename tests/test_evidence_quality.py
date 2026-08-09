@@ -188,3 +188,33 @@ def test_a_normal_rotation_window_is_not_flagged():
     assert not _is_stale_window(20, 4)      # four starts, every five days
     assert not _is_stale_window(30, 6)
     assert not _is_stale_window(None, 4)    # undatable — no claim either way
+
+
+def test_every_offered_prop_states_how_often_the_bar_is_cleared():
+    """The clear rate is the most important number about a prop and was shown only
+    at the extremes — strong (L5>=.8 / L10>=.7) or poor (L5<=.4). Props resting
+    exactly on the MIN_CLEAR floor therefore disclosed nothing: 6 of 19 on the slate
+    this was found on, every one at .60/.60, including one scored 67."""
+    from src.wnba_opportunity import score_wnba_opportunities
+    # Six of ten clear 15 — exactly the qualifying floor, previously silent.
+    logs = _wnba_logs("floor", [16, 9, 16, 9, 16, 16, 9, 16, 9, 16])
+    out = score_wnba_opportunities(logs, ["Team"], max_per_player=3)
+    points = out[out["market"] == "points"]
+    assert not points.empty
+    lines = list(points.iloc[0]["support"]) + list(points.iloc[0]["risks"])
+    assert any("Cleared" in line for line in lines), lines
+
+
+def test_a_weak_recent_run_shows_both_the_baseline_and_the_warning():
+    """A prop can qualify on its ten-game rate while its last five are poor; the
+    reader needs both numbers, not whichever one the code reached first."""
+    from src.wnba_opportunity import score_wnba_opportunities
+    # Strong older games, weak recent five: L10 clears the floor, L5 does not.
+    logs = _wnba_logs("split", [16] * 5 + [16, 9, 9, 16, 9])
+    out = score_wnba_opportunities(logs, ["Team"], max_per_player=3)
+    points = out[out["market"] == "points"]
+    if not points.empty:
+        support = " ".join(points.iloc[0]["support"])
+        risks = " ".join(points.iloc[0]["risks"])
+        assert "Cleared" in support
+        assert "only" in risks
