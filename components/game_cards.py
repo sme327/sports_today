@@ -9,6 +9,7 @@ from components.format import format_game_time, logo_img
 from components.navigation import game_href
 from domain.models import SlateGame
 from leagues.base import get_adapter
+from services.editorial import card_signal
 
 
 def _state_badge(game: SlateGame) -> str:
@@ -64,6 +65,13 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
         noun = "prop" if count == 1 else "props"
         fire = (f'<a class="fire-link" target="_self" href="{_focus_href(day, game)}" '
                 f'title="Show these props below">🎯 {count} {noun} {threshold}+ →</a>')
+    else:
+        # No strong props — either the league has none at all, or none cleared the
+        # bar today. Either way the slot is empty, so a team-level read earns it.
+        signal = card_signal(game)
+        if signal:
+            fire = (f'<span class="ed-card-signal" title="{escape(signal.detail, quote=True)}">'
+                    f'{escape(signal.label)}</span>')
     matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}">Matchup →</a>'
                if deep_dive else "")
     if not fire and not matchup:

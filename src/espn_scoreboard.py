@@ -18,7 +18,7 @@ _TYPE_LABEL = {1: "Preseason", 2: "Regular Season", 3: "Postseason", 4: "Postsea
 _PHASE_BY_TYPE = {1: "preseason", 2: "regular", 3: "postseason", 4: "postseason"}
 
 
-def _records(competitor: dict) -> dict[str, str]:
+def team_records(competitor: dict) -> dict[str, str]:
     """A competitor's record summaries keyed by ESPN's record type.
 
     Availability varies by league and is never assumed: NFL and college football
@@ -115,10 +115,10 @@ def parse_events(payload: dict) -> list[dict]:
             "season": _int(season.get("year")),
             "phase": season_phase(season.get("slug"), season.get("type")),
             "week": _int((event.get("week") or {}).get("number")),
-            "away_record": _records(away).get("total"),
-            "home_record": _records(home).get("total"),
-            "away_home_away_record": _records(away).get("awayrecord"),
-            "home_home_away_record": _records(home).get("homerecord"),
+            "away_record": team_records(away).get("total"),
+            "home_record": team_records(home).get("total"),
+            "away_home_away_record": team_records(away).get("awayrecord"),
+            "home_home_away_record": team_records(home).get("homerecord"),
             "conference_game": bool(comp.get("conferenceCompetition")),
         })
     return games

@@ -44,6 +44,17 @@ def _phase(game_type: object) -> str | None:
     return _GAME_TYPE_PHASE.get(str(game_type or "").upper().strip())
 
 
+def _record(side: dict) -> str | None:
+    """"W-L" (or "W-L-T") from StatsAPI's structured leagueRecord. None when the
+    block is absent — a team with no games yet must not read as 0-0."""
+    rec = side.get("leagueRecord") or {}
+    wins, losses = rec.get("wins"), rec.get("losses")
+    if wins is None or losses is None:
+        return None
+    ties = rec.get("ties") or 0
+    return f"{wins}-{losses}-{ties}" if ties else f"{wins}-{losses}"
+
+
 def _parse_schedule(payload: dict) -> list[dict]:
     games = []
     for day in payload.get("dates", []):
@@ -62,6 +73,8 @@ def _parse_schedule(payload: dict) -> list[dict]:
                 "phase": _phase(game.get("gameType")),
                 # e.g. "Regular Season", "World Series" — MLB's own round wording.
                 "series_description": game.get("seriesDescription"),
+                "away_record": _record(away_side),
+                "home_record": _record(home_side),
                 "status": status.get("detailedState"),
                 "away": away["name"],
                 "home": home["name"],

@@ -71,6 +71,27 @@ def test_ncaaf_prefixes_rank_and_builds_compact_card(monkeypatch):
     assert g.home_display == "Clemson"             # unranked, no prefix
     assert g.meta["round"] == "Preseason · Wk 2" and g.meta["neutral_site"] is True
     html = game_card_html(g, "today")
+    # A ranked side is worth saying, so this card earns a footer chip. Schedule-only
+    # cards stay compact only when there is genuinely nothing to say — see below.
+    assert "ed-card-signal" in html and "#5 in action" in html
+
+
+def test_schedule_only_card_stays_compact_when_there_is_nothing_to_say(monkeypatch):
+    """The 2026-08-07 decision made these cards compact because a schedule-only game
+    had no analysis to show. Editorial signals changed that premise *only* where a
+    signal exists; an unranked game with no records must still render short."""
+    payload = {"events": [{
+        "id": "1", "date": "2026-08-30T23:00Z",
+        "season": {"year": 2026, "type": 2, "slug": "regular-season"},
+        "status": {"type": {"state": "pre", "detail": "Sat", "shortDetail": "8/30"}},
+        "competitions": [{"competitors": [
+            {"homeAway": "home", "team": {"displayName": "Home Town", "shortDisplayName": "Home"}},
+            {"homeAway": "away", "team": {"displayName": "Away City", "shortDisplayName": "Away"}},
+        ]}],
+    }]}
+    monkeypatch.setattr("src.espn_scoreboard.fetch", lambda path, d, **k: sb.parse_events(payload))
+    g = get_adapter("NHL").fetch_schedule(date(2026, 8, 30))[0]
+    html = game_card_html(g, "today")
     assert "game-card--compact" in html and "game-meta" not in html
 
 

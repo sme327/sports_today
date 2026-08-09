@@ -599,6 +599,19 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .op-flat .op-ev-head { color: var(--text-3); }        /* no notable risk — calm, neutral */
 .op-ev-body { color: #dee3e9; font-size: .8rem; line-height: 1.42; }   /* brighter body for low-light legibility */
 
+/* Card chip for a team-level read, in the slot the prop count would occupy. Quieter
+   than the 🎯 link beside it: this is context, not a call to action. */
+.ed-card-signal {
+  color: var(--text-3);
+  font-size: .76rem;
+  font-weight: 620;
+  letter-spacing: .005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 /* ------------------------------------------------- EDITORIAL (THE READ) --- */
 /* Team-level curation for leagues without player props. Reuses the shared evidence
    primitives (.op-evidence / .op-ev-head / .op-ev-body) so it reads as the same
