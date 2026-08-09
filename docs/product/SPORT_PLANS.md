@@ -61,8 +61,11 @@ the shared basketball analytics, daily briefing. Both tournaments, equal depth.
 **NFL is the flagship deep-dive** (its own section below). NCAA FB is editorial-only;
 UFL is data-gated.
 
-**NFL** — 🟡 T0 schedule-only shipped. Then: T1 ingest the vendor feed → T2 props →
-**T3 the deep matchup page** → T4 playoffs/Super Bowl. See **[NFL deep-dive spec](#nfl-deep-dive-matchup-page-the-flagship)**.
+**NFL** — 🟢 T0 schedule-only, **T1 vendor-feed ingest, T2 props, and T3 the deep
+matchup page all shipped** (2026-08-08/09), browsable across multiple ingested seasons
+via the archive (`?view=nfl`). Remaining: T4 playoffs/Super Bowl depth, and connecting
+the deep-dive to the **live** slate (today it is archive-only — see
+[NFL Game Page](../engineering/NFL_GAME_PAGE.md)). Spec: **[NFL deep-dive](#nfl-deep-dive-matchup-page-the-flagship)**.
 
 **NCAA Football** — 🟡 T0 schedule-only shipped (rank prefix `#5 Georgia`, week label).
 🚫 **No player props** (roster breadth / data). Its value is games, team edges, upset

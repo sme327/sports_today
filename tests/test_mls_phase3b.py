@@ -15,7 +15,7 @@ import pytest
 
 from services import mls_analytics as A
 from services import mls_repository as R
-from services import mls_store
+from src import mls_store
 from src import espn_soccer as E
 from src import mls_collector as MC
 

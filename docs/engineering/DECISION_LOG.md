@@ -9,6 +9,129 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-09 — `src/` is a leaf layer, enforced by a test
+
+**Decision.** State the `src/` ↔ `services/` boundary as a **dependency direction** and
+enforce it structurally.
+- `src/` is a leaf library — external clients, ingestion, and the per-market scorers.
+  It may import `domain/` (itself a pure leaf: stdlib only) and nothing else from the
+  app. No Streamlit.
+- `services/` sits above and imports `src/` freely.
+- **`services/mls_store.py` moved to `src/mls_store.py`.** It imports only `sqlite3` —
+  DDL and upserts, zero app knowledge. It was the sole reason `src/mls_collector.py`
+  reached upward. Persistence belongs at the bottom of the layer diagram, not in
+  `services/`; `services/migrations.ensure_schema` still calls its DDL, now importing
+  downward. This also makes it consistent with `src/wnba_collector.py` and
+  `src/nfl_ingest.py`, which already own their own persistence.
+- `src/pitcher_opportunity.py`'s function-local `domain.markets` import was hoisted to
+  module level — no cycle existed to justify hiding it.
+- **`tests/test_layering.py`** parses every module's imports with `ast` (catching
+  function-local ones, which a grep-based check misses) and fails on any upward import.
+
+**Reason.** The boundary had been described as "historical" and was widely believed to
+be fuzzy. It is not: it is a clean direction with, as of this change, zero violations.
+An unwritten direction decays — principle 9 says prevent mistakes structurally rather
+than relying on discipline, and that applies to the architecture's own rules. The guard
+is written against *direction*, not a file list, so adding a module never requires
+editing it.
+
+**Tradeoffs.** One store now lives in `src/` while repositories and analytics stay in
+`services/`, which reads slightly asymmetric until you know the rule — hence the
+explicit paragraph in [Architecture](ARCHITECTURE.md#file-organization). The guard will
+fail loudly on a legitimate future need to share code upward; the correct response is to
+move the shared piece **down**, not to weaken the test.
+
+**Future.** Two lower-priority couplings remain unaddressed and are *not* covered by the
+guard: three `services/*_game_page.py` modules import `components.format.format_game_time`
+(a pure formatter misfiled in the UI layer), and `components/` imports `services/` in two
+places. Tightening principle 4 ("services should never contain UI") would mean moving
+`format_game_time` into `domain/` or a formatting leaf, then extending the guard.
+
+## 2026-08-09 — NFL archive holds many seasons (additive-per-season writes)
+
+**Decision.** The NFL archive stores **multiple seasons**, not one.
+- Ingest derives a `season` column from the game dates (Aug–Feb → that season) and
+  writes **additively per season**: loading a new year replaces only that year and
+  keeps the rest. The first run after this change migrates via one full replace, when
+  the existing table predates the `season` column.
+- The matchup builder scopes records, form, rest, and spotlights to **the game's own
+  season**, so a Week 1 preview can't inherit last year's profile. `game_id` is
+  globally unique, so lookups still need no season.
+- The archive gains a season selector; `list_weeks` / `list_games` are season-aware.
+
+**Reason.** A full-table replace on each import meant one season at a time — you could
+not compare years, and re-importing to look at 2023 destroyed 2025. Season-scoped reads
+are also the correct leakage bound: cross-season carryover is a subtler leak than a
+date leak and would silently inflate early-week previews.
+**Tradeoffs.** Season is *derived*, not read from the feed — a vendor file with
+malformed dates would misfile games. The DB grows roughly linearly per season loaded.
+**Future.** To add a past year, drop its Big Data Ball team + player workbooks and run
+`python -m scripts.import_nfl_feed`. Cross-season views (franchise trends, year-over-year
+identity) are now possible and unbuilt.
+
+## 2026-08-08 — Batter 1+ hit v3: shrink the recent hit rate toward the league mean
+
+**Decision.** `batter-hit-v3` shrinks a batter's recent per-PA hit rate toward the
+league mean (0.25) by a factor of 0.70 **before** the `1-(1-p)^PA` estimate. Engine
+version bumped; snapshots record it.
+
+**Reason.** The accumulated v2 ledger confirmed the saturation flagged at v2: the
+95–100 band hit only **40%** — *worse* than the 0–49 band (54%) — and picks piled up
+tied at 100. The cause is statistical, not a bug: a 50-PA hit rate is a noisy talent
+estimate, so hot streaks rocketed to the top and then regressed. Shrinkage is the
+standard correction. Validated offline on the 287 graded v2 rows: the 85+ band recovers
+from 52% (inverted) to ~62%, and picks at ≥ 99 fall from 6 to ~3. On a live slate,
+tied-100s fell from 9 to 3 and the top 10 became a real gradient (100→93) instead of a wall.
+
+**Tradeoffs.** **This does not manufacture signal.** 1+ hit is a hard ~55% event and
+overall discrimination stays modest (corr ~0.07). v3 fixes a *misleading, inverted top*
+— it does not make the market predictable, and a 100 must not be read as near-certainty.
+The shrink constant is fitted to one ledger and will need refitting as data accrues.
+**Future.** Re-check band calibration after another few hundred graded rows. If the top
+band still fails to separate, the honest conclusion may be that 1+ hit does not deserve
+its prominence, not that the scorer needs a fourth revision.
+
+## 2026-08-08 — The NFL vertical: season-feed ingest → analytics → matchup page + props
+
+**Decision.** Build the flagship NFL deep-dive (SPORT_PLANS tiers T1–T3) against
+**ingested completed seasons**, reached through a **season archive** (`?view=nfl`), and
+deliberately **not** wired to the live slate.
+- `src/nfl_ingest.py` — Big Data Ball team + player workbooks → `nfl_team_games`,
+  `nfl_player_games`, `nfl_teams`. A generic multi-row-header flattener handles both
+  shapes (2 header rows / 3) and the repeated category fields.
+- `services/nfl_repository.py` + `services/nfl_analytics.py` — leakage-safe reads, then
+  a pure football engine. **A team's defense is derived by pairing** each game with the
+  opponent's offensive row: points/yards allowed *are* the opponent's output. Season
+  profiles carry league percentiles; `battlefields()` calls pass/rush O-vs-D edges.
+- `src/nfl_opportunity.py` — props on the shared reachable-bar discipline
+  (`src/reliability.highest_reachable_over`), by position, over-only.
+- `services/nfl_game_page.py` + `components/nfl_game.py` + `views/nfl_archive.py` — a
+  leakage-safe preview (identity, battlefields, form, a synthesized "read", rest) built
+  only from games **before** kickoff, shown alongside the actual result.
+
+**Reason.** A completed season is the *ideal* substrate for a deep matchup page: every
+matchup exists, and because the outcome is known, each page is **its own backtest** —
+player spotlights show the leakage-safe pick next to what the player actually did (✓/✗).
+That is the fastest way to learn whether the analysis is any good before trusting it on
+a live slate. Deriving defense by pairing avoids needing a second feed.
+
+**Tradeoffs.**
+- **NFL now has two disconnected surfaces**: a schedule-only live card and an
+  archive-only deep-dive. They use different id spaces (ESPN event ids vs the feed's
+  `AWAY@HOME` keys) and nothing reconciles them, so `views/game.py` does not dispatch
+  NFL and `supports_deep_dive` stays `False`. This is honest but genuinely confusing to
+  a reader of the code — hence the docstring there and [NFL Game Page](NFL_GAME_PAGE.md).
+- NFL props are **not** registered in `domain/markets.py`: they are page spotlights
+  only, so they are not snapshotted, graded, or counted in Performance.
+- The preview leans on `yards_per_play` as its efficiency stand-in; there is no
+  possession-adjusted metric, no EPA/DVOA, no injuries or weather.
+- Percentiles need ≥ 2 teams, so tiny synthetic datasets fall back to raw comparisons.
+
+**Future.** Reaching the live slate needs an ESPN↔vendor id bridge plus a weekly feed
+cadence; then flip `supports_deep_dive` and add the dispatch branch. Registering the
+props as `MarketSpec` entries would give NFL grading and Performance coverage for free.
+T4 (playoffs/Super Bowl depth) is still open.
+
 ## 2026-08-07 — Batter strikeout + walk markets
 
 **Decision.** Add two MLB batter markets — **batter_k** ("2+/3+ Strikeouts") and
@@ -70,6 +193,12 @@ graded slates exist. A shared "reachable-bar" selector could unify TB/SP/WNBA.
   awareness — no player analysis, no matchup deep-dive, no props. Same pattern as
   World Cup. Schedule-only cards (no analysis footer) now render **compact**
   (shorter), since the reader only needs to know the game is on.
+
+  > **Superseded twice.** `src/nfl_api.py` was folded into the shared
+  > `src/espn_scoreboard.py` + `leagues/_espn_schedule.ScheduleOnlyESPN` later the same
+  > day. And "no deep-dive, no props" now holds only for the **live slate** — the
+  > 2026-08-08 NFL vertical below builds both against ingested seasons, reached through
+  > the archive. See [NFL Game Page](NFL_GAME_PAGE.md).
 - **Top Opportunities is a curated shortlist, not a database.** The full slate
   shows only genuinely-strong picks (score ≥ `_CURATION_FLOOR` = 70, capped at 8),
   framed "Today's N strongest · curated from N scored" — not "914 opportunities".
@@ -345,7 +474,7 @@ NULL, never zero. A local, gitignored SQLite backfill (191 matches / 30 clubs) m
 refreshed by running the collector — it is not part of the app runtime.
 **Future.** Option C (match events) is the recommended next increment; Option B (player
 data) waits on a richer source. See [MLS Game Page](MLS_GAME_PAGE.md) and
-[MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md).
+[MLS Provider Audit](../history/MLS_PHASE3A_PROVIDER_AUDIT.md).
 
 ## 2026-07-17 — Tactical honesty: measured proxies, one metric per section
 
@@ -396,7 +525,7 @@ avoid a false directional claim). Reuses `mlb-*` section/storyline CSS for share
 primitives. A separate soccer client is kept from World Cup to avoid coupling
 (national flags + bracket fallback vs. club logos + no fallback).
 **Future.** Build the soccer data pipeline (collector + additive tables +
-repository) per [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) §13; then flip
+repository) per [MLS Phase 1 Inspection](../history/MLS_PHASE1_INSPECTION.md) §13; then flip
 sections from Unavailable → real. `src/espn_soccer.py` is competition-agnostic and
 can later absorb World Cup. See [MLS Game Page](MLS_GAME_PAGE.md).
 

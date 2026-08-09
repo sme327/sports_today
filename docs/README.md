@@ -19,7 +19,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Sport Plans](product/SPORT_PLANS.md) | The by-sport view: each sport's status + tiered path, incl. the NFL deep-dive spec. |
 | [Future Endeavors](product/FUTURE_ENDEAVORS.md) | The next major product tracks (Preview / Live / Postgame) and how they connect. |
 | [WNBA Matchup Spec (v2)](engineering/WNBA_Matchup_Page_Specification_v2.md) | Source product spec for the WNBA matchup page. |
-| [MLS Matchup Philosophy](engineering/MLS_MATCHUP_PHILOSOPHY.md) | Product/UX philosophy for a future MLS matchup page. |
+| [MLS Matchup Philosophy](engineering/MLS_MATCHUP_PHILOSOPHY.md) | Product/UX philosophy for the MLS matchup page. |
+| [MLS Matchup Blueprint (v2)](engineering/MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) | The v2 section-by-section blueprint the philosophy feeds into. |
 
 ## Design — *how it looks and feels*
 
@@ -36,8 +37,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks (deeper reference). |
 | [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
 | [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
-| [MLS Provider Audit](engineering/MLS_PHASE3A_PROVIDER_AUDIT.md) | What ESPN provides for MLS, field reliability, and what to collect next. |
-| [MLS Phase 1 Inspection](engineering/MLS_PHASE1_INSPECTION.md) | Original read-only inspection + build sequence (steps 1–6 now shipped). |
+| [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, and why it lives in the archive rather than the live slate. |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
 | [Setup](engineering/SETUP.md) | One-time install and the daily data/run workflow. |
@@ -51,9 +51,17 @@ restating them.
 
 ## History — *point-in-time records*
 
-Archival only; not current guidance. See
-[history/](history/): the original build brief, the cleanup brief, the
-architecture audit, and the migration notes.
+Archival only; **not current guidance** — these describe the state of the world on the
+day they were written. See [history/](history/):
+
+| Document | Records |
+| --- | --- |
+| [Agent Build Brief](history/AGENT_BUILD_BRIEF.md) | The original build brief. |
+| [Architecture Audit](history/ARCHITECTURE_AUDIT.md) | The pre-cleanup audit of the original structure. |
+| [Architecture Cleanup Brief](history/ARCHITECTURE_CLEANUP_BRIEF.md) | The plan that produced today's layering. |
+| [Migration Notes](history/MIGRATION_NOTES.md) | What moved where during that cleanup. |
+| [MLS Phase 1 Inspection](history/MLS_PHASE1_INSPECTION.md) | The read-only inspection + build sequence (steps 1–6 shipped). |
+| [MLS Provider Audit](history/MLS_PHASE3A_PROVIDER_AUDIT.md) | What ESPN provided for MLS at Phase 3A, and field reliability. |
 
 ---
 

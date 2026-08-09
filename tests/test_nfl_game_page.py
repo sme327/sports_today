@@ -68,3 +68,71 @@ def test_archive_listing(tmp_path):
 
 def test_missing_game_returns_none(tmp_path):
     assert build_nfl_game_page("nope", db_path=_seed(tmp_path)) is None
+
+
+# --- player spotlights: the leakage-safe pick + its backtest ----------------
+
+def _p(gid, wk, pid, name, pos, **stats):
+    row = {"game_id": gid, "game_date": f"2025-09-{wk:02d}", "week": wk,
+           "player_id": pid, "player": name, "position": pos, "team": "A", "opponent": "B",
+           "passing_att": 0, "passing_yds": 0, "rushing_att": 0, "rushing_yds": 0,
+           "receiving_tar": 0, "receiving_rec": 0, "receiving_yds": 0}
+    row.update(stats)
+    return row
+
+
+def _seed_players(tmp_path):
+    """Weeks 1–5 of prior form for three A players, then week 6 (`g6`) as the game
+    being previewed. Chosen so the reachable bars land on 275 pass / 75 rush / 60 rec."""
+    db = tmp_path / "nfl_players.db"
+    team_rows = []
+    for wk in range(1, 7):
+        team_rows += [_row(f"g{wk}", wk, "A", "B", "Road", 24, 260, 100),
+                      _row(f"g{wk}", wk, "B", "A", "Home", 20, 240, 90)]
+
+    qb = [260, 275, 300, 240, 280]      # → 275 bar clears 3/5 = 60%
+    rb = [80, 95, 60, 110, 70]          # → 75 bar clears 3/5 = 60%
+    wr = [70, 55, 80, 45, 65]           # → 60 bar clears 3/5 = 60%
+    player_rows = []
+    for wk in range(1, 6):
+        player_rows += [
+            _p(f"g{wk}", wk, "a-qb", "A QB", "QB", passing_att=32, passing_yds=qb[wk - 1]),
+            _p(f"g{wk}", wk, "a-rb", "A RB", "RB", rushing_att=15, rushing_yds=rb[wk - 1]),
+            _p(f"g{wk}", wk, "a-wr", "A WR", "WR", receiving_tar=8, receiving_yds=wr[wk - 1]),
+        ]
+    # Week 6 — the previewed game. QB clears his bar, RB misses his, WR did not play.
+    player_rows += [
+        _p("g6", 6, "a-qb", "A QB", "QB", passing_att=38, passing_yds=310),
+        _p("g6", 6, "a-rb", "A RB", "RB", rushing_att=11, rushing_yds=42),
+    ]
+    with sqlite3.connect(db) as conn:
+        pd.DataFrame(team_rows).to_sql("nfl_team_games", conn, index=False)
+        pd.DataFrame(player_rows).to_sql("nfl_player_games", conn, index=False)
+    return db
+
+
+def _spot(page, player):
+    return next(s for s in page.away_spotlights if s.player == player)
+
+
+def test_spotlight_backtests_the_pick_against_what_happened(tmp_path):
+    page = build_nfl_game_page("g6", db_path=_seed_players(tmp_path))
+    qb, rb = _spot(page, "A QB"), _spot(page, "A RB")
+    assert qb.market == "275+ Pass Yards" and qb.actual == 310.0 and qb.result == "hit"
+    assert rb.market == "75+ Rush Yards" and rb.actual == 42.0 and rb.result == "miss"
+
+
+def test_spotlight_pick_uses_only_games_before_kickoff(tmp_path):
+    """The 310-yard week-6 game must not feed the pick that is being backtested —
+    otherwise the spotlight would be grading itself on its own answer."""
+    page = build_nfl_game_page("g6", db_path=_seed_players(tmp_path))
+    support = _spot(page, "A QB").support
+    assert "(3/5)" in support           # five prior games, not six
+    assert "271.0 avg" in support       # mean of weeks 1–5; leaking week 6 gives 277.5
+
+
+def test_spotlight_is_honest_when_the_player_did_not_appear(tmp_path):
+    page = build_nfl_game_page("g6", db_path=_seed_players(tmp_path))
+    wr = _spot(page, "A WR")
+    assert wr.market == "60+ Rec Yards"      # the pick is still shown
+    assert wr.actual is None and wr.result is None   # …but never graded as a miss

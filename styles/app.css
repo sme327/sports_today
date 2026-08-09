@@ -261,38 +261,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .date-toggle a:not(.active):hover { background: var(--surface-3); color: var(--text-1) !important; }
 .date-toggle a:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; z-index: 5; }
 
-/* --------------------------------------------------------- STATUS CHIP --- */
-/* Retained as a primitive (used by degraded-mode / error notices elsewhere). */
-.status-row {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  width: 100%;
-  margin: .1rem 0 1rem;
-}
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  width: max-content;
-  max-width: min(760px, 100%);
-  padding: .44rem .76rem;
-  border-radius: var(--r-pill);
-  background: var(--surface-1);
-  box-shadow: var(--edge-hi);
-  color: var(--text-2);
-  font-size: .82rem;
-  font-weight: 550;
-  line-height: 1.2;
-}
-.status-chip .status-dot {
-  width: .48rem;
-  height: .48rem;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-soft);
-}
 
 /* ------------------------------------------------------- MATCH CARDS ----- */
 .schedule-grid {

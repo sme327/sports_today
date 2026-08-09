@@ -1,8 +1,14 @@
 """Game view: a thin dispatcher.
 
 Resolves the game by league + id, then delegates to the league's game page.
-MLB has a dedicated page (views/mlb_game.py); leagues without a deep-dive render
-a schedule-only placeholder. No league-specific analysis lives here.
+MLB, WNBA, and MLS have dedicated pages; leagues without a deep-dive render a
+schedule-only placeholder. No league-specific analysis lives here.
+
+NFL is deliberately absent: it *does* have a deep-dive matchup page, but it is built
+against ingested vendor seasons and browsed through the archive (``?view=nfl``), whose
+game ids are the feed's ``AWAY@HOME`` keys — not the ESPN event ids the live slate
+carries. Nothing reconciles the two, so a live NFL game honestly has no deep-dive yet.
+See docs/engineering/NFL_GAME_PAGE.md.
 """
 
 from __future__ import annotations

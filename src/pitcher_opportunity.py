@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from domain.markets import format_market
+
 _REQUIRED = {"pitcher_id", "pitcher_name", "pitching_team", "game_id", "game_date",
              "inning", "is_strikeout", "is_hit"}
 
@@ -129,7 +131,6 @@ def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
 
 
 def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds) -> dict:
-    from domain.markets import format_market
     d = _best_direction(values, thresholds, _OVER_PENALTY.get(kind, 1.0))
     thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
     cleared = int(round(hit * n))

@@ -3,13 +3,13 @@
 > **Purpose** — Read-only inspection of the codebase to plan an MLS matchup page: what's reusable, what data exists, the risks, and the safest build sequence.
 > **Audience** — Product owner, engineering contributors, and AI assistants.
 > **Update when** — Superseded by Phase 2 decisions, or when the underlying architecture/data findings change.
-> **Related** — [Architecture](ARCHITECTURE.md) · [MLB Game Page](MLB_GAME_PAGE.md) · [Decision Log](DECISION_LOG.md) · [Future Endeavors](../product/FUTURE_ENDEAVORS.md) · [Docs index](../README.md)
+> **Related** — [Architecture](../engineering/ARCHITECTURE.md) · [MLB Game Page](../engineering/MLB_GAME_PAGE.md) · [Decision Log](../engineering/DECISION_LOG.md) · [Future Endeavors](../product/FUTURE_ENDEAVORS.md) · [Docs index](../README.md)
 
 _Inspection date: 2026-07-16. Verified against the running app and the live SQLite database via read-only queries; inference is marked explicitly. **No code changed during Phase 1.**_
 
 > **Update (2026-07-16, later):** the "there is no WNBA matchup page" finding below
 > reflects the state at inspection time. A basketball-designed **WNBA matchup page
-> has since shipped** (see [WNBA Game Page](WNBA_GAME_PAGE.md)); for MLS this means
+> has since shipped** (see [WNBA Game Page](../engineering/WNBA_GAME_PAGE.md)); for MLS this means
 > there are now **two** matchup-page templates to learn from, and the basketball
 > analytics pattern (`services/wnba_analytics.py`) confirms the "collect box scores →
 > team/season aggregates → page" flow the MLS plan recommends.
@@ -17,7 +17,7 @@ _Inspection date: 2026-07-16. Verified against the running app and the live SQLi
 > **Superseded (2026-07-17):** this is a point-in-time planning record. The MLS page
 > and its **team-data pipeline have since shipped** — steps 1–6 of the §13 sequence are
 > done (fixture shell → adapter → schedule → team-stat collection → analytics → real
-> wiring). For the current implementation see [MLS Game Page](MLS_GAME_PAGE.md); for the
+> wiring). For the current implementation see [MLS Game Page](../engineering/MLS_GAME_PAGE.md); for the
 > provider reality see [MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md). Remaining §13
 > steps: match events (7, next), then confirmed lineups (8).
 

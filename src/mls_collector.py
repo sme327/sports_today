@@ -32,7 +32,7 @@ from typing import Callable
 import pandas as pd
 import requests
 
-from services import mls_store
+from src import mls_store
 from src import espn_soccer
 from src.config import DATA_DIR, DB_PATH
 

@@ -3,7 +3,7 @@
 > **Purpose** — How the MLS matchup page is built: its sections, the real team-data pipeline behind them, the exact analytical definitions, and what is honestly deferred.
 > **Audience** — Engineers and AI assistants extending the MLS page (and a template for a future NBA/soccer page).
 > **Update when** — Sections, data states, formulas, thresholds, collected data, or the pipeline change.
-> **Related** — [Architecture](ARCHITECTURE.md) · [MLS Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md) · [MLS Phase 1 Inspection](MLS_PHASE1_INSPECTION.md) · [Philosophy](MLS_MATCHUP_PHILOSOPHY.md) · [Blueprint](MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
+> **Related** — [Architecture](ARCHITECTURE.md) · [MLS Provider Audit](../history/MLS_PHASE3A_PROVIDER_AUDIT.md) · [MLS Phase 1 Inspection](../history/MLS_PHASE1_INSPECTION.md) · [Philosophy](MLS_MATCHUP_PHILOSOPHY.md) · [Blueprint](MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
 
 A soccer-designed matchup preview that answers **"what kind of match am I about to
 watch?"** It reuses the shared architecture (router → view → cached builder →
@@ -30,7 +30,7 @@ router → views/game.py (dispatch: league == "MLS")
 
 collection (offline, separate from the app):
   src/mls_collector.py → src/espn_soccer.py (summary/standings parsers)
-                       → services/mls_store.py (additive SQLite tables + upserts)
+                       → src/mls_store.py (additive SQLite tables + upserts)
 ```
 
 The schedule (and hero) come from `src/espn_soccer.py` (a neutral,
@@ -100,7 +100,7 @@ fall back to the honest awaiting-data states.
   pattern): scoreboard discovery, incremental skip, retries/backoff, explicit validation
   (2 competitors, IDs reconcile, 2 team-stat blocks), idempotent upserts, standings
   refresh, audit run, CSV mirror. **Never writes partial/fabricated rows.**
-- **`services/mls_store.py`** — additive tables + upserts: `mls_matches`,
+- **`src/mls_store.py`** — additive tables + upserts: `mls_matches`,
   `mls_team_match_stats` (PK `event_id,team_id`), `mls_standings` (snapshot history),
   `mls_collection_runs`. Created via `services/migrations.ensure_schema`. **Missing
   provider fields stay NULL — never converted to zero.**
@@ -150,7 +150,7 @@ Confirmed/projected lineups & formations, per-player stats (the feed lacks minut
 passing, and defensive actions), match-event timing (goal/card/sub minutes, scorers —
 collected by the provider but not yet stored), and advanced tracking (xG, pressing, heat
 maps). None are claimed — each renders as an honest state. See the
-[Provider Audit](MLS_PHASE3A_PROVIDER_AUDIT.md) for exact field reliability.
+[Provider Audit](../history/MLS_PHASE3A_PROVIDER_AUDIT.md) for exact field reliability.
 
 ## Progressive intelligence & next steps
 
