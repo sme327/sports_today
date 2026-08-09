@@ -17,6 +17,7 @@ import pandas as pd
 from domain.models import Opportunity, OpportunityMode, SlateGame
 from leagues.base import register
 from src import espn_soccer
+from src.espn_scoreboard import season_phase
 
 
 def _normalize(value: object) -> str:
@@ -71,6 +72,9 @@ class MLSAdapter:
                     state=g.get("state"),
                     winner=g.get("winner"),
                     status_detail=g.get("status_detail"),
+                    season=g.get("season_year"),
+                    phase=season_phase(g.get("season_slug"), g.get("season_type")),
+                    competition=g.get("competition"),
                     meta={
                         "competition": g.get("competition"),
                         "broadcast": g.get("broadcast"),

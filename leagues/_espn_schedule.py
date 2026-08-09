@@ -44,7 +44,7 @@ class ScheduleOnlyESPN:
     default_round: str = ""      # round label when the source omits one
 
     def describe_game(self, game: SlateGame) -> str:
-        parts = [game.meta.get("round") or self.default_round]
+        parts = [game.round_name or game.meta.get("round") or self.default_round]
         if game.venue:
             parts.append(game.venue)
         return " · ".join(p for p in parts if p)
@@ -75,7 +75,15 @@ class ScheduleOnlyESPN:
                 state=g.get("state"),
                 winner=g.get("winner"),
                 status_detail=g.get("status_detail"),
+                season=g.get("season"),
+                phase=g.get("phase"),
+                week=g.get("week"),
+                round_name=espn_scoreboard.round_label(g, with_week=self.with_week)
+                           or self.default_round or None,
+                neutral_site=bool(g.get("neutral_site")),
                 meta={
+                    # `round` kept for backward compatibility with cached rows and any
+                    # caller still reading meta; `round_name` is the field to use.
                     "round": espn_scoreboard.round_label(g, with_week=self.with_week)
                              or self.default_round,
                     "broadcast": g.get("broadcast"),

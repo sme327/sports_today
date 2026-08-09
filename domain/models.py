@@ -105,8 +105,54 @@ class SlateGame:
     winner: str | None = None         # "away" | "home" | None
     status_detail: str | None = None  # e.g. "Final", "3rd Quarter", "AET"
 
-    # League-specific extras (probable pitchers, broadcast, round, etc.).
+    # Competition context — where this game sits in its competition. Every field is
+    # optional and defaults to "unknown": a league that cannot supply one leaves it
+    # None and the UI omits it, rather than showing a guess. All optional with safe
+    # defaults so cached SlateGame rows written before these existed still deserialize.
+    # NOTE: "season year" is whatever the source calls it, and the convention differs
+    # by sport — ESPN labels the 2026-27 NHL/NBA season 2027 (end year), while the NFL
+    # season starting Sept 2026 is 2026. We store the source's own value rather than
+    # re-deriving one; compare seasons within a league, not across them.
+    season: int | None = None          # the season year, e.g. 2026
+    phase: str | None = None           # "preseason" | "regular" | "postseason"
+    week: int | None = None            # week number, where the sport has weeks
+    round_name: str | None = None      # human round/stage, e.g. "Preseason · Wk 2"
+    competition: str | None = None     # tournament/competition when not league play
+    neutral_site: bool = False
+
+    # League-specific extras (probable pitchers, broadcast, etc.).
     meta: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def is_postseason(self) -> bool:
+        return self.phase == "postseason"
+
+    @property
+    def context_label(self) -> str | None:
+        """One short human line for the competition context, or None when the source
+        gave us nothing. Prefers the explicit round label the league built."""
+        if self.round_name:
+            label = self.round_name
+        elif self.week is not None:
+            label = f"Week {self.week}"
+        elif self.phase:
+            label = {"preseason": "Preseason", "regular": "Regular Season",
+                     "postseason": "Postseason"}[self.phase]
+        else:
+            label = self.competition or None
+        # Prefix the competition only when it adds something. Sources overlap: MLS
+        # reports competition "MLS Regular Season" while the phase renders "Regular
+        # Season", and naively joining gives "MLS Regular Season · Regular Season".
+        if label and self.competition:
+            if self.competition in label:
+                pass                                  # competition already stated
+            elif label in self.competition:
+                label = self.competition              # competition is the fuller form
+            else:
+                label = f"{self.competition} · {label}"
+        if label and self.neutral_site:
+            label = f"{label} · Neutral site"
+        return label
 
     @property
     def has_score(self) -> bool:

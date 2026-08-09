@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 import requests
 
+from src.espn_scoreboard import season_phase
+
 BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
 
 # ESPN occasionally omits logo arrays from scoreboard responses. These stable
@@ -97,9 +99,12 @@ def _parse_events(payload: dict) -> list[dict]:
         for item in competition.get("broadcasts") or []:
             broadcasts.extend(item.get("names") or [])
 
+        season = event.get("season") or {}
         games.append({
             "game_id": event.get("id"),
             "game_date": event.get("date"),
+            "season": int(season["year"]) if str(season.get("year", "")).isdigit() else None,
+            "phase": season_phase(season.get("slug"), season.get("type")),
             "status": stype.get("detail") or stype.get("description"),
             "away": away_team.get("displayName"),
             "home": home_team.get("displayName"),
