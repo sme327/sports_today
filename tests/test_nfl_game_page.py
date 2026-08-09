@@ -45,6 +45,8 @@ def test_build_matchup_page(tmp_path):
     assert page.identity and page.battlefields
     assert page.away_form and "W W" in page.away_form.results
     assert "thin" in page.note                       # only 2 prior games (< 4) → small-sample note
+    assert page.thesis and any("offense" in s for s in page.thesis)   # synthesized read
+    assert page.away_rest == 1 and page.home_rest == 1               # 09-03 minus 09-02
 
 
 def test_season_opener_has_no_prior_form(tmp_path):

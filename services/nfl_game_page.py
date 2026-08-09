@@ -79,6 +79,10 @@ class NFLSpotlight:
 @dataclass(frozen=True)
 class NFLGamePage:
     hero: NFLHero
+    thesis: tuple[str, ...]     # a synthesized, evidence-based read (empty at season open)
+    away_rest: int | None
+    home_rest: int | None
+    rest_note: str              # short-week / off-a-bye / rest-edge, or ""
     identity: tuple[NFLIdentityRow, ...]
     battlefields: tuple[A.Battlefield, ...]
     away_form: NFLFormLine | None
@@ -114,6 +118,59 @@ def _form(frame: pd.DataFrame, team: str, n: int = 5) -> NFLFormLine | None:
 
 def _short(name: str) -> str:
     return name.split()[-1] if name else name
+
+
+def _poss(name: str) -> str:
+    """Possessive — NFL nicknames are plural, so 'Bills' → 'Bills'', 'Team' → 'Team's'."""
+    return name + ("'" if name.endswith("s") else "'s")
+
+
+def _tier(pct) -> str:
+    if pct is None or pd.isna(pct):
+        return "unrated"
+    pct = int(pct)
+    return ("elite" if pct >= 85 else "strong" if pct >= 65 else
+            "middling" if pct >= 35 else "weak")
+
+
+def _thesis(a: str, h: str, ar, hr) -> tuple[str, ...]:
+    """A calm, factual read of the matchup from the season profiles (no result)."""
+    out = [
+        f"{a}: {_tier(ar['off_pct'])} offense ({ar['points']:.0f} pts/g) vs "
+        f"{_poss(h)} {_tier(hr['def_pct'])} defense ({hr['points_allowed']:.0f} allowed).",
+        f"{h}: {_tier(hr['off_pct'])} offense ({hr['points']:.0f} pts/g) vs "
+        f"{_poss(a)} {_tier(ar['def_pct'])} defense ({ar['points_allowed']:.0f} allowed).",
+    ]
+    watch = []
+    for atk, dfn, off_c, def_c, phrase in (
+        (a, h, "rush_off_pct", "rush_def_pct", "run game"),
+        (h, a, "rush_off_pct", "rush_def_pct", "run game"),
+        (a, h, "pass_off_pct", "pass_def_pct", "passing attack"),
+        (h, a, "pass_off_pct", "pass_def_pct", "passing attack"),
+    ):
+        arow, drow = (ar, hr) if atk == a else (hr, ar)
+        op, dp = arow.get(off_c), drow.get(def_c)
+        if pd.notna(op) and pd.notna(dp) and int(op) - (100 - int(dp)) >= 30:
+            watch.append(f"{_poss(atk)} {phrase} should test {dfn}")
+    tm = ar["turnover_margin"] - hr["turnover_margin"]
+    if abs(tm) >= 0.6:
+        watch.append(f"{a if tm > 0 else h} own the turnover battle")
+    if watch:
+        out.append("Watch: " + "; ".join(watch[:2]) + ".")
+    return tuple(out)
+
+
+def _rest_note(a: str, h: str, ar: int | None, hr: int | None) -> str:
+    parts = []
+    for team, r in ((a, ar), (h, hr)):
+        if r is not None and r <= 4:
+            parts.append(f"{team} on a short week ({r} days)")
+        elif r is not None and r >= 13:
+            parts.append(f"{team} off a bye")
+    if ar is not None and hr is not None and abs(ar - hr) >= 3 and not parts:
+        more = a if ar > hr else h
+        parts.append(f"{more} with a rest edge (+{abs(ar - hr)} days)")
+    return "; ".join(parts)
 
 
 def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str) -> tuple[NFLSpotlight, ...]:
@@ -176,8 +233,10 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
 
     identity: list[NFLIdentityRow] = []
     battlefields: tuple[A.Battlefield, ...] = ()
+    thesis: tuple[str, ...] = ()
     if not table.empty and away in table.index and home in table.index:
         a, h = table.loc[away], table.loc[home]
+        thesis = _thesis(_short(away), _short(home), a, h)
         for label, col, pct_col, higher in _IDENTITY_ROWS:
             av, hv = a.get(col), h.get(col)
             apct = int(a[pct_col]) if pct_col and pd.notna(a.get(pct_col)) else None
@@ -201,7 +260,12 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
     away_spot = _spotlights(pg, game_id, game_date, away)
     home_spot = _spotlights(pg, game_id, game_date, home)
 
-    return NFLGamePage(hero, tuple(identity), battlefields,
+    a_rest = A.rest_days(tg, away, game_date)
+    h_rest = A.rest_days(tg, home, game_date)
+    rest_note = _rest_note(_short(away), _short(home), a_rest, h_rest)
+
+    return NFLGamePage(hero, thesis, a_rest, h_rest, rest_note,
+                       tuple(identity), battlefields,
                        _form(frame, away), _form(frame, home),
                        away_spot, home_spot, note)
 

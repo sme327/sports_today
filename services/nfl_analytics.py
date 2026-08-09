@@ -10,6 +10,7 @@ already `as_of`-bounded by the repository, so leakage prevention lives in the re
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 
 import pandas as pd
 
@@ -132,6 +133,19 @@ def battlefields(table: pd.DataFrame, team_a: str, team_b: str,
             round(atk["rush_yds"], 1), round(dfn["rush_yds_allowed"], 1),
             _edge(atk.get("rush_off_pct"), dfn.get("rush_def_pct"), atk_disp, dfn_disp)))
     return tuple(out)
+
+
+def rest_days(tg: pd.DataFrame, team: str, game_date: str) -> int | None:
+    """Days between ``game_date`` and the team's previous game — the rest/schedule
+    spot. ``None`` for a season opener (no prior game)."""
+    g = tg[(tg["team"] == team) & (tg["game_date"].astype("string") < game_date)]
+    if g.empty:
+        return None
+    prev = str(g["game_date"].max())
+    try:
+        return (date.fromisoformat(game_date[:10]) - date.fromisoformat(prev[:10])).days
+    except ValueError:
+        return None
 
 
 def player_game_frame(pg: pd.DataFrame, team: str | None = None) -> pd.DataFrame:

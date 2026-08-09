@@ -124,15 +124,35 @@ def spotlights_html(page: NFLGamePage) -> str:
     )
 
 
+def thesis_html(page: NFLGamePage) -> str:
+    if not page.thesis:
+        return ""
+    lines = "".join(f'<li>{escape(s)}</li>' for s in page.thesis)
+    return f'<div class="nfl-section-head">The read</div><ul class="nfl-thesis">{lines}</ul>'
+
+
+def schedule_html(page: NFLGamePage) -> str:
+    a, h = page.hero.away.split()[-1], page.hero.home.split()[-1]
+    if page.away_rest is None and page.home_rest is None:
+        return ""
+    def _cell(short, rest):
+        return f'<span>{escape(short)} <b>{rest if rest is not None else "—"}d</b> rest</span>'
+    note = f'<div class="nfl-rest-note">{escape(page.rest_note)}</div>' if page.rest_note else ""
+    return (f'<div class="nfl-section-head">Rest &amp; schedule</div>'
+            f'<div class="nfl-rest">{_cell(a, page.away_rest)}{_cell(h, page.home_rest)}</div>{note}')
+
+
 def page_html(page: NFLGamePage) -> str:
     note = f'<div class="nfl-note">{escape(page.note)}</div>' if page.note else ""
     return (
         hero_html(page.hero)
         + note
+        + thesis_html(page)
         + identity_html(page.identity, page.hero.away, page.hero.home)
         + battlefields_html(page.battlefields)
         + spotlights_html(page)
         + form_html(page.away_form, page.home_form)
+        + schedule_html(page)
         + '<div class="opp-disclaimer">Preview uses only games before kickoff; the '
           'final score is the actual result. Weather, injuries, and rest are not modeled yet.</div>'
     )

@@ -1654,3 +1654,15 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .nfl-spot-badge.hit { color: var(--green); background: rgba(107, 198, 143, .14); }
 .nfl-spot-badge.miss { color: var(--red); background: rgba(239, 142, 134, .14); }
 @media (max-width: 720px) { .nfl-spots { grid-template-columns: 1fr; } }
+
+/* NFL thesis + rest/schedule */
+.nfl-thesis { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+.nfl-thesis li { position: relative; padding: .55rem .8rem .55rem 1.9rem; border-radius: var(--r-sm);
+  background: var(--surface-1); box-shadow: var(--edge-hi); color: var(--text-2); font-size: .86rem; line-height: 1.4; }
+.nfl-thesis li::before { content: ""; position: absolute; left: .8rem; top: .95rem; width: .42rem; height: .42rem;
+  border-radius: 50%; background: var(--brand); }
+.nfl-rest { display: flex; gap: 1.4rem; padding: .55rem .8rem; border-radius: var(--r-sm);
+  background: var(--surface-1); box-shadow: var(--edge-hi); color: var(--text-3); font-size: .84rem;
+  font-variant-numeric: tabular-nums; }
+.nfl-rest b { color: var(--text-1); font-weight: 750; }
+.nfl-rest-note { color: var(--brand-2); font-size: .78rem; font-weight: 600; margin-top: .35rem; padding-left: .2rem; }
