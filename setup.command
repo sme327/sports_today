@@ -9,7 +9,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
-chmod +x setup.command run.command update.command update_only.command
+chmod +x setup.command run.command update.command update_only.command update_wnba.command
 
 echo
 echo "Setup complete."

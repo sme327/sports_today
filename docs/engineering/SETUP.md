@@ -56,7 +56,7 @@ When setup finishes, press any key to close the Terminal window.
 The current vendor file should exist here:
 
 ```text
-/Users/sme/Downloads/07-12-2026-mlb-season-pbp-feed.xlsx
+~/Downloads/07-12-2026-mlb-season-pbp-feed.xlsx
 ```
 
 The file may have a later date. The program will choose the newest valid dated feed automatically.
@@ -69,7 +69,7 @@ Control-click `update.command` and choose **Open**.
 
 The program will:
 
-1. Search `/Users/sme/Downloads`.
+1. Search `~/Downloads`.
 2. Find the newest file named like:
    `07-12-2026-mlb-season-pbp-feed.xlsx`
 3. Archive the original at:
@@ -228,7 +228,7 @@ repo, or run the collectors on a host with persistent storage.
 Confirm the file is directly inside:
 
 ```text
-/Users/sme/Downloads
+~/Downloads
 ```
 
 and named like:
