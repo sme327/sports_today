@@ -21,6 +21,12 @@ _REQUIRED = {"pitcher_id", "pitcher_name", "pitching_team", "game_id", "game_dat
 K_THRESHOLDS = (4, 5, 6, 7, 8)
 HITS_THRESHOLDS = (4, 5, 6, 7, 8)      # hits allowed — over or under
 MIN_STARTS = 3
+# A rotation turns over every ~5 days; well beyond that per start means the window
+# has jumped an absence. Stability (our confidence in the *sample*) takes the hit;
+# the opportunity score is left alone until a scoring change can be validated
+# against graded results.
+_STALE_DAYS_PER_START = 12
+_STALE_STABILITY_PENALTY = 25
 RECENT_STARTS = 6
 MIN_START_BF = 10                      # batters faced to count as a start (excludes openers)
 
@@ -119,10 +125,11 @@ def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
         recent = lines.head(RECENT_STARTS)
         name = str(grp["pitcher_name"].iloc[-1])
         team = str(grp["pitching_team"].iloc[-1])
+        span = _window_span_days(recent["game_date"])
         rows.append(_stat_prop(pid, name, team, "sp_k", "Strikeouts", "K",
-                               recent["k"], K_THRESHOLDS))
+                               recent["k"], K_THRESHOLDS, span))
         rows.append(_stat_prop(pid, name, team, "sp_hits", "Hits Allowed", "hits",
-                               recent["hits"], HITS_THRESHOLDS))
+                               recent["hits"], HITS_THRESHOLDS, span))
     result = pd.DataFrame(rows, columns=_RESULT_COLUMNS)
     if result.empty:
         return result
@@ -130,7 +137,32 @@ def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
                               ascending=False).reset_index(drop=True)
 
 
-def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds) -> dict:
+def _window_span_days(dates) -> int | None:
+    """Calendar days covered by the starts in the window, or None if undatable."""
+    try:
+        parsed = pd.to_datetime(pd.Series(list(dates)), errors="coerce").dropna()
+    except Exception:
+        return None
+    if len(parsed) < 2:
+        return None
+    return int((parsed.max() - parsed.min()).days)
+
+
+def _is_stale_window(span_days: int | None, starts: int) -> bool:
+    """Whether these starts are too spread out to be called recent form.
+
+    A rotation turns over every five days, so N starts should span roughly 5N days.
+    Well past that means the window has jumped a gap — an injury, a demotion, a
+    role change — and the numbers on either side describe different pitchers.
+    Observed live: a pitcher's "last 4 starts" spanned 122 days across a three-month
+    absence, including the outing he left early, and scored 95.
+    """
+    return bool(span_days is not None and starts >= 2
+                and span_days > _STALE_DAYS_PER_START * starts)
+
+
+def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds,
+               span_days: int | None = None) -> dict:
     d = _best_direction(values, thresholds, _OVER_PENALTY.get(kind, 1.0))
     thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
     cleared = int(round(hit * n))
@@ -141,11 +173,19 @@ def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds) -> d
     else:
         support = [f"{avg:.1f} {unit} per start over last {n}",
                    f"Held to {thr} or fewer in {cleared} of {n} starts"]
-    risk = ("Strikeout totals swing with the opposing lineup and pitch count"
-            if kind == "sp_k" else
-            "Hits allowed depends heavily on opponent and batted-ball luck")
+    risks = []
+    if _is_stale_window(span_days, n):
+        # Named first: it changes how everything above should be read.
+        risks.append(f"These {n} starts span {span_days} days — not a continuous "
+                     f"recent run, so this is not current form")
+    risks.append("Strikeout totals swing with the opposing lineup and pitch count"
+                 if kind == "sp_k" else
+                 "Hits allowed depends heavily on opponent and batted-ball luck")
+    stability = _stability(hit, n)
+    if _is_stale_window(span_days, n):
+        stability = max(0, stability - _STALE_STABILITY_PENALTY)
     return _row(pid, name, team, market, thr, kind, d["direction"], d["score"],
-                _stability(hit, n), n, avg, hit, support=support, risks=[risk])
+                stability, n, avg, hit, support=support, risks=risks)
 
 
 def _row(pid, name, team, market, threshold, kind, direction, score, stability, starts,

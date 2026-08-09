@@ -13,6 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+import unicodedata
+
 import pandas as pd
 
 # --- Documented composite weights -------------------------------------------
@@ -309,17 +311,38 @@ def pitcher_league_table(pa: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _fold(value: object) -> str:
+    """Casefolded, accent-stripped name for comparison only.
+
+    The schedule and the feed disagree on diacritics — StatsAPI says "Randy Vásquez"
+    while the vendor workbook stores "Randy Vasquez" — so an exact match silently
+    found nothing and that pitcher lost every prop. Measured on one slate this hit
+    2 of 30 probables, always the same players, with no error anywhere.
+    """
+    text = unicodedata.normalize("NFD", str(value or "").strip().lower())
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+
+
 def match_pitcher(pa: pd.DataFrame, name: str | None) -> str | None:
-    """Match a probable-pitcher name to a stored pitcher_id (exact, then relaxed)."""
+    """Match a probable-pitcher name to a stored pitcher_id (exact, then relaxed).
+
+    Name matching is a last resort — ids are preferred everywhere downstream — so
+    this resolves to a ``pitcher_id`` immediately and nothing else joins on the name.
+    An ambiguous name (two pitchers sharing one) returns ``None`` rather than
+    arbitrarily picking the first, because scoring the wrong player silently is worse
+    than showing no prop.
+    """
     if not name:
         return None
     exact = pa.loc[pa["pitcher_name"] == name, "pitcher_id"].dropna()
-    if len(exact):
-        return str(int(exact.iloc[0]))
-    norm = name.strip().lower()
-    cand = pa.assign(_n=pa["pitcher_name"].astype(str).str.strip().str.lower())
-    hit = cand.loc[cand["_n"] == norm, "pitcher_id"].dropna()
-    return str(int(hit.iloc[0])) if len(hit) else None
+    ids = {str(int(v)) for v in exact}
+    if not ids:
+        folded = _fold(name)
+        cand = pa.assign(_n=pa["pitcher_name"].map(_fold))
+        ids = {str(int(v)) for v in cand.loc[cand["_n"] == folded, "pitcher_id"].dropna()}
+    if len(ids) != 1:
+        return None          # unmatched, or ambiguous — never guess between players
+    return ids.pop()
 
 
 def team_vs_hand(pa: pd.DataFrame, team: str, hand: str | None) -> dict | None:

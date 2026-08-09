@@ -23,6 +23,11 @@ _RESULT_COLUMNS = [
 _LEAGUE_HIT_RATE = 0.25
 _HIT_SHRINK = 0.70
 
+# Per-PA hit rate over the short window at or below which "cooled" understates it.
+# A league-average hitter sits near .250 per PA; half of that over 25 PA is a real
+# slump, not noise, and deserves to be named with its raw count.
+_COLD_PA_RATE = 0.12
+
 
 def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30,
                             lineups: Lineups | None = None) -> pd.DataFrame:
@@ -66,7 +71,16 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         if pa_per_game >= 4.2: support.append("Strong recent plate-appearance volume")
         if k_rate <= 0.20: support.append("Low recent strikeout rate")
         if reach_rate >= 0.38: support.append("Consistently reaching base")
-        if short_hit_rate < hit_rate - 0.05: risks.append("Recent hit rate has cooled")
+        # Negative evidence has to scale with severity. "Recent hit rate has cooled"
+        # is fair for a dip, but it was also the only thing said about a batter with
+        # one hit in twenty-five plate appearances — a crisis described as a wobble.
+        # Below the cold threshold we state the raw count, which cannot be misread.
+        short_hits = int(short["is_hit"].sum())
+        if short_hit_rate <= _COLD_PA_RATE:
+            risks.append(f"Ice cold — {short_hits} hit{'' if short_hits == 1 else 's'} "
+                         f"in the last {len(short)} plate appearances")
+        elif short_hit_rate < hit_rate - 0.05:
+            risks.append("Recent hit rate has cooled")
         if k_rate >= 0.28: risks.append("Elevated recent strikeout rate")
         if pa_per_game < 3.8: risks.append("Recent plate-appearance volume is limited")
 
