@@ -139,6 +139,11 @@ class SlateGame:
     series_game: int | None = None
     series_total: int | None = None
     series_summary: str | None = None
+    # The leading side's tally and the trailing side's, not away/home — which team
+    # leads is named in ``series_summary``. These two carry the shape of the series,
+    # which is what the clinch/elimination arithmetic below needs.
+    series_leader_wins: int | None = None
+    series_trailing_wins: int | None = None
 
     # League-specific extras (probable pitchers, broadcast, etc.).
     meta: dict[str, Any] = field(default_factory=dict)
@@ -184,6 +189,43 @@ class SlateGame:
         return None
 
     @property
+    def series_wins_needed(self) -> int | None:
+        """Wins required to take the series — ``N // 2 + 1`` of a best-of-N."""
+        if not self.series_total or self.series_total < 2:
+            return None
+        return self.series_total // 2 + 1
+
+    @property
+    def series_is_decided(self) -> bool:
+        """True once one side has clinched, so the remaining games are dead rubber
+        (regular season) or simply not played (postseason)."""
+        needed = self.series_wins_needed
+        return bool(needed and (self.series_leader_wins or 0) >= needed)
+
+    @property
+    def series_stakes(self) -> str | None:
+        """What is on the line in *this* game of the series, or None.
+
+        Derived purely from the series shape — no bracket, no standings. A leader one
+        win short can clinch, which means the trailing side is playing to survive; a
+        best-of-N tied at N-1 apiece is a decider. Silent when nothing hangs on the
+        game, and silent once the series is already decided, because "faces
+        elimination" would be false there.
+        """
+        needed, leader = self.series_wins_needed, (self.series_leader_wins or 0)
+        trailing = self.series_trailing_wins or 0
+        if not needed or self.series_is_decided or self.series_game is None:
+            return None
+        if leader == needed - 1 and trailing == needed - 1:
+            return "Winner takes the series"
+        if leader == needed - 1:
+            # One side can finish it; the other is playing to stay alive. In a
+            # postseason series that is elimination, in a three-game set it is not.
+            return ("Elimination game" if self.is_postseason
+                    else "Series on the line")
+        return None
+
+    @property
     def series_note(self) -> str | None:
         """The series detail worth showing, or None.
 
@@ -193,6 +235,10 @@ class SlateGame:
         within it is not, so the source's summary is used instead. Before the opener
         there is no state either way, so nothing is shown.
         """
+        # What is at stake outranks where we are: "Elimination game" tells the reader
+        # more than "Game 6 of 7", and a decider more than "Series tied 1-1".
+        if self.series_stakes:
+            return self.series_stakes
         if self.is_postseason:
             return self.series_label
         if self.series_summary and (self.series_game or 0) >= 2:

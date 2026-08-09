@@ -70,6 +70,8 @@ class MLBAdapter:
                     series_game=g.get("series_game"),
                     series_total=g.get("series_total"),
                     series_summary=g.get("series_summary"),
+                    series_leader_wins=g.get("series_leader_wins"),
+                    series_trailing_wins=g.get("series_trailing_wins"),
                     away_record=g.get("away_record"),
                     home_record=g.get("home_record"),
                     meta={

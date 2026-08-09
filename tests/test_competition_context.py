@@ -198,6 +198,63 @@ def test_series_does_not_disturb_leagues_that_have_none():
     assert g.notable_context == "Week 2"
 
 
+# --- clinching and elimination, derived from the series shape alone ------------
+
+def _series(total, leader, trailing, *, phase="postseason", game=None):
+    return SlateGame(league="MLB", game_id="1", phase=phase,
+                     series_total=total, series_leader_wins=leader,
+                     series_trailing_wins=trailing,
+                     series_game=game if game is not None else leader + trailing + 1)
+
+
+def test_wins_needed_is_a_majority_of_the_series():
+    for total, needed in ((3, 2), (5, 3), (7, 4)):
+        assert _series(total, 0, 0).series_wins_needed == needed
+    assert SlateGame(league="MLB", game_id="1").series_wins_needed is None
+
+
+def test_a_series_is_decided_once_someone_reaches_the_majority():
+    assert _series(7, 4, 2).series_is_decided
+    assert not _series(7, 3, 2).series_is_decided
+    assert _series(3, 2, 0).series_is_decided        # swept in a three-game set
+
+
+def test_postseason_leader_one_win_short_makes_it_an_elimination_game():
+    assert _series(7, 3, 2).series_stakes == "Elimination game"
+
+
+def test_the_same_shape_in_the_regular_season_is_not_elimination():
+    """Losing a three-game set in June ends nothing — the wording must not borrow
+    postseason stakes."""
+    assert _series(3, 1, 0, phase="regular").series_stakes == "Series on the line"
+
+
+def test_level_at_the_final_game_is_a_decider():
+    assert _series(7, 3, 3).series_stakes == "Winner takes the series"
+    assert _series(3, 1, 1, phase="regular").series_stakes == "Winner takes the series"
+
+
+def test_no_stakes_early_in_a_series():
+    assert _series(7, 2, 1).series_stakes is None
+
+
+def test_no_stakes_once_the_series_is_already_decided():
+    """A dead rubber must not claim someone "faces elimination" — they cannot."""
+    assert _series(7, 4, 1).series_stakes is None
+    assert _series(3, 2, 0, phase="regular").series_stakes is None
+
+
+def test_stakes_outrank_position_and_standing_in_the_shown_context():
+    postseason = _series(7, 3, 2)
+    postseason = SlateGame(league="MLB", game_id="1", phase="postseason",
+                           round_name="World Series", series_total=7, series_game=6,
+                           series_leader_wins=3, series_trailing_wins=2,
+                           series_summary="LAD leads 3-2")
+    assert postseason.notable_context == "World Series · Elimination game"
+    decider = _series(3, 1, 1, phase="regular")
+    assert decider.notable_context == "Winner takes the series"
+
+
 # --- cache compatibility -----------------------------------------------------
 
 def test_context_survives_a_cache_round_trip():
