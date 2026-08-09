@@ -1636,3 +1636,21 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 @media (max-width: 720px) {
   .nfl-bfs, .nfl-form, .nfl-arc-list { grid-template-columns: 1fr; }
 }
+
+/* NFL player spotlights */
+.nfl-spots { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.nfl-spot-col { display: flex; flex-direction: column; gap: .4rem; }
+.nfl-spot-team { font-size: .74rem; font-weight: 700; color: var(--text-3); text-transform: uppercase;
+  letter-spacing: .04em; padding-left: .2rem; }
+.nfl-spot { padding: .55rem .75rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
+.nfl-spot-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.nfl-spot-player { font-size: .88rem; font-weight: 700; color: var(--text-1); }
+.nfl-spot-pos { font-size: .64rem; font-weight: 600; color: var(--text-4); margin-left: .3rem;
+  padding: .05rem .3rem; border-radius: var(--r-pill); background: var(--surface-3); }
+.nfl-spot-mkt { font-size: .82rem; font-weight: 650; color: var(--text-2); margin-top: .2rem; }
+.nfl-spot-sub { font-size: .72rem; color: var(--text-4); margin-top: .1rem; font-variant-numeric: tabular-nums; }
+.nfl-spot-badge { font-size: .72rem; font-weight: 750; padding: .1rem .4rem; border-radius: var(--r-pill);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nfl-spot-badge.hit { color: var(--green); background: rgba(107, 198, 143, .14); }
+.nfl-spot-badge.miss { color: var(--red); background: rgba(239, 142, 134, .14); }
+@media (max-width: 720px) { .nfl-spots { grid-template-columns: 1fr; } }

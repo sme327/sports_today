@@ -6,7 +6,9 @@ from __future__ import annotations
 
 from html import escape
 
-from services.nfl_game_page import NFLFormLine, NFLGamePage, NFLHero, NFLIdentityRow
+from services.nfl_game_page import (
+    NFLFormLine, NFLGamePage, NFLHero, NFLIdentityRow, NFLSpotlight,
+)
 
 
 def _team_col(name: str, record: str, score: int | None, won: bool) -> str:
@@ -88,6 +90,40 @@ def form_html(away: NFLFormLine | None, home: NFLFormLine | None) -> str:
             f'<div class="nfl-form">{_form_col(away)}{_form_col(home)}</div>')
 
 
+def _spot_item(s: NFLSpotlight) -> str:
+    badge = ""
+    if s.result == "hit":
+        badge = f'<span class="nfl-spot-badge hit">✓ {s.actual:g}</span>'
+    elif s.result == "miss":
+        badge = f'<span class="nfl-spot-badge miss">✗ {s.actual:g}</span>'
+    return (
+        '<div class="nfl-spot">'
+        f'<div class="nfl-spot-top"><span class="nfl-spot-player">{escape(s.player)}'
+        f'<span class="nfl-spot-pos">{escape(s.position)}</span></span>{badge}</div>'
+        f'<div class="nfl-spot-mkt">{escape(s.market)}</div>'
+        f'<div class="nfl-spot-sub">{escape(s.support)}</div></div>'
+    )
+
+
+def _spot_col(title: str, spots: tuple[NFLSpotlight, ...]) -> str:
+    items = ("".join(_spot_item(s) for s in spots)
+             or '<div class="nfl-spot-sub">No qualifying props.</div>')
+    return f'<div class="nfl-spot-col"><div class="nfl-spot-team">{escape(title)}</div>{items}</div>'
+
+
+def spotlights_html(page: NFLGamePage) -> str:
+    if not page.away_spotlights and not page.home_spotlights:
+        return ""
+    a = page.hero.away.split()[-1]
+    h = page.hero.home.split()[-1]
+    return (
+        '<div class="nfl-section-head">Player spotlights '
+        '<span>(pick from prior games · ✓/✗ = result this game)</span></div>'
+        f'<div class="nfl-spots">{_spot_col(a, page.away_spotlights)}'
+        f'{_spot_col(h, page.home_spotlights)}</div>'
+    )
+
+
 def page_html(page: NFLGamePage) -> str:
     note = f'<div class="nfl-note">{escape(page.note)}</div>' if page.note else ""
     return (
@@ -95,6 +131,7 @@ def page_html(page: NFLGamePage) -> str:
         + note
         + identity_html(page.identity, page.hero.away, page.hero.home)
         + battlefields_html(page.battlefields)
+        + spotlights_html(page)
         + form_html(page.away_form, page.home_form)
         + '<div class="opp-disclaimer">Preview uses only games before kickoff; the '
           'final score is the actual result. Weather, injuries, and rest are not modeled yet.</div>'
