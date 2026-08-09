@@ -17,6 +17,12 @@ _RESULT_COLUMNS = [
     "pa_per_game", "k_rate", "lineup_slot", "support", "risks",
 ]
 
+# v3 shrinkage: pull a batter's noisy recent per-PA hit rate toward the league mean
+# before estimating the 1+ hit chance, so hot streaks don't rocket to a saturated,
+# mean-reverting top. Validated on the graded ledger (de-saturates + de-inverts the top).
+_LEAGUE_HIT_RATE = 0.25
+_HIT_SHRINK = 0.70
+
 
 def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30,
                             lineups: Lineups | None = None) -> pd.DataFrame:
@@ -38,12 +44,16 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         pitches = recent["pitch_count_pa"].mean()
         pa_per_game = len(recent) / max(games, 1)
 
-        # v2 (ledger-refit): the estimated chance of a 1+ hit — 1-(1-p)^PA, where p is
-        # the recent per-PA hit rate and PA the expected at-bats — rescaled to a 0-100
-        # ranking signal. Playing time (pa_per_game) was the strongest predictor in the
-        # graded ledger and last-25 hit rate was noise, so this drops the noisy term and
-        # lets the score actually spread/discriminate (calibration: ~52% low → ~66% high).
+        # v3: the estimated chance of a 1+ hit — 1-(1-p)^PA, where p is the recent per-PA
+        # hit rate and PA the expected at-bats — rescaled to a 0-100 ranking signal.
+        # v3 shrinks the recent hit rate toward the league mean before the estimate: a
+        # 50-PA rate is a noisy talent estimate that regresses, and without shrinkage the
+        # top saturated (picks tied at 100) and *inverted* — the 95-100 band hit only 40%,
+        # worse than average. Shrinkage de-saturates and lifts the top band back above the
+        # base rate. (1+ hit is a hard ~55% event, so the score still doesn't discriminate
+        # strongly — this fixes the misleading top, it doesn't manufacture signal.)
         p = min(max(hit_rate, 0.03), 0.60)
+        p = _LEAGUE_HIT_RATE + (p - _LEAGUE_HIT_RATE) * _HIT_SHRINK
         exp_pa = max(pa_per_game, 0.5)
         est = 1.0 - (1.0 - p) ** exp_pa
         est -= 0.12 * max(0.0, k_rate - 0.25)      # small penalty for high recent K rate

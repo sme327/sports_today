@@ -68,7 +68,7 @@ ENGINE_VERSIONS = {
 # Performance version-comparison can measure whether a change actually helped.
 # (Cannot be reconstructed retroactively; history keeps whatever it was stamped with.)
 MODEL_VERSIONS = {
-    "batter_hit": "batter-hit-v2",   # ledger-refit: estimate-based, discriminating
+    "batter_hit": "batter-hit-v3",   # v3: shrink recent hit rate → de-saturate/de-invert top
     "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
     "batter_k": "batter-k-v1",     # two-directional, reachable-bar
     "batter_bb": "batter-bb-v1",   # over-only, reachable-bar
