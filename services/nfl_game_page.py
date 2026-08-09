@@ -1,0 +1,193 @@
+"""NFL matchup page model + builder (V1).
+
+An evidence-first preview of one game, built from the ingested season feed: team
+identity (offense/defense with league percentiles), head-to-head battlefields, recent
+form, and — since these are completed games — the final result. Leakage-safe: the
+preview uses only games **before** kickoff (``as_of`` = the game's date); the result is
+shown separately as "what happened". Deterministic; every number traces to a game.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+
+import pandas as pd
+
+from services import nfl_analytics as A
+from services.nfl_repository import load_team_games
+from src.config import DB_PATH
+
+ENGINE_VERSION = "nfl-matchup-v1"
+
+# (label, season-table column, percentile column, higher-is-better)
+_IDENTITY_ROWS = [
+    ("Points / game", "points", "off_pct", True),
+    ("Points allowed / game", "points_allowed", "def_pct", False),
+    ("Yards / play", "yards_per_play", "efficiency_pct", True),
+    ("Rush yards / game", "rush_yds", "rush_off_pct", True),
+    ("Pass yards / game", "pass_yds", "pass_off_pct", True),
+    ("3rd-down %", "third_down_pct", None, True),
+    ("Turnover margin / game", "turnover_margin", "takeaway_pct", True),
+]
+
+
+@dataclass(frozen=True)
+class NFLHero:
+    away: str
+    home: str
+    game_date: str
+    round_label: str
+    away_record: str
+    home_record: str
+    away_score: int | None
+    home_score: int | None
+    winner: str | None          # "away" | "home" | None
+
+
+@dataclass(frozen=True)
+class NFLIdentityRow:
+    label: str
+    away_value: str
+    home_value: str
+    away_pct: int | None
+    home_pct: int | None
+    better: str                 # "away" | "home" | "even"
+
+
+@dataclass(frozen=True)
+class NFLFormLine:
+    team: str
+    results: str                # e.g. "W W L W L" (oldest→newest of the last 5)
+    ppg: float
+    papg: float
+    games: int
+
+
+@dataclass(frozen=True)
+class NFLGamePage:
+    hero: NFLHero
+    identity: tuple[NFLIdentityRow, ...]
+    battlefields: tuple[A.Battlefield, ...]
+    away_form: NFLFormLine | None
+    home_form: NFLFormLine | None
+    note: str                   # honest small-sample / season-opener language
+
+
+def _fmt(value: float, pct: bool = False) -> str:
+    if value is None or pd.isna(value):
+        return "—"
+    return f"{value:.0%}" if pct else f"{value:.1f}"
+
+
+def _record(frame: pd.DataFrame, team: str) -> str:
+    g = frame[frame["team"] == team]
+    w = int(g["win"].sum())
+    return f"{w}-{len(g) - w}"
+
+
+def _form(frame: pd.DataFrame, team: str, n: int = 5) -> NFLFormLine | None:
+    if frame.empty or "team" not in frame.columns:
+        return None
+    g = frame[frame["team"] == team].sort_values("game_date")
+    if g.empty:
+        return None
+    last = g.tail(n)
+    results = " ".join("W" if int(w) == 1 else "L" for w in last["win"])
+    return NFLFormLine(team, results, round(last["points"].mean(), 1),
+                       round(last["points_allowed"].mean(), 1), len(g))
+
+
+def _short(name: str) -> str:
+    return name.split()[-1] if name else name
+
+
+def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | None:
+    tg = load_team_games(db_path=db_path)
+    if tg.empty:
+        return None
+    rows = tg[tg["game_id"].astype("string") == str(game_id)]
+    if len(rows) != 2:
+        return None
+    away_row = rows[rows["venue"] == "Road"]
+    home_row = rows[rows["venue"] == "Home"]
+    # Neutral-site or missing venue → fall back to the game_id "AWAY@HOME" order.
+    if len(away_row) != 1 or len(home_row) != 1:
+        away_row, home_row = rows.iloc[[0]], rows.iloc[[1]]
+    away, home = str(away_row.iloc[0]["team"]), str(home_row.iloc[0]["team"])
+    game_date = str(away_row.iloc[0]["game_date"])
+    week = away_row.iloc[0]["week"]
+    season_type = str(away_row.iloc[0]["season_type"])
+    round_label = f"Wild Card / Playoffs · Wk {week}" if season_type == "postseason" else f"Week {week}"
+    a_score = int(away_row.iloc[0]["final"]) if pd.notna(away_row.iloc[0]["final"]) else None
+    h_score = int(home_row.iloc[0]["final"]) if pd.notna(home_row.iloc[0]["final"]) else None
+    winner = None
+    if a_score is not None and h_score is not None:
+        winner = "away" if a_score > h_score else "home" if h_score > a_score else None
+
+    # Leakage-safe preview: only games strictly before this one.
+    prior = tg[tg["game_date"].astype("string") < game_date]
+    frame = A.team_game_frame(prior)
+    table = A.team_season_table(frame)
+
+    a_rec = _record(frame, away) if not frame.empty else "0-0"
+    h_rec = _record(frame, home) if not frame.empty else "0-0"
+    hero = NFLHero(away, home, game_date, round_label, a_rec, h_rec, a_score, h_score, winner)
+
+    identity: list[NFLIdentityRow] = []
+    battlefields: tuple[A.Battlefield, ...] = ()
+    if not table.empty and away in table.index and home in table.index:
+        a, h = table.loc[away], table.loc[home]
+        for label, col, pct_col, higher in _IDENTITY_ROWS:
+            av, hv = a.get(col), h.get(col)
+            apct = int(a[pct_col]) if pct_col and pd.notna(a.get(pct_col)) else None
+            hpct = int(h[pct_col]) if pct_col and pd.notna(h.get(pct_col)) else None
+            if apct is not None and hpct is not None:
+                better = "away" if apct > hpct else "home" if hpct > apct else "even"
+            elif pd.notna(av) and pd.notna(hv):
+                better = ("away" if (av > hv) == higher else "home") if av != hv else "even"
+            else:
+                better = "even"
+            is_pct = label.endswith("%")
+            identity.append(NFLIdentityRow(label, _fmt(av, is_pct), _fmt(hv, is_pct),
+                                           apct, hpct, better))
+        battlefields = A.battlefields(table, away, home, _short(away), _short(home))
+
+    games_in = int(len(frame[frame["team"] == away])) if not frame.empty else 0
+    note = ("Season opener — no prior-form data yet." if games_in == 0 else
+            "Early-season sample — form is thin." if games_in < 4 else "")
+
+    return NFLGamePage(hero, tuple(identity), battlefields,
+                       _form(frame, away), _form(frame, home), note)
+
+
+def list_weeks(db_path: Path = DB_PATH) -> list[dict]:
+    """Available weeks with game counts, for the archive browser."""
+    tg = load_team_games(db_path=db_path)
+    if tg.empty:
+        return []
+    by_week = (tg.drop_duplicates("game_id").groupby(["week", "season_type"])
+               .size().reset_index(name="games").sort_values("week"))
+    return by_week.to_dict("records")
+
+
+def list_games(week: int, db_path: Path = DB_PATH) -> list[dict]:
+    """Games in a week (away/home, date, final, winner) for the archive browser."""
+    tg = load_team_games(db_path=db_path)
+    if tg.empty:
+        return []
+    wk = tg[tg["week"] == week]
+    out = []
+    for gid, g in wk.groupby("game_id"):
+        away = g[g["venue"] == "Road"]
+        home = g[g["venue"] == "Home"]
+        if len(away) != 1 or len(home) != 1:
+            away, home = g.iloc[[0]], g.iloc[[1]]
+        ar, hr = away.iloc[0], home.iloc[0]
+        a_s = int(ar["final"]) if pd.notna(ar["final"]) else None
+        h_s = int(hr["final"]) if pd.notna(hr["final"]) else None
+        out.append({"game_id": str(gid), "game_date": str(ar["game_date"]),
+                    "away": str(ar["team"]), "home": str(hr["team"]),
+                    "away_score": a_s, "home_score": h_s})
+    return sorted(out, key=lambda x: (x["game_date"], x["away"]))

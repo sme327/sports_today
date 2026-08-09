@@ -63,6 +63,18 @@ def _mlb_import_affordance() -> None:
                 st.error(str(exc))
 
 
+def _nfl_archive_link() -> None:
+    """Sidebar entry to the NFL season archive — shown only when NFL data is loaded."""
+    from services.nfl_repository import load_team_games
+    try:
+        if load_team_games().empty:
+            return
+    except Exception:
+        return
+    st.markdown('<a class="results-link" target="_self" href="?view=nfl">🏈 NFL season archive →</a>',
+                unsafe_allow_html=True)
+
+
 def _logo_map(games: list[SlateGame]) -> dict[str, str]:
     """Map every team identifier (name/short/abbr) to its logo url."""
     out: dict[str, str] = {}
@@ -191,6 +203,7 @@ def render(nav: NavState) -> None:
         if st.button("Refresh cached data", width="stretch"):
             st.cache_data.clear()
             st.rerun()
+        _nfl_archive_link()
         if not fresh.mlb_through:
             _mlb_import_affordance()
 

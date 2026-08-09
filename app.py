@@ -50,6 +50,9 @@ def main() -> None:
     elif nav.in_results_view:
         from views import results
         results.render(nav)
+    elif nav.in_nfl_view:
+        from views import nfl_archive
+        nfl_archive.render(nav)
     elif nav.in_game_view:
         game.render(nav)
     else:
