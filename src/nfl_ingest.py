@@ -84,7 +84,11 @@ def _numeric_frame(raw: pd.DataFrame, names: list[str], first_data_row: int) -> 
     df = df.dropna(how="all").reset_index(drop=True)
     if "game_date" not in df.columns and "date" in df.columns:
         df = df.rename(columns={"date": "game_date"})
-    df["game_date"] = pd.to_datetime(df["game_date"], errors="coerce").dt.date.astype("string")
+    parsed = pd.to_datetime(df["game_date"], errors="coerce")
+    df["game_date"] = parsed.dt.date.astype("string")
+    # NFL season Y runs Aug Y – Feb Y+1, so Jan/Feb games belong to the prior year's
+    # season. (month ≥ 6 → this year; Jan–May → prior year.)
+    df["season"] = parsed.dt.year.where(parsed.dt.month >= 6, parsed.dt.year - 1).astype("Int64")
     identity = {"dataset", "game_id", "game_date", "team", "opponent", "venue", "starter",
                 "player", "player_id", "position", "start_time_et"}
     for col in df.columns:
@@ -133,13 +137,28 @@ def read_teams(path: str | Path) -> pd.DataFrame:
     })
 
 
+def _replace_seasons(conn: sqlite3.Connection, table: str, df: pd.DataFrame) -> None:
+    """Additive-per-season write: replace only the seasons present in ``df`` (so loading
+    a new year keeps the others). Falls back to a full replace if the table is absent or
+    predates the ``season`` column (first migration)."""
+    exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                          (table,)).fetchone() is not None
+    has_season = exists and any(r[1] == "season" for r in conn.execute(f"PRAGMA table_info({table})"))
+    if has_season:
+        for s in df["season"].dropna().unique():
+            conn.execute(f"DELETE FROM {table} WHERE season = ?", (int(s),))
+        df.to_sql(table, conn, if_exists="append", index=False)
+    else:
+        df.to_sql(table, conn, if_exists="replace", index=False)
+
+
 def write_database(team_df: pd.DataFrame, player_df: pd.DataFrame, teams_df: pd.DataFrame,
                    db_path: str | Path = DB_PATH) -> Path:
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
-        team_df.to_sql("nfl_team_games", conn, if_exists="replace", index=False)
-        player_df.to_sql("nfl_player_games", conn, if_exists="replace", index=False)
+        _replace_seasons(conn, "nfl_team_games", team_df)
+        _replace_seasons(conn, "nfl_player_games", player_df)
         teams_df.to_sql("nfl_teams", conn, if_exists="replace", index=False)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_nfl_tg_game ON nfl_team_games(game_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_nfl_tg_team ON nfl_team_games(team, game_date)")
@@ -162,4 +181,5 @@ def import_nfl_feeds(team_path: str | Path, player_path: str | Path,
         "teams": len(teams_df),
         "games": team_df["game_id"].nunique(),
         "weeks": int(team_df["week"].max()) if team_df["week"].notna().any() else 0,
+        "seasons": sorted(int(s) for s in team_df["season"].dropna().unique()),
     }

@@ -1666,3 +1666,5 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   font-variant-numeric: tabular-nums; }
 .nfl-rest b { color: var(--text-1); font-weight: 750; }
 .nfl-rest-note { color: var(--brand-2); font-size: .78rem; font-weight: 600; margin-top: .35rem; padding-left: .2rem; }
+.nfl-season-lbl { color: var(--text-4); font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; align-self: center; margin-right: .2rem; }

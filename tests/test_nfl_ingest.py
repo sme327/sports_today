@@ -67,6 +67,40 @@ def test_player_feed_unique_names_and_types(tmp_path):
     assert dak.passing_yds == 188 and dak.rushing_yds == 32 and dak.passing_td == 0
 
 
+def _reyear(rows, year):
+    """Copy feed rows, shifting every YYYY- date by (year - 2025) so the whole feed —
+    including the January playoff date — lands in one other season."""
+    delta = year - 2025
+    def shift(c):
+        if isinstance(c, str) and len(c) >= 5 and c[:4].isdigit() and c[4] == "-":
+            return f"{int(c[:4]) + delta}{c[4:]}"
+        return c
+    return [[shift(c) for c in r] for r in rows]
+
+
+def test_multi_season_is_additive(tmp_path):
+    db = tmp_path / "nfl.db"
+    t25, p25 = tmp_path / "t25.xlsx", tmp_path / "p25.xlsx"
+    _write(t25, _TEAM)
+    _write(p25, _PLAYER)
+    import_nfl_feeds(t25, p25, db)                       # season 2025
+
+    t24, p24 = tmp_path / "t24.xlsx", tmp_path / "p24.xlsx"
+    _write(t24, _reyear(_TEAM, 2024))
+    _write(p24, _reyear(_PLAYER, 2024))
+    import_nfl_feeds(t24, p24, db)                       # season 2024 — must keep 2025
+
+    with sqlite3.connect(db) as conn:
+        seasons = [r[0] for r in conn.execute(
+            "SELECT DISTINCT season FROM nfl_team_games ORDER BY season")]
+        total = conn.execute("SELECT COUNT(*) FROM nfl_team_games").fetchone()[0]
+    assert seasons == [2024, 2025] and total == 8    # both seasons coexist (4 rows each)
+
+    import_nfl_feeds(t25, p25, db)                       # re-load 2025 → replaces only 2025
+    with sqlite3.connect(db) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM nfl_team_games").fetchone()[0] == 8
+
+
 def test_import_writes_all_tables(tmp_path):
     tp, pp, db = tmp_path / "t.xlsx", tmp_path / "p.xlsx", tmp_path / "nfl.db"
     _write(tp, _TEAM)

@@ -222,8 +222,11 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
     if a_score is not None and h_score is not None:
         winner = "away" if a_score > h_score else "home" if h_score > a_score else None
 
-    # Leakage-safe preview: only games strictly before this one.
-    prior = tg[tg["game_date"].astype("string") < game_date]
+    # Scope everything to this game's season (records/form/rest are within-season).
+    season = away_row.iloc[0].get("season")
+    season_tg = tg[tg["season"] == season] if ("season" in tg.columns and pd.notna(season)) else tg
+    # Leakage-safe preview: only games strictly before this one, this season.
+    prior = season_tg[season_tg["game_date"].astype("string") < game_date]
     frame = A.team_game_frame(prior)
     table = A.team_season_table(frame)
 
@@ -257,11 +260,13 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
             "Early-season sample — form is thin." if games_in < 4 else "")
 
     pg = load_player_games(db_path=db_path)
+    if not pg.empty and "season" in pg.columns and pd.notna(season):
+        pg = pg[pg["season"] == season]
     away_spot = _spotlights(pg, game_id, game_date, away)
     home_spot = _spotlights(pg, game_id, game_date, home)
 
-    a_rest = A.rest_days(tg, away, game_date)
-    h_rest = A.rest_days(tg, home, game_date)
+    a_rest = A.rest_days(season_tg, away, game_date)
+    h_rest = A.rest_days(season_tg, home, game_date)
     rest_note = _rest_note(_short(away), _short(home), a_rest, h_rest)
 
     return NFLGamePage(hero, thesis, a_rest, h_rest, rest_note,
@@ -270,21 +275,33 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
                        away_spot, home_spot, note)
 
 
-def list_weeks(db_path: Path = DB_PATH) -> list[dict]:
-    """Available weeks with game counts, for the archive browser."""
+def list_seasons(db_path: Path = DB_PATH) -> list[int]:
+    """Loaded seasons, newest first."""
+    tg = load_team_games(db_path=db_path)
+    if tg.empty or "season" not in tg.columns:
+        return []
+    return sorted((int(s) for s in tg["season"].dropna().unique()), reverse=True)
+
+
+def list_weeks(season: int | None = None, db_path: Path = DB_PATH) -> list[dict]:
+    """Available weeks with game counts for a season, for the archive browser."""
     tg = load_team_games(db_path=db_path)
     if tg.empty:
         return []
+    if season is not None and "season" in tg.columns:
+        tg = tg[tg["season"] == season]
     by_week = (tg.drop_duplicates("game_id").groupby(["week", "season_type"])
                .size().reset_index(name="games").sort_values("week"))
     return by_week.to_dict("records")
 
 
-def list_games(week: int, db_path: Path = DB_PATH) -> list[dict]:
+def list_games(week: int, season: int | None = None, db_path: Path = DB_PATH) -> list[dict]:
     """Games in a week (away/home, date, final, winner) for the archive browser."""
     tg = load_team_games(db_path=db_path)
     if tg.empty:
         return []
+    if season is not None and "season" in tg.columns:
+        tg = tg[tg["season"] == season]
     wk = tg[tg["week"] == week]
     out = []
     for gid, g in wk.groupby("game_id"):

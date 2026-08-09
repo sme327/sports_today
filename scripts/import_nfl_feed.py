@@ -43,9 +43,10 @@ def main() -> int:
     print(f"Team feed:   {team}")
     print(f"Player feed: {player}")
     counts = import_nfl_feeds(team, player, args.db)
+    seasons = ", ".join(str(s) for s in counts["seasons"])
     print(f"Imported {counts['team_games']} team-game rows and {counts['player_games']:,} "
           f"player-game rows across {counts['games']} games (through week {counts['weeks']}), "
-          f"{counts['teams']} teams.")
+          f"{counts['teams']} teams — season {seasons}. Other loaded seasons are kept.")
     return 0
 
 
