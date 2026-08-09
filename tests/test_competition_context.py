@@ -152,6 +152,52 @@ def test_is_postseason_flag():
     assert not SlateGame(league="MLB", game_id="1").is_postseason
 
 
+# --- series position ----------------------------------------------------------
+
+def test_series_label_needs_a_real_multi_game_series():
+    assert SlateGame(league="MLB", game_id="1", series_game=3,
+                     series_total=7).series_label == "Game 3 of 7"
+    # A standalone game is not a series, however the source labels it.
+    assert SlateGame(league="MLB", game_id="1", series_game=1, series_total=1).series_label is None
+    assert SlateGame(league="MLB", game_id="1").series_label is None
+
+
+def test_regular_season_shows_the_standing_not_the_game_number():
+    """"Game 2 of 3" is most of baseball and says nothing; who leads does."""
+    g = SlateGame(league="MLB", game_id="1", phase="regular", series_game=3,
+                  series_total=3, series_summary="Series tied 1-1")
+    assert g.series_note == "Series tied 1-1"
+    assert g.notable_context == "Series tied 1-1"
+
+
+def test_postseason_shows_the_game_number_instead():
+    g = SlateGame(league="MLB", game_id="1", phase="postseason", round_name="World Series",
+                  series_game=6, series_total=7, series_summary="LAD leads 3-2")
+    assert g.series_note == "Game 6 of 7"
+    assert g.notable_context == "World Series · Game 6 of 7"
+
+
+def test_series_standing_is_named_so_it_cannot_read_as_a_score():
+    """The source says "WSH wins 3-0", which sits beside the game's own final score
+    on a card. Anything not already saying "series" gets labelled."""
+    g = SlateGame(league="MLB", game_id="1", phase="regular", series_game=3,
+                  series_total=3, series_summary="WSH wins 3-0")
+    assert g.series_note == "Series · WSH wins 3-0"
+
+
+def test_nothing_shown_before_the_series_opener():
+    g = SlateGame(league="MLB", game_id="1", phase="regular", series_game=1,
+                  series_total=3, series_summary=None)
+    assert g.series_note is None and g.notable_context is None
+
+
+def test_series_does_not_disturb_leagues_that_have_none():
+    g = SlateGame(league="NFL", game_id="1", phase="regular", week=2,
+                  round_name="Regular Season · Wk 2")
+    assert g.series_note is None
+    assert g.notable_context == "Week 2"
+
+
 # --- cache compatibility -----------------------------------------------------
 
 def test_context_survives_a_cache_round_trip():

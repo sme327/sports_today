@@ -67,6 +67,9 @@ class MLBAdapter:
                     season=g.get("season"),
                     phase=g.get("phase"),
                     round_name=g.get("series_description"),
+                    series_game=g.get("series_game"),
+                    series_total=g.get("series_total"),
+                    series_summary=g.get("series_summary"),
                     away_record=g.get("away_record"),
                     home_record=g.get("home_record"),
                     meta={

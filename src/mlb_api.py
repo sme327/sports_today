@@ -55,6 +55,30 @@ def _record(side: dict) -> str | None:
     return f"{wins}-{losses}-{ties}" if ties else f"{wins}-{losses}"
 
 
+def _series(game: dict) -> dict:
+    """Where this game sits in its series, from StatsAPI's ``seriesStatus``.
+
+    Semantics matter and are the source's, not ours: for a scheduled or in-progress
+    game the block describes the series **going into** it ("Series tied 1-1"), and
+    for a completed one the finished result ("WSH wins 3-0"). That is exactly the
+    pregame framing we want, and it means no result is leaked into a preview.
+
+    A one-game "series" carries no state worth showing, so it yields nothing.
+    """
+    status = game.get("seriesStatus") or {}
+    total = status.get("totalGames") or game.get("gamesInSeries")
+    number = status.get("gameNumber") or game.get("seriesGameNumber")
+    if not total or total < 2:
+        return {"series_game": None, "series_total": None, "series_summary": None}
+    return {
+        "series_game": int(number) if number else None,
+        "series_total": int(total),
+        # e.g. "Series tied 1-1", "TB leads 2-0", "WSH wins 3-0". Absent before the
+        # opener, when there is genuinely nothing to report.
+        "series_summary": status.get("result") or None,
+    }
+
+
 def _parse_schedule(payload: dict) -> list[dict]:
     games = []
     for day in payload.get("dates", []):
@@ -73,6 +97,7 @@ def _parse_schedule(payload: dict) -> list[dict]:
                 "phase": _phase(game.get("gameType")),
                 # e.g. "Regular Season", "World Series" — MLB's own round wording.
                 "series_description": game.get("seriesDescription"),
+                **_series(game),
                 "away_record": _record(away_side),
                 "home_record": _record(home_side),
                 "status": status.get("detailedState"),
@@ -103,7 +128,7 @@ def schedule(game_date: date | str) -> list[dict]:
     d = game_date.isoformat() if hasattr(game_date, "isoformat") else str(game_date)
     response = requests.get(
         f"{BASE}/schedule",
-        params={"sportId": 1, "date": d, "hydrate": "probablePitcher,team,venue"},
+        params={"sportId": 1, "date": d, "hydrate": "probablePitcher,team,venue,seriesStatus"},
         timeout=20,
     )
     response.raise_for_status()
