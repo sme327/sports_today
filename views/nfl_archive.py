@@ -10,16 +10,26 @@ import streamlit as st
 
 from components import nfl_game as C
 from router import NavState
-from services.nfl_game_page import build_nfl_game_page, list_games, list_weeks
+from services.nfl_game_page import build_nfl_game_page, list_games, list_seasons, list_weeks
 
 
-def _week_pills(weeks: list[dict], current: int) -> str:
+def _season_pills(seasons: list[int], current: int) -> str:
+    if len(seasons) < 2:
+        return ""
+    pills = "".join(
+        f'<a class="thr-pill{" active" if s == current else ""}" target="_self" '
+        f'href="?view=nfl&season={s}">{s}</a>' for s in seasons)
+    return f'<div class="nfl-weeks"><span class="nfl-season-lbl">Season</span>{pills}</div>'
+
+
+def _week_pills(weeks: list[dict], current: int, season: int) -> str:
     pills = ""
     for w in weeks:
         wk = int(w["week"])
         label = f"WC {wk}" if w["season_type"] == "postseason" else f"Wk {wk}"
         active = " active" if wk == current else ""
-        pills += f'<a class="thr-pill{active}" target="_self" href="?view=nfl&wk={wk}">{label}</a>'
+        pills += (f'<a class="thr-pill{active}" target="_self" '
+                  f'href="?view=nfl&season={season}&wk={wk}">{label}</a>')
     return f'<div class="nfl-weeks">{pills}</div>'
 
 
@@ -42,8 +52,8 @@ def render(nav: NavState) -> None:
     st.markdown('<div class="page-title">NFL <span class="title-accent">Archive</span></div>',
                 unsafe_allow_html=True)
 
-    weeks = list_weeks()
-    if not weeks:
+    seasons = list_seasons()
+    if not seasons:
         st.info("No NFL season data loaded yet. Run `python -m scripts.import_nfl_feed`.")
         return
 
@@ -64,7 +74,15 @@ def render(nav: NavState) -> None:
         st.markdown(C.page_html(page), unsafe_allow_html=True)
         return
 
-    # The browser: week pills + that week's games.
+    # The browser: season pills → week pills → that week's games.
+    try:
+        season = int(st.query_params.get("season", seasons[0]))
+    except (TypeError, ValueError):
+        season = seasons[0]
+    if season not in seasons:
+        season = seasons[0]
+
+    weeks = list_weeks(season)
     available = [int(w["week"]) for w in weeks]
     try:
         current = int(st.query_params.get("wk", available[0]))
@@ -73,7 +91,8 @@ def render(nav: NavState) -> None:
     if current not in available:
         current = available[0]
 
-    st.markdown(_week_pills(weeks, current), unsafe_allow_html=True)
-    games = list_games(current)
+    st.markdown(_season_pills(seasons, season), unsafe_allow_html=True)
+    st.markdown(_week_pills(weeks, current, season), unsafe_allow_html=True)
+    games = list_games(current, season)
     cards = "".join(_game_card(g) for g in games)
     st.markdown(f'<div class="nfl-arc-list">{cards}</div>', unsafe_allow_html=True)
