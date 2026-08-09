@@ -72,6 +72,8 @@ class WNBAAdapter:
                     status_detail=g.get("status_detail"),
                     season=g.get("season"),
                     phase=g.get("phase"),
+                    away_record=g.get("away_record"),
+                    home_record=g.get("home_record"),
                     meta={"broadcast": g.get("broadcast")},
                 )
             )

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 import requests
 
-from src.espn_scoreboard import season_phase
+from src.espn_scoreboard import season_phase, team_records
 
 BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
 
@@ -105,6 +105,8 @@ def _parse_events(payload: dict) -> list[dict]:
             "game_date": event.get("date"),
             "season": int(season["year"]) if str(season.get("year", "")).isdigit() else None,
             "phase": season_phase(season.get("slug"), season.get("type")),
+            "away_record": team_records(away).get("total"),
+            "home_record": team_records(home).get("total"),
             "status": stype.get("detail") or stype.get("description"),
             "away": away_team.get("displayName"),
             "home": home_team.get("displayName"),

@@ -162,7 +162,11 @@ def _quality_signals(game: SlateGame, away: Standing, home: Standing) -> list[Si
     if gap >= _WIDE:
         stronger, weaker = ((a_name, h_name) if ap > hp else (h_name, a_name))
         weaker_is_home = (hp < ap)
-        if weaker_is_home or game.neutral_site:
+        # An upset is only a story when the favourite is actually good. Without this
+        # a 5-6 side hosting a 8-3 side read as an "upset setup", which fired on 10
+        # of 45 college games and cheapened the label.
+        favourite_is_strong = max(ap, hp) >= _STRONG
+        if favourite_is_strong and (weaker_is_home or game.neutral_site):
             where = "at home" if weaker_is_home and not game.neutral_site else "on a neutral field"
             out.append(Signal(
                 "upset_setup", "Upset setup",
@@ -284,6 +288,35 @@ def interest(game: SlateGame) -> GameInterest:
                     + _stakes_signals(game))
     return GameInterest(score=score, components=components, signals=signals,
                         caveats=_caveats(game, away, home))
+
+
+# Signals worth a card chip. The card answers "is this worth watching?", so it shows
+# only the draws — an ordinary or discouraging read stays on the game page, where
+# there is room for its evidence and caveats. Same discipline as notable_context:
+# a label that appears on every card teaches the reader to ignore the slot.
+#
+# "even" is deliberately absent. Closeness is not notable by itself, and the
+# threshold cannot mean the same thing in every sport: MLB's whole league sits
+# between roughly .380 and .620, so a .100 gap covers half of baseball and tagged 9
+# of 15 cards, while in football it is a rounding error. Both-good-and-close is
+# already "marquee", which travels correctly.
+_CARD_WORTHY = ("ranked_pair", "ranked_one", "marquee", "upset_setup")
+
+
+def card_signal(game: SlateGame) -> Signal | None:
+    """The one signal worth a chip on this game's card, or None.
+
+    Cross-league note: this returns a *label*, never a score, on purpose. Win
+    percentage is not comparable across sports — baseball's best team is around .620
+    while a college football team reaches .900 — so ranking a mixed slate by score
+    would quietly favour the high-variance sports rather than reflect merit. A chip
+    makes a claim only about its own game.
+    """
+    by_kind = {s.kind: s for s in interest(game).signals}
+    for kind in _CARD_WORTHY:
+        if kind in by_kind:
+            return by_kind[kind]
+    return None
 
 
 def rank_games(games: list[SlateGame]) -> list[tuple[SlateGame, GameInterest]]:

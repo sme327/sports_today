@@ -154,6 +154,40 @@ def test_ranking_keeps_unknown_games_in_the_slate():
     assert rank_games(games)[0][0].away_short == "Known"
 
 
+# --- what earns a chip on the card ---------------------------------------------
+
+def test_upset_setup_needs_the_favourite_to_actually_be_good():
+    """A 5-6 side hosting an 8-3 side is not an upset story. Without this gate the
+    label fired on 10 of 45 college games and stopped meaning anything."""
+    weak_favourite = _g("8-3", "5-6")        # .727 vs .455 — gap is wide enough…
+    assert "upset_setup" not in _kinds(weak_favourite)   # …but .727 is not strong
+    real = _g("9-2", "4-7")                  # .818 favourite, weak host
+    assert "upset_setup" in _kinds(real)
+
+
+def test_evenly_matched_alone_does_not_earn_a_card_chip():
+    """Closeness does not travel across sports: MLB sits inside .380-.620, so a
+    .100 gap covers half the league and tagged 9 of 15 cards. Both-good-and-close
+    is "marquee", which does travel."""
+    from services.editorial import card_signal
+    ordinary = _g("60-58", "61-57")          # a typical mid-table baseball pairing
+    assert "even" in _kinds(ordinary)        # still true, and still on the game page
+    assert card_signal(ordinary) is None     # but not shouted on the card
+
+
+def test_card_chip_appears_for_the_genuinely_notable():
+    from services.editorial import card_signal
+    for game in (_g("9-1", "8-2"),                                   # marquee
+                 _g("9-2", "4-7"),                                   # upset setup
+                 _g("6-3", "7-2", away_rank=3, home_rank=8)):        # ranked pair
+        assert card_signal(game) is not None
+
+
+def test_card_chip_is_absent_when_records_are_unknown():
+    from services.editorial import card_signal
+    assert card_signal(_g(None, None)) is None
+
+
 # --- rendering ----------------------------------------------------------------
 
 def test_render_shows_records_even_when_the_lead_is_rank_based():

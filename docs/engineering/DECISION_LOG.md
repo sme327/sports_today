@@ -9,6 +9,54 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-09 — Competition context + editorial signals (curation without props)
+
+**Decision.** Two connected pieces so a league with no player props is still curated.
+
+- **Competition context** is six typed `SlateGame` fields — `season`, `phase`, `week`,
+  `round_name`, `competition`, `neutral_site` — populated by all eight adapters, plus
+  `conference_game` and team records/ranks. `phase` uses one vocabulary everywhere
+  (`preseason`/`regular`/`postseason`), matching what `nfl_team_games.season_type`
+  already stores, so a live game and an ingested one compare without translation.
+- **`services/editorial.py`** turns records, ranks, conference and stakes into named
+  signals, each carrying its evidence and caveats, plus a slate ranking and a
+  `best_game()` that returns `None` when nothing deserves it.
+- Shown in two places: a chip on the card (the slot the prop count would occupy) and
+  a full **"The read"** section on schedule-only game pages, replacing the old
+  "analysis is not connected yet" placeholder.
+
+**Reason.** Football, hockey and basketball arrive with no props, so the slate showed
+them as a bare fixture list. This answers "which of these is worth attention, and why"
+from what the schedule honestly provides.
+
+**Betting odds are deliberately excluded.** ESPN serves a DraftKings spread on every
+event and it would be the strongest single signal available. The Vision lists odds
+among what fans are already drowning in and says three times this is not a sportsbook;
+the prop scorers already refuse them. A test fails if `odds` or `spread` appears in the
+editorial logic, so reversing this is a product decision with an entry here, not a
+quiet import. **Playoff leverage is also excluded** until the series/bracket model
+exists — a guess dressed as leverage is worse than silence.
+
+> **Supersedes** the 2026-08-07 decision that schedule-only cards render **compact**
+> "since the reader only needs to know the game is on". That rationale was that there
+> was nothing to say; where there now is, the card gets a footer chip. Cards with
+> nothing notable stay compact, and a test covers both halves.
+
+**Tradeoffs.** The honest limitation is that **win percentage is not comparable across
+sports**. MLB's league sits inside roughly .380–.620 while a football team reaches
+.900, so a fixed threshold means different things per sport, and poll ranks exist only
+in college. Two consequences, both found by measuring real slates rather than
+reasoning: "evenly matched" tagged **9 of 15 MLB cards** before being dropped from the
+card chips, and a cross-league "best game of the day" is **not** shown at all, because
+it would systematically pick football over baseball and call a metric artefact merit.
+Chips therefore make a claim only about their own game. The engine also rewarded
+closeness independently of quality until real data showed Sam Houston (1-8) at Oregon
+St (2-8) scoring 45; competitiveness is now weighted by quality.
+
+**Future.** Normalizing win percentage against each league's own spread would make a
+cross-league best-game pick honest. `best_game()` exists and is tested but is not yet
+surfaced anywhere for that reason.
+
 ## 2026-08-09 — `src/` is a leaf layer, enforced by a test
 
 **Decision.** State the `src/` ↔ `services/` boundary as a **dependency direction** and
