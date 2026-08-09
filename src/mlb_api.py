@@ -70,12 +70,19 @@ def _series(game: dict) -> dict:
     number = status.get("gameNumber") or game.get("seriesGameNumber")
     if not total or total < 2:
         return {"series_game": None, "series_total": None, "series_summary": None}
+    # ``wins``/``losses`` are the *leading* side's tally, not home/away — for
+    # "ATH wins 2-1" the away team holds the 2. Which team leads is named in the
+    # result string; these two carry the shape of the series, which is what the
+    # clinch/elimination arithmetic needs.
+    wins, losses = status.get("wins"), status.get("losses")
     return {
         "series_game": int(number) if number else None,
         "series_total": int(total),
         # e.g. "Series tied 1-1", "TB leads 2-0", "WSH wins 3-0". Absent before the
         # opener, when there is genuinely nothing to report.
         "series_summary": status.get("result") or None,
+        "series_leader_wins": int(wins) if wins is not None else None,
+        "series_trailing_wins": int(losses) if losses is not None else None,
     }
 
 
