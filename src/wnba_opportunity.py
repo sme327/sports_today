@@ -46,10 +46,12 @@ def _normalize(value: object) -> str:
 # last 10; players who clear none are skipped. Hold-out backtest next-game clear:
 # points 37%→64%, rebounds 33%→68%, assists 32%→58%.
 MIN_CLEAR = 0.60
+# Appearances (not roster rows) needed before a player's form is described at all.
+MIN_PLAYED_GAMES = 5
 
 
 def _choose_threshold(values: pd.Series, thresholds: tuple[int, ...]) -> int | None:
-    clean = pd.to_numeric(values, errors="coerce").dropna()
+    clean = _played(values)
     if len(clean) < 5:
         return None
     recent = clean.head(10)      # newest-first; the recent clear-rate is the signal
@@ -57,8 +59,18 @@ def _choose_threshold(values: pd.Series, thresholds: tuple[int, ...]) -> int | N
     return picked[0] if picked else None   # highest reliably-cleared bar, else skip
 
 
+def _played(values: pd.Series) -> pd.Series:
+    """Only games the player actually appeared in, newest first.
+
+    Dropping DNPs *after* slicing let five rows collapse to one game while still
+    being reported as "the last 5" — a single June appearance was presented as a
+    five-game sample. Drop first, then take the window.
+    """
+    return pd.to_numeric(values, errors="coerce").dropna()
+
+
 def _hit_rate(values: pd.Series, threshold: float, games: int) -> float:
-    clean = pd.to_numeric(values.head(games), errors="coerce").dropna()
+    clean = _played(values).head(games)
     return float((clean >= threshold).mean()) if len(clean) else 0.0
 
 
@@ -83,18 +95,27 @@ def score_wnba_opportunities(
         return pd.DataFrame(columns=columns)
 
     data = logs.copy()
-    team_tokens = data.get("team_abbr", pd.Series(index=data.index, dtype=object)).map(_normalize)
-    team_id_tokens = data.get("team_id", pd.Series(index=data.index, dtype=object)).map(_normalize)
-    team_name_tokens = data.get("team", pd.Series(index=data.index, dtype=object)).map(_normalize)
-    data = data.loc[
-        team_tokens.isin(tokens)
-        | team_id_tokens.isin(tokens)
-        | team_name_tokens.isin(tokens)
-    ].copy()
+    data["game_date"] = pd.to_datetime(data["game_date"], utc=True, errors="coerce")
+    data = data.sort_values(["game_date", "game_id"], ascending=[False, False])
+
+    # Eligibility is decided per PLAYER by the team of their most recent game, not
+    # per row. Filtering rows by team kept a traded player's *old* club rows and
+    # scored them for tonight: Kelsey Plum moved Sparks -> Mercury in July and was
+    # still being offered in a Sparks game, on her stale Sparks games. A player
+    # belongs to exactly one team tonight — whoever they last played for.
+    def _team_tokens(frame: pd.DataFrame) -> pd.Series:
+        parts = [frame.get(col, pd.Series(index=frame.index, dtype=object)).map(_normalize)
+                 for col in ("team_abbr", "team_id", "team")]
+        return parts[0].where(parts[0].isin(tokens),
+                              parts[1].where(parts[1].isin(tokens), parts[2]))
+
+    newest = data.drop_duplicates("player_id")          # newest row per player
+    eligible = set(newest.loc[_team_tokens(newest).isin(tokens), "player_id"])
+    # Form comes from every recent game the player has played, including any for a
+    # previous club — their scoring form travels with them even when the club does not.
+    data = data.loc[data["player_id"].isin(eligible)].copy()
     if data.empty:
         return pd.DataFrame(columns=columns)
-
-    data["game_date"] = pd.to_datetime(data["game_date"], utc=True, errors="coerce")
     numeric_columns = [
         "minutes", "points", "rebounds", "assists",
         "field_goals_attempted", "three_pointers_attempted",
@@ -115,9 +136,10 @@ def score_wnba_opportunities(
             continue
 
         latest = group.iloc[0]
-        minutes_l5 = float(group["minutes"].head(5).mean())
-        minutes_l10 = float(group["minutes"].head(10).mean())
-        minutes_sd = float(group["minutes"].head(10).std(ddof=0) or 0)
+        played_minutes = _played(group["minutes"])
+        minutes_l5 = float(played_minutes.head(5).mean())
+        minutes_l10 = float(played_minutes.head(10).mean())
+        minutes_sd = float(played_minutes.head(10).std(ddof=0) or 0)
         if math.isnan(minutes_l5) or minutes_l5 < 16:
             continue
 
@@ -127,8 +149,11 @@ def score_wnba_opportunities(
             if threshold is None:
                 continue
 
-            avg_l5 = float(group[market].head(5).mean())
-            avg_l10 = float(group[market].head(10).mean())
+            played = _played(group[market])
+            if len(played) < MIN_PLAYED_GAMES:
+                continue          # too few actual appearances to describe form
+            avg_l5 = float(played.head(5).mean())
+            avg_l10 = float(played.head(10).mean())
             hit_l5 = _hit_rate(group[market], threshold, 5)
             hit_l10 = _hit_rate(group[market], threshold, 10)
 
@@ -173,6 +198,17 @@ def score_wnba_opportunities(
                 risks.append("Recent playing time is below 24 minutes")
             if minutes_sd >= 7:
                 risks.append("Minutes have been volatile")
+            # The last-5 clear rate had no rule at all, so a player who had missed
+            # this bar in every one of her last five games drew either a mild
+            # "below the 10-game baseline" or — worse — "No standout red flags".
+            # State it plainly, and scale the wording to how bad it is.
+            # A bar is only offered when cleared in >=60% of the last 10 played
+            # games, which makes "cleared none of the last 5" arithmetically
+            # impossible — it only ever appeared because DNP rows were shrinking the
+            # window. Two-of-five is the genuine low end.
+            cleared_l5 = round(hit_l5 * 5)
+            if hit_l5 <= .4:
+                risks.append(f"Cleared {threshold}+ in only {cleared_l5} of the last 5")
             if hit_l10 < .5:
                 risks.append("Cleared this threshold in fewer than half of the last 10")
             if avg_l5 < avg_l10 - .75:

@@ -62,11 +62,15 @@ def _avatar(headshot: str | None, team_logo: str | None, alt: str, league: str) 
             '<div class="op-photo op-ph-fallback"></div></div></div>')
 
 
-def _evidence(kind: str, heading: str, body: str) -> str:
+def _evidence(kind: str, heading: str, body: str = "") -> str:
+    """One evidence block. ``body`` may be empty — "No notable risk" says everything
+    already, and a second line restating it as "Nothing concerning in recent form"
+    was two lines of vertical space for no added information."""
     ic = icon("positive") if kind == "good" else icon("neutral") if kind == "flat" else icon("risk")
+    body_html = f'<div class="op-ev-body">{escape(body)}</div>' if body else ""
     return (f'<div class="op-evidence op-{kind}">'
             f'<div class="op-ev-head">{ic}<span>{escape(heading)}</span></div>'
-            f'<div class="op-ev-body">{escape(body)}</div></div>')
+            f'{body_html}</div>')
 
 
 def _row_html(opp: Opportunity) -> str:
@@ -74,7 +78,7 @@ def _row_html(opp: Opportunity) -> str:
     support = opp.primary_support or support_fb
     risk = opp.primary_risk or risk_fb
     if risk in _NEUTRAL_RISKS:
-        risk_html = _evidence("flat", "No notable risk", "Nothing concerning in recent form")
+        risk_html = _evidence("flat", "No notable risk")
     else:
         risk_html = _evidence("risk", "Main risk", risk)
     return (
