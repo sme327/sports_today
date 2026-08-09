@@ -8,7 +8,7 @@
 Run: `pip install -r requirements-dev.txt` then `python -m pytest`.
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (344 tests, all passing)
+## Test suites (350 tests, all passing)
 
 | File | Covers |
 | --- | --- |
@@ -30,7 +30,7 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_deploy_boot.py` | App boots + degrades honestly against an empty DB (cloud-deploy path) |
 | `test_navigation.py` | Same-tab query-param hrefs; back link carries only `day` |
 | `test_competition_context.py` | Season/phase/week/round/neutral-site on `SlateGame`: one phase vocabulary across ESPN + MLB StatsAPI, unknown stays `None` (never defaulted to "regular"), `context_label` composition and competition-name dedup, `notable_context` suppressing ordinary regular-season games, cache rows written before these fields existed still deserializing, and **series position** — the regular season showing who leads while the postseason shows the game number, the standing labelled so it cannot read as a game score, nothing shown before the opener, and **clinch/elimination derived from the series shape alone** — a majority of best-of-N, postseason elimination vs a regular-season set that ends nothing, a decider at level, and silence once the series is already decided (a dead rubber must not claim someone faces elimination) |
-| `test_editorial.py` | Editorial signals for prop-less leagues: record parsing incl. ties, the min-sample gate, each signal's trigger, **evenly-bad not outranking evenly-good**, upset setup requiring a genuinely strong favourite, no game scoring meaningfully without an explanation, unknown records scoring 0 with a caveat rather than mid-table, `best_game` returning `None` when nothing qualifies, caveats rendered with the same primitive as evidence, and a guard that **fails if betting odds ever enter the logic** |
+| `test_editorial.py` | Editorial signals for prop-less leagues: record parsing incl. ties, the min-sample gate, each signal's trigger, **evenly-bad not outranking evenly-good**, upset setup requiring a genuinely strong favourite, no game scoring meaningfully without an explanation, unknown records scoring 0 with a caveat rather than mid-table, `best_game` returning `None` when nothing qualifies, caveats rendered with the same primitive as evidence, **cross-sport normalisation** (league spread measured from the slate, dominant teams in a tight and a wide league scoring alike, within-league order preserved, too-few-teams not normalised, cross-league claims gated), and a guard that **fails if betting odds ever enter the logic** — checked against the parsed AST so the module stays free to explain in prose why odds are excluded |
 | `test_layering.py` | **Structural layer guards** (one case per module): `src/` never imports `services`/`views`/`components`/`leagues`/`router`/`app` — including function-local imports, via `ast`; `domain/` stays a pure stdlib-only leaf; `src/` never imports Streamlit. Written against the dependency *direction*, so new modules never require editing it |
 | `test_registry.py` | All **eight** adapters (MLB, WNBA, World Cup, MLS, NFL, NHL, NBA, NCAAF) registered in order; satisfy Protocol; deep-dive flags |
 | `test_espn_leagues.py` | The shared `ScheduleOnlyESPN` base: the four ESPN schedule-only leagues registered and flagged schedule-only, matchup/rank/logo parsing, round-label variants, NCAAF rank prefix, NFL/NHL league+round mapping |

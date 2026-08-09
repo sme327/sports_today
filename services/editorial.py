@@ -35,6 +35,11 @@ from domain.models import SlateGame
 # the prop scorers use; below it a team is "2-0" on noise.
 MIN_GAMES = 4
 
+# Distinct teams a league must field on a slate before its spread is worth measuring.
+# Eight is four games — below that the "league" is a handful of teams and its mean
+# says more about who happens to be playing than about the competition.
+MIN_TEAMS_FOR_NORM = 8
+
 _STRONG = 0.650        # win pct that counts as a good team
 _WINNING = 0.500       # above water — the broad middle most pro teams live in
 _CLOSE = 0.100         # win-pct gap within which two teams are evenly matched
@@ -71,6 +76,40 @@ class Standing:
     @property
     def is_ranked(self) -> bool:
         return self.rank is not None
+
+
+@dataclass(frozen=True)
+class LeagueNorm:
+    """How a league's records are spread, so a team can be judged against its own
+    competition rather than an absolute number.
+
+    A .620 team is dominant in baseball and mediocre in football: MLB's season pulls
+    everyone toward .500 while a 17-game NFL season lets teams reach .900. Comparing
+    raw win percentage across sports therefore measures the sport, not the team.
+    """
+
+    league: str
+    mean: float
+    sd: float
+    teams: int
+
+    @property
+    def usable(self) -> bool:
+        """Enough distinct teams, and enough spread, for the shape to mean anything.
+        A two-team slate says nothing about its league."""
+        return self.teams >= MIN_TEAMS_FOR_NORM and self.sd >= 0.01
+
+    def strength(self, win_pct: float | None) -> float | None:
+        """A team's standing within its own league on a 0-1 scale.
+
+        Two standard deviations either side of the league mean spans the scale, which
+        keeps a dominant baseball team and a dominant football team near the same
+        number instead of an artefact of their sport's schedule length.
+        """
+        if win_pct is None or not self.usable:
+            return None
+        z = (win_pct - self.mean) / self.sd
+        return round(min(max((z + 2.0) / 4.0, 0.0), 1.0), 4)
 
 
 @dataclass(frozen=True)
@@ -235,15 +274,48 @@ def _caveats(game: SlateGame, away: Standing, home: Standing) -> tuple[str, ...]
     return tuple(out)
 
 
-def interest(game: SlateGame) -> GameInterest:
+def league_norms(games: list[SlateGame]) -> dict[str, LeagueNorm]:
+    """Each league's record spread, measured from the teams actually on the slate.
+
+    Derived from the slate rather than hardcoded per sport, so a new league needs no
+    tuning and an unusual season is described as it is. Leagues with too few teams
+    present are still returned, but report ``usable`` False and are then scored on
+    raw win percentage — comparable within themselves, not across.
+    """
+    seen: dict[str, dict[str, float]] = {}
+    for game in games:
+        away, home = standings(game)
+        for side, standing in ((game.away_name or game.away_short, away),
+                               (game.home_name or game.home_short, home)):
+            if standing.win_pct is None or not side:
+                continue
+            seen.setdefault(game.league, {})[side] = standing.win_pct
+
+    out: dict[str, LeagueNorm] = {}
+    for league, teams in seen.items():
+        values = list(teams.values())
+        n = len(values)
+        mean = sum(values) / n
+        var = sum((v - mean) ** 2 for v in values) / n
+        out[league] = LeagueNorm(league, round(mean, 4), round(var ** 0.5, 4), n)
+    return out
+
+
+def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
     """Rank one game's claim on the reader's attention, with its reasoning.
 
     The score is a transparent blend of three inspectable parts: how good the two
     sides are, how evenly matched they are, and what is at stake. A game we know
     nothing about scores 0 and says so, rather than being quietly ranked mid-table.
+
+    ``norm`` makes the score comparable across sports by judging each team against its
+    own league's spread. Without it the score is still correct *within* a league but
+    must not be compared between them — see ``LeagueNorm``.
     """
     away, home = standings(game)
     ap, hp = away.win_pct, home.win_pct
+    if norm is not None and norm.usable:
+        ap, hp = norm.strength(ap), norm.strength(hp)
 
     components: dict[str, float] = {}
     if ap is not None and hp is not None:
@@ -325,9 +397,22 @@ def rank_games(games: list[SlateGame]) -> list[tuple[SlateGame, GameInterest]]:
     Games we know nothing about (score 0) keep their place in the list rather than
     being dropped — the slate stays complete and their emptiness is visible.
     """
-    scored = [(g, interest(g)) for g in games]
+    norms = league_norms(games)
+    scored = [(g, interest(g, norms.get(g.league))) for g in games]
     scored.sort(key=lambda pair: (pair[1].score, len(pair[1].signals)), reverse=True)
     return scored
+
+
+def cross_league_comparable(games: list[SlateGame]) -> bool:
+    """Whether every league on this slate has enough teams present to be normalised.
+
+    When false, the ranking is still right inside each league but a single "best game
+    of the day" across them would be comparing sports rather than teams — so callers
+    that make a cross-league claim should check this first.
+    """
+    norms = league_norms(games)
+    leagues = {g.league for g in games if any(standings(g))}
+    return bool(norms) and all(norms.get(l) and norms[l].usable for l in leagues)
 
 
 def best_game(games: list[SlateGame], minimum: int = 55) -> tuple[SlateGame, GameInterest] | None:
