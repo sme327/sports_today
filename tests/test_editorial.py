@@ -154,6 +154,45 @@ def test_ranking_keeps_unknown_games_in_the_slate():
     assert rank_games(games)[0][0].away_short == "Known"
 
 
+# --- rendering ----------------------------------------------------------------
+
+def test_render_shows_records_even_when_the_lead_is_rank_based():
+    """A rank-led signal carries only "#1 Team" as evidence; the records come from
+    the quality signals and must not be dropped."""
+    from components.editorial import editorial_html
+    g = _g("9-0", "2-8", away="#1 Ohio State", home="Purdue", away_rank=1)
+    html = editorial_html(interest(g))
+    assert "Ohio State 9-0" in html and "Purdue 2-8" in html
+
+
+def test_render_gives_caveats_the_same_block_treatment_as_evidence():
+    """Product rule: negative evidence is at least as prominent as supporting
+    evidence. Both must use the same evidence block, inside the same grid."""
+    from components.editorial import editorial_html
+    html = editorial_html(interest(_g("9-2", "3-8")))
+    assert html.count('class="op-evidence') >= 2
+    assert 'op-evidence op-flat' in html          # caveat, same primitive
+    assert 'op-evidence op-good' in html          # evidence, same primitive
+    assert "no injuries" in html
+
+
+def test_render_is_empty_when_there_is_nothing_honest_to_say():
+    from components.editorial import editorial_html
+    assert editorial_html(interest(_g(None, None))) == ""
+
+
+def test_empty_state_names_the_league_and_the_reason():
+    from components.editorial import editorial_empty_html
+    html = editorial_empty_html("NHL", "No team records published for this league.")
+    assert "NHL" in html and "No team records" in html
+
+
+def test_render_escapes_team_names():
+    from components.editorial import editorial_html
+    g = _g("9-1", "8-2", away="<script>x</script>", home="Home")
+    assert "<script>" not in editorial_html(interest(g))
+
+
 # --- the deliberate omissions -------------------------------------------------
 
 def test_module_does_not_consult_betting_odds():

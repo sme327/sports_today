@@ -80,12 +80,21 @@ def render(nav: NavState) -> None:
         mls_game.render(nav, game)
         return
 
-    # Leagues without a deep-dive: generic header + honest placeholder.
+    # Leagues without a player-level deep-dive still get a team-level read, built
+    # from records/ranks/stakes (services/editorial). No props does not mean no
+    # curation; where even that is unavailable, say so plainly.
     st.markdown(_detail_header(game), unsafe_allow_html=True)
     adapter = get_adapter(league)
     label = league or "This league"
     if not adapter or not adapter.supports_deep_dive:
-        st.info(
-            f"{label} schedule navigation is live. "
-            "Deeper team and player analysis is not connected yet."
-        )
+        from components.editorial import editorial_empty_html, editorial_html
+        from services.editorial import interest
+
+        detail = interest(game)
+        html = editorial_html(detail)
+        if not html:
+            reason = (detail.caveats[0] if detail.caveats
+                      else "No team records are published for this league.")
+            html = editorial_empty_html(label, reason)
+        st.markdown(html, unsafe_allow_html=True)
+        st.caption(f"{label} player-level analysis is not connected yet.")
