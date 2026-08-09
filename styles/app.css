@@ -599,6 +599,37 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .op-flat .op-ev-head { color: var(--text-3); }        /* no notable risk — calm, neutral */
 .op-ev-body { color: #dee3e9; font-size: .8rem; line-height: 1.42; }   /* brighter body for low-light legibility */
 
+/* ------------------------------------------------- EDITORIAL (THE READ) --- */
+/* Team-level curation for leagues without player props. Reuses the shared evidence
+   primitives (.op-evidence / .op-ev-head / .op-ev-body) so it reads as the same
+   product; only layout lives here. */
+.ed-lead {
+  color: var(--text-1);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  font-weight: 560;
+  margin-bottom: .7rem;
+}
+.ed-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .95rem; }
+.ed-chip {
+  padding: .2rem .56rem;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  box-shadow: var(--edge-hi);
+  color: var(--text-2);
+  font-size: .74rem;
+  font-weight: 640;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+/* Evidence and caveats share one grid and one block size — a caveat is never
+   visually demoted relative to the supporting evidence beside it. */
+.ed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: .8rem 1.4rem;
+}
+
 /* ---------------------------------------------------- GAME DEEP DIVE ----- */
 .back-link {
   display: inline-flex;
