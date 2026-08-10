@@ -30,3 +30,6 @@ logs/*.csv
 # Icon zips (SVG sources are kept)
 icons/*.zip
 data/mls/*.csv
+
+# Frozen experiment captures (analysis records, not app data)
+data/experiments/
