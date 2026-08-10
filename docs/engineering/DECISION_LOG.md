@@ -9,6 +9,75 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — Editorial signals judged against their league, not a fixed number
+
+**Decision.** `marquee` and `even` now test a team's strength **relative to its own
+league** (`LeagueNorm.strength`) rather than an absolute win percentage, each paired
+with an absolute floor. `even` additionally requires both sides to be good, not merely
+similar. Card chips are passed the slate's norms, and `even` earns a chip only when a
+norm exists. `services/editorial._both_clear`.
+
+**Reason — the first fix the feedback loop paid for.** Measured over 191 finished MLB
+games (base mean margin 3.39):
+
+| rule | fires | mean margin |
+|---|---|---|
+| `even`, old (gap ≤ .100, min ≥ .400) | 134 | 3.45 *(vs 3.25 for everything else)* |
+| gap ≤ .050 | 75 | 3.64 |
+| normalised gap ≤ 0.5 SD | 49 | 4.06 |
+| both sides at league strength ≥ 0.55 | 32 | 2.91 |
+
+**Closeness of record predicts nothing, and tightening it makes things actively
+worse.** The old rule fired on two-thirds of games — the base rate wearing a label —
+and its games were *wider* than the rest. Quality does all the work: two **good** teams
+play close games; two **similarly-rated** teams do not. "Evenly matched" was the wrong
+concept, so the fix mirrors what `competitiveness` already does inside the score, where
+closeness is weighted by quality.
+
+`marquee` was worse than miscalibrated — it was **dead**. A raw `.650` is a bar no
+baseball team reaches (the league tops out near .620), so it fired on **zero** of 191
+MLB games and could not have appeared all season.
+
+**Two bars, because each fails differently.** A relative bar alone crowns the least-poor
+side on a slate of bad teams — caught by an existing test, where a 43-75 team was
+labelled good because its peers were worse. An absolute bar alone does not travel
+between sports. So `_both_clear` takes both, plus a conservative raw fallback used only
+when the slate is too small to normalise.
+
+**Result.** Both leagues now rank coherently — marquee < even < edge < solid <
+struggling:
+
+| signal | MLB n | margin | vs base |
+|---|---|---|---|
+| `marquee` | 9 | 2.11 | −1.28 |
+| `even` | 31 | 2.84 | −0.55 |
+| `edge` | 91 | 3.09 | −0.30 |
+| `solid` | 44 | 3.41 | +0.02 |
+| `struggling` | 47 | 4.19 | +0.80 |
+
+**Chips.** `even` was previously barred from cards for a reason that was correct at the
+time — a .100 gap covered half of baseball. That reason is gone, so it is now
+card-worthy, but only where a norm exists: un-normalised, its fallback is an absolute
+.500 bar that .508-vs-.517 clears while being the most ordinary pairing in the sport.
+The game page can show such a read with its evidence; a chip has no room to qualify
+itself. Chip density is now 16% of MLB cards and 15% of WNBA — MLB previously showed
+**none**, since `marquee` was unreachable and `even` excluded.
+
+**Tradeoffs.** Thresholds are tuned on 191 MLB and 40 WNBA games over two weeks, which
+is thin — 0.55 and 0.65 are the best of a handful of candidates, not established
+constants. Margin is a proxy for "worth watching" and always was. `solid` now measures
+as uninformative (+0.02 MLB, +2.37 WNBA on n=9); it is kept because its job is to
+*explain* the broad middle, not to predict, but it should not be trusted as a reason.
+
+**Future considerations.** Re-check every threshold once `richer_game_outcomes` lands —
+lead changes and closeness entering the final period are better targets than final
+margin, and a signal tuned to margin may not survive them. Revisit `solid`'s place in
+`_BEST_WORTHY`. Both `struggling` in WNBA (−3.36, n=7) and `solid` there look inverted
+against MLB; more likely small-sample noise than a real cross-sport difference, but
+worth a second look at n > 100.
+
+---
+
 ## 2026-08-10 — A feedback loop for the editorial engine
 
 **Decision.** Record how every finished game actually played out — final margin, total

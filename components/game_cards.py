@@ -9,7 +9,7 @@ from components.format import format_game_time, logo_img
 from components.navigation import game_href
 from domain.models import SlateGame
 from leagues.base import get_adapter
-from services.editorial import card_signal
+from services.editorial import LeagueNorm, card_signal
 
 
 def _state_badge(game: SlateGame) -> str:
@@ -57,7 +57,7 @@ def _focus_href(day: str, game: SlateGame) -> str:
 
 
 def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
-            threshold: int, deep_dive: bool) -> str:
+            threshold: int, deep_dive: bool, norm: LeagueNorm | None = None) -> str:
     """Footer = a strong-pick filter link (left) + a Matchup link (right). Distinct
     treatments: the fire link filters the props below; the pill opens the deep-dive."""
     fire = ""
@@ -68,7 +68,7 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
     else:
         # No strong props — either the league has none at all, or none cleared the
         # bar today. Either way the slot is empty, so a team-level read earns it.
-        signal = card_signal(game)
+        signal = card_signal(game, norm)
         if signal:
             fire = (f'<span class="ed-card-signal" title="{escape(signal.detail, quote=True)}">'
                     f'{escape(signal.label)}</span>')
@@ -80,7 +80,7 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
 
 
 def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90,
-                   is_best: bool = False) -> str:
+                   is_best: bool = False, norm: LeagueNorm | None = None) -> str:
     adapter = get_adapter(game.league)
     away = game.away_display
     home = game.home_display
@@ -117,7 +117,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
                     if context else "")
     # Marked per league, never across the slate — see editorial.best_per_league.
     best_html = '<span class="bg-chip">Best game</span>' if is_best else ""
-    footer = _footer(game, day, matchup_href, count, threshold, deep_dive)
+    footer = _footer(game, day, matchup_href, count, threshold, deep_dive, norm)
     # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
     # reader just needs to know the game is happening, so it needn't be as tall.
     compact_cls = "" if footer else " game-card--compact"
@@ -139,11 +139,17 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
 
 def schedule_grid_html(games: list[SlateGame], day: str,
                        counts: dict[str, int] | None = None, threshold: int = 90,
-                       best_ids: set[str] | None = None) -> str:
+                       best_ids: set[str] | None = None,
+                       norms: dict[str, LeagueNorm] | None = None) -> str:
+    """``norms`` should be built from the **whole** slate, not this group — the grid is
+    rendered once per game state, and a league's shape is not a property of who
+    happens to be mid-game."""
     counts = counts or {}
     best_ids = best_ids or set()
+    norms = norms or {}
     cards = "".join(game_card_html(game, day, counts.get(game.game_id, 0), threshold,
-                                   is_best=str(game.game_id) in best_ids)
+                                   is_best=str(game.game_id) in best_ids,
+                                   norm=norms.get(game.league))
                     for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
 

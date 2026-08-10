@@ -43,6 +43,17 @@ MIN_TEAMS_FOR_NORM = 8
 _STRONG = 0.650        # win pct that counts as a good team
 _WINNING = 0.500       # above water — the broad middle most pro teams live in
 _CLOSE = 0.100         # win-pct gap within which two teams are evenly matched
+# "Evenly matched" only means something between good teams. Measured against 191
+# finished MLB games: closeness of record predicts nothing on its own, and tightening
+# it makes matters worse — gap<=.100 gave a 3.45 mean margin against 3.25 for everything
+# else, gap<=.050 gave 3.64, and a half-SD normalised gap gave 4.06 against a 3.39 base.
+# Quality is what predicts a close game: both sides at league strength >= 0.55 gave 2.91.
+# Two *good* teams play close games; two similarly-rated ones do not.
+# _EVEN_MIN_STRENGTH tightens "close" into "close between good teams"; _MARQUEE_MIN
+# is the same treatment for the top of the league. Both pair with an absolute raw
+# floor — see _both_clear.
+_EVEN_MIN_STRENGTH = 0.55
+_MARQUEE_MIN_STRENGTH = 0.65
 _WIDE = 0.300          # win-pct gap that makes a game lopsided on paper
 _RANKED_TOP = 10       # "top-10" for poll-rank purposes
 # How far below their overall rate a home side can be before home court stops
@@ -190,7 +201,8 @@ def _rec(name: str, s: Standing) -> str:
     return f"{name} {s.record}" if s.record else name
 
 
-def _quality_signals(game: SlateGame, away: Standing, home: Standing) -> list[Signal]:
+def _quality_signals(game: SlateGame, away: Standing, home: Standing,
+                     norm: LeagueNorm | None = None) -> list[Signal]:
     """Signals that need both records to be real."""
     ap, hp = away.win_pct, home.win_pct
     if ap is None or hp is None:
@@ -200,10 +212,10 @@ def _quality_signals(game: SlateGame, away: Standing, home: Standing) -> list[Si
     gap = abs(ap - hp)
     out: list[Signal] = []
 
-    if ap >= _STRONG and hp >= _STRONG:
+    if _both_clear(away, home, norm, _MARQUEE_MIN_STRENGTH, _WINNING, _STRONG):
         out.append(Signal(
             "marquee", "Marquee matchup",
-            f"Two winning sides: {a_name} and {h_name} both above .650.",
+            f"Two of the best teams in the league: {a_name} and {h_name}.",
             evidence))
     elif min(ap, hp) >= _WINNING:
         # The broad middle, where most professional games live. Without this a
@@ -212,10 +224,10 @@ def _quality_signals(game: SlateGame, away: Standing, home: Standing) -> list[Si
             "solid", "Winning records",
             f"Both {a_name} and {h_name} come in above .500.",
             evidence))
-    if gap <= _CLOSE and min(ap, hp) >= 0.400:
+    if gap <= _CLOSE and _both_clear(away, home, norm, _EVEN_MIN_STRENGTH, _WINNING, _WINNING):
         out.append(Signal(
             "even", "Evenly matched",
-            f"{a_name} and {h_name} have nearly identical records.",
+            f"{a_name} and {h_name} are closely matched, and both are good.",
             evidence))
     if gap >= _WIDE:
         stronger, weaker = ((a_name, h_name) if ap > hp else (h_name, a_name))
@@ -269,6 +281,33 @@ def _quality_signals(game: SlateGame, away: Standing, home: Standing) -> list[Si
                 "edge", "Edge on record",
                 f"{leader} come in ahead of {trailer} on record.", evidence))
     return out
+
+
+def _both_clear(away: Standing, home: Standing, norm: LeagueNorm | None,
+                strength_bar: float, raw_floor: float, raw_fallback: float) -> bool:
+    """Whether both sides clear a quality bar, judged against their own league.
+
+    Raw win percentage cannot carry this alone: .650 is unreachable in baseball and
+    ordinary in basketball, which left ``marquee`` firing on **zero** of 191 MLB games.
+    So the bar is league-relative strength where the slate supports a norm.
+
+    Three bars, because each covers a different failure. ``raw_floor`` is absolute: a
+    losing team is not "good" however weak its peers are, and a relative bar alone would
+    crown the least-poor side on a slate of bad teams. ``strength_bar`` is relative, and
+    is what makes one signal mean the same thing in two sports. ``raw_fallback`` applies
+    only when the slate is too small to normalise, where a strict absolute bar is all
+    that is left — so it must be the conservative one.
+    """
+    ap, hp = away.win_pct, home.win_pct
+    if ap is None or hp is None:
+        return False
+    if min(ap, hp) < raw_floor:
+        return False
+    if norm is not None and norm.usable:
+        sa, sh = norm.strength(ap), norm.strength(hp)
+        if sa is not None and sh is not None:
+            return min(sa, sh) >= strength_bar
+    return min(ap, hp) >= raw_fallback
 
 
 def _rank_signals(game: SlateGame, away: Standing, home: Standing) -> list[Signal]:
@@ -391,7 +430,7 @@ def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
         score = round(100 * sum(components[k] * w for k, w in available.items()) / total)
 
     signals = tuple(_rank_signals(game, away, home)
-                    + _quality_signals(game, away, home)
+                    + _quality_signals(game, away, home, norm)
                     + _stakes_signals(game))
     return GameInterest(score=score, components=components, signals=signals,
                         caveats=_caveats(game, away, home))
@@ -402,12 +441,20 @@ def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
 # there is room for its evidence and caveats. Same discipline as notable_context:
 # a label that appears on every card teaches the reader to ignore the slot.
 #
-# "even" is deliberately absent. Closeness is not notable by itself, and the
-# threshold cannot mean the same thing in every sport: MLB's whole league sits
-# between roughly .380 and .620, so a .100 gap covers half of baseball and tagged 9
-# of 15 cards, while in football it is a rounding error. Both-good-and-close is
-# already "marquee", which travels correctly.
-_CARD_WORTHY = ("ranked_pair", "ranked_one", "marquee", "upset_setup")
+# "even" was excluded while it meant nothing but closeness: MLB's whole league sits
+# between roughly .380 and .620, so a .100 gap covered half of baseball and tagged 9 of
+# 15 cards. It now also requires both sides to be good against their own league, which
+# cut it to 31 of 191 MLB games and turned it from the worst predictor of a close game
+# into one of the best (2.84 mean margin against a 3.39 base). It travels, so it earns
+# a chip — but only when a norm is available, which is what makes it league-relative.
+_CARD_WORTHY = ("ranked_pair", "ranked_one", "marquee", "even", "upset_setup")
+
+# Kinds that may only claim a chip when the slate could actually be normalised. Their
+# un-normalised fallback is an absolute win-percentage bar, and .508 vs .517 clears it
+# while being the most ordinary pairing in baseball. On the game page that is harmless —
+# the evidence is right there to read. A chip has no room to qualify itself, so it
+# stays silent rather than overclaim.
+_CARD_NEEDS_NORM = ("even",)
 
 # Signals that can justify calling a game the best one. Normalisation is relative to
 # the league, so on a slate where every team is poor the least-poor game still scores
@@ -416,8 +463,13 @@ _CARD_WORTHY = ("ranked_pair", "ranked_one", "marquee", "upset_setup")
 _BEST_WORTHY = ("ranked_pair", "ranked_one", "marquee", "even", "solid", "upset_setup")
 
 
-def card_signal(game: SlateGame) -> Signal | None:
+def card_signal(game: SlateGame, norm: LeagueNorm | None = None) -> Signal | None:
     """The one signal worth a chip on this game's card, or None.
+
+    Pass ``norm`` wherever the whole slate is in hand. Without it the quality signals
+    fall back to absolute win-percentage bars, and those do not travel: ``marquee``
+    needs .650 raw, which no MLB team reaches, so an un-normalised card could never
+    show one all season.
 
     Cross-league note: this returns a *label*, never a score, on purpose. Win
     percentage is not comparable across sports — baseball's best team is around .620
@@ -425,9 +477,10 @@ def card_signal(game: SlateGame) -> Signal | None:
     would quietly favour the high-variance sports rather than reflect merit. A chip
     makes a claim only about its own game.
     """
-    by_kind = {s.kind: s for s in interest(game).signals}
+    normalised = norm is not None and norm.usable
+    by_kind = {s.kind: s for s in interest(game, norm).signals}
     for kind in _CARD_WORTHY:
-        if kind in by_kind:
+        if kind in by_kind and (normalised or kind not in _CARD_NEEDS_NORM):
             return by_kind[kind]
     return None
 
