@@ -84,10 +84,29 @@ that **batter × park** does not. Nothing built yet.
 - Batter vs individual pitcher: only 26 pairs reach 12 meetings in five seasons.
   Untestable here, and unavailable in practice for a given night's matchup.
 
-**Why it matters.** `batter-hit-v3` uses no park context at all, and 12 points of range
-is large next to what the model does use. This is the most promising unused MLB input
-found so far — but it is a *park* effect that shifts everyone's baseline, not a
-batter-specific one.
+**Why it looked promising.** `batter-hit-v3` uses no park context at all, and 12 points
+of range is large next to what the model does use.
+
+**Backtested against the ledger the same day — and it does not transfer. Not built.**
+Across 2,714 graded `batter_hit` props with a park factor attached:
+
+- `corr(park factor, win)` = **+0.025**; after removing the app's own score, **+0.033**.
+- By tercile: pitcher parks 0.556, neutral 0.586, hitter parks 0.568 — **not monotonic**.
+
+This is well powered enough to be a real negative. A full-strength park effect predicts a
+~7.3-point spread across those terciles; the observed spread is 1.2 points against a
+standard error near 1.6. The obvious rescue — that a batter's recent rate already embeds
+their home park, so the effect should only bite on the road — is also wrong: road batters
+show *less* park sensitivity (+0.017) than home batters (+0.032), the reverse of that
+prediction.
+
+Most likely the historical park factor is a run-environment effect that does not survive
+into "does this batter get **at least one** hit", which is dominated by plate appearances
+and batter quality. Possibly also an era gap (2020-24 factors, 2026 slate).
+
+**Incidental, and worth keeping:** home field is worth essentially **nothing** on
+P(1+ hit) — 0.5580 at home vs 0.5601 on the road across 144k batter-games. Do not add
+"playing at home" as batter evidence; it is not evidence.
 
 **Also checked: batting order.** The raw spread is enormous (0.669 at slot 1 to 0.470 at
 slot 9), but **86% of it is who bats there**. Controlling for the batter's own rate leaves

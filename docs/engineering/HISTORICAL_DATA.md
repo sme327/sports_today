@@ -254,9 +254,11 @@ the no-odds rule outright. Option (b) is the one worth discussing.
 
 Three findings the first pass missed, all validated:
 
-- **Park factor is real and unused** — split-half r = +0.413, a 12-point range on
-  P(1+ hit) (Boston +6.9, Colorado +6.4, Milwaukee −5.1). **Batter × park is noise**
-  (r = +0.047), so this shifts everyone's baseline rather than identifying a hitter.
+- **Park factor is real in the history but does not transfer to the props.** Split-half
+  r = +0.413 with a 12-point range on P(1+ hit) — yet across 2,714 graded `batter_hit`
+  props, `corr(park factor, win)` is **+0.025** and the terciles are not monotonic.
+  Backtested, not built. **Batter × park is noise** (r = +0.047). Home field is worth
+  ~nothing on P(1+ hit): 0.5580 home vs 0.5601 road.
 - **NBA fatigue predicts upsets** — underdog at home with the favourite on a
   back-to-back: 42.9% against a 30.1% base, and it **replicates** across halves
   (+13.8% / +10.6%). The only signal here to survive out-of-sample on the first attempt.
