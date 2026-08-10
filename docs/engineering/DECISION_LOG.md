@@ -9,6 +9,122 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — Judge a prop by lift over base rate, not by conversion rate
+
+**The lens.** A 40% hit rate on a bar that lands 15% of the time is excellent. A 56% hit
+rate on a bar that lands 54% of the time is worthless. The app has been evaluating SP
+props by **raw conversion**, and that single choice distorts three separate decisions.
+Measured on 416 graded SP props against 2020–24 base rates:
+
+| market | dir | n | converted | base rate | **lift** | verdict |
+|---|---|---|---|---|---|---|
+| `sp_k` | over | 38 | 0.395 | 0.224 | **+0.170** | real edge |
+| `sp_k` | under | 170 | 0.629 | 0.565 | **+0.065** | real edge |
+| `sp_hits` | under | 189 | 0.561 | 0.572 | −0.011 | no information |
+| `sp_hits` | over | 19 | 0.158 | 0.253 | −0.095 | actively bad |
+
+**1. `sp_hits` carries no information — a retirement candidate.** At 85+, where the app
+actually recommends, it converts 0.524 against a 0.542 base rate for the thresholds it
+picked. Betting the base rate blindly does as well. This is the total-bases shape again:
+it looks respectable at 56% until you ask 56% *of what*.
+
+**2. `sp-v2` penalised the app's best signal.** That refit cut overs (`sp_k` ×0.70,
+`sp_hits` ×0.45) because overs converted 0.395 against unders' 0.629. But that compares
+overs to unders, not to their own difficulty. `sp_k` overs sit at **+0.170 lift, the
+highest of any SP cell** — and +0.339 at 85+. The penalty is suppressing the one thing
+that works. `sp_hits` overs deserved theirs (−0.095).
+
+**3. `_best_direction`'s "impressiveness" is linear in the threshold's value, not its
+difficulty.** For an under it is `1 − (t−lo)/span`, so `≤4` scores 1.00 while actually
+happening 46% of the time, and `≤8` scores 0.00 while happening 95% of the time. Since
+value = clear-rate × impressiveness, the hardest bar wins the argmax on impressiveness
+alone. The ledger shows the consequence exactly:
+
+| threshold picked | n | converted |
+|---|---|---|
+| `≤4` | 96 | 0.375 |
+| `≤5` | 61 | 0.672 |
+| `≤6` | 32 | 0.906 |
+
+It picks the hardest bar most often, and that bar converts worst.
+
+**Why nothing shipped.** Replacing impressiveness with true rarity was backtested on
+45,020 leakage-safe simulated starts (prior 6 starts only). It is **not a clean win**:
+isolated to unders it lifts `sp_k` 85+ from 0.685 to 0.742 but `sp_hits` only 0.616 to
+0.624, and it cuts served volume by ~85%. Its headline gains come from flipping the mix
+to overs — which is entangled with `sp-v2` and cannot be judged independently of it.
+Shipping would reverse a logged decision on simulated evidence while the real graded
+evidence points the same way for `sp_k` but the opposite way for `sp_hits`.
+
+**Three decisions, none of them mine to make alone:** retire `sp_hits`; drop or invert
+the `sp_k` over-penalty; re-base impressiveness on real rarity. They interact, so they
+should be taken together, and `sp_hits` retirement should follow the total-bases pattern
+(delete the scorer, keep the `MarketSpec` and grading branch so old ledger rows resolve).
+
+**How this surfaced.** From a live bet, not a code review: a pitcher scored 90/94 on a
+strikeout under whose own career rate was *below* league average. The hypothesis — that
+the pitcher scorers do not shrink recent form the way `batter-hit-v3` does — was
+**wrong**: score and outcome correlate +0.140 and the bands are monotonic. The real
+problem was the denominator, not the shrinkage.
+
+---
+
+## 2026-08-10 — Park factor is a real, unused input; batter-specific park effects are not
+
+**Decision.** Record that **ballpark** shifts P(1+ hit) materially and persistently, and
+that **batter × park** does not. Nothing built yet.
+
+**Evidence.** Split-half across 2020-21 vs 2022-24, 30 parks with 1,500+ batter-games:
+
+- **Park effect: r = +0.413.** Range **12.0 points** of P(1+ hit) — Boston +6.9 and
+  Colorado +6.4 against Milwaukee −5.1 and the Dodgers −4.0, on a 0.559 league rate.
+- **Batter × park (beyond the park's own effect): r = +0.047.** Noise. "He hits well at
+  Coors" is a story, not a signal.
+- Batter home/road split: r = +0.127 — weak, marginal.
+- Batter vs individual pitcher: only 26 pairs reach 12 meetings in five seasons.
+  Untestable here, and unavailable in practice for a given night's matchup.
+
+**Why it matters.** `batter-hit-v3` uses no park context at all, and 12 points of range
+is large next to what the model does use. This is the most promising unused MLB input
+found so far — but it is a *park* effect that shifts everyone's baseline, not a
+batter-specific one.
+
+**Also checked: batting order.** The raw spread is enormous (0.669 at slot 1 to 0.470 at
+slot 9), but **86% of it is who bats there**. Controlling for the batter's own rate leaves
+~1.8 points, confirmed within-batter for players who moved around the order. The existing
+±3 `slot_bonus` is about right. **Validation, not a bug** — and a reminder that a large
+raw split is usually a composition effect.
+
+---
+
+## 2026-08-10 — NBA upsets: fatigue is a real, replicating signal
+
+**Decision.** Record the first signal in this project to survive out-of-sample validation
+on the first attempt. Nothing built — NBA is schedule-only.
+
+**Evidence.** 3,685 NBA games with a clear favourite (record gap ≥ .10), base upset rate
+30.1%:
+
+| condition | n | upset rate | vs base |
+|---|---|---|---|
+| underdog at home **and** favourite on a back-to-back | 268 | **42.9%** | **+12.8** |
+| favourite on a B2B, underdog is not | 469 | 38.4% | +8.3 |
+| underdog at home | 1,856 | 34.8% | +4.6 |
+| underdog on road, favourite rested | 1,532 | 24.7% | −5.4 |
+
+An 18-point swing between best and worst. **It replicates**: split across 2018-21 and
+2024-25, the B2B cut gives +8.4% and +8.0%, the combined cut +13.8% and +10.6%.
+
+**Contrast with the editorial finding.** Records alone say nothing about whether an MLB
+game will be close. Rest state says a great deal about whether an NBA favourite will lose.
+Fatigue is mechanistic where "evenly matched" was not.
+
+**Nearly missed.** `team_rest_days` is text (`B2B`, `3IN4-B2B`, `3+`), so a numeric parse
+silently dropped every back-to-back and returned nothing. The first pass reported no
+effect. Worth remembering the next time a promising column returns a flat result.
+
+---
+
 ## 2026-08-10 — Three negative results from the box-score history
 
 Full evidence in [Historical Data](HISTORICAL_DATA.md) §3. Summarised here because each

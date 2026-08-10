@@ -250,20 +250,43 @@ the no-odds rule outright. Option (b) is the one worth discussing.
 
 ---
 
+## 4b. What the history *did* find (added 2026-08-10, later the same day)
+
+Three findings the first pass missed, all validated:
+
+- **Park factor is real and unused** — split-half r = +0.413, a 12-point range on
+  P(1+ hit) (Boston +6.9, Colorado +6.4, Milwaukee −5.1). **Batter × park is noise**
+  (r = +0.047), so this shifts everyone's baseline rather than identifying a hitter.
+- **NBA fatigue predicts upsets** — underdog at home with the favourite on a
+  back-to-back: 42.9% against a 30.1% base, and it **replicates** across halves
+  (+13.8% / +10.6%). The only signal here to survive out-of-sample on the first attempt.
+- **`sp_hits` carries no information; `sp_k` overs are the app's best signal.** Judged as
+  lift over base rate rather than raw conversion. See the decision log entry for the
+  three interacting decisions this raises.
+
+Also checked and dismissed: batting order (86% of its huge raw spread is who bats there),
+batter home/road (r = +0.127), batter-vs-pitcher (26 usable pairs in five seasons).
+
 ## 5. What is actually worth building
 
 Ranked by evidence, not appeal:
 
-1. **Nothing, for now.** The three negative results above mean the highest-value outcome
-   of this data has already been delivered: two planned work items (platoon splits,
+1. **Resolve the three SP-scorer decisions** (§4b, decision log 2026-08-10). Retiring
+   `sp_hits`, un-penalising `sp_k` overs and re-basing threshold impressiveness on real
+   rarity interact with each other and with the logged `sp-v2` refit, so they should be
+   decided together. This is the only finding that touches a live scorer.
+2. **Park factor as a `batter-hit` input or evidence line** — 12 points of range, and the
+   model currently uses none of it.
+3. **Nothing else, for now.** The negative results mean the highest-value outcome of this
+   data has already been delivered: two planned work items (platoon splits,
    `richer_game_outcomes` for MLB) are dead, and one model (`batter-hit-v3`) is confirmed
    near its ceiling.
-2. **If an NBA feature is ever built**, the data supports it well — seven seasons, quarter
+4. **If an NBA feature is ever built**, the data supports it well — seven seasons, quarter
    scores, DNP/availability, rest days, referee assignments, and full odds. NBA is also
    the sport where record-based editorial claims measurably work.
-3. **Calibrate editorial against closing lines** (§4), if the odds question is settled in
+5. **Calibrate editorial against closing lines** (§4), if the odds question is settled in
    favour. This is the only tested route to making Game Interest mean something in MLB.
-4. **Fill the gaps in §2** opportunistically — cheap, and they cost nothing to hold.
+6. **Fill the gaps in §2** opportunistically — cheap, and they cost nothing to hold.
 
 If none of this earns its keep, dropping the tables is one statement per table. That was
 the agreed deal when they were loaded.
