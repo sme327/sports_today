@@ -43,17 +43,17 @@ def test_reads_the_single_row_header_layout(tmp_path):
 
 
 def test_reads_the_two_row_banner_layout(tmp_path):
-    """A merged category row above the fields, so `AB` becomes `batting_ab` — while the
-    banner section itself ("PLAYER INFORMATION") adds no prefix."""
+    """A merged category row above the fields, so `AB` becomes `bat_ab` — while the banner
+    section itself ("PLAYER INFORMATION") adds no prefix."""
     path = _write(tmp_path / "mlb.xlsx", {"2022-MLB-PLAYER": [
         ["PLAYER INFORMATION", None, None, None, None, "BATTING", None],
         ["BIGDATABALL\nDATASET", "GAME-ID", "DATE", "PLAYER", "TEAM", "AB", "H"],
         ["MLB 2022", "44658-MIL@CHC-1", "2022-04-07", "Kolten Wong", "Milwaukee", 5, 1],
     ]})
     df = read_feed(path, "player", sport=SPORTS["mlb"])
-    assert "batting_ab" in df.columns and "batting_h" in df.columns
+    assert "bat_ab" in df.columns and "bat_h" in df.columns
     assert "team" in df.columns          # banner section contributes no prefix
-    assert df["batting_ab"].tolist() == [5]
+    assert df["bat_ab"].tolist() == [5]
 
 
 def test_bare_numbered_periods_are_named_for_the_sport(tmp_path):
@@ -177,3 +177,42 @@ def test_a_sheet_with_no_usable_date_is_refused(tmp_path):
 def test_unknown_sport_is_refused():
     with pytest.raises(ValueError, match="Unknown sport"):
         import_feed("x.xlsx", "nhl", "player")
+
+
+def test_the_same_field_gets_one_name_across_feed_vintages(tmp_path):
+    """The vendor writes `BATTING/H` one year and `Bat H` the next. Unreconciled they land
+    in two columns with no overlap, so 2020-22 MLB hits sat in `bat_h` and 2023-24 in
+    `batting_h` — a query on either silently returned half the history."""
+    banner = _write(tmp_path / "old.xlsx", {"P": [
+        ["PLAYER INFORMATION", None, None, "BATTING"],
+        ["DATASET", "GAME-ID", "DATE", "H"],
+        ["MLB 2022", "g1", "2022-04-07", 2]]})
+    flat = _write(tmp_path / "new.xlsx", {"P": [
+        ["DATASET", "GAME-ID", "DATE", "Bat H"],
+        ["MLB 2023", "g2", "2023-04-07", 3]]})
+    a = read_feed(banner, "player", sport=SPORTS["mlb"])
+    b = read_feed(flat, "player", sport=SPORTS["mlb"])
+    assert "bat_h" in a.columns and "bat_h" in b.columns
+    assert "batting_h" not in a.columns
+
+    db = tmp_path / "t.db"
+    import_feed(banner, "mlb", "player", db)
+    import_feed(flat, "mlb", "player", db)
+    with sqlite3.connect(db) as conn:
+        rows = conn.execute(
+            "SELECT COUNT(*) FROM mlb_box_player_games WHERE bat_h IS NOT NULL").fetchone()[0]
+    assert rows == 2, "both vintages must land in the same column"
+
+
+def test_text_columns_survive_even_when_nobody_listed_them(tmp_path):
+    """Coercing everything unlisted to numeric nulled batter handedness — "L"/"R" parses
+    as nothing — silently deleting the one column platoon splits need. Type is decided by
+    what a column contains, not by whether someone remembered to enumerate it."""
+    path = _write(tmp_path / "h.xlsx", {"P": [
+        ["DATASET", "GAME-ID", "DATE", "PLAYER", "Bat HAND", "Bat H", "TEMPERATURE"],
+        ["MLB 2022", "g1", "2022-04-07", "A", "L", 2, "72 degrees, clear"],
+        ["MLB 2022", "g1", "2022-04-07", "B", "R", 1, "68 degrees, cloudy"]]})
+    df = read_feed(path, "player", sport=SPORTS["mlb"])
+    assert df["bat_hand"].tolist() == ["L", "R"]
+    assert df["temperature"].notna().all()
+    assert df["bat_h"].tolist() == [2, 1]      # genuinely numeric columns still coerce

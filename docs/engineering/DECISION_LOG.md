@@ -9,6 +9,86 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — Three negative results from the box-score history
+
+Full evidence in [Historical Data](HISTORICAL_DATA.md) §3. Summarised here because each
+one **closes** a line of work.
+
+**1. Platoon splits are not a stable trait — question closed.** The 2026-08-09 entry
+rejected them as "too thin here, not does not exist", flagging a re-test if multi-season
+history landed. It landed: 127,886 batter-games, 2020–2024, with the opposing starter's
+hand. The effect is now measurable (5.5% of batters exceed a .040 split at k=200, against
+0.0% before) but it does not **persist**: split-half correlation between 2020-21 and
+2022-24 is **r = +0.077**, against **r = +0.576** for overall hit rate measured the same
+way on the same players. More seasons will not change this; only a different kind of data
+(career splits, PA-level pitcher matching) could.
+
+**2. A prior-season prior does not improve `batter-hit-v3`.** Shrinking a batter's early
+rate toward *their own* prior-season rate instead of the league mean is **worse** at 20,
+40, 60 and 150 observed PA — including, and especially, early in the season where it
+should help most. The league mean alone (RMSE 0.03242) still beats the raw unshrunk rate
+(0.04790) by a mile, which independently confirms v3's heavy shrinkage. **v3 is at the
+ceiling this data supports.**
+
+**3. Editorial signals cannot be calibrated against MLB outcomes — and this kills
+`richer_game_outcomes` for MLB.** Tested out-of-sample on 5,173 games from 2020–2023 with
+records reconstructed as of each game. The reconstruction is sound: favourite win rate
+climbs monotonically with the record gap, 50.7% → 55.8% → 59.3% → 63.7%. But **margin does
+not move**, and neither does anything else — close-after-7 sits at the 32.5% base rate for
+every signal, lead changes at 1.38, comebacks at 8.0%. Correlations with min-win% are
++0.018 and −0.014.
+
+Two consequences. The `even` rework earlier the same day showed a −0.55 margin effect
+in-sample on 191 games; **it does not replicate.** That rework stands on its other
+grounds — `marquee` firing on zero MLB games was a plain bug, and 16% card density beats
+70% — but not on predicting closer games, and the decision log entry for it should be read
+with this alongside. And `richer_game_outcomes` exists to replace margin with lead changes
+and late closeness: both were tested here directly, both are flat. **Do not build it for
+MLB.** The problem is not that margin is a crude proxy; it is that records predict *who
+wins* and nothing about whether a game is worth watching.
+
+**The one positive.** The same test on 5,838 NBA games behaves differently: mismatches
+(gap ≥ .25) move all three measures the right way — margin 13.79 vs 12.54, close-after-Q3
+26.6% vs 30.3%, comebacks 13.3% vs 16.8% — and `corr(gap, margin)` is +0.098 against MLB's
++0.031. **Competitiveness claims from records are defensible in basketball and not in
+baseball.** Baseball editorial has to earn its value some other way.
+
+**Cost.** About an hour, no production code. The third and fourth negative results in
+three days, after `batter-hit-v4` and total bases, all reached by measuring before
+building.
+
+---
+
+## 2026-08-10 — The vendor feeds contain odds; held, not read
+
+**Decision.** The ingested box-score tables carry betting odds — `nba_team_games` has
+opening/closing spread, total and moneyline plus line movements at **100% coverage across
+six seasons**; CBB ~91%; MLB 2023 only. They are stored and **nothing reads them**.
+
+**Reason.** They arrived as columns of feeds imported for other reasons. Stripping them
+would have meant editing data on the way in, which is its own kind of dishonesty, and they
+are genuinely useful for calibration.
+
+**The tension, stated plainly.** A product rule says editorial signals use **no odds**,
+enforced by an AST-based test. That test still passes and was not modified: it constrains
+what code reads, not what a table holds. But "we ingest no odds" is no longer literally
+true, and a future reader deserves to know that before they discover it.
+
+**Why it matters now.** [Historical Data](HISTORICAL_DATA.md) §3 shows the editorial
+engine cannot be calibrated against MLB outcomes at all. A closing line is the one
+benchmark that plausibly could be — it is the market's own estimate of the same thing the
+Game Interest score gestures at. That makes this worth deciding rather than leaving
+implicit.
+
+**Not a fix for `threshold_realignment`.** These are **game-level** lines, not player prop
+lines. That item stays open.
+
+**Options.** (a) Keep odds strictly held-not-read. (b) Allow them for backtesting and
+calibration only, never in a user-facing surface. (c) Revisit the no-odds rule. **(b) is
+the one worth discussing**; nothing should change without an explicit decision here.
+
+---
+
 ## 2026-08-10 — Hold box-score history for sports the app cannot yet read
 
 **Decision.** Ingest Big Data Ball box scores for **NBA, CBB, WNBA and MLB** into SQLite

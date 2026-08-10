@@ -37,6 +37,7 @@ runs off ingested Big Data Ball seasons and is browsed through the **season arch
 - **Product** — [Vision](docs/product/VISION.md) · [Experience Principles](docs/product/EXPERIENCE_PRINCIPLES.md) · [Roadmap](docs/product/ROADMAP.md) · [Sport Plans](docs/product/SPORT_PLANS.md) (by-sport tiers + NFL deep-dive spec)
 - **Design** — [Design System](docs/design/DESIGN_SYSTEM.md) (mirrors `styles/app.css`)
 - **Engineering** — [Architecture](docs/engineering/ARCHITECTURE.md) (structure, "where to add X", glossary) · [Decision Log](docs/engineering/DECISION_LOG.md) · [Testing](docs/engineering/TESTING.md) · [Setup](docs/engineering/SETUP.md)
+- **Historical data** — [Historical Data](docs/engineering/HISTORICAL_DATA.md) (what we hold, the gaps, and what it measurably can't do)
 - **Per-league pages** — [MLB](docs/engineering/MLB_GAME_PAGE.md) · [WNBA](docs/engineering/WNBA_GAME_PAGE.md) · [MLS](docs/engineering/MLS_GAME_PAGE.md) · [NFL](docs/engineering/NFL_GAME_PAGE.md)
 
 ## How to contribute (the short version)
@@ -102,7 +103,10 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   CBB (2024–2025), MLB (2020–2024) and WNBA game logs — ~732k rows. **Nothing reads
   them**: no adapter, no scorer, no view, and the live slate for those leagues is
   unchanged. They are storage for future work, so don't infer from their presence that a
-  league is supported. Load more with `scripts/import_boxscore_feed.py`.
+  league is supported. Load more with `scripts/import_boxscore_feed.py`. Coverage, gaps
+  and **measured** findings: [Historical Data](docs/engineering/HISTORICAL_DATA.md) —
+  read it before proposing work on this data; platoon splits and MLB
+  `richer_game_outcomes` are already tested and dead.
 - Season-to-date feed must be replaced daily; schedules need internet.
 - MLB batter scoring now uses **today's confirmed lineups** when posted (from MLB
   StatsAPI): a confirmed slot adds evidence, a scratched batter is capped, and an
