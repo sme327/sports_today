@@ -317,6 +317,22 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .game-top-left { display: inline-flex; align-items: center; gap: .55rem; min-width: 0; }
 .league-name { color: var(--text-2); flex: 0 0 auto; }
 
+/* "Best game" — the most watchable game in its league. Orange is the app's only
+   accent and this is the one card-level recommendation, so it earns it. Marked per
+   league; a league we cannot judge says so beneath the grid instead. */
+.bg-chip {
+  flex: 0 0 auto;
+  padding: .1rem .4rem;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: #1a1206;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 /* Competition context (e.g. "Week 2", "Preseason · Wk 2", "World Series") — rides on
    the league line so it costs no card height. Deliberately quiet: it is orienting
    detail, not the headline, and it only renders when notable. Truncates rather than

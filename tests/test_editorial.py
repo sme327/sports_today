@@ -369,3 +369,58 @@ def test_module_does_not_consult_betting_odds():
     for token in ("odds", "moneyline", "point_spread", "vegas", "sportsbook"):
         offenders = [u for u in used if token in u]
         assert not offenders, f"{token!r} reached the editorial logic via {offenders}"
+
+
+# --- naming a best game, honestly ------------------------------------------------
+
+def _lg(league, pairs):
+    return [SlateGame(league=league, game_id=f"{league}{i}",
+                      away_name=f"{league}A{i}", home_name=f"{league}H{i}",
+                      away_short=f"A{i}", home_short=f"H{i}",
+                      away_record=a, home_record=h)
+            for i, (a, h) in enumerate(pairs)]
+
+
+_FULL = _lg("MLB", [("71-47", "66-52"), ("60-58", "58-60"), ("52-67", "71-47"),
+                    ("64-53", "56-63"), ("57-61", "58-61")])
+
+
+def test_best_game_refuses_a_cross_league_claim_it_cannot_support():
+    """The guard existed but callers had to remember it, which is not a guard. On a
+    real slate the WNBA had four teams playing — far too few to normalise — and
+    best_game still returned a pick."""
+    from services.editorial import best_game
+    thin = _lg("WNBA", [("20-10", "10-20")])          # 2 teams: not normalisable
+    assert best_game(_FULL + thin) is None
+    assert best_game(_FULL) is not None                # single league is always fair
+
+
+def test_best_per_league_marks_each_league_separately():
+    from services.editorial import best_per_league
+    picks, unjudged = best_per_league(_FULL + _lg("WNBA", [("20-10", "10-20")]))
+    assert set(picks) == {"MLB"}
+    assert unjudged == ["WNBA"]
+
+
+def test_a_league_that_cannot_be_judged_is_named_not_dropped():
+    """So the UI can say why there is no pick, rather than silently omitting it."""
+    from services.editorial import best_per_league
+    _, unjudged = best_per_league(_lg("WNBA", [("20-10", "10-20")]))
+    assert unjudged == ["WNBA"]
+
+
+def test_no_pick_when_nothing_clears_the_bar():
+    from services.editorial import best_per_league
+    weak = _lg("MLB", [("40-78", "38-80"), ("41-77", "39-79"),
+                       ("42-76", "40-78"), ("43-75", "41-77")])
+    picks, _ = best_per_league(weak)
+    assert picks == {}
+
+
+def test_the_card_shows_the_chip_only_when_marked():
+    from components.game_cards import game_card_html, schedule_grid_html
+    g = _FULL[0]
+    assert "bg-chip" in game_card_html(g, "today", is_best=True)
+    assert "bg-chip" not in game_card_html(g, "today")
+    grid = schedule_grid_html(_FULL, "today", best_ids={str(_FULL[0].game_id)})
+    assert grid.count("bg-chip") == 1, "exactly one card marked"
