@@ -66,11 +66,31 @@ _CORE_ALIASES = {
     "player_name_2": "player",
 }
 
-# Columns that stay text. Everything else is coerced to numeric, so a stray "-" or "DNP"
-# becomes NULL rather than poisoning a whole column's type.
+# Columns that are always text, whatever they look like.
 _TEXT_COLUMNS = {"dataset", "game_id", "game_date", "team", "opponent", "venue",
                  "starter", "player", "player_id", "position", "start_time_et",
                  "conference", "division", "arena", "status", "reason"}
+
+# Fraction of a column's values that must parse as numbers before it is stored numeric.
+# An allow-list alone was not enough: batter handedness ("L"/"R") is not on any obvious
+# list of identity fields, and coercing it nulled **every** value — silently deleting the
+# one column platoon splits need. Judging by content catches the fields nobody enumerated:
+# umpire names, weather, pitcher names, odds written as text.
+_NUMERIC_SHARE = 0.80
+
+# The vendor renames the same field between vintages, and the two spellings land in two
+# columns with no overlap — 2020-22 MLB hits in `bat_h`, 2023-24 in `batting_h`, so a
+# query on either silently returns half the history. Everything canonicalises to one.
+_VINTAGE_ALIASES = {
+    "days_rest_team": "team_rest_days",
+    "main_ref": "crew_chief", "crew": "referee_umpire",
+    "spread_open": "opening_spread", "total_open": "opening_total",
+    "spread_close": "closing_spread", "total_close": "closing_total",
+    "closing_odd": "closing_odds",
+    "1st_5_total_1st_5_moneyline": "first5_moneyline", "1st_5_runline": "first5_runline",
+    "starting_pitcher": "pitch_starting_pitcher",
+    "winning_losing_pitcher": "pitch_winning_losing_pitcher",
+}
 
 
 @dataclass(frozen=True)
@@ -133,6 +153,28 @@ def _banner_names(raw: pd.DataFrame) -> list[str]:
 
 
 _BARE_NUMBER = re.compile(r"^(\d+)(?:_0)?$")
+# Prefixes a banner row adds in one vintage and not another, plus the "z" the vendor uses
+# to sort odds columns last in a spreadsheet. Stripping them makes both vintages agree.
+_STRIP_PREFIXES = ("odds_", "game_")
+_LONG_TO_SHORT = (("batting_", "bat_"), ("pitching_", "pitch_"))
+
+
+def _canonical(name: str) -> str:
+    """One spelling for a field however this vintage of the feed happened to label it."""
+    if name in ("game_id", "game_date"):
+        return name
+    for prefix in _STRIP_PREFIXES:
+        if name.startswith(prefix) and len(name) > len(prefix):
+            name = name[len(prefix):]
+    if name.startswith("z") and name[1:] in _VINTAGE_ALIASES or name.startswith("zline_"):
+        name = name[1:]
+    if name.startswith("z") and (name[1:].startswith(("opening", "closing", "halftime",
+                                                      "box_score", "odds_"))):
+        name = name[1:]
+    for long, short in _LONG_TO_SHORT:
+        if name.startswith(long):
+            name = short + name[len(long):]
+    return _VINTAGE_ALIASES.get(name, name)
 
 
 def _apply_aliases(names: list[str], sport: Sport | None = None) -> list[str]:
@@ -143,6 +185,8 @@ def _apply_aliases(names: list[str], sport: Sport | None = None) -> list[str]:
         m = _BARE_NUMBER.match(n)
         if m and sport is not None:
             n = f"{sport.period}_{int(m.group(1))}"
+        else:
+            n = _CORE_ALIASES.get(_canonical(n), _canonical(n))
         out.append(n)
     return _dedupe(out)
 
@@ -208,10 +252,16 @@ def read_feed(path: str | Path, kind: str = "player", sheet: str | None = None,
     # never join on names. Storing it is fine; pretending it is usable is not.
     df.attrs["joinable"] = "game_id" in df.columns and df["game_id"].notna().any()
     for col in df.columns:
-        if col not in _TEXT_COLUMNS:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        else:
+        if col in _TEXT_COLUMNS:
             df[col] = df[col].astype("string").str.strip()
+            continue
+        values = df[col]
+        filled = values.notna().sum()
+        numeric = pd.to_numeric(values, errors="coerce")
+        if filled and numeric.notna().sum() / filled >= _NUMERIC_SHARE:
+            df[col] = numeric
+        else:
+            df[col] = values.astype("string").str.strip()
     return df
 
 
