@@ -9,6 +9,72 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — Hold box-score history for sports the app cannot yet read
+
+**Decision.** Ingest Big Data Ball box scores for **NBA, CBB, WNBA and MLB** into SQLite
+via a new `src/boxscore_ingest.py` + `scripts/import_boxscore_feed.py`. 732,172 rows
+across nine tables. **Nothing reads them.** No adapter, no scorer, no view.
+
+**Reason.** The data existed but was unusable — spread across 143 near-duplicate
+workbooks in iCloud, some 65MB, with no way to join one to another. NBA is
+schedule-only in the app and CBB absent entirely, so none of it could inform anything.
+Holding it in SQLite costs a table and makes it queryable the day a feature wants it;
+leaving it in spreadsheets meant every future question started with an archaeology dig.
+The explicit call was "bring them all to have if we need them; if they prove not useful
+we can get rid of them later" — cheap to keep, expensive to re-derive.
+
+| table | rows | seasons |
+|---|---|---|
+| `nba_player_games` | 197,807 | 2018–2021, 2023–2025 |
+| `nba_team_games` | 14,496 | same, less 2023 |
+| `nba_dnp` | 12,883 | 2024–2025 |
+| `cbb_player_games` | 254,919 | 2024–2025 |
+| `cbb_team_games` | 25,174 | 2024–2025 |
+| `mlb_box_player_games` | 208,480 | 2020–2024 |
+| `mlb_box_team_games` | 13,426 | 2020–2023 |
+| `wnba_box_{player,team}_games` | 4,987 | 2020, 2025 |
+
+**Why not reuse `nfl_ingest`.** Its field map renames a `1.0` column to `q1` — correct
+for a football quarter, wrong for a **baseball inning**. Sharing it would have silently
+mislabelled every MLB box score. The pure text helpers (`_clean`, `_dedupe`) are shared;
+the semantics are not. Bare-numbered period columns now take a per-sport noun, because
+the vendor emits `6` beside `1.0` and both mean the same kind of thing.
+
+**Season calendars are explicit per sport.** NBA and CBB run autumn-to-spring, so a June
+game belongs to the season that began the previous autumn; MLB and WNBA are simply the
+year they are played in. Getting this backwards files every playoff game under the wrong
+season. The rule survives the covid-shifted 2020-21 NBA season (December to July), which
+is pinned by a test.
+
+**The mistake worth recording.** Per-season replace assumed a newer pull is a fuller one.
+It is not: the 2024-25 NBA feed (pulled 28 May, 1,312 games) overwrote the multi-season
+archive's copy of that season (pulled 8 June, 1,339 games) and **deleted the Finals**.
+Nothing errored. `import_feed` now refuses to shrink a season, reporting it instead, with
+`--force` for the deliberate case. That class of loss is invisible until a query returns
+a short answer months later.
+
+**Honesty guards.** A feed with no game id — the 2020 WNBA vintage ships names only —
+loads but is flagged `joinable: False`, because the project never joins on names and
+stored rows must not look usable merely for having loaded. A sheet with no parseable date
+is refused outright: a row we cannot place in time cannot be filed under a season.
+
+**What the data actually contains** (checked, not assumed): the NBA archive spans 2018 to
+2025 but holds **five** seasons, not seven — 2019-20 and 2022-23 are absent from it,
+though a separate covid-shortened file fills 2019-20. 2022-23 is genuinely missing.
+
+**Tradeoffs.** The DB grew 85MB → 252MB, all of it inert. Column sets are preserved
+wide and unnormalised (58 columns for an NBA team game), which is deliberate — which stat
+matters later is not knowable now — but it means these tables are not modelled, just
+stored. No test asserts anything about their *content*, only about the reader.
+
+**Future considerations.** The NBA team feed carries quarter-by-quarter linescores and
+CBB carries halves: that is the shape `richer_game_outcomes` wants for "closeness entering
+the final period", and it is now local rather than hypothetical. `nba_dnp` is the
+availability signal whose absence caused the WNBA windowing bug. If a sport proves
+useless, dropping its tables is one statement.
+
+---
+
 ## 2026-08-10 — Editorial signals judged against their league, not a fixed number
 
 **Decision.** `marquee` and `even` now test a team's strength **relative to its own

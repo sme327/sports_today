@@ -97,7 +97,12 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 ## Known limitations
 
 - MLB is current-season only, at plate-appearance grain (no Statcast/exit velo/pitch
-  type). NFL is the exception: it holds **multiple ingested seasons**.
+  type). NFL is the exception: it holds **multiple ingested seasons** (2023–2025).
+- **Held-but-unused box scores.** `src/boxscore_ingest.py` has loaded NBA (2018–2025),
+  CBB (2024–2025), MLB (2020–2024) and WNBA game logs — ~732k rows. **Nothing reads
+  them**: no adapter, no scorer, no view, and the live slate for those leagues is
+  unchanged. They are storage for future work, so don't infer from their presence that a
+  league is supported. Load more with `scripts/import_boxscore_feed.py`.
 - Season-to-date feed must be replaced daily; schedules need internet.
 - MLB batter scoring now uses **today's confirmed lineups** when posted (from MLB
   StatsAPI): a confirmed slot adds evidence, a scratched batter is capped, and an
