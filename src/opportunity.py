@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from src import lineup_overlay
+from src.availability import InjuryReport
 from src.mlb_lineups import Lineups
 
 
@@ -72,15 +73,24 @@ def opposing_starter_note(pa: pd.DataFrame, pitcher_id: str | None) -> tuple[str
 
 def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30,
                             lineups: Lineups | None = None,
-                            opposing_starters: dict[str, str] | None = None) -> pd.DataFrame:
+                            opposing_starters: dict[str, str] | None = None,
+                            availability: InjuryReport | None = None) -> pd.DataFrame:
     """``opposing_starters`` maps a batting-team name to the id of the pitcher it
-    faces tonight. Used for evidence only — the score is unchanged."""
+    faces tonight. Used for evidence only — the score is unchanged.
+
+    ``availability`` drops batters who cannot play (injured list, optioned). The
+    lineup overlay already caps them once lineups are posted, but that is late in the
+    day; before then they score normally, and each one is written into the ledger only
+    to void."""
     # Guard: empty input or missing columns yields an empty result, never a crash.
     if pa.empty or not _REQUIRED_COLUMNS.issubset(pa.columns) or not teams:
         return pd.DataFrame(columns=_RESULT_COLUMNS)
     x = pa.loc[pa["batting_team"].isin(teams)].sort_values(["game_date", "game_id", "pa_number"])
     rows = []
+    unavailable = (availability.out if availability else {})
     for batter_id, all_pa in x.groupby("batter_id"):
+        if str(int(batter_id)) in unavailable:
+            continue                    # not on the active roster tonight
         recent = all_pa.tail(50)
         short = all_pa.tail(25)
         if len(recent) < minimum_pa:

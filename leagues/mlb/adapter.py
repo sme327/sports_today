@@ -12,6 +12,8 @@ from leagues.base import register
 from leagues.mlb.teams import canonical_team
 from services.data_access import load_plate_appearances
 from services.mlb_analytics import match_pitcher
+from src import mlb_injuries
+from src.availability import InjuryReport
 from src.mlb_api import schedule as mlb_schedule
 from src.opportunity import score_hit_opportunities
 
@@ -86,6 +88,17 @@ class MLBAdapter:
     def match_team(self, identifier: str | None) -> str | None:
         return canonical_team(identifier)
 
+    def _slate_availability(self, slate_date: date, teams: list[str]) -> InjuryReport:
+        """Roster availability for the teams on this slate (empty when unavailable)."""
+        try:
+            games = self.fetch_schedule(slate_date)
+        except Exception:
+            return InjuryReport()
+        canon = {canonical_team(t) for t in teams}
+        ids = {g.away_id for g in games if canonical_team(g.away_name) in canon}
+        ids |= {g.home_id for g in games if canonical_team(g.home_name) in canon}
+        return mlb_injuries.fetch_teams(sorted(i for i in ids if i))
+
     def _opposing_starters(self, pa: pd.DataFrame, slate_date: date,
                            teams: list[str]) -> dict[str, str]:
         """Map each raw PBP batting-team name to the id of the pitcher it faces.
@@ -155,9 +168,11 @@ class MLBAdapter:
         except Exception:
             lineups = None
 
+        availability = self._slate_availability(as_of, teams)
         opposing = self._opposing_starters(pa, as_of, teams)
         scored = score_hit_opportunities(pa, teams, lineups=lineups,
-                                         opposing_starters=opposing)
+                                         opposing_starters=opposing,
+                                         availability=availability)
         if scored.empty:
             return []
 

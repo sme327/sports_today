@@ -100,3 +100,62 @@ def test_an_unlisted_player_is_unaffected():
                                    injuries=parse(_PAYLOAD))
     assert not out.empty
     assert not any("Listed" in r for r in out.iloc[0]["risks"])
+
+
+# --- MLB roster availability -----------------------------------------------------
+
+_ROSTER = {"roster": [
+    {"person": {"id": 1, "fullName": "Active Guy"}, "status": {"code": "A", "description": "Active"}},
+    {"person": {"id": 2, "fullName": "Hurt Guy"}, "status": {"code": "D10", "description": "Injured 10-Day"}},
+    {"person": {"id": 3, "fullName": "Optioned Guy"}, "status": {"code": "RM", "description": "Reassigned to Minors"}},
+    {"person": {"id": 4, "fullName": "No Status"}, "status": {}},
+]}
+
+
+def test_mlb_roster_marks_every_non_active_status_unavailable():
+    """StatsAPI has no questionable tier — a day-to-day player stays active — so the
+    split is active vs everything else, and nothing is inferred."""
+    from src.mlb_injuries import parse as mlb_parse
+    r = mlb_parse(_ROSTER)
+    assert set(r.out) == {"2", "3"}
+    assert r.status_for("1") is None          # active
+    assert r.status_for("4") is None          # no status published -> no claim
+
+
+def test_mlb_keeps_the_sources_own_wording_as_the_detail():
+    from src.mlb_injuries import parse as mlb_parse
+    r = mlb_parse(_ROSTER)
+    assert r.status_for("2").detail == "Injured 10-Day"
+    assert "Injured 10-Day" in r.status_for("2").note
+
+
+def test_unavailable_batters_are_dropped_before_scoring():
+    """Observed live: 12 of 40 scored batters for one game were on the injured list
+    or in the minors. The lineup overlay caps them once lineups post, but before that
+    they score normally and every one is written to the ledger only to void."""
+    from src.mlb_injuries import parse as mlb_parse
+    from src.opportunity import score_hit_opportunities
+    rows = []
+    for bid in (1, 2):
+        for i in range(40):
+            rows.append({"batter_id": bid, "batter_name": f"B{bid}", "batting_team": "HOU",
+                         "game_id": f"g{i // 4}", "game_date": f"2026-08-{1 + i // 4:02d}",
+                         "pa_number": i, "is_hit": 1 if i % 3 == 0 else 0,
+                         "reached_base": 1 if i % 3 == 0 else 0, "is_strikeout": 0,
+                         "pitch_count_pa": 4, "is_official_ab": 1})
+    pa = pd.DataFrame(rows)
+    assert len(score_hit_opportunities(pa, ["HOU"])) == 2
+    out = score_hit_opportunities(pa, ["HOU"], availability=mlb_parse(_ROSTER))
+    assert list(out["batter_id"]) == [1], "the injured batter must not be scored"
+
+
+def test_no_availability_data_changes_nothing():
+    from src.opportunity import score_hit_opportunities
+    from src.availability import InjuryReport
+    rows = [{"batter_id": 1, "batter_name": "B", "batting_team": "HOU",
+             "game_id": f"g{i // 4}", "game_date": f"2026-08-{1 + i // 4:02d}",
+             "pa_number": i, "is_hit": i % 3 == 0, "reached_base": i % 3 == 0,
+             "is_strikeout": 0, "pitch_count_pa": 4, "is_official_ab": 1} for i in range(40)]
+    pa = pd.DataFrame(rows)
+    assert len(score_hit_opportunities(pa, ["HOU"], availability=InjuryReport())) == 1
+    assert len(score_hit_opportunities(pa, ["HOU"], availability=None)) == 1
