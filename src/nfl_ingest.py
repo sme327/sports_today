@@ -7,9 +7,16 @@ the player feed 3 (super-category / sub-category / field), with field names that
 across categories (YDS/TD/ATT under Passing, Rushing, Receiving…). We flatten those into
 unique, readable column names (``passing_yds``, ``rushing_att``, ``receiving_rec`` …).
 
-Full-season replace, like MLB: each ingest rebuilds the NFL tables in ``sportshub.db``.
-The feed on hand (pulled 01-12) covers the regular season + Wild Card; re-download the
-completed-season feed for the full playoffs + Super Bowl.
+Replace is **per season, not per table**: an ingest clears only the seasons present in the
+workbook, so loading one year leaves the others in place. Seasons 2023, 2024 and 2025 are
+loaded.
+
+Each stops a round or two short of the Super Bowl, because each feed was pulled in
+mid-January while that postseason was still being played — a download-recency limit, not a
+format one. Re-pulling a completed season fills in the rest.
+
+Layouts drift between vintages: pre-2019 feeds omit ``game_date`` entirely and are
+rejected here rather than silently mis-parsed.
 """
 
 from __future__ import annotations
