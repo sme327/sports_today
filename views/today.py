@@ -25,6 +25,7 @@ from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
 from services import grading
 from services.calibration import annotate
+from services.editorial import best_per_league
 from services.app_cache import (cached_mlb_k_opps, cached_mlb_pitcher_opps,
                                  cached_opportunities, cached_slate)
 from services.freshness import get_freshness
@@ -261,10 +262,18 @@ def render(nav: NavState) -> None:
                 st.markdown(games_toggle_html(day, nav.games_collapsed, len(all_visible)),
                             unsafe_allow_html=True)
         if not nav.games_collapsed:
+            # The most watchable game in each league, marked on its own card. Never a
+            # single cross-league pick: that would assert leagues are comparable, and
+            # on a light slate they are not.
+            best_ids, unjudged = best_per_league(all_visible)
             for group in group_games_by_state(all_visible):
                 if group:
-                    st.markdown(schedule_grid_html(group, day, game_counts, nav.prop_threshold),
+                    st.markdown(schedule_grid_html(group, day, game_counts,
+                                                   nav.prop_threshold, set(best_ids.values())),
                                 unsafe_allow_html=True)
+            if unjudged:
+                names = ", ".join(unjudged)
+                st.caption(f"Not enough of {names} playing today to name a best game fairly.")
     else:
         empty_states.no_games(day_label(day))
 

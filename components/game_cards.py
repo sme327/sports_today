@@ -79,7 +79,8 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
     return f'<div class="game-meta">{fire}{matchup}</div>'
 
 
-def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90) -> str:
+def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90,
+                   is_best: bool = False) -> str:
     adapter = get_adapter(game.league)
     away = game.away_display
     home = game.home_display
@@ -114,6 +115,8 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     context = game.notable_context
     context_html = (f'<span class="game-context">{escape(context)}</span>'
                     if context else "")
+    # Marked per league, never across the slate — see editorial.best_per_league.
+    best_html = '<span class="bg-chip">Best game</span>' if is_best else ""
     footer = _footer(game, day, matchup_href, count, threshold, deep_dive)
     # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
     # reader just needs to know the game is happening, so it needn't be as tall.
@@ -121,7 +124,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     # The card body isn't clickable — only the footer links act (filter / deep-dive).
     return (
         f'<div class="game-card{state_cls}{compact_cls}">'
-        f'<div class="game-top"><span class="game-top-left">'
+        f'<div class="game-top"><span class="game-top-left">{best_html}'
         f'<span class="league-name">{escape(league_label)}</span>{context_html}</span>'
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
@@ -135,9 +138,12 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
 
 
 def schedule_grid_html(games: list[SlateGame], day: str,
-                       counts: dict[str, int] | None = None, threshold: int = 90) -> str:
+                       counts: dict[str, int] | None = None, threshold: int = 90,
+                       best_ids: set[str] | None = None) -> str:
     counts = counts or {}
-    cards = "".join(game_card_html(game, day, counts.get(game.game_id, 0), threshold)
+    best_ids = best_ids or set()
+    cards = "".join(game_card_html(game, day, counts.get(game.game_id, 0), threshold,
+                                   is_best=str(game.game_id) in best_ids)
                     for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
 

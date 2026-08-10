@@ -409,6 +409,12 @@ def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
 # already "marquee", which travels correctly.
 _CARD_WORTHY = ("ranked_pair", "ranked_one", "marquee", "upset_setup")
 
+# Signals that can justify calling a game the best one. Normalisation is relative to
+# the league, so on a slate where every team is poor the least-poor game still scores
+# well — and would be marked "Best game" on the strength of "Both below .500". A best
+# game needs a positive reason, not merely the highest number.
+_BEST_WORTHY = ("ranked_pair", "ranked_one", "marquee", "even", "solid", "upset_setup")
+
 
 def card_signal(game: SlateGame) -> Signal | None:
     """The one signal worth a chip on this game's card, or None.
@@ -424,6 +430,31 @@ def card_signal(game: SlateGame) -> Signal | None:
         if kind in by_kind:
             return by_kind[kind]
     return None
+
+
+def best_per_league(games: list[SlateGame], minimum: int = 55
+                    ) -> tuple[dict[str, str], list[str]]:
+    """``({league: game_id}, [leagues we could not judge])``.
+
+    Marked per league rather than across the slate because a single "game of the day"
+    asserts leagues are comparable, and on a light day they are not — today the WNBA
+    had four of its teams playing, far too few to normalise. Naming a best game inside
+    one league is always a fair comparison; naming one across leagues often is not.
+
+    A league appears in the second list when it is playing but cannot be judged, so the
+    UI can say so rather than silently omitting it.
+    """
+    picks: dict[str, str] = {}
+    unjudged: list[str] = []
+    for league in sorted({g.league for g in games}):
+        pick = best_game_in_league(games, league, minimum=minimum)
+        if pick:
+            picks[league] = str(pick[0].game_id)
+        elif any(g.league == league for g in games):
+            norm = league_norms([g for g in games if g.league == league]).get(league)
+            if norm is None or not norm.usable:
+                unjudged.append(league)
+    return picks, unjudged
 
 
 def rank_games(games: list[SlateGame]) -> list[tuple[SlateGame, GameInterest]]:
@@ -451,12 +482,43 @@ def cross_league_comparable(games: list[SlateGame]) -> bool:
 
 
 def best_game(games: list[SlateGame], minimum: int = 55) -> tuple[SlateGame, GameInterest] | None:
-    """The single game most worth attention, or None when nothing clears the bar.
+    """The single game most worth attention, or None when we cannot honestly name one.
 
-    Honouring "the app may say there are no strong opportunities": a slate of
-    lopsided or unknown fixtures produces no pick at all.
+    Returns None in three cases, all of them deliberate:
+
+    - nothing clears ``minimum`` ("the app may say there are no strong opportunities");
+    - the leading game has no signal, so there would be nothing to say about it;
+    - **the slate spans leagues we cannot compare** — picking a single best game across
+      leagues asserts they are comparable, and when one of them has too few teams on
+      the slate to normalise, that assertion is false. The guard existed but callers
+      had to remember it, which is not a guard. Enforced here instead.
     """
+    # Only a multi-league slate makes a cross-league claim. Within one league the
+    # scores are comparable by construction, so the guard must not fire there — an
+    # over-strict version refused a perfectly fair three-game single-league slate.
+    leagues = {g.league for g in games}
+    if len(leagues) > 1 and not cross_league_comparable(games):
+        return None
     for game, detail in rank_games(games):
-        if detail.score >= minimum and detail.signals:
+        if detail.score >= minimum and any(s.kind in _BEST_WORTHY for s in detail.signals):
+            return game, detail
+    return None
+
+
+def best_game_in_league(games: list[SlateGame], league: str,
+                        minimum: int = 55) -> tuple[SlateGame, GameInterest] | None:
+    """The best game within one league, which is always a fair comparison.
+
+    Useful when the slate as a whole cannot be compared but a single league on it
+    still can — the common case on a light day.
+    """
+    subset = [g for g in games if g.league == league]
+    norm = league_norms(subset).get(league)
+    if norm is None or not norm.usable:
+        return None
+    scored = sorted(((g, interest(g, norm)) for g in subset),
+                    key=lambda p: (p[1].score, len(p[1].signals)), reverse=True)
+    for game, detail in scored:
+        if detail.score >= minimum and any(s.kind in _BEST_WORTHY for s in detail.signals):
             return game, detail
     return None
