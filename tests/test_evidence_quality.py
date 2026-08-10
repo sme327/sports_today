@@ -218,3 +218,69 @@ def test_a_weak_recent_run_shows_both_the_baseline_and_the_warning():
         risks = " ".join(points.iloc[0]["risks"])
         assert "Cleared" in support
         assert "only" in risks
+
+
+# --- opposing starter context ---------------------------------------------------
+
+def _pa_with_pitcher(pitcher_hit_rate, pitcher_bf, *, league_rate=0.209, league_bf=4000):
+    """A frame with one identified starter plus a league background."""
+    rows = []
+    for i in range(pitcher_bf):
+        rows.append({"pitcher_id": 99, "pitcher_name": "Target Arm",
+                     "is_hit": 1 if i < round(pitcher_hit_rate * pitcher_bf) else 0})
+    for i in range(league_bf):
+        rows.append({"pitcher_id": 1000 + (i % 50), "pitcher_name": f"Other{i % 50}",
+                     "is_hit": 1 if i < round(league_rate * league_bf) else 0})
+    return pd.DataFrame(rows)
+
+
+def test_a_hittable_starter_is_flagged_as_favourable():
+    from src.opportunity import opposing_starter_note
+    note = opposing_starter_note(_pa_with_pitcher(0.26, 600), "99")
+    assert note and note[0] == "good" and "above league average" in note[1]
+
+
+def test_a_stingy_starter_is_flagged_as_a_risk():
+    from src.opportunity import opposing_starter_note
+    note = opposing_starter_note(_pa_with_pitcher(0.16, 600), "99")
+    assert note and note[0] == "risk" and "below league average" in note[1]
+
+
+def test_an_average_starter_says_nothing():
+    from src.opportunity import opposing_starter_note
+    assert opposing_starter_note(_pa_with_pitcher(0.21, 600), "99") is None
+
+
+def test_a_thin_sample_says_nothing_at_all():
+    """Below the minimum we make no claim, rather than a loud one on two starts."""
+    from src.opportunity import opposing_starter_note
+    assert opposing_starter_note(_pa_with_pitcher(0.40, 40), "99") is None
+
+
+def test_shrinkage_stops_a_small_sample_from_shouting():
+    """Observed live: a starter at .242 over 128 batters faced regresses to 1.06x
+    league and correctly drops below the threshold, while the same rate over a full
+    season would clear it."""
+    from src.opportunity import opposing_starter_note
+    assert opposing_starter_note(_pa_with_pitcher(0.242, 128), "99") is None
+    assert opposing_starter_note(_pa_with_pitcher(0.242, 900), "99") is not None
+
+
+def test_no_pitcher_means_no_claim():
+    from src.opportunity import opposing_starter_note
+    assert opposing_starter_note(_pa_with_pitcher(0.26, 600), None) is None
+
+
+def test_the_matchup_line_survives_the_evidence_cap():
+    """Support is capped at three lines. The matchup is the only line about tonight
+    rather than about the batter's own form, so it must lead, not be truncated."""
+    from src.opportunity import score_hit_opportunities
+    pa = pd.DataFrame(_pa_rows(7, hits_last25=9))          # a batter with several support lines
+    pa = pa.assign(pitcher_id=99, pitcher_name="Target Arm")
+    extra = _pa_with_pitcher(0.26, 900)
+    extra["batting_team"] = "OTHER"
+    frame = pd.concat([pa, extra], ignore_index=True)
+    out = score_hit_opportunities(frame, ["HOU"], opposing_starters={"HOU": "99"})
+    assert not out.empty
+    support = list(out.iloc[0]["support"])
+    assert support and "Faces" in support[0], support

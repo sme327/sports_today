@@ -28,9 +28,53 @@ _HIT_SHRINK = 0.70
 # slump, not noise, and deserves to be named with its raw count.
 _COLD_PA_RATE = 0.12
 
+# --- Opposing-starter context -------------------------------------------------
+# Who is pitching is the largest single input this market was missing. Across 261
+# starters with >=200 batters faced the spread is .167 to .238 hits allowed per
+# batter (0.80x to 1.14x league), which moves P(1+ hit) by 10-14 points — wider
+# than the scorer's entire graded discrimination. For now this is shown as
+# evidence only; folding it into the score is a version bump that needs ledger
+# validation first.
+_PITCHER_SHRINK_BF = 200   # regress a pitcher's rate toward league over this many BF
+_PITCHER_MIN_BF = 100      # below this we say nothing rather than guess
+_HITTABLE = 1.10           # allows hits >=10% above league -> favourable for the batter
+_STINGY = 0.90             # >=10% below league -> a real headwind
+
+
+def opposing_starter_note(pa: pd.DataFrame, pitcher_id: str | None) -> tuple[str, str] | None:
+    """``(kind, sentence)`` describing tonight's starter, or None when unknown.
+
+    ``kind`` is "good" when the matchup favours the batter and "risk" when it does
+    not. The rate is regressed toward league average by batters faced, so a pitcher
+    with two starts on record does not swing the wording; below ``_PITCHER_MIN_BF``
+    nothing is claimed at all.
+    """
+    if not pitcher_id or pa.empty or "pitcher_id" not in pa.columns:
+        return None
+    own = pa.loc[pa["pitcher_id"].astype(str) == str(pitcher_id)]
+    bf = len(own)
+    if bf < _PITCHER_MIN_BF:
+        return None
+    league = float(pa["is_hit"].mean())
+    if not league:
+        return None
+    raw = float(own["is_hit"].mean())
+    shrunk = (raw * bf + league * _PITCHER_SHRINK_BF) / (bf + _PITCHER_SHRINK_BF)
+    ratio = shrunk / league
+    name = str(own["pitcher_name"].iloc[-1])
+    pct = abs(round((ratio - 1) * 100))
+    if ratio >= _HITTABLE:
+        return ("good", f"Faces {name}, who allows hits {pct}% above league average")
+    if ratio <= _STINGY:
+        return ("risk", f"Faces {name}, who allows hits {pct}% below league average")
+    return None
+
 
 def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int = 30,
-                            lineups: Lineups | None = None) -> pd.DataFrame:
+                            lineups: Lineups | None = None,
+                            opposing_starters: dict[str, str] | None = None) -> pd.DataFrame:
+    """``opposing_starters`` maps a batting-team name to the id of the pitcher it
+    faces tonight. Used for evidence only — the score is unchanged."""
     # Guard: empty input or missing columns yields an empty result, never a crash.
     if pa.empty or not _REQUIRED_COLUMNS.issubset(pa.columns) or not teams:
         return pd.DataFrame(columns=_RESULT_COLUMNS)
@@ -88,6 +132,13 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         team_name = recent["batting_team"].iloc[-1]
         score, stability, slot, team_posted = lineup_overlay.apply(
             batter_id, team_name, score, stability, support, risks, lineups)
+
+        # Inserted at the front, not appended: evidence is capped (support[:3],
+        # risks[:2]) and this is the only line about *tonight* rather than about the
+        # batter's own recent form, so it must not be the one that gets truncated.
+        note = opposing_starter_note(pa, (opposing_starters or {}).get(team_name))
+        if note:
+            (support if note[0] == "good" else risks).insert(0, note[1])
 
         if not risks:
             if lineups is not None and slot is None and not team_posted:

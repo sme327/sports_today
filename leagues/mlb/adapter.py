@@ -11,6 +11,7 @@ from domain.models import Opportunity, OpportunityMode, SlateGame
 from leagues.base import register
 from leagues.mlb.teams import canonical_team
 from services.data_access import load_plate_appearances
+from services.mlb_analytics import match_pitcher
 from src.mlb_api import schedule as mlb_schedule
 from src.opportunity import score_hit_opportunities
 
@@ -85,6 +86,33 @@ class MLBAdapter:
     def match_team(self, identifier: str | None) -> str | None:
         return canonical_team(identifier)
 
+    def _opposing_starters(self, pa: pd.DataFrame, slate_date: date,
+                           teams: list[str]) -> dict[str, str]:
+        """Map each raw PBP batting-team name to the id of the pitcher it faces.
+
+        Resolved here rather than in the scorer because `src/` is a leaf layer and
+        cannot reach the schedule or `match_pitcher`. A probable that does not
+        resolve is simply absent, and the scorer then says nothing about the matchup
+        rather than guessing.
+        """
+        out: dict[str, str] = {}
+        try:
+            games = self.fetch_schedule(slate_date)
+        except Exception:
+            return out
+        by_canon = {canonical_team(name): name for name in teams}
+        for game in games:
+            for own, opp_key in ((game.away_name, "home_pitcher"),
+                                 (game.home_name, "away_pitcher")):
+                raw = by_canon.get(canonical_team(own))
+                probable = (game.meta or {}).get(opp_key)
+                if not raw or not probable or str(probable).upper() == "TBD":
+                    continue
+                pid = match_pitcher(pa, str(probable))
+                if pid:
+                    out[raw] = pid
+        return out
+
     def _raw_team_names(self, pa: pd.DataFrame, canon_set: set[str] | None) -> list[str]:
         """Raw PBP team strings, optionally restricted to a canonical set."""
         if pa.empty or "batting_team" not in pa.columns:
@@ -127,7 +155,9 @@ class MLBAdapter:
         except Exception:
             lineups = None
 
-        scored = score_hit_opportunities(pa, teams, lineups=lineups)
+        opposing = self._opposing_starters(pa, as_of, teams)
+        scored = score_hit_opportunities(pa, teams, lineups=lineups,
+                                         opposing_starters=opposing)
         if scored.empty:
             return []
 
