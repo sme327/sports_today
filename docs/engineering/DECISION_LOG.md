@@ -9,7 +9,36 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-10 — Retire the batter-walks market
+## 2026-08-10 — Performance measures the advice, not the whole scored output
+
+**Decision.** The Performance headline now leads with the **served** subset — props at
+or above the curation floor, the ones a reader was actually shown — with the full
+scored population underneath, labelled as including props that never cleared the bar.
+`CURATION_FLOOR` moves to `services/grading.py` as the single definition, imported by
+the Today view.
+
+**Reason.** The ledger deliberately records the whole scored population, which is right
+for calibration but wrong for a headline. Measured over the season to date:
+
+| | Record | Rate | Graded |
+| --- | --- | --- | --- |
+| Served (70+) | 686–462 | **59.8%** | 1,148 |
+| Whole scored population | 1642–1886 | **46.5%** | 3,528 |
+
+A **13.2-point** gap, with **77% of rows never reaching a reader**. The dashboard's
+main number was understating the product's actual advice by more than the entire
+discrimination range of the batter-hit scorer.
+
+**Tradeoffs.** Two numbers is more to read than one, and there is a real risk of
+looking like the flattering figure was chosen. Mitigated by keeping both visible, in
+one block, with the population's meaning spelled out rather than dropped — and by the
+floor being one shared constant, so the served number cannot be quietly tuned by
+changing a view.
+
+**Note.** Retiring total bases and walks removed the two worst contributors to that
+gap, so it should narrow going forward. The structural point stands regardless: any
+market scoring below the floor distorts a population-level metric while never
+reaching anyone.
 
 **Decision.** Stop scoring `batter_bb`, following the retirement pattern set by total
 bases the day before: the scorer half is deleted and the adapter method renamed

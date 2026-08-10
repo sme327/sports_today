@@ -612,6 +612,20 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   min-width: 0;
 }
 
+/* The scored population, shown under the served headline. Deliberately quieter: it
+   is context for the number above, not a competing figure. */
+.perf-subline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .45rem;
+  margin: -.35rem 0 .9rem;
+  color: var(--text-3);
+  font-size: .82rem;
+}
+.perf-subline strong { color: var(--text-2); font-weight: 650; font-variant-numeric: tabular-nums; }
+.perf-subline .ph-meta { color: var(--text-4); font-size: .76rem; }
+
 /* ------------------------------------------------- EDITORIAL (THE READ) --- */
 /* Team-level curation for leagues without player props. Reuses the shared evidence
    primitives (.op-evidence / .op-ev-head / .op-ev-body) so it reads as the same
