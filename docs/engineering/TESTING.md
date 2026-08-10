@@ -6,6 +6,11 @@
 > **Related** — [Architecture](ARCHITECTURE.md) · [Decision Log](DECISION_LOG.md) · [Docs index](../README.md)
 
 Run: `pip install -r requirements-dev.txt` then `python -m pytest`.
+
+Scoring changes are **not** covered by the unit suite — they are judged against graded
+outcomes with `python -m scripts.backtest_scoring`, which recomputes a candidate on every
+graded prop using only pre-slate data. Ship only if it widens the band spread **and**
+lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
 ## Test suites (386 tests, all passing)
