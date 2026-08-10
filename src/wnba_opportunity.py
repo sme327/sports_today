@@ -8,6 +8,7 @@ from typing import Iterable
 import pandas as pd
 
 from src.config import DB_PATH
+from src.espn_injuries import InjuryReport
 from src.reliability import highest_reachable_over
 
 
@@ -79,7 +80,14 @@ def score_wnba_opportunities(
     scheduled_teams: Iterable[str],
     *,
     max_per_player: int = 2,
+    injuries: InjuryReport | None = None,
 ) -> pd.DataFrame:
+    """``injuries`` removes players listed OUT and flags anyone questionable.
+
+    Availability outranks form: a player's scoring history says nothing about a game
+    she will not appear in. Absent or empty report -> no claim either way, never an
+    implied clean bill of health.
+    """
     columns = [
         "player_id", "player", "team_id", "team", "team_abbr", "headshot",
         "market", "market_label", "threshold", "display_market",
@@ -135,6 +143,11 @@ def score_wnba_opportunities(
         if len(group) < 5:
             continue
 
+        # Availability first — everything below describes a player who is playing.
+        status = injuries.status_for(player_id) if injuries else None
+        if status is not None and status.is_out:
+            continue
+
         latest = group.iloc[0]
         played_minutes = _played(group["minutes"])
         minutes_l5 = float(played_minutes.head(5).mean())
@@ -181,6 +194,9 @@ def score_wnba_opportunities(
 
             support: list[str] = []
             risks: list[str] = []
+            if status is not None and status.is_questionable:
+                # First, because it changes how every other line should be read.
+                risks.append(status.note)
             if minutes_l5 >= 28:
                 support.append(f"{minutes_l5:.1f} minutes per game over the last 5")
             elif minutes_l5 >= 22:
