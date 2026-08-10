@@ -101,9 +101,14 @@ def render(nav: NavState) -> None:
         return
 
     overall = grading.summarize(rows)["overall"]
+    served_rows, _below = grading.split_served(rows)
+    served = grading.tally(served_rows)
     scores = [r["opportunity_score"] for r in rows if r.get("opportunity_score") is not None]
     avg_score = sum(scores) / len(scores) if scores else None
-    st.markdown(period_summary_html(overall, avg_score, period_label), unsafe_allow_html=True)
+    # What was recommended leads; the full scored population follows as context.
+    st.markdown(period_summary_html(overall, avg_score, period_label,
+                                    served=served, floor=grading.CURATION_FLOOR),
+                unsafe_allow_html=True)
 
     # "vs previous equivalent period" — hidden when the prior window is thin.
     span = (end - start).days + 1

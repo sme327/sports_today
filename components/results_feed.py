@@ -226,15 +226,38 @@ def calibration_interpretation(bands: dict) -> str:
     return "Score bands have produced broadly similar hit rates so far." + note
 
 
-def period_summary_html(overall: dict, avg_score: float | None, label: str) -> str:
-    """A one-line record / hit-rate / sample headline for a period."""
+def period_summary_html(overall: dict, avg_score: float | None, label: str,
+                        served: dict | None = None, floor: int | None = None) -> str:
+    """Record / hit-rate / sample headline for a period.
+
+    When ``served`` is given it leads, because it is what the product actually
+    recommended; the full scored population follows as context. The ledger records
+    every prop that was scored, most of which never cleared the curation floor and so
+    were never shown to anyone — mixing those into the headline measures the scorer's
+    whole output rather than its advice, and the two differ by double digits.
+    """
     dec = overall["hit"] + overall["miss"]
-    sample = f'<span class="ds-sub">n={dec}</span>' if dec else ""
     avg = f" · avg score {avg_score:.0f}" if avg_score is not None else ""
-    return (f'<div class="perf-headline"><span class="ph-label">{escape(label)}</span>'
-            f'<span class="ph-rec">{overall["hit"]}–{overall["miss"]}</span>'
-            f'<span class="ph-rate">{_rate(overall)}</span>{sample}'
-            f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg}</span></div>')
+    if served is None:
+        sample = f'<span class="ds-sub">n={dec}</span>' if dec else ""
+        return (f'<div class="perf-headline"><span class="ph-label">{escape(label)}</span>'
+                f'<span class="ph-rec">{overall["hit"]}–{overall["miss"]}</span>'
+                f'<span class="ph-rate">{_rate(overall)}</span>{sample}'
+                f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg}</span></div>')
+
+    srv_dec = served["hit"] + served["miss"]
+    floor_txt = f" ({floor}+)" if floor is not None else ""
+    return (
+        f'<div class="perf-headline"><span class="ph-label">{escape(label)}</span>'
+        f'<span class="ph-rec">{served["hit"]}–{served["miss"]}</span>'
+        f'<span class="ph-rate">{_rate(served)}</span>'
+        f'<span class="ds-sub">n={srv_dec}</span>'
+        f'<span class="ph-meta">shown as picks{floor_txt}</span></div>'
+        f'<div class="perf-subline">Whole scored population '
+        f'<strong>{overall["hit"]}–{overall["miss"]}</strong> '
+        f'<span>{_rate(overall)}</span> <span class="ds-sub">n={dec}</span>'
+        f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg} · '
+        f'includes props that never cleared the bar</span></div>')
 
 
 def _diff_html(rate: float | None, overall: float | None) -> str:

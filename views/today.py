@@ -23,6 +23,7 @@ from components.prop_filters import (
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
+from services import grading
 from services.calibration import annotate
 from services.app_cache import (cached_mlb_k_opps, cached_mlb_pitcher_opps,
                                  cached_opportunities, cached_slate)
@@ -38,7 +39,7 @@ _LEDGER_LIMIT = 100_000
 # Top Opportunities is a *curated shortlist*, not a searchable database: on the full
 # slate we surface only genuinely-strong picks (score floor) and cap the count. The
 # whole scored population still feeds the daily ledger — this only governs display.
-_CURATION_FLOOR = 70   # v2 scores spread 0–100; ~70+ is where the hit-rate edge shows
+_CURATION_FLOOR = grading.CURATION_FLOOR   # single definition, shared with Performance
 _CURATION_MAX = 8
 
 
