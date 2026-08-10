@@ -56,6 +56,15 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
     except Exception as exc:
         out["regrade_error"] = str(exc)
 
+    # How interesting the finished games actually were, so the editorial score has a
+    # feedback loop rather than accumulating unchecked. Non-fatal: this is analysis,
+    # and a network wobble must not fail the daily rebuild.
+    try:
+        from scripts.record_game_outcomes import run as record_outcomes
+        out["game_outcomes"] = record_outcomes(days=_REGRADE_DAYS, verbose=False)
+    except Exception as exc:
+        out["game_outcomes_error"] = str(exc)
+
     try:
         from services.data_store import is_configured, publish_db
         out["published"] = bool(is_configured() and publish_db())

@@ -58,6 +58,11 @@ def main() -> int:
                   f"{result['mls']['standings']:,} standings rows.")
         elif "mls_error" in result:
             print(f"MLS update skipped: {result['mls_error']}", file=sys.stderr)
+        if result.get("game_outcomes"):
+            print(f"Game outcomes recorded: {result['game_outcomes']} finished games "
+                  f"(feeds the editorial calibration).")
+        elif "game_outcomes_error" in result:
+            print(f"Game outcomes skipped: {result['game_outcomes_error']}", file=sys.stderr)
         for iso, g in (result.get("regraded") or {}).items():
             print(f"Re-graded {iso}: {g['hit']} hit, {g['miss']} miss, {g['void']} void.")
         if result.get("published"):
