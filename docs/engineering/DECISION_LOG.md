@@ -9,6 +9,53 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-09 — batter-hit-v4 (opposing starter in the score): TESTED AND REJECTED
+
+**Decision.** Do **not** fold the opposing starter into the batter-hit score. The
+evidence line stays (it informs a human reader); the score is unchanged and there is
+no v4.
+
+**The proposal.** log5 odds-ratio on the already-shrunk batter rate, with the pitcher
+rate regressed toward league by batters faced (k=200), applied only to the starter's
+share of expected PA (his own BF-per-start ÷ 9) with the remainder at baseline. Well
+motivated: who is pitching is the largest input this market ignored.
+
+**The result.** Backtested on **2,134 graded props across 9 slates**, recomputing both
+the current scorer and the candidate from data strictly before each slate:
+
+| | Q1 | Q2 | Q3 | Q4 | spread | corr | top-20% lift |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| current (v3) | 45.7% | 58.8% | 61.1% | **62.6%** | **+16.9%** | **+0.1124** | **+5.9%** |
+| candidate (v4) | 47.7% | 56.6% | 61.2% | 62.7% | +15.1% | +0.1108 | +5.7% |
+
+Worse on every measure. Not a dilution artefact: **94% of rows received an adjustment**
+and the median pitcher sample was 429 BF. A variant without the bullpen split — the
+full, undamped effect — was no better (spread +14.1%). At the top end, where served
+picks live, it is a dead heat (top 10%: 65.4% vs 65.1%).
+
+**Why the estimate was wrong, which is the part worth remembering.** The "10–14 points
+of swing" figure that motivated this came from the **raw** pitcher spread (.167–.238,
+0.80×–1.14× league). After applying the shrinkage the same proposal specified, the
+realised spread is only **0.90×–1.10×** — then log5 compresses it further, then the
+bullpen split compresses it again. The effect size was quoted from unshrunk rates while
+the method used shrunk ones. Those are inconsistent, and the honest number is much
+smaller than the one that justified the work.
+
+**Tradeoffs.** A real effect can still fail to improve a ranking, because the noise it
+adds can match the signal. Pitcher quality genuinely matters for whether a batter gets
+a hit; it does not help us **order** batters, most of whom face pitchers within ±10% of
+league once the estimate is honest.
+
+**Kept:** `scripts/backtest_scoring.py`, the harness this produced. v2 and v3 were both
+validated ad hoc with the code discarded; the next scoring proposal should not have to
+rebuild it. Its rule is printed on every run: ship only if the candidate widens the
+spread **and** lifts the top 20%.
+
+**Future — better hypotheses than this one.** Platoon splits (batter vs LHP/RHP;
+`pitcher_hand` is already in the feed and `team_vs_hand` uses it) are a sharper signal
+than an aggregate rate. And the same mechanism is far more promising on **total bases**,
+which grades at 19–28% and has much more room than a market already at 57%.
+
 ## 2026-08-09 — Reading two live boards prop-by-prop; six fixes and what it teaches
 
 **Decision.** Audit the actual props for two games before first pitch — every line,
