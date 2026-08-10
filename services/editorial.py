@@ -45,6 +45,10 @@ _WINNING = 0.500       # above water — the broad middle most pro teams live in
 _CLOSE = 0.100         # win-pct gap within which two teams are evenly matched
 _WIDE = 0.300          # win-pct gap that makes a game lopsided on paper
 _RANKED_TOP = 10       # "top-10" for poll-rank purposes
+# How far below their overall rate a home side can be before home court stops
+# counting as a point in their favour. Small: this is a veto on a weak claim, not a
+# claim of its own.
+_HOME_EDGE_TOL = 0.02
 
 _RECORD_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)(?:\s*-\s*(\d+))?\s*$")
 # College short names arrive pre-prefixed with their poll rank ("#7 BYU"); signal
@@ -155,6 +159,21 @@ def parse_record(record: str | None, rank: int | None = None) -> Standing:
     return Standing(record=str(record), wins=wins, losses=losses, ties=ties, rank=rank)
 
 
+def home_edge(game: SlateGame) -> float | None:
+    """How much better the home side is at home than overall, in win pct.
+
+    Positive means home court is worth something to them; negative means it is not.
+    ``None`` when the split is not published, and the caller must then not claim a
+    home advantage either way.
+    """
+    overall = parse_record(game.home_record)
+    at_home = parse_record(game.home_home_record)
+    if overall.win_pct is None or at_home.games < MIN_GAMES:
+        return None
+    home_pct = (at_home.wins + 0.5 * at_home.ties) / at_home.games
+    return round(home_pct - overall.win_pct, 4)
+
+
 def standings(game: SlateGame) -> tuple[Standing, Standing]:
     """(away, home) standings as the source reported them."""
     return (parse_record(game.away_record, game.away_rank),
@@ -205,14 +224,30 @@ def _quality_signals(game: SlateGame, away: Standing, home: Standing) -> list[Si
         # a 5-6 side hosting a 8-3 side read as an "upset setup", which fired on 10
         # of 45 college games and cheapened the label.
         favourite_is_strong = max(ap, hp) >= _STRONG
-        if favourite_is_strong and (weaker_is_home or game.neutral_site):
+        # The home angle is only worth making when the home side is actually better
+        # at home. Observed live: a 12-19 team hosting was framed as an upset setup
+        # while being 5-10 at home — worse than their own overall — and they lost.
+        edge = home_edge(game)
+        home_is_a_factor = weaker_is_home and (edge is None or edge >= -_HOME_EDGE_TOL)
+        if favourite_is_strong and (home_is_a_factor or game.neutral_site):
             where = "at home" if weaker_is_home and not game.neutral_site else "on a neutral field"
+            detail = f"{stronger} are much stronger on record, but {weaker} are {where}."
+            ev = evidence + ((f"{weaker} {game.home_home_record} at home",)
+                             if weaker_is_home and game.home_home_record else ())
             out.append(Signal(
-                "upset_setup", "Upset setup",
-                f"{stronger} are much stronger on record, but {weaker} are {where}.",
-                evidence,
+                "upset_setup", "Upset setup", detail, ev,
                 caveats=("A record gap describes the season so far, not tonight — "
                          "no injury, rest or matchup context is included.",)))
+        elif favourite_is_strong and weaker_is_home and game.home_home_record:
+            # Weaker side at home, but home is no help to them — say so plainly
+            # rather than dressing it as an upset.
+            out.append(Signal(
+                "mismatch", "Lopsided on paper",
+                f"{stronger} come in far ahead, and {weaker} are no better at home "
+                f"({game.home_home_record}).",
+                evidence + (f"{weaker} {game.home_home_record} at home",),
+                caveats=("Record gap only; nothing here accounts for injuries or "
+                         "how the teams match up.",)))
         else:
             out.append(Signal(
                 "mismatch", "Lopsided on paper",

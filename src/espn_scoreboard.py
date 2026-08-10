@@ -33,6 +33,21 @@ def team_records(competitor: dict) -> dict[str, str]:
     return out
 
 
+# Leagues disagree on what to call the venue splits: basketball says "home"/"road",
+# football says "homerecord"/"awayrecord". Look for either rather than per-league code.
+_HOME_KEYS = ("home", "homerecord")
+_ROAD_KEYS = ("road", "awayrecord", "away")
+
+
+def venue_record(competitor: dict, home: bool) -> str | None:
+    """A team's record at this venue type ("11-5"), or None if not published."""
+    recs = team_records(competitor)
+    for key in (_HOME_KEYS if home else _ROAD_KEYS):
+        if recs.get(key):
+            return recs[key]
+    return None
+
+
 def _int(value: object) -> int | None:
     """A clean int, or None — ESPN sends numbers as ints, strings, or not at all."""
     try:
@@ -117,8 +132,8 @@ def parse_events(payload: dict) -> list[dict]:
             "week": _int((event.get("week") or {}).get("number")),
             "away_record": team_records(away).get("total"),
             "home_record": team_records(home).get("total"),
-            "away_home_away_record": team_records(away).get("awayrecord"),
-            "home_home_away_record": team_records(home).get("homerecord"),
+            "away_road_record": venue_record(away, home=False),
+            "home_home_record": venue_record(home, home=True),
             "conference_game": bool(comp.get("conferenceCompetition")),
         })
     return games
