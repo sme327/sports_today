@@ -9,6 +9,52 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-09 — Reading two live boards prop-by-prop; six fixes and what it teaches
+
+**Decision.** Audit the actual props for two games before first pitch — every line,
+against the underlying data — rather than trusting the suite. Six defects surfaced,
+two of them correctness bugs that **350 passing tests did not see**.
+
+**Correctness.**
+- **A traded player was offered for the team she had left.** Eligibility filtered
+  *rows* by team, so a player who moved clubs kept her stale old-club rows and drew
+  props in a game she was not in. Eligibility now follows the team of the most recent
+  appearance; form still draws on every recent game, because form travels with a
+  player and the club does not.
+- **DNP rows silently shrank windows.** `head(5).dropna()` sliced before dropping, so
+  five roster rows could collapse to one appearance still reported as "the last 5" —
+  a single June game presented as a five-game sample. It also corrupted *threshold
+  selection*, not just labels: one player's bar moved 10+ → 15+ once fixed.
+- **Accented names lost every prop.** The schedule says "Randy Vásquez", the feed
+  stores "Randy Vasquez"; exact matching returned `None` and that starter had no SP
+  props at all — 2 of 30 probables on the slate. Matching now folds accents, and
+  returns `None` on an ambiguous name rather than picking the first row.
+
+**Evidence wording.** Severity now scales ("Ice cold — 1 hit in the last 25" replaced
+"Recent hit rate has cooled" for a 1-for-25 batter); the WNBA gained a last-5 rule so
+a player who cleared her bar twice in five no longer reads "No standout red flags";
+stale start windows are named (a pitcher's "last 4 starts" spanning **128 days** now
+says so, and stability drops 25); and every offered prop states its clear rate —
+previously hidden on exactly the props sitting on the qualifying floor, 6 of 19.
+
+**Added, not fixed:** the opposing starter now appears as evidence on batter-hit props.
+
+**Reason.** The suite tested that the code did what it was written to do. None of it
+asked whether the sentence beside the number was *true*, or whether the player was
+even in the game. Those are only visible by reading real output against real data.
+
+**Tradeoffs / what it teaches.**
+- **A symptom fix can entrench a bug.** The first severity rule ("cleared none of the
+  last 5") was written after seeing a 0/5 that only existed *because* of the DNP bug.
+  Once that was fixed the branch became provably unreachable at every sample size and
+  was removed. Fixing wording before checking the number made the app briefly more
+  confidently wrong.
+- **Numbers that don't reconcile are the signal.** The DNP and roster bugs were both
+  found by chasing one figure — `average_l5: 12.0` against a player's actual last five
+  of 25, 19, 20 — instead of moving on.
+- Verifying against **live sources rather than fixtures** is what caught all six; the
+  synthetic tests were written afterwards, from the real shapes.
+
 ## 2026-08-09 — OPEN: our prop thresholds sit far below where the question is asked
 
 **Status: a finding, not yet a decision.** Recorded now because it reframes what the
