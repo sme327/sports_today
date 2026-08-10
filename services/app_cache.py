@@ -64,13 +64,6 @@ def cached_lineups(slate_iso: str):
         return EMPTY_LINEUPS
 
 
-@st.cache_data(ttl=900, show_spinner=False)
-def cached_mlb_tb_opps(as_of_iso: str, team_ids: tuple[str, ...], limit: int = 100_000):
-    """Batter Total-Bases opportunities for the slate, cached by (as_of, teams)."""
-    adapter = get_adapter("MLB")
-    return adapter.tb_opportunities(
-        as_of=date.fromisoformat(as_of_iso), scheduled_team_ids=list(team_ids), limit=limit)
-
 
 @st.cache_data(ttl=900, show_spinner=False)
 def cached_mlb_kbb_opps(as_of_iso: str, team_ids: tuple[str, ...], limit: int = 100_000):

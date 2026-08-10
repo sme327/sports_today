@@ -46,6 +46,11 @@ MARKETS: dict[str, MarketSpec] = {
     "batter_hit": MarketSpec(
         "batter_hit", "MLB", "hits", "Hit", "hit", True,
         "plate_appearances", OVER, allows_both=False),
+    # RETIRED 2026-08-09 — no longer scored, kept so the 1,124 graded rows already in
+    # the ledger still resolve, display and grade. Do not add a scorer back without
+    # reading the decision log: total bases is strictly nested inside 1+ Hit (of 2,017
+    # paired outcomes, zero cases where TB hit and the hit prop missed), converted
+    # 20.6%, and never once scored 75+ so it could never be recommended.
     "batter_tb": MarketSpec(
         "batter_tb", "MLB", "tb", "Total Bases", "total bases", False,
         "plate_appearances", OVER, allows_both=False),

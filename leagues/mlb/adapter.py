@@ -209,60 +209,6 @@ class MLBAdapter:
             )
         return out
 
-    def tb_opportunities(self, *, as_of: date,
-                         scheduled_team_ids: Iterable[str] | None = None,
-                         limit: int = 8) -> list[Opportunity]:
-        """Batter Total-Bases opportunities for the slate's teams — same feed /
-        ledger / grading path as 1+ Hit, with the same confirmed-lineup overlay."""
-        from domain.markets import format_market
-        from src.tb_opportunity import score_tb_opportunities
-
-        pa = load_plate_appearances(as_of=as_of)
-        if pa.empty:
-            return []
-        canon_set = {c for c in (canonical_team(t) for t in (scheduled_team_ids or [])) if c}
-        if not canon_set:
-            return []
-        teams = self._raw_team_names(pa, canon_set)
-        if not teams:
-            return []
-        lineups = None
-        try:
-            from services.app_cache import cached_lineups
-            lineups = cached_lineups(as_of.isoformat())
-        except Exception:
-            lineups = None
-
-        scored = score_tb_opportunities(pa, teams, lineups=lineups)
-        if scored.empty:
-            return []
-
-        out: list[Opportunity] = []
-        for _, row in scored.head(limit).iterrows():
-            thr = int(row.threshold)
-            out.append(Opportunity(
-                league=self.league,
-                player_id=str(int(row.batter_id)),
-                player_name=str(row.player),
-                team_id=None,
-                team_name=str(row.team),
-                market=format_market("batter_tb", thr, "over"),
-                market_key="batter_tb",
-                direction="over",
-                threshold=thr,
-                opportunity_score=int(row.opportunity_score),
-                stability_score=int(row.stability_score),
-                supporting_evidence=list(row.support) if isinstance(row.support, list) else [],
-                negative_evidence=list(row.risks) if isinstance(row.risks, list) else [],
-                image_url=None,
-                headshot_url=(f"https://img.mlbstatic.com/mlb-photos/image/upload/"
-                              f"w_120,q_auto:best/v1/people/{int(row.batter_id)}/headshot/67/current"),
-                mode=OpportunityMode.SLATE,
-                components={"recent_avg": float(row.recent_avg),
-                            "recent_hit_rate": float(row.recent_hit_rate)},
-            ))
-        return out
-
     def k_bb_opportunities(self, *, as_of: date,
                            scheduled_team_ids: Iterable[str] | None = None,
                            limit: int = 8) -> list[Opportunity]:
