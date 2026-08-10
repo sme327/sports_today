@@ -182,7 +182,7 @@ If it scores poorly, it belongs later — or not at all.
   picks and a proven-edge confidence tier (Scoring v2 follow-ups).
 - **Before Games:** further inputs beyond confirmed lineups (expected plate
   appearances/minutes, matched-starter lines, park/weather/bullpen). MLB batter
-  markets (total bases, strikeouts, walks) are shipped; home runs are out of scope
+  markets (strikeouts, walks) are shipped; total bases was retired and home runs are out of scope
   (a "1+ HR" pick is only ever a ~25% longshot — poor fit for the reliability bar).
   For **MLS**, projected/confirmed lineups next; **MLS player data is deferred**
   until a richer source exists.

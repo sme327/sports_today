@@ -29,7 +29,7 @@ Sports are grouped by **family** because a foundation is built once and reused.
 The most mature sport; the template for everything else.
 
 - **T0/T1** ✅ Schedule, live state, final scores.
-- **T2** ✅ Batter props: 1+ hit, total bases, strikeouts (2+/3+), walks (1+/2+); SP
+- **T2** ✅ Batter props: 1+ hit, strikeouts (2+/3+), walks (1+/2+) — total bases retired; SP
   strikeouts + hits allowed (over/under). All on the reachable-bar discipline, graded daily.
 - **T3** ✅ Matchup deep-dive (SP trends, batter spotlights, team analysis).
 - **T4** ⬜ Postseason mode: series model, rotation/short-rest flags, bullpen workload,

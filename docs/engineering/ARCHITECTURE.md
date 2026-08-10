@@ -16,7 +16,8 @@
 | a new **component** (reusable UI/HTML) | `components/<name>.py` |
 | a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |
 | a new **domain object** | `domain/models.py`, or a league page model (`domain/<league>_game_page.py`) |
-| a new **prop market** | a `MarketSpec` entry in `domain/markets.py` (label, unit, direction, grade rule, source) + a scorer in `src/`; grading/classification/display then work automatically |
+| a new **prop market** | a `MarketSpec` entry in `domain/markets.py` (label, unit, direction, grade rule, source) + a scorer in `src/`; grading/classification/display then work automatically. **Before adding one, check it can actually clear the curation floor** — total bases never scored above 72 in 1,199 graded rows, so it was scored daily for a reader who never saw it |
+| to **retire** a prop market | delete the scorer, adapter entry point, cached builder and slate wiring; **keep** the `MarketSpec` and grading branch so existing ledger rows still resolve. Never delete graded history |
 | **grading / Results & Performance** logic | `services/grading.py` (grade + summarize by band/segment), `views/results.py` (Daily Results), `views/performance.py` (Performance dashboard), `components/results_feed.py`, `components/filter_bar.py` (shared query-param filter bar) |
 | a new **data collector** (fetch → normalize → SQLite) | `src/<league>_collector.py`, writing via a `src/<league>_store.py` (DDL + upserts; keep it a leaf so the collector stays runnable headless) |
 | a new **vendor season-feed ingest** (workbook → SQLite) | `src/<league>_ingest.py` + a `scripts/import_<league>_feed.py` CLI. Write **additively per season** so loading a new year keeps the others (see `src/nfl_ingest.py`) |
@@ -57,8 +58,10 @@ Everything else follows the layers below.
 - **Grading** — scoring each recorded prop **hit / miss / void** against actual
   results; a player who did not play is **void** (excluded from the hit rate), never
   a miss. Lives in `services/grading.py`; surfaced in the **Results** view.
-- **Prop market** — a market a prop is scored in (batter 1+ hit, SP strikeouts, SP
-  hits allowed, WNBA points/rebounds/assists). `domain/markets.py` is the **registry**
+- **Prop market** — a market a prop is scored in (batter 1+ hit / strikeouts / walks,
+  SP strikeouts, SP hits allowed, WNBA points/rebounds/assists). A **retired** market
+  keeps its `MarketSpec` so old ledger rows still resolve, but has no scorer — see
+  `batter_tb`. `domain/markets.py` is the **registry**
   (one `MarketSpec` per family) and the single source of truth for a market's label,
   unit, direction, grade rule, source, and prop-type — used by the scorers, grading,
   the feed filters, and the Results breakdown. Legacy snapshot rows (which store market

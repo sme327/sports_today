@@ -14,7 +14,7 @@ restating it. **Start with [`docs/README.md`](docs/README.md).**
 A personal **daily sports companion** — calm, explainable, curated. It answers
 *"what should I pay attention to today?"* It is an analysis/opportunity tool, **not**
 a sportsbook, dashboard, or fantasy platform. Today's slate carries **daily
-opportunities** for MLB (batters: 1+ hit, total bases, strikeouts 2+/3+, walks 1+/2+;
+opportunities** for MLB (batters: 1+ hit, strikeouts 2+/3+, walks 1+/2+;
 SP strikeouts and SP hits allowed, both over/under) and WNBA
 (points/rebounds/assists), with **matchup pages for MLB, WNBA, and MLS**. The
 remaining leagues (World Cup, NHL, NBA, NCAA Football — via the shared
@@ -101,12 +101,20 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 - Season-to-date feed must be replaced daily; schedules need internet.
 - MLB batter scoring now uses **today's confirmed lineups** when posted (from MLB
   StatsAPI): a confirmed slot adds evidence, a scratched batter is capped, and an
-  un-posted lineup is shown honestly (never guessed). Scoring still does **not**
-  include opposing-starter quality, weather, park, or bullpen context. Do not
-  represent scores as hit probabilities.
+  un-posted lineup is shown honestly (never guessed). Batters who are not on the
+  active roster are dropped entirely (StatsAPI roster status). The opposing starter
+  appears as **evidence** ("allows hits 14% above league average") but is deliberately
+  **not** in the score — folding it in was backtested as `batter-hit-v4` and rejected
+  for making discrimination worse. Scoring still excludes weather, park and bullpen
+  context. Do not represent scores as hit probabilities.
 - **1+ hit is a hard ~55% event.** `batter-hit-v3` shrinks the recent per-PA hit rate
   toward the league mean to fix a saturated, *inverted* top band; overall
   discrimination is still modest by design. Don't read a 100 as near-certainty.
+- **Total bases was retired (2026-08-09)** and its `MarketSpec` kept only so old ledger
+  rows still resolve. Don't re-add a scorer for it without reading the decision log: it
+  is strictly nested inside 1+ Hit, converted 20.6%, and never once scored 75+ so it
+  could never be recommended. **Batter walks looks like the same shape** — 1 prop ever
+  above 75, and the outcome depends more on how the pitcher attacks than on the batter.
 - **Editorial signals are records, not forecasts.** They use no odds (a deliberate
   product decision, enforced by a test), no injuries and no weather. A "Game Interest"
   score ranks a slate for attention — it is **not** a win probability and not
