@@ -9,7 +9,50 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-10 — Platoon splits: MEASURED AND NOT BUILT
+## 2026-08-10 — A feedback loop for the editorial engine
+
+**Decision.** Record how every finished game actually played out — final margin, total
+score, winner, and the signals it carried — alongside the interest score it was given
+beforehand. Runs with the daily rebuild (non-fatal), with a backfill script for
+history. `services/game_outcomes.py` + `scripts/record_game_outcomes.py`.
+
+**Reason.** Props are graded hit/miss nightly. A game's interest score was checked
+against nothing, so the editorial engine was the one part of the product that could
+not improve with data — more slates taught it nothing because no outcome was recorded.
+
+**The leak, and why it matters more than the feature.** ESPN's record for a completed
+game **includes that game**: the Yankees show 66-51 on a day they won and 66-52 the
+next. Backfilling straight from that feeds the result into the input, and always in
+the same direction, since the winner is the side credited. `pregame_record` rewinds
+it. Without that the calibration would have flattered itself and we would have
+believed it.
+
+**What 232 backfilled games say.**
+
+| | n | mean margin | close-game rate |
+| --- | --- | --- | --- |
+| MLB, interest ≥ 60 | 31 | **2.97** | **54.8%** |
+| MLB, interest < 45 | 98 | 3.77 | 49.0% |
+
+Real, and weak: **r = −0.111 within MLB**. Two things fall out of it —
+
+- **Pooling leagues destroys the signal.** MLB alone is −0.111; pooled with WNBA it is
+  −0.017. Margins are no more comparable across sports than win percentage was, so
+  calibration is reported within a league.
+- **The `even` signal does not do what it claims.** MLB mean margin by signal: `even`
+  **3.45** (n=134), `solid` 3.19, `edge` 3.20. "Evenly matched" produces the *widest*
+  margins — it is firing on nearly two-thirds of games and is essentially the base
+  rate. That is the first concrete evidence that an editorial signal needs rework, and
+  it exists only because this loop now exists.
+
+**Tradeoffs.** Margin is a **proxy**, not truth: a 1-0 duel and a 12-10 slugfest are
+both good games to different people, and no metric settles that. So the raw facts are
+stored and no composite "watchability score" is invented. Lead changes and late-game
+closeness are the obvious next measures, both derivable from data already held.
+
+**Note.** Wiring this into the rebuild briefly broke the offline test guarantee — the
+pipeline suite went from 3s to 37s making live calls. Faked in the fixture, with the
+new step covered including its non-fatal failure path.
 
 **Decision.** Do not add batter-vs-hand splits. Nothing shipped; this is the finding.
 

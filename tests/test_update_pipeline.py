@@ -18,6 +18,9 @@ def _fake_import(monkeypatch):
     monkeypatch.setattr("src.ingest.import_feed", lambda p, **k: (Path("db"), _MLB))
     # Don't touch the real ledger during the pipeline's regrade step.
     monkeypatch.setattr("services.grading.grade_slate", lambda d, **k: dict(_ZERO))
+    # Recording game outcomes fetches finished slates, so it must be faked here too —
+    # this file's contract is that the pipeline runs with no network at all.
+    monkeypatch.setattr("scripts.record_game_outcomes.run", lambda **k: 7)
 
 
 def test_rebuild_mlb_only(monkeypatch):
@@ -57,3 +60,18 @@ def test_collector_failure_is_captured(monkeypatch):
     assert "no internet" in out["wnba_error"]
     assert "no internet" in out["mls_error"]
     assert out["published"] is False
+
+
+def test_game_outcomes_are_recorded_and_non_fatal(monkeypatch):
+    """The editorial feedback loop runs with the daily rebuild, and a failure there
+    must not fail the rebuild — it is analysis, not data the app needs to boot."""
+    _fake_import(monkeypatch)
+    monkeypatch.setattr("services.data_store.is_configured", lambda: False)
+    assert P.rebuild("feed.xlsx", collect_web=False)["game_outcomes"] == 7
+
+    def _boom(**_k):
+        raise RuntimeError("espn down")
+    monkeypatch.setattr("scripts.record_game_outcomes.run", _boom)
+    out = P.rebuild("feed.xlsx", collect_web=False)
+    assert "espn down" in out["game_outcomes_error"]
+    assert out["mlb"], "the rebuild itself still succeeded"
