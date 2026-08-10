@@ -270,13 +270,25 @@ def test_upset_setup_needs_the_favourite_to_actually_be_good():
 
 
 def test_evenly_matched_alone_does_not_earn_a_card_chip():
-    """Closeness does not travel across sports: MLB sits inside .380-.620, so a
-    .100 gap covers half the league and tagged 9 of 15 cards. Both-good-and-close
-    is "marquee", which does travel."""
+    """Without a norm, "even" falls back to an absolute .500 bar — and .508 vs .517 is
+    the most ordinary pairing in baseball, not a reason to watch. The game page can
+    show it with its evidence; a chip has no room to qualify itself."""
     from services.editorial import card_signal
     ordinary = _g("60-58", "61-57")          # a typical mid-table baseball pairing
     assert "even" in _kinds(ordinary)        # still true, and still on the game page
-    assert card_signal(ordinary) is None     # but not shouted on the card
+    assert card_signal(ordinary) is None     # but not shouted on an un-normalised card
+
+
+def test_evenly_matched_earns_a_chip_once_the_league_can_be_judged():
+    """With a norm, "even" means close *and* good against this league — which fired on
+    31 of 191 MLB games at a 2.84 mean margin against a 3.39 base."""
+    from services.editorial import card_signal, league_norms
+    slate = _lg("MLB", [("72-46", "70-48"),   # two of the league's best, close
+                        ("60-58", "61-57"), ("59-59", "58-60"), ("45-73", "44-74")])
+    norm = league_norms(slate).get("MLB")
+    top = card_signal(slate[0], norm)
+    assert top is not None and top.kind in ("marquee", "even")
+    assert card_signal(slate[1], norm) is None   # mid-table stays quiet
 
 
 def test_card_chip_appears_for_the_genuinely_notable():
@@ -424,3 +436,34 @@ def test_the_card_shows_the_chip_only_when_marked():
     assert "bg-chip" not in game_card_html(g, "today")
     grid = schedule_grid_html(_FULL, "today", best_ids={str(_FULL[0].game_id)})
     assert grid.count("bg-chip") == 1, "exactly one card marked"
+
+
+def test_marquee_is_reachable_in_a_league_nobody_wins_650_in():
+    """The bar used to be a raw .650. Baseball's best team finishes near .620, so
+    "Marquee matchup" fired on **zero** of 191 finished MLB games — a label that could
+    not exist all season. Judged against the league instead, its top pairings qualify."""
+    from services.editorial import interest, league_norms, standings
+    slate = _lg("MLB", [("74-44", "72-46"),                    # the league's two best
+                        ("64-54", "62-56"), ("60-58", "58-60"),
+                        ("54-64", "52-66"), ("46-72", "44-74")])
+    norm = league_norms(slate).get("MLB")
+    assert norm is not None and norm.usable
+    assert max(s.win_pct for g in slate for s in standings(g)) < 0.650   # nobody clears it
+    assert "marquee" in {s.kind for s in interest(slate[0], norm).signals}
+    assert "marquee" not in {s.kind for s in interest(slate[2], norm).signals}
+
+
+def test_even_needs_both_sides_good_not_merely_similar():
+    """Measured over 191 MLB games, closeness of record predicted nothing: the old
+    gap-only rule fired on 134 and its games averaged a *wider* margin than the rest.
+    Quality is what predicts a close game, so both sides must clear a league-relative
+    bar — and an absolute one, since on an all-poor slate the least-poor look strong."""
+    from services.editorial import interest, league_norms
+    slate = _lg("MLB", [("70-48", "69-49"),      # close and good
+                        ("48-70", "47-71"),      # close and bad
+                        ("60-58", "59-59"), ("62-56", "61-57"),
+                        ("55-63", "54-64"), ("44-74", "43-75")])
+    norm = league_norms(slate).get("MLB")
+    kinds = lambda g: {s.kind for s in interest(g, norm).signals}
+    assert "even" in kinds(slate[0])
+    assert "even" not in kinds(slate[1])

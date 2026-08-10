@@ -25,7 +25,7 @@ from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
 from services import grading
 from services.calibration import annotate
-from services.editorial import best_per_league
+from services.editorial import best_per_league, league_norms
 from services.app_cache import (cached_mlb_k_opps, cached_mlb_pitcher_opps,
                                  cached_opportunities, cached_slate)
 from services.freshness import get_freshness
@@ -266,10 +266,14 @@ def render(nav: NavState) -> None:
             # single cross-league pick: that would assert leagues are comparable, and
             # on a light slate they are not.
             best_ids, unjudged = best_per_league(all_visible)
+            # Built from the full slate so a card's chip means the same thing whether
+            # its game is upcoming or already final.
+            norms = league_norms(all_visible)
             for group in group_games_by_state(all_visible):
                 if group:
                     st.markdown(schedule_grid_html(group, day, game_counts,
-                                                   nav.prop_threshold, set(best_ids.values())),
+                                                   nav.prop_threshold, set(best_ids.values()),
+                                                   norms),
                                 unsafe_allow_html=True)
             if unjudged:
                 names = ", ".join(unjudged)
