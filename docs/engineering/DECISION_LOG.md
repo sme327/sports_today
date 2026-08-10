@@ -9,7 +9,42 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-10 — Performance measures the advice, not the whole scored output
+## 2026-08-10 — Platoon splits: MEASURED AND NOT BUILT
+
+**Decision.** Do not add batter-vs-hand splits. Nothing shipped; this is the finding.
+
+**Reason.** The effect does not survive honest regression on the data we hold.
+
+| Stat | League vs L / vs R | Raw split p10/p90 | Shrunk (k=200) |
+| --- | --- | --- | --- |
+| Hit rate | .2075 / .2098 | −.043 / +.037 | **−.013 / +.011** |
+| Strikeout rate | .2192 / .2113 | −.039 / +.048 | **−.013 / +.014** |
+| Total bases/PA | .3364 / .3474 | −.105 / +.062 | −.027 / +.023 |
+
+Two things make this conclusive rather than merely discouraging:
+
+- **There is no league-level platoon effect in hit rate at all** (.2075 vs .2098), so
+  any signal would have to be individual — and individual splits are thin. The median
+  batter has **89 PA against left-handers** (p10: 29). At k=200, **0.0%** of batter×hand
+  pairs show a shrunk delta above .04, against **21% raw**. The raw number is the trap.
+- **A ±.013 shift in strikeout rate is 0.05 strikeouts across four plate appearances** —
+  invisible against a 2+ threshold. It cannot move `batter_k`, the market it was most
+  likely to help.
+
+**The effect is real where the theory says it should be** — total bases, i.e. power, at
+roughly twice the shrunk spread of the other two. That is the market retired the day
+before for never clearing the curation floor. Platoon splits would have been the right
+input for the wrong market.
+
+**Scope of the claim.** This is measured on **season-to-date** data only. Career splits
+carry several times the sample and might survive shrinkage; we do not have them, and
+acquiring them is a data-source question rather than a modelling one. If multi-season
+batter history ever lands, this is worth re-testing — the finding is "too thin here",
+not "does not exist".
+
+**Cost.** Fifteen minutes, no code. The second negative result in two days (after
+`batter-hit-v4`), and both were reached by measuring the effect size before building
+anything — which is the pattern worth keeping.
 
 **Decision.** The Performance headline now leads with the **served** subset — props at
 or above the curation floor, the ones a reader was actually shown — with the full
