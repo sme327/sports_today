@@ -186,11 +186,19 @@ pain the current markets hit). The plan is to make the whole season **browsable*
 - **Bonus: an instant season-long backtest** — see how the props/edges graded across an
   entire season at once, not one live slate at a time.
 
-**Data note (honest):** the feed on hand (pulled 2026-01-12) has the full 2025 **regular
-season + Wild Card round** (weeks 1–19), but not the divisional/conference/Super Bowl games
-— those were played after that pull. A fresh re-download of the now-completed 2025 season
-feed includes the entire playoffs + Super Bowl. So "browse last season incl. playoffs/SB"
-is fully possible; it just needs the completed-season file, not the mid-January snapshot.
+**Data note (honest):** three seasons are loaded — **2023** (284 games, through week 21),
+**2024** (282, week 20) and **2025** (278, week 19).
+
+Every one of them stops short of the Super Bowl, for the same reason: each feed was pulled
+in mid-January, while that postseason was still being played. This is a **download
+recency** problem, not a data-source limitation — re-pulling the now-completed seasons
+adds the missing rounds. So "browse last season incl. playoffs/SB" needs the
+completed-season files, not new code.
+
+A 2022 **player** feed does reach week 22 (284 games, Super Bowl included) and is the only
+such file we hold, but no matching team feed exists, so it cannot be imported as-is. Feeds
+live in `~/Library/Mobile Documents/com~apple~CloudDocs/Sports Data/NFL/`, whose README
+records what each covers.
 
 ## Build order (tiers within NFL)
 
