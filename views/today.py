@@ -23,6 +23,7 @@ from components.prop_filters import (
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
+from services.calibration import annotate
 from services.app_cache import (cached_mlb_kbb_opps, cached_mlb_pitcher_opps,
                                  cached_mlb_tb_opps, cached_opportunities, cached_slate)
 from services.freshness import get_freshness
@@ -151,6 +152,10 @@ def _build_slate_opps(nav: NavState, visible: dict[str, list[SlateGame]]):
         slate_opps.extend(_stamp(cached_mlb_kbb_opps(as_of_iso, mlb_team_ids),
                                  mlb_games, get_adapter("MLB")))
 
+    # A score is only comparable within its market — total bases has converted 21%
+    # and SP hits 60% in the same band — so flag the markets with a poor record
+    # rather than letting an identical number imply identical worth.
+    annotate(slate_opps)
     slate_opps.sort(key=lambda o: o.sort_key, reverse=True)
     return slate_opps, analysis_leagues
 
