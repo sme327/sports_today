@@ -76,6 +76,8 @@ class WNBAAdapter:
                     phase=g.get("phase"),
                     away_record=g.get("away_record"),
                     home_record=g.get("home_record"),
+                    away_road_record=g.get("away_road_record"),
+                    home_home_record=g.get("home_home_record"),
                     meta={"broadcast": g.get("broadcast")},
                 )
             )

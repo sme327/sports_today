@@ -130,6 +130,10 @@ class SlateGame:
     home_record: str | None = None
     away_rank: int | None = None
     home_rank: int | None = None
+    # Venue splits. A home-court claim is only worth making when the home side is
+    # actually good at home — see editorial's upset rule.
+    away_road_record: str | None = None
+    home_home_record: str | None = None
 
     # Position within a multi-game series. Baseball plays the regular season in
     # series and every postseason is one, so this is context year-round, not just in

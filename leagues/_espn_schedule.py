@@ -86,6 +86,8 @@ class ScheduleOnlyESPN:
                 home_record=g.get("home_record"),
                 away_rank=g.get("away_rank"),
                 home_rank=g.get("home_rank"),
+                away_road_record=g.get("away_road_record"),
+                home_home_record=g.get("home_home_record"),
                 meta={
                     # `round` kept for backward compatibility with cached rows and any
                     # caller still reading meta; `round_name` is the field to use.

@@ -218,6 +218,46 @@ def test_ranking_keeps_unknown_games_in_the_slate():
     assert rank_games(games)[0][0].away_short == "Known"
 
 
+# --- home court is a claim that has to be earned ---------------------------------
+
+def _home_split(away_rec, home_rec, home_at_home, **kw):
+    return SlateGame(league="WNBA", game_id="g", away_short="Road", home_short="Host",
+                     away_record=away_rec, home_record=home_rec,
+                     home_home_record=home_at_home, **kw)
+
+
+def test_home_edge_compares_home_form_to_the_team_s_own_overall():
+    from services.editorial import home_edge
+    assert home_edge(_home_split("20-10", "12-19", "9-6")) > 0     # better at home
+    assert home_edge(_home_split("20-10", "12-19", "5-10")) < 0    # worse at home
+    assert home_edge(_home_split("20-10", "12-19", None)) is None  # not published
+    assert home_edge(_home_split("20-10", "12-19", "1-1")) is None # too few home games
+
+
+def test_upset_setup_needs_the_host_to_be_good_at_home():
+    """Observed live: a 12-19 side hosting was framed as an upset setup while going
+    5-10 at home — worse than their own overall — and they lost by 6."""
+    real_edge = _home_split("23-9", "12-19", "9-6")
+    assert "upset_setup" in _kinds(real_edge)
+    no_edge = _home_split("23-9", "12-19", "5-10")
+    kinds = _kinds(no_edge)
+    assert "upset_setup" not in kinds and "mismatch" in kinds
+
+
+def test_the_home_record_is_shown_either_way():
+    """Whether it supports the angle or undercuts it, the reader sees the number."""
+    for host_home in ("9-6", "5-10"):
+        g = _home_split("23-9", "12-19", host_home)
+        ev = " ".join(e for s in interest(g).signals for e in s.evidence)
+        assert f"{host_home} at home" in ev, (host_home, ev)
+
+
+def test_a_missing_split_does_not_veto_the_upset_angle():
+    """Absent data is not evidence against. Leagues that publish no splits keep the
+    old behaviour rather than silently losing the signal."""
+    assert "upset_setup" in _kinds(_home_split("23-9", "12-19", None))
+
+
 # --- what earns a chip on the card ---------------------------------------------
 
 def test_upset_setup_needs_the_favourite_to_actually_be_good():
