@@ -15,6 +15,8 @@ from domain.markets import market_key_from_scorer
 from domain.models import Opportunity, OpportunityMode, SlateGame
 from leagues.base import register
 from services.data_access import load_wnba_player_logs
+from src import espn_injuries
+from src.espn_injuries import InjuryReport
 from src.wnba_api import schedule as wnba_schedule
 from src.wnba_opportunity import score_wnba_opportunities
 
@@ -83,6 +85,24 @@ class WNBAAdapter:
         token = _normalize(identifier)
         return token or None
 
+    def _slate_injuries(self, slate_date: date, teams: set[str]) -> InjuryReport:
+        """Merged injury report for the slate's games (empty when unavailable)."""
+        out: dict[str, object] = {}
+        questionable: dict[str, object] = {}
+        try:
+            games = self.fetch_schedule(slate_date)
+        except Exception:
+            return InjuryReport()
+        wanted = {_normalize(t) for t in teams if t}
+        for game in games:
+            ids = {_normalize(v) for v in game.team_identifiers if v}
+            if wanted and not (ids & wanted):
+                continue
+            report = espn_injuries.fetch("basketball/wnba", game.game_id)
+            out.update(report.out)
+            questionable.update(report.questionable)
+        return InjuryReport(out=out, questionable=questionable)
+
     def opportunities(
         self,
         *,
@@ -105,7 +125,11 @@ class WNBAAdapter:
         if not teams:
             return []
 
-        scored = score_wnba_opportunities(logs, teams)
+        # Availability for the games on this slate. One summary request per game,
+        # merged: a player is Out or questionable regardless of which game we asked
+        # about. Silent on failure — an empty report is not a clean bill of health.
+        injuries = self._slate_injuries(as_of, teams)
+        scored = score_wnba_opportunities(logs, teams, injuries=injuries)
         if scored.empty:
             return []
 
