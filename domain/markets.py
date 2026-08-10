@@ -57,6 +57,10 @@ MARKETS: dict[str, MarketSpec] = {
     "batter_k": MarketSpec(
         "batter_k", "MLB", "batter_k", "Strikeouts", "K", False,
         "plate_appearances", OVER, allows_both=False),
+    # RETIRED 2026-08-09 — no longer scored, kept so existing ledger rows still
+    # resolve, display and grade. Same failure as batter_tb: one prop ever scored
+    # above 75, so it could never be recommended. Additionally the outcome depends
+    # more on how the pitcher attacks than on the batter, which no extra data fixes.
     "batter_bb": MarketSpec(
         "batter_bb", "MLB", "batter_bb", "Walks", "walk", True,
         "plate_appearances", OVER, allows_both=False),

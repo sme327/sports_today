@@ -9,7 +9,42 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-09 — Retire the batter total-bases market
+## 2026-08-10 — Retire the batter-walks market
+
+**Decision.** Stop scoring `batter_bb`, following the retirement pattern set by total
+bases the day before: the scorer half is deleted and the adapter method renamed
+`k_bb_opportunities` → `k_opportunities`; the `MarketSpec` and grading branch **stay**
+so the 70 graded rows still resolve and display.
+
+**Reason.** Two arguments, and the second is the stronger.
+
+- **It could never be recommended.** Exactly **one** walk prop has ever scored 75+, and
+  none reached 85 or 90. Like total bases it sat permanently below the curation floor,
+  scored and graded daily for a reader who never saw one. It converted 28.6% over 70
+  graded rows.
+- **The outcome is mostly the opponent's choice.** A walk depends more on how the
+  pitcher attacks a hitter than on the hitter's own skill — which the app already
+  conceded in its own risk line: *"Walks depend on plate discipline and how the pitcher
+  attacks him."* No amount of accumulated data fixes a market whose result is largely
+  decided by someone we are not modelling. This is why we did not wait for the sample
+  to reach 100: more rows would have measured the same wrong thing more precisely.
+
+**Tradeoffs.** Plate discipline is a real and under-covered attribute, and this was the
+only market touching it. As with total bases, the loss is acceptable because the market
+was not delivering it — but a genuine discipline market would need a bar that can reach
+the floor, and probably an opposing-pitcher term, which we now know does not help the
+hit market (see the v4 rejection).
+
+**Watch next: `batter_k` has the same structural flaw.** Best score ever **69**, zero
+props above 75 — also unservable. Its conversion is respectable (47.1%) and the sample
+is small (34), so it is flagged rather than retired. If it stays unservable it should
+follow, and the whole `src/batter_kbb_opportunity.py` module goes with it.
+
+**The pattern is now explicit** in ARCHITECTURE: check a market can clear the curation
+floor *before* building it. Three markets have now failed that test — home runs (caught
+before shipping), total bases and walks (caught after).
+
+## 2026-08-09 — Retire the batter-total-bases market
 
 **Decision.** Stop scoring `batter_tb`. The scorer (`src/tb_opportunity.py`), the
 adapter entry point, the cached builder and the slate wiring are removed. The

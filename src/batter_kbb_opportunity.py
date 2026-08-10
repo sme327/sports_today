@@ -105,35 +105,6 @@ def score_k_opportunities(pa: pd.DataFrame, teams: list[str], minimum_games: int
     return _frame(rows)
 
 
-def score_bb_opportunities(pa: pd.DataFrame, teams: list[str], minimum_games: int = MIN_GAMES,
-                           lineups: Lineups | None = None) -> pd.DataFrame:
-    """Over-only batter-walk props (1+/2+ Walk) for patient hitters."""
-    per_game = _per_game(pa, teams)
-    if per_game is None:
-        return pd.DataFrame(columns=_RESULT_COLUMNS)
-    x = pa.loc[pa["batting_team"].isin(teams)]
-    rows = []
-    for batter_id, g in per_game.groupby("batter_id"):
-        recent = g.sort_values("game_date").tail(RECENT_GAMES)["bb"]
-        n = len(recent)
-        if n < minimum_games:
-            continue
-        over = _reliable_over(recent, BB_THRESHOLDS, BB_FLOOR)
-        if not over:
-            continue
-        thr, clear, imp = over
-        avg = float(recent.mean())
-        name, team = _name_team(x, per_game, batter_id)
-        cleared = int(round(clear * n))
-        support = [f"{avg:.1f} walks per game over last {n}",
-                   f"{thr}+ walk in {cleared} of {n} games"]
-        rows.append(_row(batter_id, name, team, "batter_bb", "over", thr,
-                         _score(clear, imp, n, imp_weight=0.20), _stability(clear, n),
-                         avg, clear, support,
-                         ["Walks depend on plate discipline and how the pitcher attacks him"],
-                         lineups))
-    return _frame(rows)
-
 
 def _row(batter_id, name, team, key, direction, thr, score, stability, avg, clear,
          support, risks, lineups) -> dict:
