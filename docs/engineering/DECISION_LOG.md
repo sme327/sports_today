@@ -9,6 +9,43 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-09 — Retire the batter total-bases market
+
+**Decision.** Stop scoring `batter_tb`. The scorer (`src/tb_opportunity.py`), the
+adapter entry point, the cached builder and the slate wiring are removed. The
+`MarketSpec` and the grading branch **stay**, so the 2,204 rows already in the ledger
+continue to resolve, display and grade — history is never rewritten.
+
+**Reason.** Four independent findings, any one of which would be enough:
+
+- **It is strictly nested inside a market we already run.** You cannot record two
+  total bases without a hit. Verified on 2,017 paired outcomes: **zero cases** where
+  the TB prop hit and that player's 1+ Hit prop missed. Every TB win is a hit win,
+  arrived at the hard way.
+- **It cannot be recommended, by construction.** Best score ever achieved: v1 **67**,
+  v2 **72**, v0.1 **64**. Exactly one prop in 1,124 reached 70; **none reached 75**.
+  It sits permanently below the curation floor, so no reader has ever seen one.
+- **It converts at 20.6%** over 1,124 graded rows — by far the worst market, and the
+  v2 refit only lifted it to 28.2% on n=39, still nowhere near servable.
+- **It distorts the headline metric.** It is 28% of the entire graded ledger and drags
+  the population hit rate from 54.8% to **45.4%** — a 9.4-point penalty on the
+  Performance dashboard's main number, paid for props nobody is shown.
+
+**This is the same anti-pattern already rejected once.** The 2026-08-07 entry dropped
+home runs as "the low-probability-over anti-pattern the TB/SP/WNBA refits removed."
+Total bases is that pattern; it survived only because it was built earlier.
+
+**Tradeoffs.** Extra-base power is a genuinely different attribute from contact, and
+this gives up the only market that spoke to it. That is a real loss — but a market
+that converts at 20% and can never surface was not delivering it. If power is worth
+scoring, it needs a market designed for a reachable bar (as the WNBA and SP refits
+were), not this one kept on life support.
+
+**Future.** The ledger keeps its history, so the 9.4-point drag on the population rate
+persists in past figures. That is correct — it happened — but it argues for the
+Performance dashboard distinguishing **scored** from **served**, since a metric
+dominated by props no one saw is not measuring what it claims to.
+
 ## 2026-08-09 — batter-hit-v4 (opposing starter in the score): TESTED AND REJECTED
 
 **Decision.** Do **not** fold the opposing starter into the batter-hit score. The
