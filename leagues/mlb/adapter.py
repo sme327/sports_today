@@ -209,13 +209,17 @@ class MLBAdapter:
             )
         return out
 
-    def k_bb_opportunities(self, *, as_of: date,
-                           scheduled_team_ids: Iterable[str] | None = None,
-                           limit: int = 8) -> list[Opportunity]:
-        """Batter strikeout (two-directional) + walk (over) opportunities for the
-        slate's teams — same feed / ledger / grading path and lineup overlay as 1+ Hit."""
+    def k_opportunities(self, *, as_of: date,
+                        scheduled_team_ids: Iterable[str] | None = None,
+                        limit: int = 8) -> list[Opportunity]:
+        """Batter strikeout opportunities for the slate's teams — same feed / ledger /
+        grading path and lineup overlay as 1+ Hit.
+
+        Walks were retired 2026-08-09: they never cleared the curation floor (one prop
+        above 75, ever) and the outcome turns more on how the pitcher attacks than on
+        the batter, which no extra data would fix."""
         from domain.markets import format_market
-        from src.batter_kbb_opportunity import score_bb_opportunities, score_k_opportunities
+        from src.batter_kbb_opportunity import score_k_opportunities
 
         pa = load_plate_appearances(as_of=as_of)
         if pa.empty:
@@ -234,7 +238,7 @@ class MLBAdapter:
             lineups = None
 
         out: list[Opportunity] = []
-        for scorer in (score_k_opportunities, score_bb_opportunities):
+        for scorer in (score_k_opportunities,):
             scored = scorer(pa, teams, lineups=lineups)
             for _, row in scored.head(limit).iterrows():
                 thr, key, direction = int(row.threshold), str(row.market_key), str(row.direction)

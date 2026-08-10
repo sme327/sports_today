@@ -24,7 +24,7 @@ from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, S
 from leagues.base import LeagueAdapter, get_adapter, iter_adapters
 from router import NavState
 from services.calibration import annotate
-from services.app_cache import (cached_mlb_kbb_opps, cached_mlb_pitcher_opps,
+from services.app_cache import (cached_mlb_k_opps, cached_mlb_pitcher_opps,
                                  cached_opportunities, cached_slate)
 from services.freshness import get_freshness
 from services import snapshots
@@ -147,7 +147,7 @@ def _build_slate_opps(nav: NavState, visible: dict[str, list[SlateGame]]):
                                  mlb_games, get_adapter("MLB")))
     if mlb_games:
         mlb_team_ids = tuple(sorted({t for g in mlb_games for t in g.team_identifiers}))
-        slate_opps.extend(_stamp(cached_mlb_kbb_opps(as_of_iso, mlb_team_ids),
+        slate_opps.extend(_stamp(cached_mlb_k_opps(as_of_iso, mlb_team_ids),
                                  mlb_games, get_adapter("MLB")))
 
     # A score is only comparable within its market — total bases has converted 21%

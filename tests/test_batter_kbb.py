@@ -10,7 +10,7 @@ import pandas as pd
 
 from domain import markets
 from services import grading, snapshots
-from src.batter_kbb_opportunity import score_bb_opportunities, score_k_opportunities
+from src.batter_kbb_opportunity import score_k_opportunities
 
 
 def _pa(bid, team, per_game):
@@ -41,11 +41,18 @@ def test_k_skips_low_strikeout_batter():
     assert score_k_opportunities(pa, ["T"]).empty
 
 
-def test_bb_over_for_patient_hitter():
-    pa = _pa(1, "T", [(0, 1)] * 8 + [(0, 2), (0, 0)])
-    r = score_bb_opportunities(pa, ["T"])
-    assert not r.empty
-    assert r.iloc[0].market_key == "batter_bb" and r.iloc[0].direction == "over"
+def test_walks_are_no_longer_scored():
+    """Retired 2026-08-09. The contract for a retired market: no scorer, but the
+    registry entry and grading branch survive so existing ledger rows still resolve
+    and display. Deleting those would rewrite history."""
+    import src.batter_kbb_opportunity as kbb
+    assert not hasattr(kbb, "score_bb_opportunities")
+    from leagues.base import get_adapter
+    assert not hasattr(get_adapter("MLB"), "k_bb_opportunities")
+    # …while the market itself stays readable:
+    assert markets.format_market("batter_bb", 1, "over") == "1+ Walks"
+    assert markets.resolve(None, "1+ Walks")[0] == "batter_bb"
+    assert markets.grade("batter_bb", 2, 1, "over") == "hit"
 
 
 def test_registry_labels_and_grading():
