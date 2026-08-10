@@ -9,6 +9,68 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-09 — OPEN: our prop thresholds sit far below where the question is asked
+
+**Status: a finding, not yet a decision.** Recorded now because it reframes what the
+Opportunity Score is for, and the answer changes the product.
+
+**The finding.** Reading a live WNBA board against four real sportsbook lines showed
+our bars land **1.5–3.5 below the market**, and that everything collapses at the line:
+
+| Player | Our bar | Clears | Book line | Over rate (L10) |
+| --- | --- | --- | --- | --- |
+| Stokes rebounds | 4+ | **90%** | 6.5 | **50%** |
+| Burton assists | 5+ | **80%** | 6.5 | **40%** |
+| Hamby rebounds | 6+ | **70%** | 7.5 | **50%** |
+| Burton points | 10+ | **70%** | 13.5 | **40%** |
+
+Three separate causes:
+
+1. **`MIN_CLEAR = 0.60` selects for reachability**, so a bar is chosen *because* the
+   player clears it often — which by construction puts it below the median.
+2. **The threshold grids cannot express a line.** Rebounds are `(4, 6, 8, 10)`,
+   points `(10, 15, 20, 25)`; a 6.5 or 13.5 line has no representable neighbour.
+3. **A priced line is an efficient estimate**, so any prop at one is ~50% — if it
+   weren't, the book would move it. Our 90% exists precisely because nobody offers
+   that bar.
+
+**Why it matters.** The app is currently answering a question no one is asking, and
+answering it accurately. The high-scoring props are the safest *and* the emptiest:
+cushion and score move together, so value and correctness are inversely related by
+design. A recommendation made from this board an hour before tip — "Stokes 4+ rebounds,
++50% cushion, 90% clear" — was true about our data and useless as advice, because at
+the real line it is a coin flip.
+
+**Useful corollary:** book lines tracked each player's own 10-game average to within
+0.5–1.2 (Stokes 6.0 vs 6.5, Burton 6.2 vs 6.5, Hamby 7.6 vs 7.5, Burton 12.3 vs 13.5).
+**A market-adjacent bar can therefore be approximated from our own data**, with no odds
+ingested.
+
+**The options.**
+
+- **A — keep low bars.** Honest and high hit-rate; low relevance. Status quo.
+- **B — median-centred bars, no odds.** Choose the threshold nearest the player's own
+  recent median and add half-point granularity. Clear rates fall to ~50%, so the
+  Opportunity Score can no longer mean "likely to hit" and must be redefined — e.g.
+  how unusual the player's distribution is around that bar. Preserves "we ingest no
+  odds"; the per-game distribution becomes the product.
+- **C — ingest odds.** The only way to claim an *edge*, since edge is defined against
+  a price. Reverses a core product decision stated three times in the Vision.
+
+**Recommendation: B**, with the score redefined and the raw last-10 line shown
+("Stokes: 7, 7, 11, 4, 4, 4, 7, 4, 3, 9"), which is more useful than any single number
+and lets the reader hold it against whatever line they see.
+
+**What this collides with.** The **2026-08-07 v2 refit** deliberately moved *toward*
+reachable bars because impressive ones hit 17–44%. B is not a return to that failure
+— those bars sat *above* the average, these sit *at* it — but it does undo the metric
+that refit optimised, so the ledger comparison must be reset from the change forward.
+
+**Untested hypothesis, logged so it isn't mistaken for a finding.** Three of the four
+observed lines sat *above* the player's average, which would give unders systematic
+value. n=4 and the four were hand-picked; needs real collection before it means
+anything.
+
 ## 2026-08-09 — Competition context + editorial signals (curation without props)
 
 **Decision.** Two connected pieces so a league with no player props is still curated.
