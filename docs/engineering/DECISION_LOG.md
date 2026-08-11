@@ -9,6 +9,55 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — `sp-v3`: threshold impressiveness from real rarity (shipped)
+
+**Supersedes the "why nothing shipped" paragraph in the entry below.** That paragraph
+judged the candidate on **raw conversion**, which is the very mistake the entry itself
+identifies. Re-scored on **lift over base rate**, the fix is a clear win and the three
+"interacting decisions" collapse to one.
+
+**Decision.** `_best_direction` now takes each threshold's impressiveness from measured
+league clear-rates (`_CLEAR_RATES`, 14,188 starts of 2020-24 box-score history) instead of
+`1 - (t-lo)/span`. **The `sp-v2` over-penalties are unchanged, and `sp_hits` is not
+retired** — neither turned out to be necessary.
+
+**Evidence** — 45,020 leakage-safe simulated starts (prior 6 starts only), lift over base
+rate by score band. Rarity beats linear in **every band of both markets**:
+
+| band | `sp_k` linear → rarity | `sp_hits` linear → rarity |
+|---|---|---|
+| 60-69 | −0.096 → **+0.056** | −0.078 → **−0.017** |
+| 70-79 | +0.019 → **+0.130** | **−0.037 → +0.047** |
+| 80-89 | +0.094 → **+0.215** | +0.015 → **+0.095** |
+| 90+ | +0.184 → **+0.346** | +0.085 → **+0.104** |
+
+Both remain monotonic, so this is stochastic dominance rather than a reshuffle. The
+`sp_hits` 70-79 row is the headline: the old scorer was serving props with **negative
+lift** — worse than betting the base rate blindly — inside the curation floor.
+
+**Why the over-penalty did not need touching.** At 0.45 / 0.70 / 1.00 the served lift
+moves by ~0.01 once impressiveness is right. `sp-v2` was compensating for a distortion
+that made high-threshold overs look artificially attractive; fix the cause and the
+penalty stops mattering. A logged decision that no longer does harm is left alone.
+
+**Tradeoffs.** Served volume falls ~25-40% — fewer, better props, which the curation floor
+already implies. `sp_hits` **narrows** its lift spread (+0.163 → +0.120) even while every
+band improves, because its 90+ population collapses to n=65; the ship rule's "widen the
+spread" is technically not met there, and band-wise dominance was judged the stronger
+evidence. Base rates are 2020-24 and will drift; they are a documented constant, not a
+live query, so they need periodic re-measurement.
+
+**Live check.** On the 2026-08-10 slate the scorer now spreads across `≤4`/`≤5` and real
+overs instead of jamming `≤4`, and the top score fell from 94 to 87. Bryce Elder's "5 or
+fewer hits allowed" moved **94 → 84** — much closer to his measured 0.619 baseline than the
+6-start window implied, which is exactly the correction intended.
+
+**A test caught a real bug.** The fallback for an unmeasured threshold was unclamped: a
+bar of 99 against a 4-8 range returned **−22.75** and would have poisoned the argmax.
+Clamped to [0, 1].
+
+---
+
 ## 2026-08-10 — Judge a prop by lift over base rate, not by conversion rate
 
 **The lens.** A 40% hit rate on a bar that lands 15% of the time is excellent. A 56% hit
