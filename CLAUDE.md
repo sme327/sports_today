@@ -116,9 +116,13 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   **not** in the score — folding it in was backtested as `batter-hit-v4` and rejected
   for making discrimination worse. Scoring still excludes weather, park and bullpen
   context. Do not represent scores as hit probabilities.
-- **1+ hit is a hard ~55% event.** `batter-hit-v3` shrinks the recent per-PA hit rate
-  toward the league mean to fix a saturated, *inverted* top band; overall
-  discrimination is still modest by design. Don't read a 100 as near-certainty.
+- **1+ hit is a hard ~55% event, and it is mostly about chances, not form.**
+  `batter-hit-v5` shrinks the recent per-PA hit rate hard toward the league mean
+  (`_HIT_SHRINK = 0.25`) because **plate appearances per game predict a hit more than
+  twice as well as recent hitting does** (+0.130 vs +0.054 over 28k batter-games).
+  Shrinkage also fixes a saturated, *inverted* top band. Overall discrimination is still
+  modest by design — don't read a 100 as near-certainty, and note the 90+ band remains
+  this market's weak spot (`v3_top_band_watch`).
 - **Total bases was retired (2026-08-09)** and its `MarketSpec` kept only so old ledger
   rows still resolve. Don't re-add a scorer for it without reading the decision log: it
   is strictly nested inside 1+ Hit, converted 20.6%, and never once scored 75+ so it

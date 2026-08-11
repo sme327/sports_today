@@ -39,7 +39,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
 | [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, and why it lives in the archive rather than the live slate. |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
-| [Historical Data](engineering/HISTORICAL_DATA.md) · [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
+| [Historical Data](engineering/HISTORICAL_DATA.md) | Ingested box-score history: coverage, gaps, and which model ideas are already tested and dead. |
+| [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
 | [Setup](engineering/SETUP.md) | One-time install and the daily data/run workflow. |
 | [Deploy](engineering/DEPLOY.md) | Put it on the web for phone/iPad/computer: Streamlit Cloud + private bucket + in-app uploader + password gate. |
 

@@ -13,7 +13,7 @@ graded prop using only pre-slate data. Ship only if it widens the band spread **
 lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (414 tests, all passing)
+## Test suites (442 tests, all passing)
 
 | File | Covers |
 | --- | --- |
@@ -28,7 +28,8 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_snapshots.py` | Context captured (provenance, cutoff, engine, flags); idempotent per day; empty writes nothing |
 | `test_opportunities.py` | Empty/missing-column and no-matching-team inputs return empty frames (no crash); **lineup overlay** — confirmed-slot evidence, bench-cap (≤25), honest not-posted state, and backward-compat with no `lineups` arg |
 | `test_scores.py` | MLB 1+ hit scorer components, score/stability bounds, support/risk rules |
-| `test_pitcher_opportunity.py` | SP props: per-start line extraction (inning `1T`/`1B` parse), opener exclusion, two-directional over/under selection, min-starts gate |
+| `test_boxscore_ingest.py` | Box-score ingest (NBA/CBB/WNBA/MLB): both vendor header shapes, per-sport season calendars incl. the covid-shifted 2020-21 NBA year, sheet selection when metadata sheets also say "team", DNP sheets not mistaken for player sheets, **a thinner file refusing to overwrite a fuller season**, additive per-season writes, one canonical name per field across feed vintages, text columns surviving numeric coercion (batter handedness was being nulled), and feeds without game ids stored but flagged unjoinable |
+| `test_pitcher_opportunity.py` | SP props: per-start line extraction (inning `1T`/`1B` parse), opener exclusion, two-directional over/under selection, min-starts gate, and **`sp-v3` threshold impressiveness** — that it tracks a bar's measured rarity rather than its position in the list, that a bar the league almost always clears cannot win, that a reliably-cleared moderate bar beats the hardest one, and that an unmeasured threshold falls back inside [0, 1] (an unclamped fallback returned −22.75) |
 | `test_grading.py` | Prop grading hit/miss/void (incl. DNP=void honesty), idempotency, no-grading-today guard, dedup/min-score reads, summary + **`summarize_by_market`**, row classification, market-breakdown render |
 | `test_mlb_trends.py` | MLB trend spotlights: pitcher per-start sparklines/direction/props/min-starts, batter dots/L5-L10-L25 windows/streak/min-games, rendering, empty states |
 | `test_deploy_boot.py` | App boots + degrades honestly against an empty DB (cloud-deploy path) |
