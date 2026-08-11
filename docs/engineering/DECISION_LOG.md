@@ -9,6 +9,54 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — `batter_hit` top band: quantified, not fixed
+
+**Decision.** Record what the lift lens says about the flagship market, and **ship
+nothing.** The suggestive result did not survive an attempt to reproduce it.
+
+**What the ledger says.** On the 792 graded rows where a confirmed lineup slot is known —
+so each prop can be compared to *its own slot's* base rate rather than a flat league
+average — discrimination rises cleanly and then inverts:
+
+| band | n | converted | slot-adj base | lift |
+|---|---|---|---|---|
+| <70 | 533 | 0.578 | 0.573 | +0.005 |
+| 70-79 | 115 | 0.617 | 0.598 | +0.019 |
+| **80-89** | 68 | 0.677 | 0.613 | **+0.064** |
+| **90+** | 76 | 0.487 | 0.611 | **−0.124** |
+
+An era offset is normalised out first (2026 offence runs ~0.021 below the 2020-24 base
+rates), and the slot curve itself validates against this season — slot 1 observed 0.656
+against 0.669 predicted, slot 9 observed 0.465 against 0.470. The 99-100 sub-band is
+−0.19 at 2.2 SE. **80-89 is the app's best band, not 90+.**
+
+**The mechanism looked clean.** The 90+ band is not thinner-sampled (stability 87.4,
+in line with every other band) — it selects **extreme recent form**: a mean last-25 per-PA
+hit rate of **0.340** against a league 0.217. And `_HIT_SHRINK` is a *fixed multiplier*,
+blind to sample size: a 25-PA rate and a 200-PA rate are shrunk identically, when a
+25-PA 0.340 should regress almost to the mean. Proper Bayesian shrinkage
+(`(raw·n + league·k)/(n+k)`, the form already used for pitchers in
+`opposing_starter_note`) was the obvious fix.
+
+**It did not reproduce.** Simulated on 136,564 leakage-safe batter-games, v3's fixed
+shrink shows **no inversion at all** — 0.546 / 0.640 / 0.652 / 0.681, monotonic. Bayesian
+shrinkage is marginally better per band but collapses the top of the range: at k=100 only
+159 props reach 90+, at k=200 just two. A fix for a problem that a 136k-row simulation
+cannot see, which also guts the score range, is not a fix worth shipping on n=76.
+
+**Where that leaves it.** The ledger signal is real enough to watch and too thin to act on.
+Re-check once the 90+ band has a few hundred graded confirmed-lineup rows. Until then
+`v3_top_band_watch` stays open, now with a number attached instead of "1-4 (n=5)".
+
+**One concrete discrepancy found on the way.** `_LEAGUE_HIT_RATE = 0.25`, but the measured
+per-PA hit rate across 144k batter-games is **0.2172** — the scorer shrinks toward a mean
+about 15% too high, which biases every shrunk rate upward. The two may be measuring
+different denominators (`plate_appearances` vs box-score `bat_pa` treat walks/HBP/sac
+differently), so this needs verifying before changing. Worth doing: it sits under every
+batter score.
+
+---
+
 ## 2026-08-10 — `sp-v3`: threshold impressiveness from real rarity (shipped)
 
 **Supersedes the "why nothing shipped" paragraph in the entry below.** That paragraph
