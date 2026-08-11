@@ -18,11 +18,38 @@ _RESULT_COLUMNS = [
     "pa_per_game", "k_rate", "lineup_slot", "support", "risks",
 ]
 
-# v3 shrinkage: pull a batter's noisy recent per-PA hit rate toward the league mean
-# before estimating the 1+ hit chance, so hot streaks don't rocket to a saturated,
-# mean-reverting top. Validated on the graded ledger (de-saturates + de-inverts the top).
+# Shrinkage: pull a batter's noisy recent per-PA hit rate toward the league mean before
+# estimating the 1+ hit chance, so hot streaks don't rocket to a saturated, mean-reverting
+# top. v3 introduced this at 0.70; **v5 cut it to 0.25** after measuring which inputs
+# actually predict the outcome, on 28,000 leakage-safe batter-games from our own feed:
+#
+#     corr(plate appearances per game, got a hit) = +0.1296
+#     corr(recent per-PA hit rate,     got a hit) = +0.0539
+#     corr(recent strikeout rate,      got a hit) = -0.0494
+#
+# **How many chances a batter gets predicts a 1+ hit more than twice as well as how well
+# he has been hitting.** So the recent rate deserves far less weight than v3 gave it.
+# Validated out of sample (fit on the first half of the season, tested on the second):
+# test correlation +0.1127 -> +0.1314, served conversion 0.6304 -> 0.6417, top-20%
+# conversion 0.6419 -> 0.6556 and its spread over the bottom 20% +0.1613 -> +0.1879.
+# The trend is monotonic down to ~0.10; 0.25 is near-optimal and still lets recorded form
+# matter, which keeps the score explainable against the evidence shown beside it.
+#
+# _LEAGUE_HIT_RATE is **not** the true league per-PA hit rate — that is 0.2092 in our own
+# data (0.25 is nearer a batting average, hits per official at-bat, which is 0.2347).
+# It is left as-is deliberately: shrinkage is linear, so the constant sets the score's
+# zero point rather than its ordering, and it is entangled with the scale below. Corrected
+# in isolation it changes nothing measurable (re-scaled test correlation +0.1137 vs
+# +0.1119). Do not "fix" it without re-tuning _SCORE_OFFSET/_SCORE_SPAN together.
 _LEAGUE_HIT_RATE = 0.25
-_HIT_SHRINK = 0.70
+_HIT_SHRINK = 0.25
+
+# Maps the estimated 1+ hit chance onto 0-100. Re-tuned with the v5 shrinkage to preserve
+# how much of the slate clears the curation floor (served 70+: 18.7% before, 19.3% after) —
+# heavier shrinkage compresses the estimate, so the old (0.45, 0.37) pair would have
+# quietly halved the served population.
+_SCORE_OFFSET = 0.550
+_SCORE_SPAN = 0.225
 
 # Per-PA hit rate over the short window at or below which "cooled" understates it.
 # A league-average hitter sits near .250 per PA; half of that over 25 PA is a real
@@ -103,20 +130,20 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         pitches = recent["pitch_count_pa"].mean()
         pa_per_game = len(recent) / max(games, 1)
 
-        # v3: the estimated chance of a 1+ hit — 1-(1-p)^PA, where p is the recent per-PA
-        # hit rate and PA the expected at-bats — rescaled to a 0-100 ranking signal.
-        # v3 shrinks the recent hit rate toward the league mean before the estimate: a
-        # 50-PA rate is a noisy talent estimate that regresses, and without shrinkage the
-        # top saturated (picks tied at 100) and *inverted* — the 95-100 band hit only 40%,
-        # worse than average. Shrinkage de-saturates and lifts the top band back above the
-        # base rate. (1+ hit is a hard ~55% event, so the score still doesn't discriminate
-        # strongly — this fixes the misleading top, it doesn't manufacture signal.)
+        # The estimated chance of a 1+ hit — 1-(1-p)^PA, where p is the shrunk recent
+        # per-PA hit rate and PA the expected at-bats — rescaled to a 0-100 ranking signal.
+        # Shrinkage exists because a 50-PA rate is a noisy talent estimate that regresses:
+        # unshrunk, the top saturated (picks tied at 100) and *inverted*. v5 shrinks much
+        # harder than v3 did, because plate-appearance volume turns out to carry more than
+        # twice the signal of recent form (see _HIT_SHRINK). (1+ hit is a hard ~55% event,
+        # so this still doesn't discriminate strongly — it ranks honestly, it doesn't
+        # manufacture signal.)
         p = min(max(hit_rate, 0.03), 0.60)
         p = _LEAGUE_HIT_RATE + (p - _LEAGUE_HIT_RATE) * _HIT_SHRINK
         exp_pa = max(pa_per_game, 0.5)
         est = 1.0 - (1.0 - p) ** exp_pa
         est -= 0.12 * max(0.0, k_rate - 0.25)      # small penalty for high recent K rate
-        score = (est - 0.45) / 0.37 * 100          # spread ~[0,100]; clamped by the overlay
+        score = (est - _SCORE_OFFSET) / _SCORE_SPAN * 100   # ~[0,100]; clamped by the overlay
         stability = max(0, min(round(55 + min(len(recent), 50) * 0.7 - abs(short_hit_rate - hit_rate) * 40), 100))
 
         support = []
