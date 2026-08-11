@@ -29,7 +29,7 @@ You should see:
 - `run.command`
 - `app.py`
 - `scripts/` (`morning_update.py`, `collect_wnba.py`, `diagnostics.py`, `import_feed.py`,
-  `import_nfl_feed.py`, `sync_mlb_download.py`)
+  `import_nfl_feed.py`, `import_boxscore_feed.py`, `sync_mlb_download.py`)
 - `data`
 - `database`
 - `logs`

@@ -141,8 +141,9 @@ more seasons of the same will not change it.
 
 ### ❌ A prior-season prior does not improve batter-hit scoring
 
-`batter-hit-v3` shrinks a batter's recent hit rate toward the **league mean**. The obvious
-upgrade is to shrink toward *that batter's* prior-season rate instead. Tested by
+The scorer shrinks a batter's recent hit rate toward the **league mean** (v3 at the time
+of this test; `batter-hit-v5` later cut the weight from 0.70 to 0.25). The obvious upgrade
+is to shrink toward *that batter's* prior-season rate instead. Tested by
 predicting the rest of a batter's season from their first N plate appearances:
 
 | observed PA | n | shrink → league mean | shrink → prior season | change |
@@ -267,23 +268,31 @@ Three findings the first pass missed, all validated:
   three interacting decisions this raises.
 
 Also checked and dismissed: batting order (86% of its huge raw spread is who bats there),
-batter home/road (r = +0.127), batter-vs-pitcher (26 usable pairs in five seasons).
+batter home/road (r = +0.127), batter-vs-pitcher (26 usable pairs in five seasons), and
+porting the v5 weighting to WNBA (form beats volume there, the inverse of baseball).
+
+**Superseding §3's "v3 is at its ceiling".** That conclusion held for the *inputs* tested
+there (prior-season priors, platoon splits, park). It was wrong about the model: asking
+which inputs the scorer *already has* actually predict the outcome produced
+`batter-hit-v5` — recent form's weight cut 0.70 → 0.25 because plate appearances carry
+more than twice its signal. Out of sample, test correlation +0.1127 → +0.1314 and top-20%
+conversion 0.6419 → 0.6556. The ceiling was in the data we went looking for, not in the
+data already in hand.
 
 ## 5. What is actually worth building
 
 Ranked by evidence, not appeal:
 
-1. **Resolve the three SP-scorer decisions** (§4b, decision log 2026-08-10). Retiring
-   `sp_hits`, un-penalising `sp_k` overs and re-basing threshold impressiveness on real
-   rarity interact with each other and with the logged `sp-v2` refit, so they should be
-   decided together. This is the only finding that touches a live scorer.
-2. **Park factor as a `batter-hit` input or evidence line** — 12 points of range, and the
-   model currently uses none of it.
-3. **Nothing else, for now.** The negative results mean the highest-value outcome of this
-   data has already been delivered: two planned work items (platoon splits,
-   `richer_game_outcomes` for MLB) are dead, and one model (`batter-hit-v3`) is confirmed
-   near its ceiling.
-4. **If an NBA feature is ever built**, the data supports it well — seven seasons, quarter
+1. **~~Resolve the three SP-scorer decisions~~ — done, 2026-08-10 (`sp-v3`).** Only one of
+   the three was needed: threshold impressiveness now comes from measured rarity. Retiring
+   `sp_hits` and un-penalising `sp_k` overs both turned out to be unnecessary once the
+   cause was fixed — the `sp-v2` penalties move served lift by ~0.01 and were compensating
+   for this distortion. Neither was touched.
+2. **Nothing else from *new* inputs.** Three planned work items are dead (platoon splits,
+   `richer_game_outcomes` for MLB, park factor as a `batter-hit` input). Park factor in
+   particular is **rejected**, not pending — §4b has the backtest; an earlier draft of this
+   section recommended it before that test existed.
+4. **If an NBA feature is ever built**, the data supports it well — five seasons, quarter
    scores, DNP/availability, rest days, referee assignments, and full odds. NBA is also
    the sport where record-based editorial claims measurably work.
 5. **Calibrate editorial against closing lines** (§4), if the odds question is settled in
