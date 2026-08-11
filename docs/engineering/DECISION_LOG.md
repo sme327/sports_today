@@ -9,6 +9,60 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — `batter-hit-v5`: chances beat form (shipped)
+
+**Decision.** `_HIT_SHRINK` 0.70 → **0.25**, with the score scale re-tuned from
+`(est-0.45)/0.37` to `(est-0.550)/0.225` so the served share holds. One change, two
+matched constants.
+
+**The finding, on 28,000 leakage-safe batter-games from our own feed:**
+
+| input | correlation with getting a hit |
+|---|---|
+| **plate appearances per game** | **+0.1296** |
+| recent per-PA hit rate | +0.0539 |
+| recent strikeout rate | −0.0494 |
+
+**How many chances a batter gets predicts a 1+ hit more than twice as well as how well he
+has been hitting.** v3 weighted recent form at 0.70 of its deviation from the mean; the
+data says it deserves far less. This is the same lesson as the batting-order analysis
+earlier today — that slot's huge raw spread was 86% composition, i.e. plate appearances —
+arriving from the other direction.
+
+**Validated out of sample** (fit on the first half of the season, tested on the second),
+with train and test tracking closely at every setting:
+
+| | shrink 0.70 | shrink 0.25 |
+|---|---|---|
+| test correlation | +0.1127 | **+0.1314** |
+| served (70+) conversion | 0.6304 | **0.6417** |
+| top-20% conversion | 0.6419 | **0.6556** |
+| spread over bottom 20% | +0.1613 | **+0.1879** |
+
+**Both halves of the ship rule are met** — the top lifts and the spread widens — on held-out
+data. The trend is monotonic down to ~0.10 rather than a picked optimum; 0.25 was chosen
+over the peak because a score that shrinks 90% of recorded form away is hard to defend
+beside evidence lines that quote that form. Explainability bought ~0.001 of correlation.
+
+**Tradeoff.** The 90-100 band does not improve (0.6642 → 0.6545 in-sample); the gains are
+in 80-89 (0.6491 → **0.6701**) and in the spread. That is consistent with the separate
+finding that the top band is this market's weak spot, and `v3_top_band_watch` stays open.
+
+**`_LEAGUE_HIT_RATE` was deliberately left at 0.25 although it is wrong.** The true per-PA
+rate in our own data is **0.2092**; 0.25 is nearer a batting average (hits per official
+at-bat, 0.2347). It reads as a round-number placeholder. But shrinkage is linear, so the
+constant sets the score's **zero point, not its ordering** — corrected in isolation and
+re-scaled, test correlation moves +0.1119 vs +0.1137, i.e. nothing. It is entangled with
+the scale constants and changing it alone silently cut the served population from 19% to
+13%. Documented in place; do not "fix" it without re-tuning the pair.
+
+**Method note.** The first comparison said the correction made things *worse* — because it
+changed the league rate while leaving a scale that had been tuned around the old one. Any
+future change to these constants has to re-tune them together or the comparison is
+meaningless.
+
+---
+
 ## 2026-08-10 — `batter_hit` top band: quantified, not fixed
 
 **Decision.** Record what the lift lens says about the flagship market, and **ship
