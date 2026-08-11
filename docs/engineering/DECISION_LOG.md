@@ -9,6 +9,46 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-10 — "Volume beats form" is baseball-specific. Do not port v5 to WNBA
+
+**Decision.** Record that the `batter-hit-v5` lesson **does not transfer**, and change
+nothing in `src/wnba_opportunity.py` on this evidence alone.
+
+**Why it needed checking.** v5 cut MLB's recent-form weight to 0.25 after finding plate
+appearances predict a 1+ hit more than twice as well as recent hitting. The obvious next
+move is to do the same to the WNBA scorer, where minutes are the analogue of plate
+appearances. The obvious next move is wrong.
+
+**Measured on 1,437 leakage-safe WNBA player-games** (prior 10 games, at the reachable bar
+the scorer would actually pick):
+
+| input | points | rebounds | assists | pooled |
+|---|---|---|---|---|
+| **recent clear rate** | +0.2710 | **+0.3835** | +0.2434 | **+0.2999** |
+| minutes, last 5 | +0.1974 | +0.0980 | +0.2394 | +0.1800 |
+| recent average | **+0.3073** | +0.3649 | +0.2179 | +0.1487 |
+
+**Recent form beats volume roughly 5:3 overall, and nearly 4:1 for rebounds** — the exact
+inverse of baseball.
+
+**Why the sports differ.** A 1+ hit is near-binary at ~0.21 per plate appearance, so the
+spread in true talent is small and the number of chances dominates. Points and rebounds
+are counting stats where role and ability genuinely separate players: an 18-point scorer
+is a different thing from an 8-point scorer in a way that a .270 hitter is not from a
+.245 one. The MLB finding was about a *hard binary event*, not about volume in general.
+
+**What this implies, unshipped.** If anything the WNBA scorer may **under**-weight form —
+`recent_score` caps at 22 against `role_score`'s 25. But the score is a compound of six
+terms, several of which encode form indirectly (`baseline_score`, `cushion_score`,
+`trend_score`), so an input-correlation table is not enough to justify a reweight. That
+needs a full-scorer backtest on more than 1,437 rows. Logged as a candidate, not a change.
+
+**The general lesson.** Today's method — decompose which inputs actually predict the
+outcome, then reweight — is sound and portable. Its *answers* are not. Re-measure per
+sport and per market before assuming a finding carries.
+
+---
+
 ## 2026-08-10 — `batter-hit-v5`: chances beat form (shipped)
 
 **Decision.** `_HIT_SHRINK` 0.70 → **0.25**, with the score scale re-tuned from
