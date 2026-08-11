@@ -80,3 +80,52 @@ def test_scorer_requires_minimum_starts():
 def test_scorer_empty_inputs():
     assert score_pitcher_opportunities(pd.DataFrame(), ["1"]).empty
     assert score_pitcher_opportunities(_pa(_start("1", "g", "2026-06-01", 6, 5)), []).empty
+
+
+# --- impressiveness from real rarity (2026-08-10) ---------------------------------
+
+def test_impressiveness_reflects_how_hard_a_bar_actually_is():
+    """It used to be linear in the threshold's *value*: `<=4` scored 1.00 while happening
+    46% of the time and `<=8` scored 0.00 while happening 95% of the time. Since a
+    direction's value is clear-rate x impressiveness, the hardest bar won on
+    impressiveness alone — and the ledger showed the scorer picking `<=4` 96 times
+    (converting 37.5%) over `<=6` 32 times (90.6%)."""
+    from src.pitcher_opportunity import _CLEAR_RATES, _impressiveness
+    g = (4, 5, 6, 7, 8)
+    easy = _impressiveness("sp_hits", 8, "under", g)     # happens 94.7% of the time
+    hard = _impressiveness("sp_hits", 4, "under", g)     # happens 46.4% of the time
+    assert hard > easy
+    # ...but the gap must track reality, not the threshold's position in the list.
+    assert abs(hard - (1 - _CLEAR_RATES["sp_hits"][4][0])) < 1e-9
+    assert abs(easy - (1 - _CLEAR_RATES["sp_hits"][8][0])) < 1e-9
+    # The old scheme said `<=4` was maximally impressive (1.00). It is not.
+    assert hard < 0.60
+
+
+def test_impressiveness_falls_back_when_a_threshold_has_no_measured_rate():
+    """A new bar must not silently score as maximally impressive just because it is
+    missing from the table."""
+    from src.pitcher_opportunity import _impressiveness
+    g = (4, 5, 6, 7, 8)
+    v = _impressiveness("sp_hits", 99, "under", g)
+    assert 0.0 <= v <= 1.0
+
+
+def test_scorer_no_longer_jams_every_under_into_the_hardest_bar():
+    """With linear impressiveness, a pitcher who comfortably clears a *moderate* bar was
+    still pushed to the hardest one, because impressiveness alone carried the argmax."""
+    import pandas as pd
+    g = (4, 5, 6, 7, 8)
+    # Clears <=5 every time, <=4 only half the time. The moderate bar is the honest read.
+    d = _best_direction(pd.Series([5, 5, 4, 5, 4, 5]), g, stat="sp_hits")
+    assert d["direction"] == "under"
+    assert d["threshold"] == 5, f"expected the reliably-cleared bar, got {d['threshold']}"
+
+
+def test_a_bar_the_league_almost_always_clears_cannot_win():
+    """`<=8` hits is cleared 94.7% of the time — a 6-for-6 record against it says nothing,
+    and must not outscore a genuinely hard bar."""
+    import pandas as pd
+    g = (4, 5, 6, 7, 8)
+    d = _best_direction(pd.Series([8, 8, 8, 8, 8, 8]), g, stat="sp_hits")
+    assert d["threshold"] != 8 or d["direction"] == "over"

@@ -75,28 +75,73 @@ def _stability(hit_rate: float, starts: int) -> int:
 # to be served, strongly so for hits allowed.
 _OVER_PENALTY = {"sp_k": 0.70, "sp_hits": 0.45}
 
+# How often a start actually clears each bar, as (P(value <= t), P(value >= t)).
+# Measured over 14,188 starts in the 2020-24 Big Data Ball box-score history
+# (`mlb_box_player_games`). These are league base rates, not this pitcher's — they say how
+# *hard* a bar is, which is what "impressive" should mean.
+#
+# Why this exists: impressiveness used to be linear in the threshold's **value**
+# (`1 - (t-lo)/span`), so an under at `<=4` scored 1.00 while happening 46% of the time and
+# `<=8` scored 0.00 while happening 95% of the time. Because a direction's value is
+# clear-rate x impressiveness, the hardest bar won the argmax on impressiveness alone. The
+# ledger shows the damage: the scorer picked `<=4` 96 times (converting 37.5%) over `<=6`
+# 32 times (90.6%) — the hardest bar most often, and it converted worst.
+#
+# Backtested on 45,020 leakage-safe simulated starts (prior 6 starts only), scored as
+# **lift over base rate** rather than raw conversion. Rarity beat linear in every score
+# band for both markets: sp_k 70-79 went +0.019 -> +0.130 and 90+ went +0.184 -> +0.346;
+# sp_hits 70-79 went **-0.037 -> +0.047**, i.e. from serving props worse than the base rate
+# to serving useful ones. The over-penalties above were left untouched: once impressiveness
+# is right they move lift by ~0.01, so the sp-v2 decision did not need reversing.
+_CLEAR_RATES: dict[str, dict[int, tuple[float, float]]] = {
+    "sp_k": {
+        4: (0.492, 0.662), 5: (0.637, 0.508), 6: (0.763, 0.363),
+        7: (0.854, 0.237), 8: (0.917, 0.146),
+    },
+    "sp_hits": {
+        4: (0.464, 0.710), 5: (0.633, 0.536), 6: (0.779, 0.367),
+        7: (0.882, 0.221), 8: (0.947, 0.118),
+    },
+}
 
-def _best_direction(values: pd.Series, thresholds, over_penalty: float = 1.0) -> dict:
+
+def _impressiveness(stat: str, threshold: int, direction: str, thresholds) -> float:
+    """How rare it is to clear this bar — 1 minus how often it happens.
+
+    Falls back to the old linear-in-value shape when a threshold has no measured rate, so
+    a new bar cannot silently score as maximally impressive.
+    """
+    rates = _CLEAR_RATES.get(stat, {}).get(threshold)
+    if rates is not None:
+        under_rate, over_rate = rates
+        return 1.0 - (over_rate if direction == "over" else under_rate)
+    lo, hi = min(thresholds), max(thresholds)
+    # Clamped: a threshold outside the configured range would otherwise produce a wildly
+    # out-of-scale value (a bar of 99 against 4-8 gave -22.75) and poison the argmax.
+    norm = min(1.0, max(0.0, (threshold - lo) / ((hi - lo) or 1)))
+    return norm if direction == "over" else 1 - norm
+
+
+def _best_direction(values: pd.Series, thresholds, over_penalty: float = 1.0,
+                    stat: str = "") -> dict:
     """The stronger of an over vs. an under opportunity for a stat.
 
-    Each threshold has an "impressiveness": for an over, a *high* threshold is
-    impressive (``norm``); for an under, a *low* threshold is impressive
-    (``1-norm``). A direction's value = clear-rate × impressiveness (× ``over_penalty``
-    for overs, which the ledger shows are unreliable). A dominant starter still
-    surfaces a strong over; otherwise the under wins. Never a trivial "≤ max"/"min+"."""
+    Each threshold has an "impressiveness" — how *rare* clearing it actually is, from
+    ``_CLEAR_RATES``. A direction's value = clear-rate × impressiveness (× ``over_penalty``
+    for overs, which the ledger shows are unreliable). A dominant starter still surfaces a
+    strong over; otherwise the under wins. Never a trivial bar: anything the league clears
+    (or misses) almost always has impressiveness near zero and cannot win."""
     lo, hi = min(thresholds), max(thresholds)
-    span = (hi - lo) or 1
     n = len(values)
     avg = float(values.mean())
 
-    def norm(t):
-        return (t - lo) / span
-
-    # Over: exclude the min threshold (impressiveness 0 → trivial).
-    over = [(float((values >= t).mean()), t, norm(t)) for t in thresholds if norm(t) > 0]
+    over = [(float((values >= t).mean()), t, _impressiveness(stat, t, "over", thresholds))
+            for t in thresholds]
+    over = [x for x in over if x[2] > 0]
     o_rate, o_thr, o_imp = max(over, key=lambda x: x[0] * x[2], default=(0.0, hi, 0.0))
-    # Under: exclude the max threshold (impressiveness 0 → trivial).
-    under = [(float((values <= t).mean()), t, 1 - norm(t)) for t in thresholds if (1 - norm(t)) > 0]
+    under = [(float((values <= t).mean()), t, _impressiveness(stat, t, "under", thresholds))
+             for t in thresholds]
+    under = [x for x in under if x[2] > 0]
     u_rate, u_thr, u_imp = max(under, key=lambda x: x[0] * x[2], default=(0.0, lo, 0.0))
 
     if o_rate * o_imp * over_penalty >= u_rate * u_imp:
@@ -163,7 +208,7 @@ def _is_stale_window(span_days: int | None, starts: int) -> bool:
 
 def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds,
                span_days: int | None = None) -> dict:
-    d = _best_direction(values, thresholds, _OVER_PENALTY.get(kind, 1.0))
+    d = _best_direction(values, thresholds, _OVER_PENALTY.get(kind, 1.0), kind)
     thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
     cleared = int(round(hit * n))
     market = format_market(kind, thr, d["direction"])   # one label source of truth
