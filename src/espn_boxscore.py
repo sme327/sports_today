@@ -116,6 +116,7 @@ _HOCKEY_ALIASES = {
     # five-day sample while the real data sat in a field called `shots`. Caught because a
     # team SOG of 0.0 per game is impossible — the true figure here is 26.7, and NHL
     # averages ~30. `SOG` is deliberately mapped to a name no spec stores.
+    "g": "goals", "a": "assists",
     "s": "shots_on_goal", "sog": "_espn_sog_unused",
     "sm": "shots_missed", "bs": "blocked_shots", "ht": "hits", "tk": "takeaways",
     "gv": "giveaways", "fw": "faceoffs_won", "fl": "faceoffs_lost", "fo%": "faceoff_pct",
