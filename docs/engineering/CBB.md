@@ -98,8 +98,10 @@ not curation, it is a lottery.
 CBB therefore needs a **curation gate of its own** before it earns slate space. Options, in
 rough order of appeal:
 
-1. **Interest floor** — only surface CBB games clearing a high bar, so a quiet Tuesday shows
-   two and Championship Week shows twelve. Fits the existing `best_per_league` shape.
+1. **Exclusion first** *(now the measured recommendation)* — drop games records flag as
+   likely blowouts (gap ≥ .40 cuts the within-5 rate by 11.9pp and covers ~12% of the
+   slate), then apply an interest floor to what remains. Detecting a bad game is about
+   three times more reliable than detecting a good one, so filter before you rank.
 2. **Ranked / conference-relevant only** — top-25 involvement, conference games, rivalry.
    Simple and defensible, but the ranking source is a new dependency.
 3. **Collapse to a CBB section** — one "college basketball" block with its own top-N rather
@@ -158,9 +160,14 @@ Player props, player spotlights, any per-player scoring — see §3.
 
 ## 6. Open questions
 
-- **Does a CBB editorial signal beat its base rate?** Untested. The line predicts
-  competitiveness (+0.531) but that is the *market*, not our records-based read. Run the
-  same analysis that produced the MLB null before building Phase 1.
+- ~~**Does a CBB editorial signal beat its base rate?**~~ **Tested 2026-08-11 — yes.**
+  `corr(record gap, |margin|)` is **+0.2367** against MLB's +0.031, and mismatches
+  (gap ≥ .40) drop the within-5 rate by **−11.9pp**. Two caveats that shape Phase 1:
+  **quality is inverted** (both-good games are *less* close, −2.4pp, the opposite of MLB's
+  `even`), so use the **gap only**; and records add just **+0.066** once the line is
+  controlled for, with **nothing** in close-line games. Lead the gate with **exclusion** —
+  dropping likely blowouts is ~3x more reliable than picking good games. Full numbers in
+  the decision log.
 - **Where does the conference tendency go?** Over/under rates correlate r = +0.252 between
   seasons across 29 conferences — above the umpire null (+0.057) but only ~1.3 SE from zero
   at n=29. More seasons would settle it. Not a betting angle; possibly an editorial one

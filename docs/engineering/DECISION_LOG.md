@@ -75,6 +75,65 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-11 — CBB editorial: green light, but as a *filter*, not a ranker
+
+**Decision.** CBB Phase 1 is viable — records genuinely predict competitiveness there,
+unlike MLB. But the signal's real use is **excluding blowouts**, not identifying great
+games, and it must not be sold as insight. Measured on 7,449 D1-vs-D1 games with 8+ prior
+games for both sides.
+
+**Test A — do records predict competitiveness?** Yes, and by a wide margin over baseball:
+
+| | CBB | MLB |
+|---|---|---|
+| corr(record gap, \|margin\|) | **+0.2367** | +0.031 |
+
+| signal | n | within 5 pts | vs base (31.1%) |
+|---|---|---|---|
+| **mismatch (gap ≥ .40)** | 880 | 19.2% | **−11.9pp** |
+| close records (gap ≤ .10) | 2,377 | 34.5% | +3.4pp |
+| both poor (max < .400) | 1,030 | 33.0% | +1.9pp |
+| **both good (min ≥ .650)** | 862 | 28.8% | **−2.4pp** |
+
+**Two findings that shape the design.**
+
+**Quality is inverted here.** "Both good" makes a game *less* likely to be close — the
+exact opposite of the MLB `even` rework, which added a quality gate because closeness alone
+predicted nothing. In CBB only the **gap** matters, and adding a quality requirement would
+make the signal worse. A lesson that transfers between sports is the exception, not the
+rule (see also: v5 not porting to WNBA).
+
+**Exclusion is much stronger than selection.** Mismatch detection moves the within-5 rate
+by −11.9pp; the best *positive* signal moves it +3.4pp. Detecting a bad game is roughly
+three times more reliable than detecting a good one.
+
+**Test B — does any of it survive the line?** Mostly not:
+
+| | corr with \|margin\| |
+|---|---|
+| closing line | +0.3952 |
+| records alone | +0.2368 |
+| **records, after controlling for the line** | **+0.0664** |
+
+And by bucket, records add nothing precisely where it would matter — |spread| 0-2 gives
+−0.003, 5-7 gives −0.034 — while the only bucket with real residual signal is |spread|
+11-44 at +0.220. **In the close games anyone wants to watch, records tell us nothing the
+market has not already priced.** They distinguish a 20-point blowout from a 35-point one.
+
+**Why this is still a green light.** [Method](METHOD.md) rule 6 exists to stop us claiming
+*edge*, and by that standard CBB editorial has none. But the product does not use odds and
+is not betting: the question for curation is "does this help a reader decide what to
+watch, from evidence they can see?" — and a 15-point within-5 spread between mismatches and
+close-record games does. What we must not do is present it as insight the market lacks.
+
+**What it changes in the plan.** [CBB](CBB.md) Phase 1's curation gate should lead with
+**exclusion** — drop the ~12% of the slate that records identify as likely blowouts — rather
+than trying to crown a best game from 100 candidates. That is both the stronger signal and
+the better answer to the volume problem. Use the record **gap** only; do not add a quality
+gate.
+
+---
+
 ## 2026-08-11 — Totals: no readable signal in any sport. Question closed
 
 **Decision.** Stop looking for an over/under edge. Scanned MLB, NBA and CBB with ~45
