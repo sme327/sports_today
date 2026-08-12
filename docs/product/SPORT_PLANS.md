@@ -91,7 +91,11 @@ that drop straight into the reachable-bar model.
 - **T0** 🟡 Schedule-only shipped. **T1** ⬜ period+clock live-state.
 - **T2** ⬜ Props from ESPN box scores: **shots on goal**, **points** (G+A) — over-only,
   reachable-bar; then **goalie saves**; blocks/hits if reliable. Collector mirrors
-  `src/wnba_collector.py`.
+  `src/wnba_collector.py`. **Feasibility confirmed 2026-08-12**: ESPN's `summary` endpoint
+  returns TOI (with PP/SH/ES splits), SOG, G, A, blocks, hits, takeaways, faceoffs and PIM
+  for skaters, and saves/SA/SV% for goalies — with athlete ids, back to **2011**. NHL is the
+  *most awkward* of the candidate sports (skaters and goalies are separate stat groups) and
+  the only one with **no vendor data to validate a collector against**.
 - **T3** ⬜ Matchup page: shot-share/pace identity, projected goalie, form, injuries.
 - **T4** ⬜ Stanley Cup Playoffs spotlight (series model).
 

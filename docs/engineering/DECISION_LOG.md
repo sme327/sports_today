@@ -75,6 +75,54 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-12 — ESPN can supply player props for NHL, NBA and CBB. Feasibility confirmed
+
+**Finding.** Everything needed for player props in **NHL, NBA and CBB** is available from
+the same ESPN `summary` endpoint the WNBA collector already uses
+(`.../sports/<path>/summary?event=<id>` → `boxscore.players`). No vendor purchase, no new
+provider. Nothing built yet.
+
+**What each sport returns**, with athlete ids on every row:
+
+| sport | stats |
+|---|---|
+| **NHL skaters** | TOI (plus PP/SH/ES splits), shifts, G, A, **SOG**, blocked shots, hits, takeaways, giveaways, faceoff W/L/%, PIM, +/− |
+| **NHL goalies** | saves, shots against, GA, SV%, ES/PP/SH saves, TOI |
+| **NBA** | MIN, PTS, FG, 3PT, FT, REB (+OREB/DREB), AST, TO, STL, BLK, PF, +/− |
+| **CBB** | as NBA, without +/− |
+
+This covers **every prop the roadmap wants for NHL** — shots on goal, points (G+A), goalie
+saves, and blocks/hits as stretch markets — and the full P/R/A set for NBA and CBB.
+
+**History is deep, not live-only.** Box scores resolve back to at least **2011 (NHL)**,
+**2010 (NBA)** and **2015 (CBB)** — checked by pulling a real game's box score on each date,
+not by trusting that the schedule endpoint answered. So these are backfillable archives,
+which matters: [Method §2](METHOD.md) needs multiple seasons to split-half anything.
+
+**Effort is a generalisation, not a new build.** `src/wnba_collector.py` is 671 lines and
+roughly 80% of it is sport-agnostic — request/retry, schedule paging, the stat-name
+cleaners, `_made_attempted`, `_minutes_float`, athlete-id extraction, incremental
+skip-existing, upsert. The sport-specific parts are the ESPN path, the stat-name → column
+map, table names, and the season window. That is the same shape as
+`boxscore_ingest.SPORTS`: one shared engine, a spec per sport.
+
+**Difficulty order, and it is not intuitive.** NBA and CBB are near-clones of WNBA — same
+stat vocabulary, same single athlete group. **NHL is the awkward one**: skaters and goalies
+are two different stat sets in separate groups, so the "one row per player-game" shape
+needs a decision (two tables, or one wide table with nulls). NHL also has no vendor data at
+all, so its collector *is* its data source, where NBA/CBB have ingested seasons to
+cross-check a collector against — a real validation advantage worth using.
+
+**Volume, for planning.** One summary call per game. NHL and NBA are ~1,300 games a season
+(~20 minutes of backfill each at a courteous rate); **CBB is ~6,300** (~2 hours per season).
+Daily incremental is 5-15 games for any of them. The existing collector already skips
+completed games it holds.
+
+**Not decided here:** whether to build any of it. This entry answers "is it possible and
+what would it cost", so the sequencing decision can be made on facts.
+
+---
+
 ## 2026-08-11 — ESPN scoreboard groups and limits (college sports only)
 
 **Decision.** `src/espn_scoreboard.fetch` accepts `groups` (fetch several, union by event
