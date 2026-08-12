@@ -9,6 +9,35 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-11 — NFL feed pickup joins the daily run (Downloads only)
+
+**Decision.** `services/nfl_feed_refresh.refresh()` runs inside the daily `rebuild()`. If a
+team+player feed pair is sitting in `~/Downloads` it is imported; otherwise nothing
+happens and nothing is said.
+
+**Reason.** The slate↔feed bridge shipped the same day works on *loaded* seasons. Keeping
+the current season loaded meant remembering to run `scripts/import_nfl_feed` by hand every
+week — the gap between "the bridge works" and "the bridge works on this year's games".
+
+**Idempotent by fingerprint.** The rebuild is daily and an NFL player feed is ~9MB.
+Re-parsing an unchanged workbook every morning is pure waste, so each import records the
+source files' name+size+mtime and a matching run short-circuits before opening the file.
+
+**Downloads only — and the first version got this wrong.** It reused the CLI's search
+path, which also walks `~/Documents`, and on the very first run it found a feed in a
+personal `to review` folder and imported it. Harmless (it re-loaded a season already held)
+but wrong in principle: **an automated daily job must not go hunting through someone's
+documents and load whatever it finds.** Downloads is the drop location the MLB pipeline
+already uses, so a file arriving there means "load me". The manual CLI keeps the broader
+search, because a human invoking it has named the file.
+
+**Non-fatal.** A malformed NFL workbook must never take down the MLB daily update, so the
+pipeline records `nfl_error` and continues — same contract as WNBA and MLS. Note this
+composes with the drift guard shipped alongside: bad layout raises, the pipeline notes it,
+and no half-loaded season is written.
+
+---
+
 ## 2026-08-11 — NFL slate ↔ feed bridge: join on date + teams, never on ids
 
 **Decision.** `services/nfl_bridge.py` matches a live ESPN NFL game to its row in the

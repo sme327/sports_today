@@ -94,9 +94,12 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   archives, atomically replaces the current workbook, rebuilds SQLite, collects
   WNBA **and MLS** (both non-fatal on failure), and launches. `NO_CHANGE` is handled
   safely. Full steps: [Setup](docs/engineering/SETUP.md).
-- **NFL is not part of the daily loop.** Its seasons are loaded one-off with
-  `python -m scripts.import_nfl_feed` (team + player workbooks per season, written
-  additively — a new year replaces only that year).
+- **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
+  + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there
+  is none (most days, and all offseason), skipped when the pair is unchanged since the
+  last import, and non-fatal on failure. In season this is what keeps the slate↔feed
+  bridge working on *this* year's games. A one-off load is still
+  `python -m scripts.import_nfl_feed`; writes are additive per season either way.
 
 ## Known limitations
 
