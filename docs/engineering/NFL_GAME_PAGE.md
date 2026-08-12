@@ -39,10 +39,16 @@ given game has a page is decided per game by `NFLAdapter.deep_dive_available()`,
 cards consult before offering a link. Offering a "Matchup →" that lands on "not connected"
 is precisely the dishonesty the product rules forbid.
 
-**Still missing: a current-season feed cadence.** The bridge is live, but the 2026 season
-cannot be ingested until its games are played, so today's NFL cards will not deep-dive
-until a 2026 feed is loaded mid-season. That is a data cadence problem now, not a code
-one — which is also why NFL props still cannot be graded (`nfl_props_registry`).
+**The cadence is wired; the data is not there yet.** `services/nfl_feed_refresh.py` runs
+inside the daily rebuild and imports a `*nfl-season-team-feed*.xlsx` +
+`*nfl-season-player-feed*.xlsx` pair dropped in `~/Downloads` — idempotent by file
+fingerprint, silent when there is none, non-fatal on failure, **Downloads only** (an
+automated job must not search a personal documents tree). So mid-season, dropping a feed
+is all it takes for today's NFL cards to start deep-diving.
+
+What remains is simply that **the 2026 season cannot be ingested until its games are
+played**. That is also why NFL props still cannot be graded (`nfl_props_registry`) — a
+data-availability limit, not a missing piece of code.
 
 Entry point: a **sidebar** link on the Today view (`views/today._nfl_archive_link`),
 rendered only when `nfl_team_games` actually holds data — so a fresh clone with no NFL

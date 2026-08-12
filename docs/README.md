@@ -37,7 +37,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks (deeper reference). |
 | [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
 | [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
-| [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, and why it lives in the archive rather than the live slate. |
+| [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, and the bridge that joins the live slate to it (and when it honestly cannot). |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Historical Data](engineering/HISTORICAL_DATA.md) | Ingested box-score history: coverage, gaps, and which model ideas are already tested and dead. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
