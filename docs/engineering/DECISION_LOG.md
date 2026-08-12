@@ -75,6 +75,38 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-12 — Two scorers shipped without their version strings; ledger corrected
+
+**What happened.** `batter-hit-v5` (2026-08-10 18:08) and `sp-v3` (17:16) changed the
+scorers but not `services/snapshots.MODEL_VERSIONS`. The 2026-08-11 slate was therefore
+scored by the new engines and **recorded as `batter-hit-v3` and `sp-v2`** — 449 rows.
+
+**Why it matters.** Version comparison is the only way this project learns whether a change
+helped, and the 2026-08-08 entry already warns that it is *"only valid going forward"*.
+A mislabelled slate does not merely lose one day; it silently pollutes both sides of the
+comparison — the new engine's results are credited to the old one.
+
+**Confirmed empirically, not assumed.** sp-v3's signature is threshold diversification: the
+08-09 and 08-10 slates picked overs only at thresholds 7-8 (the old linear scheme's high
+bars), while 08-11 spread across 4, 5, 6, 7 and 8. Same process and working tree, and v5
+shipped 52 minutes before sp-v3, so both were live. The 08-10 slate (captured 11:39, before
+either shipped) correctly keeps the old labels.
+
+**Fixed.** The strings now name the shipped engines, and the 449 rows on 2026-08-11 were
+relabelled. Correcting a factual recording error is not rewriting history — the scores
+themselves are untouched, and leaving the label wrong would corrupt every future comparison.
+
+**Guarded.** A test now ties each version string to a property of the scorer it names:
+`batter-hit-v5` iff `_HIT_SHRINK <= 0.35`, `sp-v3` iff `_CLEAR_RATES` exists,
+`wnba-pra-v3` iff the 10-game weight exceeds the 5-game. Changing a scorer without its
+label now fails the suite. WNBA's string *was* updated at the time, which is why only two
+markets were affected — the guard makes that the default rather than the exception.
+
+**Add to the ship checklist:** a scorer change is not complete until its version string
+moves with it.
+
+---
+
 ## 2026-08-12 — A shared ESPN box-score collector (NBA, CBB, NHL validated)
 
 **Decision.** `src/espn_boxscore.py` + `scripts/collect_espn_boxscores.py`. A sport is a

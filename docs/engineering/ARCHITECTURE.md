@@ -16,6 +16,7 @@
 | a new **component** (reusable UI/HTML) | `components/<name>.py` |
 | a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |
 | a new **domain object** | `domain/models.py`, or a league page model (`domain/<league>_game_page.py`) |
+| to **change a scorer** | edit the scorer **and** its `services/snapshots.MODEL_VERSIONS` string in the same commit — a test ties each version to a property of the engine it names, because a mislabelled slate silently credits a new engine's results to the old one |
 | a new **prop market** | a `MarketSpec` entry in `domain/markets.py` (label, unit, direction, grade rule, source) + a scorer in `src/`; grading/classification/display then work automatically. **Before adding one, check it can actually clear the curation floor** — total bases never scored above 72 in 1,199 graded rows, so it was scored daily for a reader who never saw it |
 | to **retire** a prop market | delete the scorer, adapter entry point, cached builder and slate wiring; **keep** the `MarketSpec` and grading branch so existing ledger rows still resolve. Never delete graded history |
 | **grading / Results & Performance** logic | `services/grading.py` (grade + summarize by band/segment), `views/results.py` (Daily Results), `views/performance.py` (Performance dashboard), `components/results_feed.py`, `components/filter_bar.py` (shared query-param filter bar) |
