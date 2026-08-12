@@ -57,6 +57,9 @@ assists, steals, blocks, turnovers.
 **Gaps:** two seasons only, no data before 2024-25, and neutral-site games are excluded
 from any home/road analysis rather than mishandled.
 
+**Volume, measured:** 43.7 games per day on average across a 144-day season, peaking at
+**169** (2025-11-03), 155, 149. This is the constraint that shapes everything below.
+
 ---
 
 ## 3. Why this should stay team-level
@@ -117,13 +120,28 @@ dominate any "mismatch" reading.
 
 Deliberately phased so each step is useful alone, and so we can stop after any of them.
 
-### Phase 0 — Schedule only *(small)*
+### Phase 0 — Schedule only *(small, but there is a trap)*
 
 A `leagues/cbb/adapter.py` subclassing `ScheduleOnlyESPN` with
-`espn_path = "basketball/mens-college-basketball"`, registered like NHL/NBA/NCAAF. ~8 lines
-plus tests. Gives cards, dates, records and scores; nothing reads the ingested data yet.
+`espn_path = "basketball/mens-college-basketball"`, registered like NHL/NBA/NCAAF.
 
-**Ship gate:** the slate does not become unusable. If it does, Phase 1's gate comes first.
+**⚠️ It must set `espn_groups = (50,)` and `espn_limit = 300`, or it is silently broken.**
+ESPN's college-basketball scoreboard defaults to a small subset, and truncates to `limit`
+after filtering. Verified against our own vendor feed on four dates:
+
+| date | our feed | ESPN default | `groups=50`, limit 100 | **`groups=50`, limit 300** |
+|---|---|---|---|---|
+| 2026-02-11 | 54 | **5** | 54 | **54** |
+| 2026-01-10 | 149 | **19** | 100 | **149** |
+| 2025-11-03 | 169 | **19** | 100 | **169** |
+
+The default would have shown **19 of 169 games** and said nothing. Both settings are
+already supported by `ScheduleOnlyESPN` (added 2026-08-11); the adapter just has to declare
+them. Do **not** raise the limit further — ESPN handles very large values badly
+(`limit=900` returned 19 where `limit=100` returned 45 on NCAAF).
+
+**Ship gate:** the slate does not become unusable. At 169 games on a peak night it will,
+so Phase 1's curation gate almost certainly has to land first — see §4.
 
 ### Phase 1 — Editorial + a curation gate *(the real value)*
 

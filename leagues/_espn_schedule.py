@@ -39,6 +39,15 @@ class ScheduleOnlyESPN:
 
     # Per-league configuration (set by subclasses):
     espn_path: str = ""          # e.g. "hockey/nhl"
+    # ESPN caps a college scoreboard response at 25 events **per group**. Leagues split
+    # across divisions must name their groups or they silently show a partial slate —
+    # NCAAF was returning exactly 25 games on every busy Saturday. Single-league sports
+    # (NFL/NBA/NHL) leave this empty. See src/espn_scoreboard.fetch.
+    espn_groups: tuple[str | int, ...] = ()
+    # ESPN truncates to `limit` *after* filtering. College basketball runs 169 games on a
+    # busy night, so 100 silently drops the tail. Do not raise this globally: ESPN handles
+    # very large values badly (limit=900 returned 19 games where limit=100 returned 45).
+    espn_limit: int = 100
     with_week: bool = False      # append "· Wk N" (football/college)
     rank_prefix: bool = False    # prepend "#N " to ranked teams (NCAA)
     default_round: str = ""      # round label when the source omits one
@@ -51,7 +60,9 @@ class ScheduleOnlyESPN:
 
     def fetch_schedule(self, slate_date: date) -> list[SlateGame]:
         games: list[SlateGame] = []
-        for g in espn_scoreboard.fetch(self.espn_path, slate_date):
+        for g in espn_scoreboard.fetch(self.espn_path, slate_date,
+                                       limit=self.espn_limit,
+                                       groups=self.espn_groups or None):
             away_short, home_short = g.get("away_short"), g.get("home_short")
             if self.rank_prefix:
                 away_short = _ranked(away_short, g.get("away_rank"))

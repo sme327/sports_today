@@ -75,6 +75,35 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-11 — ESPN scoreboard groups and limits (college sports only)
+
+**Decision.** `src/espn_scoreboard.fetch` accepts `groups` (fetch several, union by event
+id) and `ScheduleOnlyESPN` gains `espn_groups` / `espn_limit`. **No shipped league changes
+behaviour.** This is plumbing a CBB adapter will need, plus a documented trap.
+
+**What prompted it.** Building toward CBB Phase 0, ESPN returned 11 games on a date our
+own feed had 22. It gets worse on busy nights — **19 of 169**. The default scoreboard is a
+subset, and the response truncates to `limit` after filtering, so `groups=50` alone still
+capped at 100. `groups=(50,)` with `limit=300` matches our vendor feed exactly on every
+date checked (54/54, 149/149, 169/169).
+
+**A wrong turn worth recording.** My first probe used `limit=900` and NCAAF came back as
+exactly 25 on three separate Saturdays, which reads unmistakably like a cap — quiet
+Tuesdays correctly returned 2. I very nearly logged "our NCAAF adapter silently truncates
+every Saturday" as a live bug. It is not: **ESPN handles large limits badly**, and at the
+adapter's actual `limit=100` the same date returns **45**. The lesson is the same one as
+the pace leak — when a number looks alarming, check the instrument before the world.
+
+**NCAAF deliberately unchanged.** Its default returns FBS, which is what this product means
+by college football. Adding FCS (group 81) is now one line and would take a November
+Saturday from 45 games to 99 — complete, but mostly lower-division games nobody asked for.
+Left alone, with the option documented in the adapter.
+
+**Tests** cover the union-and-deduplicate behaviour, one group failing without losing the
+others, total failure still returning `[]`, and that no shipped adapter declares groups.
+
+---
+
 ## 2026-08-11 — CBB editorial: green light, but as a *filter*, not a ranker
 
 **Decision.** CBB Phase 1 is viable — records genuinely predict competitiveness there,

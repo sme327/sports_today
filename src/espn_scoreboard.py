@@ -9,6 +9,7 @@ so leakage rules don't apply (there's no scoring, only the schedule).
 from __future__ import annotations
 
 from datetime import date
+from typing import Iterable
 
 import requests
 
@@ -175,14 +176,45 @@ def round_label(game: dict, *, with_week: bool = False) -> str:
     return base
 
 
-def fetch(sport_path: str, game_date: date | str, limit: int = 100) -> list[dict]:
-    """Normalized games for a date (empty list on failure or an off day)."""
+def fetch(sport_path: str, game_date: date | str, limit: int = 100,
+          groups: Iterable[str | int] | None = None) -> list[dict]:
+    """Normalized games for a date (empty list on failure or an off day).
+
+    **``groups`` matters more than it looks.** ESPN's scoreboard caps a college response
+    at **25 events**, and the cap applies *per group*, not per request — so a college
+    football Saturday came back as exactly 25 games while quiet Tuesdays correctly
+    returned 2. We were showing fewer than half a slate and calling it the slate.
+
+    Passing several groups fetches each and unions by event id. Measured 2026-08-11:
+
+    * **NCAAF** — FBS (80) and FCS (81) return 25 each with **zero overlap**; together
+      with the other divisions that is 54 distinct games where we had been showing 25.
+    * **CBB** — group 50 ("all D1") is *not* capped and matches our own vendor feed
+      exactly on every date checked (149 vs 149, 169 vs 169), where the default returned
+      19. A college adapter without it is silently broken.
+
+    Leagues with a single national league (NFL, NBA, NHL) need no groups and are
+    unaffected.
+    """
     key = game_date.isoformat() if hasattr(game_date, "isoformat") else str(game_date)
     token = key.replace("-", "")
-    try:
-        response = requests.get(_BASE.format(path=sport_path),
-                                params={"dates": token, "limit": limit}, timeout=15)
-        response.raise_for_status()
-        return parse_events(response.json())
-    except Exception:
+    variants = [None] if not groups else list(groups)
+    seen: dict[str, dict] = {}
+    ok = False
+    for group in variants:
+        params: dict = {"dates": token, "limit": limit}
+        if group is not None:
+            params["groups"] = group
+        try:
+            response = requests.get(_BASE.format(path=sport_path), params=params, timeout=15)
+            response.raise_for_status()
+            payload = response.json()
+        except Exception:
+            continue                      # one group failing must not lose the others
+        ok = True
+        for game in parse_events(payload):
+            gid = str(game.get("game_id") or id(game))
+            seen.setdefault(gid, game)
+    if not ok:
         return []
+    return sorted(seen.values(), key=lambda g: (g.get("start_time") or "", str(g.get("game_id"))))
