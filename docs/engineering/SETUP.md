@@ -174,10 +174,10 @@ python -m scripts.morning_update --force
 
 ## League data collectors (WNBA, MLS)
 
-MLB comes from the daily vendor workbook above. **WNBA and MLS collect their own
-history from ESPN** into the same `database/sportshub.db` (additive tables; the MLB
-data is never touched). These are run occasionally, not part of the daily MLB flow,
-and require an internet connection. The collected data is **gitignored** — a fresh
+MLB comes from the daily vendor workbook above, and NFL from season workbooks (see
+below). **WNBA and MLS collect their own history from ESPN** into the same
+`database/sportshub.db` (additive tables; the MLB data is never touched). These two run
+as part of the daily update but are non-fatal, and require an internet connection. The collected data is **gitignored** — a fresh
 clone starts empty and the relevant sections show honest awaiting-data states until a
 collector runs.
 
@@ -197,6 +197,39 @@ The MLS collector is **incremental** (skips already-collected matches), validate
 `mls_collection_runs`. Only completed **regular-season** matches are stored (no Leagues
 Cup, Open Cup, Concacaf, friendlies, or playoffs). Re-run periodically to pick up new
 results.
+
+## NFL season feeds
+
+NFL does **not** collect from ESPN like WNBA/MLS — it loads Big Data Ball season
+workbooks, a **team** feed and a **player** feed per season, into `nfl_team_games` /
+`nfl_player_games`. Writes are additive per season, so loading a new year leaves the
+others alone.
+
+**One-off load** (any location, you name the files):
+
+```bash
+python -m scripts.import_nfl_feed --team <team.xlsx> --player <player.xlsx>
+python -m scripts.import_nfl_feed          # or auto-detect the newest pair
+```
+
+**In season, the daily run picks them up for you.** Drop a
+`*nfl-season-team-feed*.xlsx` + `*nfl-season-player-feed*.xlsx` pair in `~/Downloads`
+and the next `update.command` imports it. It is:
+
+- **silent** when there is no pair — most days, and the whole offseason;
+- **skipped** when the pair is unchanged since the last import (fingerprinted by
+  name/size/mtime, so a ~9MB player feed is not re-parsed every morning);
+- **non-fatal** — a malformed NFL workbook records a note and the MLB update continues;
+- **`~/Downloads` only** — deliberately not your documents folder.
+
+Each import is recorded in `nfl_feed_runs`.
+
+**Why it matters:** a live NFL game only opens its deep-dive matchup page if that game's
+season is loaded (`services/nfl_bridge.py` joins the two on date + teams). Preseason is
+never in the feed, so those cards stay schedule-only by design.
+
+If the vendor changes the workbook layout, the import **fails loudly** and names the
+missing columns rather than writing a half-correct table.
 
 ## Deploying to Streamlit Community Cloud (live-schedule build)
 
