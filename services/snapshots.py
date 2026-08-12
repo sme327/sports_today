@@ -74,9 +74,11 @@ MODEL_VERSIONS = {
     "batter_bb": "batter-bb-v1",   # over-only, reachable-bar
     "sp_k": "sp-v2",         # ledger-refit: overs penalized (unders convert, overs regress)
     "sp_hits": "sp-v2",
-    "wnba_points": "wnba-pra-v2",   # ledger-refit: reliability-floor threshold (clear ≥ .60)
-    "wnba_rebounds": "wnba-pra-v2",
-    "wnba_assists": "wnba-pra-v2",
+    # v3: 10-game clear rate weighted above the 5-game, trend term dropped (it correlated
+    # +0.031 with clearing). Threshold selection unchanged from v2's reliability floor.
+    "wnba_points": "wnba-pra-v3",
+    "wnba_rebounds": "wnba-pra-v3",
+    "wnba_assists": "wnba-pra-v3",
 }
 
 
