@@ -26,11 +26,14 @@ across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
 
-**NFL is a separate surface.** Its live slate is schedule-only like the others, but a
-full deep-dive — season-feed ingest, team analytics, player props, matchup pages —
-runs off ingested Big Data Ball seasons and is browsed through the **season archive**
-(`?view=nfl`), not the day's slate. The split is deliberate; see
-[NFL Game Page](docs/engineering/NFL_GAME_PAGE.md) before changing it.
+**NFL spans two surfaces, now joined.** Its deep-dive — season-feed ingest, team
+analytics, player props, matchup pages — runs off ingested Big Data Ball seasons and is
+browsed through the **season archive** (`?view=nfl`). `services/nfl_bridge.py` matches a
+live ESPN slate game to its feed row **by date + teams** (the two sources key games
+differently), so a slate game whose season is loaded opens the same matchup page. A game
+the feed does not cover — **preseason always, and any season not yet ingested** — shows the
+team-level read and says which it is. NFL still scores **no props** onto the slate. See
+[NFL Game Page](docs/engineering/NFL_GAME_PAGE.md).
 
 ## Read before you build
 

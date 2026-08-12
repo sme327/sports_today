@@ -9,6 +9,63 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-11 — NFL slate ↔ feed bridge: join on date + teams, never on ids
+
+**Decision.** `services/nfl_bridge.py` matches a live ESPN NFL game to its row in the
+ingested vendor feed, so a slate game whose season is loaded opens the same matchup page
+the archive serves. `views/game.py` gains an NFL branch; `NFLAdapter.supports_deep_dive`
+becomes True with a **per-game** `deep_dive_available()` gate.
+
+**Why it was hard, and what actually worked.** The two halves share no identifier — ESPN
+uses event ids (`401772980`), the feed uses `46033-SFO@PHI`. The tracker framed this as
+needing to decode the vendor key. It does not: **both sides carry full team names**, so
+the join is `(date, home team, away team)` and the `AWAY@HOME` string is never parsed.
+Names normalise through the feed's own `nfl_teams` dimension (long/short/nick/initial), so
+a rebrand or a nickname-only schedule still resolves, and an ambiguous name resolves to
+nothing rather than to a guess.
+
+**Two things that would have silently broken it.** Week is *not* a join key — ESPN calls a
+wild-card game "week 1 of the postseason", the feed calls it week 19 of the season, and
+joining on it would match nothing in January. Dates need a one-day window, because ESPN
+start times are UTC and a Sunday-night kickoff records as Monday. Both are pinned by tests.
+
+**`None` is a normal answer.** The feed holds regular season and playoffs only, so
+preseason *never* matches, and an un-ingested season never matches. Rather than a bare
+failure, `unavailable_reason()` names the cause — "not preseason", or "the 2026 season is
+not loaded yet; the feed holds 2023, 2024, 2025" — because the feed's coverage is a fact
+the reader can act on.
+
+**Capability vs availability.** `supports_deep_dive` stays a league-level flag, and a new
+optional `deep_dive_available(game)` decides per game. Cards consult it before rendering a
+"Matchup →" link, so we never offer a link that lands on "analysis is not connected yet".
+That is the honest-data rule applied to navigation.
+
+**What this does *not* unblock.** NFL props still cannot be scored or graded. The 2026
+season cannot be ingested until its games are played, so today's cards will not deep-dive
+until a mid-season feed lands. `nfl_props_registry` remains blocked — but on **data
+cadence**, not on missing code, which is a clearer place to be stuck.
+
+---
+
+## 2026-08-11 — NFL feed drift fails at import instead of months later
+
+**Decision.** `src/nfl_ingest` declares `REQUIRED_TEAM_COLUMNS` / `REQUIRED_PLAYER_COLUMNS`
+and refuses a workbook missing any of them, naming every missing column and the file.
+
+**Reason.** The header flattener derives column names from whatever the workbook carries.
+That is what makes it robust — and exactly why it cannot detect drift: a renamed vendor
+category yields a *renamed column*, not an error. The table looks fine and a matchup page
+breaks months later. Only naming what we depend on can catch it. The contract is
+deliberately not a schema mirror: identity, the joins, and the stats the matchup page and
+prop scorer read.
+
+**It immediately found something.** The existing synthetic test fixtures did not carry
+`venue`, `final`, `first_downs`, `total_plays`, `position`, `opponent` or the receiving
+group — so the ingest tests had been exercising a workbook shape the real feed never has.
+Fixtures updated to be faithful; the 2023-2025 feeds load clean against the new contract.
+
+---
+
 ## 2026-08-10 — "Volume beats form" is baseball-specific. Do not port v5 to WNBA
 
 **Decision.** Record that the `batter-hit-v5` lesson **does not transfer**, and change

@@ -54,12 +54,17 @@ def test_round_label_variants():
     assert sb.round_label({}) == ""
 
 
-def test_all_four_leagues_registered_and_schedule_only():
+def test_all_four_leagues_registered_and_carry_no_props():
+    """All four are ESPN schedule-only for *props*. NFL is the exception on deep-dive:
+    it gained a conditional matchup page (see `services/nfl_bridge`), but still scores
+    no opportunities onto the slate."""
     for lg in ("NFL", "NHL", "NBA", "NCAAF"):
         a = get_adapter(lg)
         assert a is not None, lg
-        assert a.supports_deep_dive is False
         assert a.opportunities(as_of=date(2026, 8, 30)) == []
+    for lg in ("NHL", "NBA", "NCAAF"):
+        assert get_adapter(lg).supports_deep_dive is False
+    assert get_adapter("NFL").supports_deep_dive is True
 
 
 def test_ncaaf_prefixes_rank_and_builds_compact_card(monkeypatch):

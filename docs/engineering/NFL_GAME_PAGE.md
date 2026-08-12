@@ -12,18 +12,37 @@ actually happened, which is what gives it a built-in backtest.
 
 ## The archive/slate split (read this first)
 
-**NFL appears twice in the app, and the two are not connected:**
+**NFL appears on two surfaces, joined since 2026-08-11 by an id bridge:**
 
 | Surface | Source | What you get |
 | --- | --- | --- |
-| Today's slate | ESPN scoreboard, via `ScheduleOnlyESPN` | Schedule-only card. `supports_deep_dive` is **False**, so `views/game.py` renders the honest placeholder. |
+| Today's slate | ESPN scoreboard, via `ScheduleOnlyESPN` | Schedule card. If the feed covers this game, a **Matchup →** link to the full deep-dive; otherwise the team-level read plus a sentence saying why. |
 | Season archive (`?view=nfl`) | Ingested Big Data Ball seasons in `sportshub.db` | Week browser → full matchup deep-dive for any ingested game. |
 
-`views/game.py` deliberately does **not** dispatch NFL. The two surfaces use different
-identity spaces — ESPN event IDs on the slate, vendor `game_id` (`AWAY@HOME` form) in
-the feed — and nothing reconciles them. Connecting them is real work (an ID bridge
-plus a current-season feed cadence), not a missing `if` branch. Until that exists, a
-live NFL game genuinely has no deep-dive, and the placeholder is the honest answer.
+The two surfaces still use different identity spaces — ESPN event ids
+(`401772980`) on the slate, vendor `game_id` (`46033-SFO@PHI`) in the feed.
+**`services/nfl_bridge.py` reconciles them on date + teams**, not on ids, because no id is
+shared. Both sides carry full team names, so it never decodes `SFO@PHI`; names normalise
+through the feed's own `nfl_teams` dimension so a rebrand does not break the join. Week is
+**not** a join key — ESPN calls a wild-card game "week 1 of the postseason" and the feed
+calls it week 19. Dates match within one day, because ESPN start times are UTC and a
+Sunday-night kickoff lands on Monday.
+
+**No match is the ordinary case, not an error.** The feed carries regular season and
+playoffs only, so **preseason never matches**, and a season nobody has ingested never
+matches. `views/game.py` falls through to the team-level read and `unavailable_reason()`
+says which case it is — "not preseason", or "the 2026 season is not loaded yet; the feed
+holds 2023, 2024, 2025".
+
+`supports_deep_dive` is now **True** for NFL, but that is a *league capability*; whether a
+given game has a page is decided per game by `NFLAdapter.deep_dive_available()`, which
+cards consult before offering a link. Offering a "Matchup →" that lands on "not connected"
+is precisely the dishonesty the product rules forbid.
+
+**Still missing: a current-season feed cadence.** The bridge is live, but the 2026 season
+cannot be ingested until its games are played, so today's NFL cards will not deep-dive
+until a 2026 feed is loaded mid-season. That is a data cadence problem now, not a code
+one — which is also why NFL props still cannot be graded (`nfl_props_registry`).
 
 Entry point: a **sidebar** link on the Today view (`views/today._nfl_archive_link`),
 rendered only when `nfl_team_games` actually holds data — so a fresh clone with no NFL
