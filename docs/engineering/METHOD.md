@@ -126,7 +126,20 @@ tuned around the old value.
 - **Missing is missing.** `None` beats a derived guess — the vendor prices only the
   favourite in some MLB seasons, so the underdog's moneyline stays empty.
 
-## 9. Write the negative result down
+## 9. Validate a new data source against something it has never seen
+
+A collector that parses without erroring is not a collector that is correct. Check it
+against an independent source where one exists — the ESPN box-score collector was built
+NBA-first *because* six vendor seasons could contradict it — and against the sport's own
+real-world rates where none does. NHL had no second source, so it was checked against
+hockey: 26.7 shots on goal per team per game, 3.0 goals, 19.7 hits. A stat sitting at
+exactly 0.0 is the loudest signal available, and it is invisible if you only read the
+schema.
+
+**And when a debug value looks odd, check it.** A `None` in a throwaway print was dismissed
+as a formatting artifact; it was two stat columns silently unmapped.
+
+## 10. Write the negative result down
 
 Roughly two thirds of the investigations in the [Decision Log](DECISION_LOG.md) are
 negatives, and they are the most valuable entries in it: platoon splits, prior-season
@@ -147,4 +160,5 @@ gets re-run in three months.
 5. `√(2 ln k)` before admiring an outlier.
 6. Would the market already know?
 7. Widen the spread *and* lift the top, out of sample.
-8. Write the negative down.
+8. Validate a new source against something it has never seen.
+9. Write the negative down.

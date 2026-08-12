@@ -75,6 +75,75 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-12 — A shared ESPN box-score collector (NBA, CBB, NHL validated)
+
+**Decision.** `src/espn_boxscore.py` + `scripts/collect_espn_boxscores.py`. A sport is a
+**`SportSpec`** — ESPN path, table prefix, stat vocabulary, columns, and the scoreboard
+`groups`/`limit` it needs. Everything else is shared. Same shape as `boxscore_ingest.SPORTS`.
+
+**Validated against an independent source, which is why NBA went first.** We hold six
+ingested vendor seasons of NBA, so the collector's output can be checked against data it
+has never seen. One month, 233 games, 6,064 player rows, zero failures:
+
+| stat | exact | within 1 |
+|---|---|---|
+| points | **100.00%** | 100% |
+| rebounds | 99.94% | 100% |
+| assists | 99.96% | 100% |
+| minutes | 98.28% | 100% (ESPN rounds to whole minutes) |
+
+CBB then matched **241 of 241 games** and 99.7%+ on every stat.
+
+**Three bugs the validation caught, all of which would have shipped.**
+
+1. **`game_date` was the UTC instant.** A 7pm ET tip on 9 January is `2026-01-10T00:00Z`,
+   so every `WHERE game_date = …` would have been silently wrong. The validation reported
+   **24% agreement** until the shift was found — then 99.1%. `game_date` is now the
+   league's calendar day and `start_time` keeps the instant. Same class of bug as the NFL
+   bridge's one-day window; it will recur in any ESPN-sourced feature.
+
+2. **NHL shots on goal was always zero.** ESPN ships both `S` and `SOG`; **`SOG` is a dead
+   column that is always 0** and the real data is in `S`. All 1,548 skaters in a five-day
+   sample had `shots_on_goal = 0` while the true values sat under a column named `shots`.
+   Caught only because a team SOG of 0.0 per game is impossible — the real figure is 26.7
+   against an NHL average of ~30. **Shots on goal is the headline NHL prop.**
+
+3. **The fix for (2) dropped `g → goals` and `a → assists` from the alias map.** Worse
+   than the bug: the evidence was on screen and dismissed. A debug table printed `goals`
+   as `None` and it was called a formatting artifact rather than checked. The guard now in
+   the suite — *every declared column must have an alias pointing at it* — is the test that
+   would have caught it, and it runs for all four sports. **A column nothing maps to is
+   silently always-null: the table looks right and the data never arrives.**
+
+**Athlete id spaces are disjoint.** ESPN ids and Big Data Ball ids share **zero** of 486
+NBA players (Curry is `3975` to ESPN, `201939` to the vendor — an NBA.com id). This is
+fine: the collector is the *sole* source for props and never joins to vendor data. The
+validation crosswalk was name-based, one-time and offline, and is deliberately not shipped.
+It also demonstrated why the rule exists — "Josh Smith" played for two different teams on
+2026-01-08 and the name join swapped their lines exactly (8↔22 points). Adding team to the
+key took CBB agreement from 99.1% to 99.7%.
+
+**NHL's shape.** Skaters and goalies are separate ESPN stat groups. They land in one wide
+table tagged by `player_group`, keeping "one row per player-game" — the shape every scorer
+in this app expects. Two tables would force every downstream query to know about both.
+Goalie `saves + goals_against == shots_against` on 97.8% of rows.
+
+**Sanity, not just agreement.** NHL has no vendor data to check against, so it was
+validated against the sport itself: shots on goal 26.7 per team per game, goals 3.0,
+assists 5.1, hits 19.7, blocked shots 14.6, goalie SV% .873. Every figure lands where
+hockey says it should.
+
+**WNBA is deliberately not migrated.** It is live and graded daily, with a settled schema
+and a scorer reading it; rewriting it to prove a refactor would risk the one working
+basketball surface for no user-visible gain. Its spec is included and exercised by the
+shared parser, so the migration is available later as a separate, deliberate step.
+
+**What this unlocks.** Player props for NHL, NBA and CBB from a source we already use, with
+history back to 2011/2010/2015. It also makes the CBB and NFL **vendor feeds optional** at
+player grain — a simplification, not just an addition.
+
+---
+
 ## 2026-08-12 — `wnba-pra-v3`: back the ten-game window, drop the trend term (shipped)
 
 **Decision.** `_RECENT_WEIGHT` (last-5 clear rate) 22 → **18**, `_BASELINE_WEIGHT`
