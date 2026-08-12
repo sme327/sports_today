@@ -47,6 +47,24 @@ def _normalize(value: object) -> str:
 # last 10; players who clear none are skipped. Hold-out backtest next-game clear:
 # points 37%→64%, rebounds 33%→68%, assists 32%→58%.
 MIN_CLEAR = 0.60
+
+# v3 weights (2026-08-12). Backtested on 3,118 leakage-safe player-games, fit on the first
+# half of the season by date and tested on the second. Against the live v2 formula:
+#
+#     test correlation   +0.1339 -> +0.1416
+#     top-20% clear      0.6923  -> 0.7212
+#     spread over bottom +0.1620 -> +0.2115
+#
+# Both halves of the ship rule, out of sample. Per-market differences are within noise at
+# these sizes (the points top-20% moves 0.6 SE), so the aggregate is the signal.
+#
+# `_SCORE_BASE` is a **matched pair** with dropping the trend term: removing up to 8 points
+# of headroom would otherwise have cut the served share from 42.9% to 38%. At 19 the share
+# holds (41.1%) and the served clear-rate still improves (0.6998 -> 0.7067). Do not change
+# one without re-tuning the other.
+_RECENT_WEIGHT = 18      # last-5 clear rate  (was 22)
+_BASELINE_WEIGHT = 22    # last-10 clear rate (was 18)
+_SCORE_BASE = 19         # was 18
 # Appearances (not roster rows) needed before a player's form is described at all.
 MIN_PLAYED_GAMES = 5
 
@@ -171,14 +189,22 @@ def score_wnba_opportunities(
             hit_l10 = _hit_rate(group[market], threshold, 10)
 
             role_score = min(25, max(0, (minutes_l5 - 14) * 1.25))
-            recent_score = 22 * hit_l5
-            baseline_score = 18 * hit_l10
+            # v3: the **10-game** clear rate outweighs the 5-game one in every market —
+            # +0.159 vs +0.121 (points), +0.087 vs +0.053 (rebounds), +0.183 vs +0.092
+            # (assists) over 3,118 leakage-safe player-games. The weights used to be the
+            # other way round, backing the noisier window.
+            recent_score = _RECENT_WEIGHT * hit_l5
+            baseline_score = _BASELINE_WEIGHT * hit_l10
             cushion = max(0, avg_l10 - threshold)
             cushion_score = min(15, cushion * (1.1 if market == "points" else 2.5))
-            trend_score = max(-5, min(8, (avg_l5 - avg_l10) * 2))
+            # v3 dropped a `trend_score` — clip((avg_l5 - avg_l10) * 2, -5, 8). It
+            # correlated **+0.031** with actually clearing the bar: a short-window delta
+            # on noisy counting stats is close to pure noise, and it was occupying up to
+            # 8 points of a 99-point scale.
 
             opportunity = round(
-                min(99, max(0, 18 + role_score + recent_score + baseline_score + cushion_score + trend_score))
+                min(99, max(0, _SCORE_BASE + role_score + recent_score
+                            + baseline_score + cushion_score))
             )
             stability = round(
                 min(

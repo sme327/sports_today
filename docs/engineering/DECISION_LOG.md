@@ -75,6 +75,62 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-12 — `wnba-pra-v3`: back the ten-game window, drop the trend term (shipped)
+
+**Decision.** `_RECENT_WEIGHT` (last-5 clear rate) 22 → **18**, `_BASELINE_WEIGHT`
+(last-10) 18 → **22**, the `trend_score` term removed, and `_SCORE_BASE` 18 → **19** to
+hold the served share. First full-scorer backtest the WNBA engine has had.
+
+**The inputs say the weights were backwards.** Over 3,118 leakage-safe player-games — the
+live formula replayed against every game using only prior ones — the **10-game** clear rate
+beats the 5-game in *every* market:
+
+| | points | rebounds | assists |
+|---|---|---|---|
+| `hit_l10` | **+0.159** | **+0.087** | **+0.183** |
+| `hit_l5` | +0.121 | +0.053 | +0.092 |
+
+v2 weighted the noisier window higher. Minutes, by contrast, correlate +0.067 (l5) and
++0.049 (l10) — real but well behind form, which is the **opposite** of the MLB finding and
+why `batter-hit-v5` was not ported here.
+
+**The trend term was noise.** `clip((avg_l5 - avg_l10) * 2, -5, 8)` correlated **+0.031**
+with clearing — a short-window delta on noisy counting stats — while occupying up to 8
+points of a 99-point scale.
+
+**Ship rule, out of sample** (fit on the first half of the season by date, tested on the
+second):
+
+| | v2 | v3 |
+|---|---|---|
+| test correlation | +0.1339 | **+0.1416** |
+| top-20% clear rate | 0.6923 | **0.7212** |
+| spread over bottom 20% | +0.1620 | **+0.2115** |
+
+Both halves met on held-out data, and train/test track without collapsing.
+
+**What I did not ship, and why.** A variant also cutting `role_score` 25 → 20 scored best
+in aggregate (test corr +0.1482) but moved per-market results in different directions —
+better assists, worse rebounds. With ~500 props per market in the test half that is not
+separable from noise, so the simpler change wins.
+
+**An aggregate pass can hide a per-market regression.** Points' top-20% appears to drop
+(0.7317 → 0.7049), which looked like a real cost until sized: the test-half points top
+quintile is ~121 props, so that gap is **0.6 SE**. Worth checking every time — the
+aggregate was carried by assists and rebounds either way.
+
+**`_SCORE_BASE` is a matched pair with the dropped term**, exactly as v5's rescale was:
+removing 8 points of headroom would have cut the served share 42.9% → 38%. At 19 the share
+holds (41.1%) and the served clear-rate still improves (0.6998 → 0.7067). Do not change one
+without re-tuning the other.
+
+**Correcting an earlier note.** The tracker suggested v2 might *under*-weight form because
+`recent_score` capped at 22 against `role_score`'s 25. That compared one term to the whole:
+form is spread across `recent + baseline + cushion + trend`, up to **63** points against
+role's 25. Form was never under-weighted — it was *mis*-weighted, backing the wrong window.
+
+---
+
 ## 2026-08-12 — ESPN can supply player props for NHL, NBA and CBB. Feasibility confirmed
 
 **Finding.** Everything needed for player props in **NHL, NBA and CBB** is available from
