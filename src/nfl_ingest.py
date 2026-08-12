@@ -50,6 +50,34 @@ _FIELD_RENAME = {
 
 _REGULAR_SEASON_MAX_WEEK = 18   # weeks 1–18 regular season; 19+ = postseason
 
+# Columns every downstream NFL surface depends on. Checked after flattening, so a vendor
+# layout change fails **here**, loudly, instead of producing a table that looks fine and
+# quietly breaks a matchup page months later.
+#
+# The flattener derives names from whatever headers the workbook carries, which is exactly
+# why it cannot detect drift on its own: a renamed category silently yields a renamed
+# column rather than an error. Only naming what we depend on can catch that.
+#
+# Keep this to what is genuinely load-bearing — identity, the joins, and the stats the
+# matchup page and prop scorer read. It is not a schema mirror.
+REQUIRED_TEAM_COLUMNS = frozenset({
+    "game_id", "game_date", "week", "team", "venue", "final", "first_downs", "total_plays",
+})
+REQUIRED_PLAYER_COLUMNS = frozenset({
+    "game_id", "game_date", "week", "player_id", "player", "position", "team", "opponent",
+    "venue", "passing_yds", "rushing_yds", "rushing_att", "receiving_yds", "receiving_rec",
+})
+
+
+def _check_columns(df: pd.DataFrame, required: frozenset, path, kind: str) -> None:
+    missing = sorted(required - set(df.columns))
+    if missing:
+        raise ValueError(
+            f"{Path(path).name} is missing {len(missing)} required {kind}-feed column(s) "
+            f"after header flattening: {', '.join(missing)}. The Big Data Ball layout has "
+            f"probably changed — compare the workbook's header rows against "
+            f"src/nfl_ingest._FIELD_RENAME before loading it.")
+
 
 def _clean(value: object) -> str:
     if pd.isna(value):
@@ -125,13 +153,17 @@ def _pair_opponents(team_df: pd.DataFrame) -> pd.DataFrame:
 def read_team_feed(path: str | Path) -> pd.DataFrame:
     raw = pd.read_excel(Path(path).expanduser(), sheet_name=0, header=None)
     names = _column_names(raw, group_rows=[0], field_row=1)
-    return _pair_opponents(_numeric_frame(raw, names, first_data_row=2))
+    df = _pair_opponents(_numeric_frame(raw, names, first_data_row=2))
+    _check_columns(df, REQUIRED_TEAM_COLUMNS, path, "team")
+    return df
 
 
 def read_player_feed(path: str | Path) -> pd.DataFrame:
     raw = pd.read_excel(Path(path).expanduser(), sheet_name=0, header=None)
     names = _column_names(raw, group_rows=[0, 1], field_row=2)
-    return _numeric_frame(raw, names, first_data_row=3)
+    df = _numeric_frame(raw, names, first_data_row=3)
+    _check_columns(df, REQUIRED_PLAYER_COLUMNS, path, "player")
+    return df
 
 
 def read_teams(path: str | Path) -> pd.DataFrame:

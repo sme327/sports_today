@@ -4,10 +4,10 @@ Resolves the game by league + id, then delegates to the league's game page.
 MLB, WNBA, and MLS have dedicated pages; leagues without a deep-dive render a
 schedule-only placeholder. No league-specific analysis lives here.
 
-NFL is deliberately absent: it *does* have a deep-dive matchup page, but it is built
-against ingested vendor seasons and browsed through the archive (``?view=nfl``), whose
-game ids are the feed's ``AWAY@HOME`` keys — not the ESPN event ids the live slate
-carries. Nothing reconciles the two, so a live NFL game honestly has no deep-dive yet.
+NFL is now connected: ``services/nfl_bridge`` matches a live ESPN game to its row in the
+ingested vendor feed (by date + teams), so a slate game whose season is loaded opens the
+same matchup page the archive serves. A game the feed does not cover — preseason, or a
+season nobody has ingested — falls through to the team-level read and says which it is.
 See docs/engineering/NFL_GAME_PAGE.md.
 """
 
@@ -79,6 +79,23 @@ def render(nav: NavState) -> None:
         from views import mls_game
         mls_game.render(nav, game)
         return
+    if league == "NFL":
+        # The live slate and the season feed name games differently; the bridge joins
+        # them on date + teams. No match is ordinary (preseason, or a season not loaded),
+        # so fall through to the team-level read rather than erroring.
+        from services.nfl_bridge import feed_game_id, unavailable_reason
+        feed_id = feed_game_id(game)
+        if feed_id:
+            from components import nfl_game as C
+            from services.nfl_game_page import build_nfl_game_page
+            try:
+                page = build_nfl_game_page(feed_id)
+            except Exception:                       # noqa: BLE001
+                page = None
+            if page is not None:
+                st.markdown(C.page_html(page), unsafe_allow_html=True)
+                return
+        _nfl_reason = unavailable_reason(game)
 
     # Leagues without a player-level deep-dive still get a team-level read, built
     # from records/ranks/stakes (services/editorial). No props does not mean no
@@ -97,4 +114,10 @@ def render(nav: NavState) -> None:
                       else "No team records are published for this league.")
             html = editorial_empty_html(label, reason)
         st.markdown(html, unsafe_allow_html=True)
-        st.caption(f"{label} player-level analysis is not connected yet.")
+        if league == "NFL":
+            # Say *why* there is no deep dive — the feed's coverage is a fact the reader
+            # can act on ("load the season"), unlike a bare "not connected".
+            st.caption(locals().get("_nfl_reason")
+                       or "This game is not in the loaded season feed.")
+        else:
+            st.caption(f"{label} player-level analysis is not connected yet.")

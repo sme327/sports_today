@@ -88,7 +88,17 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     home_logo = logo_img(game.home_logo, home, "team-logo")
     time = format_game_time(game.start_time)
     matchup_href = game_href(day, game)
+    # Static capability, then a per-game check where the league offers one. NFL can only
+    # deep-dive games its season feed covers, and a link that lands on "not connected" is
+    # exactly the kind of promise the product rules forbid.
     deep_dive = bool(adapter and getattr(adapter, "supports_deep_dive", False))
+    if deep_dive:
+        check = getattr(adapter, "deep_dive_available", None)
+        if callable(check):
+            try:
+                deep_dive = bool(check(game))
+            except Exception:                       # noqa: BLE001
+                deep_dive = False
 
     league_label = adapter.label if adapter else game.league
 

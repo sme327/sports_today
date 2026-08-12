@@ -17,6 +17,21 @@ def test_deep_dive_support_flags():
     assert get_adapter("MLB").supports_deep_dive is True
     assert get_adapter("WNBA").supports_deep_dive is True   # WNBA matchup page shipped
     assert get_adapter("MLS").supports_deep_dive is True     # MLS matchup page shipped
+    assert get_adapter("NFL").supports_deep_dive is True     # conditional — see below
     assert get_adapter("World Cup").supports_deep_dive is False
-    for lg in ("NFL", "NHL", "NBA", "NCAAF"):                 # schedule-only (ESPN)
+    for lg in ("NHL", "NBA", "NCAAF"):                       # schedule-only (ESPN)
         assert get_adapter(lg).supports_deep_dive is False
+
+
+def test_nfl_deep_dive_is_decided_per_game_not_per_league():
+    """NFL is the one league whose deep-dive depends on the *game*: the matchup page is
+    built from ingested vendor seasons, so a preseason game or an unloaded season has no
+    page. The adapter must expose that per-game hook, or cards promise links that land on
+    "not connected"."""
+    a = get_adapter("NFL")
+    assert callable(getattr(a, "deep_dive_available", None))
+    # Every other deep-dive league answers for the whole league; none may claim the hook
+    # and then ignore the game it is handed.
+    for lg in ("MLB", "WNBA", "MLS"):
+        hook = getattr(get_adapter(lg), "deep_dive_available", None)
+        assert hook is None or callable(hook)

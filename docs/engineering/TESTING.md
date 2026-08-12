@@ -13,7 +13,7 @@ graded prop using only pre-slate data. Ship only if it widens the band spread **
 lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (442 tests, all passing)
+## Test suites (459 tests passing, 1 skipped)
 
 | File | Covers |
 | --- | --- |
@@ -29,6 +29,8 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_opportunities.py` | Empty/missing-column and no-matching-team inputs return empty frames (no crash); **lineup overlay** — confirmed-slot evidence, bench-cap (≤25), honest not-posted state, and backward-compat with no `lineups` arg |
 | `test_scores.py` | MLB 1+ hit scorer components, score/stability bounds, support/risk rules |
 | `test_boxscore_ingest.py` | Box-score ingest (NBA/CBB/WNBA/MLB): both vendor header shapes, per-sport season calendars incl. the covid-shifted 2020-21 NBA year, sheet selection when metadata sheets also say "team", DNP sheets not mistaken for player sheets, **a thinner file refusing to overwrite a fuller season**, additive per-season writes, one canonical name per field across feed vintages, text columns surviving numeric coercion (batter handedness was being nulled), and feeds without game ids stored but flagged unjoinable |
+| `test_nfl_bridge.py` | The ESPN ↔ vendor-feed id bridge: matching a live game to its feed row, the UTC date boundary (a Sunday-night kickoff is Monday in UTC), home/away not interchangeable, nickname/initial resolution, and the four ordinary ways to get `None` — preseason, an unloaded season, a non-NFL game, and a missing database |
+| `test_nfl_archive_app.py` | The archive as a **running page** via `AppTest`: `?view=nfl` renders, week browsing lists that week's games, opening a matchup reaches the deep-dive with a route back, an unknown id is reported not raised, and an empty DB gives guidance rather than a traceback. Asserts robustness rather than specific seasons, so a fresh clone does not fail for the wrong reason |
 | `test_pitcher_opportunity.py` | SP props: per-start line extraction (inning `1T`/`1B` parse), opener exclusion, two-directional over/under selection, min-starts gate, and **`sp-v3` threshold impressiveness** — that it tracks a bar's measured rarity rather than its position in the list, that a bar the league almost always clears cannot win, that a reliably-cleared moderate bar beats the hardest one, and that an unmeasured threshold falls back inside [0, 1] (an unclamped fallback returned −22.75) |
 | `test_grading.py` | Prop grading hit/miss/void (incl. DNP=void honesty), idempotency, no-grading-today guard, dedup/min-score reads, summary + **`summarize_by_market`**, row classification, market-breakdown render |
 | `test_mlb_trends.py` | MLB trend spotlights: pitcher per-start sparklines/direction/props/min-starts, batter dots/L5-L10-L25 windows/streak/min-games, rendering, empty states |
