@@ -256,6 +256,11 @@ surface. Evidence: both markets are efficient (every slice covers 0.48-0.53 agai
 ~52.4% break-even), so there is no edge to take; and the value showed up immediately when
 the benchmark invalidated the NBA fatigue signal before anything was built on it.
 
+**Totals are closed too (2026-08-11).** ~45 splits across all three sports — weather, wind,
+day/night, 71 umpires, prior pace, back-to-backs, line movement, total size, 29 CBB
+conferences. Nothing survives. See the decision-log entry; do not re-run without a new
+data source.
+
 **And it settles the MLB question.** `corr(line, |margin|)` is **+0.531 CBB / +0.195 NBA /
 +0.047 MLB** — baseball closeness is barely predictable *even for the market*, so using the
 line would not rescue MLB editorial. CBB is the sport where a line genuinely knows
