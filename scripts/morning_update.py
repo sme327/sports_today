@@ -58,6 +58,10 @@ def main() -> int:
                   f"{result['mls']['standings']:,} standings rows.")
         elif "mls_error" in result:
             print(f"MLS update skipped: {result['mls_error']}", file=sys.stderr)
+        if "nfl" in result:
+            print(result["nfl"]["message"])
+        elif "nfl_error" in result:
+            print(f"NFL feed refresh skipped: {result['nfl_error']}", file=sys.stderr)
         if result.get("game_outcomes"):
             print(f"Game outcomes recorded: {result['game_outcomes']} finished games "
                   f"(feeds the editorial calibration).")

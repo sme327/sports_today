@@ -40,6 +40,19 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
         except Exception as exc:
             out["mls_error"] = str(exc)
 
+    # Pick up an NFL season feed if one has been dropped in Downloads. Silent on the
+    # common path (no feed, or the same feed as last time) and non-fatal on failure — a
+    # bad NFL workbook must not take down the MLB daily update. In season this is what
+    # keeps the slate↔feed bridge working on *this* year's games.
+    try:
+        from services.nfl_feed_refresh import refresh as refresh_nfl
+        r = refresh_nfl()
+        if r.status == "imported":
+            out["nfl"] = {"seasons": list(r.seasons), "team_rows": r.team_rows,
+                          "player_rows": r.player_rows, "message": r.message}
+    except Exception as exc:
+        out["nfl_error"] = str(exc)
+
     # Re-grade the last few days now that fresh results are loaded — corrects any
     # slate that was graded against partial data (the availability gate leaves such
     # rows pending, but a force pass also fixes any already frozen as void).
