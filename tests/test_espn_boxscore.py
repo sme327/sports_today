@@ -102,7 +102,7 @@ def test_parses_a_basketball_box_score_into_the_declared_schema():
 def test_skaters_and_goalies_land_in_one_table_tagged_by_group():
     """NHL ships two different stat sets in separate groups. One wide table keeps 'one row
     per player-game' — the shape every scorer expects — with `player_group` saying which."""
-    skater = _payload(["TOI", "G", "A", "SOG", "HT"],
+    skater = _payload(["TOI", "G", "A", "S", "HT"],
                       [_athlete("1", "Skater", ["18:04", "1", "2", "4", "3"])], "forwards")
     goalie = _payload(["SV", "SA", "SV%", "TOI"],
                       [_athlete("2", "Goalie", ["10", "14", ".714", "28:34"])], "goalies")
@@ -234,3 +234,22 @@ def test_hockey_shots_on_goal_comes_from_S_not_the_dead_SOG_column():
     assert row["shots_missed"] == 1.0
     assert "shots" not in row, "no second column may shadow shots_on_goal"
     assert "_espn_sog_unused" not in row
+
+
+@pytest.mark.parametrize("key", sorted(SPORTS))
+def test_every_declared_column_can_actually_be_populated(key):
+    """A column in `columns` with no alias pointing at it is silently always-null — the
+    table looks right and the data never arrives. This caught a real slip: an edit fixing
+    the shots-on-goal mapping dropped `g -> goals` and `a -> assists`, and the only visible
+    symptom was a `None` in a debug print that was mistaken for a formatting artifact."""
+    spec = SPORTS[key]
+    reachable = set(spec.stat_aliases.values())
+    orphans = [c for c in spec.columns if c not in reachable]
+    assert not orphans, f"{key}: no alias maps to {orphans}"
+
+
+@pytest.mark.parametrize("key", sorted(SPORTS))
+def test_split_and_clock_names_are_real_columns(key):
+    spec = SPORTS[key]
+    assert set(spec.splits) <= set(spec.columns)
+    assert set(spec.clock) <= set(spec.columns)
