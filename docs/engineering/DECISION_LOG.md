@@ -75,6 +75,58 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-11 — Totals: no readable signal in any sport. Question closed
+
+**Decision.** Stop looking for an over/under edge. Scanned MLB, NBA and CBB with ~45
+splits including every classic angle; nothing survives. **Do not re-run this** without a
+genuinely new data source.
+
+**What was tested.**
+
+| sport | splits | best survivor |
+|---|---|---|
+| MLB (6,424 games) | temperature (4 bands), wind speed + direction, sky, day/night, total size, **71 home-plate umpires** | none |
+| NBA (7,166) | prior pace, back-to-backs, line movement, total size, spread size, season | none, max +2.2 SE across 18 splits |
+| CBB (10,612) | prior pace, line movement, total size, **29 conferences** | steam-following, inside the vig |
+
+**The classic angles are priced.** Weather was the most promising prior — hot air carries,
+wind blows balls out — and MLB temperature bands came in at −1.5, −2.2, +0.1, +0.6 SE. Wind
+direction, all under 1.8 SE. The market knows the forecast too.
+
+**Umpires do not have a persistent zone effect *in this data*.** The extreme looked
+compelling — Roberto Ortiz's games went under 69% of the time (−3.2 SE). Then: across 71
+umpires the largest |SE| expected from chance alone is ~2.9, his split by season is
+0.571 / 0.286 / 0.250 / 0.375, and **split-half persistence across all umpires is
+r = +0.057** — the platoon-splits test, and the same near-zero answer.
+
+**The one directionally consistent result, and why it still is not enough.** CBB totals
+that moved **down** 3+ points went under 54.8% (2024) and 52.9% (2025) — same direction
+twice, and "follow the steam" is a real mechanism rather than a fitted number. But 53.6%
+overall against a ~52.4% vig break-even puts the entire edge inside the noise band.
+
+**Conference tendency is the one open thread.** Over/under rates correlate
+**r = +0.2518** between the two CBB seasons across 29 conferences — far above umpires. But
+with n=29, `SE(r) ≈ 1/√26 ≈ 0.196`, so that is **~1.3 SE from zero**: suggestive, not
+significant, and two seasons cannot settle it. Revisit only if more CBB seasons land.
+
+### The methodology notes worth keeping
+
+**A huge effect in an efficient market is a leak.** NBA fast-pace games went over 61.4%
+(+9.7 SE) — using `pace` computed *from the game itself*. More possessions → more points →
+over. Circular. Re-run with each team's **prior** pace: +1.3 and −1.1 SE, nothing. Any
+result that large should trigger a leakage check before a celebration.
+
+**Expected max deviation from chance is `√(2 ln k)` for k splits.** Across 71 umpires that
+is ~2.9 SE, across 29 conferences ~2.6. Computing it *before* looking at the extremes
+turned three "findings" into what they were. MAAC's under rate was 53.0% then 64.9% by
+season — the whole effect was one year.
+
+**Split-half persistence is the test that keeps working.** It killed platoon splits
+(+0.077), umpire zones (+0.057) and MAAC, and it is what separated a real conference
+tendency (+0.252) from a one-season artifact.
+
+---
+
 ## 2026-08-11 — MLB market lines reconciled across two feed vintages
 
 **Decision.** `services/mlb_odds.py` interprets the MLB box-score odds. It **reads**; it
