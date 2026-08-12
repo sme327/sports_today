@@ -68,12 +68,17 @@ ENGINE_VERSIONS = {
 # Performance version-comparison can measure whether a change actually helped.
 # (Cannot be reconstructed retroactively; history keeps whatever it was stamped with.)
 MODEL_VERSIONS = {
-    "batter_hit": "batter-hit-v3",   # v3: shrink recent hit rate → de-saturate/de-invert top
+    # v5: shrink recent form hard (0.70 -> 0.25) because plate appearances predict a
+    # 1+ hit more than twice as well as recent hitting (+0.130 vs +0.054), with the score
+    # scale re-tuned to hold the served share.
+    "batter_hit": "batter-hit-v5",
     "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
     "batter_k": "batter-k-v1",     # two-directional, reachable-bar
     "batter_bb": "batter-bb-v1",   # over-only, reachable-bar
-    "sp_k": "sp-v2",         # ledger-refit: overs penalized (unders convert, overs regress)
-    "sp_hits": "sp-v2",
+    # v3: threshold impressiveness from measured league rarity rather than the bar's
+    # position in the list. The sp-v2 over-penalties are unchanged underneath.
+    "sp_k": "sp-v3",
+    "sp_hits": "sp-v3",
     # v3: 10-game clear rate weighted above the 5-game, trend term dropped (it correlated
     # +0.031 with clearing). Threshold selection unchanged from v2's reliability floor.
     "wnba_points": "wnba-pra-v3",

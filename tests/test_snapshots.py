@@ -35,7 +35,7 @@ def test_write_captures_context_once_per_day(tmp_path):
             "SELECT schedule_source_status, historical_data_cutoff, "
             "lineups_available, scoring_engine_version FROM opportunity_snapshots"
         ).fetchone()
-    assert row == ("live", "2026-07-15", 0, "batter-hit-v3")   # per-market model version
+    assert row == ("live", "2026-07-15", 0, "batter-hit-v5")   # per-market model version
 
 
 def test_no_opportunities_writes_nothing(tmp_path):
@@ -74,3 +74,26 @@ def test_game_context_opponent_and_opposing_sp():
     assert wnba_sp is None
     # unknown game → all None
     assert _game_context(opp("MLB", "Dodgers"), {}) == (None, None, None)
+
+
+def test_engine_version_strings_match_the_scorers_actually_shipped():
+    """A scorer change that does not update its version string makes the ledger lie about
+    which engine produced a score — and version comparison is the only way we learn whether
+    a change helped. It happened: `batter-hit-v5` and `sp-v3` shipped on 2026-08-10 while
+    the ledger kept recording `batter-hit-v3` and `sp-v2`, and 449 rows had to be corrected
+    after the fact. This pins the pair together."""
+    from services.snapshots import MODEL_VERSIONS
+    from src.opportunity import _HIT_SHRINK
+    from src.pitcher_opportunity import _CLEAR_RATES
+    from src.wnba_opportunity import _BASELINE_WEIGHT, _RECENT_WEIGHT
+
+    # batter-hit-v5 is defined by shrinking recent form hard toward the league mean.
+    assert (_HIT_SHRINK <= 0.35) == MODEL_VERSIONS["batter_hit"].endswith("v5")
+    # sp-v3 is defined by taking impressiveness from measured rarity.
+    assert bool(_CLEAR_RATES) == MODEL_VERSIONS["sp_k"].endswith("v3")
+    assert MODEL_VERSIONS["sp_k"] == MODEL_VERSIONS["sp_hits"]
+    # wnba-pra-v3 is defined by the 10-game window outweighing the 5-game.
+    assert ((_BASELINE_WEIGHT > _RECENT_WEIGHT)
+            == MODEL_VERSIONS["wnba_points"].endswith("v3"))
+    for market in ("wnba_points", "wnba_rebounds", "wnba_assists"):
+        assert MODEL_VERSIONS[market] == MODEL_VERSIONS["wnba_points"]
