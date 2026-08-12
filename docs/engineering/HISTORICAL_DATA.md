@@ -103,7 +103,11 @@ Nothing here is urgent — this is a shopping list for when it matters.
 8. **NFL 2018–2022 team feeds.** We hold a 2022 *player* feed that reaches the Super Bowl
    (the only such file in the collection) but no matching team feed, so it cannot be
    imported. 2018's team feed uses a pre-2019 layout the loader rejects outright.
-9. **MLB 2020–2022 odds.** Those vintages carry no odds columns; 2023 does. See §4.
+9. ~~**MLB 2020–2022 odds.**~~ **Not a gap — they were there all along.** Those seasons
+   pack the total and the favourite's moneyline into *one* column, split across the game's
+   two rows, so the named columns read as empty. `services/mlb_odds.py` reconciles both
+   vintages; all four seasons are usable (6,713 games with a total). See the 2026-08-11
+   decision-log entry.
 
 ### Not gaps
 
@@ -231,7 +235,9 @@ Baseball's editorial value has to come from something other than records.
 - `nba_team_games` — opening/closing spread, total and moneyline, plus line movements.
   **100% coverage, all six seasons.**
 - `cbb_team_games` — same fields, ~91% coverage.
-- `mlb_box_team_games` — 2023 only (1,627 rows); the 2020–2022 vintages carry none.
+- `mlb_box_team_games` — **all four seasons**, once reconciled by `services/mlb_odds.py`:
+  6,713 games with a total, 7,513 team-rows with a moneyline. 2020-22 price only the
+  favourite; 2023 prices both sides.
 
 This sits against an explicit product rule: editorial signals **use no odds**, a decision
 enforced by an AST-based test. Holding odds in a table no code reads does not break that
@@ -245,9 +251,15 @@ resolve that item. What they would allow is calibrating the *editorial* Game Int
 score against a market — a much stronger benchmark than final margin, and one that
 §3 suggests is the only thing that actually works in baseball.
 
-**Decide before using:** either (a) keep odds strictly as held-not-read data, (b) allow
-them for backtesting and calibration only, never in a user-facing surface, or (c) revisit
-the no-odds rule outright. Option (b) is the one worth discussing.
+**Decided 2026-08-11: option (b)** — offline for validation and benchmarking, never in a
+surface. Evidence: both markets are efficient (every slice covers 0.48-0.53 against a
+~52.4% break-even), so there is no edge to take; and the value showed up immediately when
+the benchmark invalidated the NBA fatigue signal before anything was built on it.
+
+**And it settles the MLB question.** `corr(line, |margin|)` is **+0.531 CBB / +0.195 NBA /
++0.047 MLB** — baseball closeness is barely predictable *even for the market*, so using the
+line would not rescue MLB editorial. CBB is the sport where a line genuinely knows
+something, and CBB has no surface.
 
 ---
 
@@ -260,9 +272,11 @@ Three findings the first pass missed, all validated:
   props, `corr(park factor, win)` is **+0.025** and the terciles are not monotonic.
   Backtested, not built. **Batter × park is noise** (r = +0.047). Home field is worth
   ~nothing on P(1+ hit): 0.5580 home vs 0.5601 road.
-- **NBA fatigue predicts upsets** — underdog at home with the favourite on a
-  back-to-back: 42.9% against a 30.1% base, and it **replicates** across halves
-  (+13.8% / +10.6%). The only signal here to survive out-of-sample on the first attempt.
+- **NBA fatigue predicts upsets — but the market already prices it.** Underdog at home
+  with the favourite on a back-to-back: 42.9% against a 30.1% base, replicating across
+  halves. Then measured against the **closing line**: B2B favourites cover 49.3%, within
+  noise of 50%. Real, replicating, and **worth nothing** — the effect is entirely in the
+  line. See the 2026-08-11 decision-log entry.
 - **`sp_hits` carries no information; `sp_k` overs are the app's best signal.** Judged as
   lift over base rate rather than raw conversion. See the decision log entry for the
   three interacting decisions this raises.
