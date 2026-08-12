@@ -9,6 +9,103 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-11 — What the ingested odds actually taught us (and what they killed)
+
+**Decision.** Keep odds **offline-only** — validation and benchmarking, never a surface.
+Option (b) from the 2026-08-10 entry, now with evidence behind it. Also **corrects the NBA
+fatigue finding logged the previous day.**
+
+### ⚠️ Correction: the NBA back-to-back signal is fully priced
+
+The 2026-08-10 entry called it "the first signal in this project to survive out-of-sample
+validation on the first attempt". Measured against the **market** rather than against
+records, it is worth nothing:
+
+| condition | n | favourite covers |
+|---|---|---|
+| all games | 7,125 | 0.5033 |
+| **favourite on a B2B, dog is not** | 655 | **0.4931** |
+| dog on a B2B, fav is not | 1,065 | 0.4958 |
+| neither | 5,080 | 0.5051 |
+
+Every cut is within ±0.7pp of 50%. The effect is **real but already in the line** — B2B
+favourites do lose more often, and the market has priced exactly that. The earlier finding
+used *records* to define the favourite, which measures "is this true?" rather than "does
+anyone not already know?". **Descriptive, not predictive.** Do not build on it.
+
+### The markets are efficient; there is no edge here
+
+Scanned NBA (7,236 games, six seasons) and CBB (10,653, two): home favourites, home
+underdogs, big/small spreads, line movement, high/low totals, and CBB conference cuts.
+Everything landed between **0.48 and 0.53** cover, against the ~52.4% needed to beat vig.
+The largest conference deviation was 1.9 SE across ~30 conferences — exactly what chance
+produces. MLB totals: 49.2% of decided bets go over. **Nothing is exploitable.**
+
+### The benchmark, which is the real value
+
+| | market | our records-based |
+|---|---|---|
+| NBA corr(spread, margin) | +0.478 | +0.098 |
+| NBA picks the winner | 67.8% | 64.8% |
+| MLB picks the winner | 59.5% | 56.8% |
+
+**On "who wins" we are close to the market. On "by how much" we are five times worse.**
+That is a precise statement of where a records-based read has value and where it does not.
+
+### The finding that explains the last two days
+
+`corr(line, |margin|)` — how well *anything* predicts a close game:
+
+| sport | from the line | from records |
+|---|---|---|
+| **CBB** | **+0.531** | — |
+| NBA | +0.195 | +0.098 |
+| **MLB** | **+0.047** | +0.031 |
+
+**Baseball games are close-or-not almost at random.** A toss-up MLB line averages a
+3.41-run margin; a heavy favourite 3.74. The market, with every resource we lack, manages
++0.047. So the 2026-08-10 conclusion that MLB editorial cannot be calibrated was right,
+and now has a cause: *the target is not predictable*, by us or by anyone. It also settles
+the odds question for our core sport — **using the line would not rescue MLB editorial.**
+CBB is where a line genuinely knows something, and CBB has no surface.
+
+**The discipline this suggests.** Before shipping an editorial signal, ask whether it adds
+anything the closing line does not already contain. That test just killed the fatigue
+signal at zero cost, which is the whole argument for keeping odds offline.
+
+---
+
+## 2026-08-11 — MLB market lines reconciled across two feed vintages
+
+**Decision.** `services/mlb_odds.py` interprets the MLB box-score odds. It **reads**; it
+does not rewrite `mlb_box_team_games`, which stays faithful to the source.
+
+**The problem.** I first reported MLB odds as "2023 only, 1,627 rows". Wrong —
+2020-2022 carry odds too, in a shape that made them look empty:
+
+- **2020-2022** pack *two different quantities into one column*, split across the game's
+  two rows: one carries the game **total** (4.5-14.0), the other the favourite's
+  **moneyline** (always negative, -107 to -480). It is **not** home/road consistent, so
+  position cannot disambiguate it — a positional rule would mislabel half the season.
+- **2023** uses a richer layout: per-team moneylines, and a total carried as text with its
+  juice (`"o7.5 -122"`).
+
+**The fix.** Magnitude, not position. The two ranges do not overlap, and over 5,886 games
+**every single one** has exactly one value in each band. Validated against outcomes: the
+row we label favourite wins **59.5%**, consistent across all four seasons (0.574-0.604) —
+which is what a -150ish favourite should do, and would be ~0.50 if the attribution were
+wrong.
+
+**What we deliberately do not produce.** For 2020-2022 the vendor prices only the
+favourite, so the underdog's moneyline stays `None` rather than being derived — publishing
+a number the vendor never did is inventing data. No MLB season here carries a closing
+spread; baseball's equivalent is the runline, which ships as text.
+
+**Result.** All four seasons usable: 6,713 games with a total, 7,513 team-rows with a
+moneyline — up from the 1,627 I had written off.
+
+---
+
 ## 2026-08-11 — NFL feed pickup joins the daily run (Downloads only)
 
 **Decision.** `services/nfl_feed_refresh.refresh()` runs inside the daily `rebuild()`. If a
@@ -394,6 +491,13 @@ raw split is usually a composition effect.
 ---
 
 ## 2026-08-10 — NBA upsets: fatigue is a real, replicating signal
+
+> **⚠️ Superseded 2026-08-11 — see "What the ingested odds actually taught us".** Measured
+> against the **market** instead of against records, this signal is worth nothing: B2B
+> favourites cover 49.3%, within noise of 50%. The effect below is real and it replicates;
+> it is also entirely priced into the closing line. Descriptive, not predictive. **Do not
+> build on it.** The entry stands as written because the measurement was correct — the
+> *question* was wrong.
 
 **Decision.** Record the first signal in this project to survive out-of-sample validation
 on the first attempt. Nothing built — NBA is schedule-only.
