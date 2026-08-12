@@ -107,3 +107,67 @@ def test_nfl_and_nhl_map_league_and_round(monkeypatch):
     assert nfl.away_display == "Georgia"           # NFL doesn't prefix ranks
     nhl = get_adapter("NHL").fetch_schedule(date(2026, 8, 30))[0]
     assert nhl.league == "NHL" and nhl.meta["round"] == "Preseason"   # no week for hockey
+
+
+# --- ESPN group/limit handling (2026-08-11) ----------------------------------------
+
+def test_fetch_unions_groups_and_deduplicates(monkeypatch):
+    """ESPN splits college sports across divisions, and a response is truncated per
+    request. Fetching several groups and unioning by id is the only way to see a full
+    college slate — measured on NCAAF, where FBS and FCS returned 45 and 56 games with an
+    overlap of 2."""
+    calls = []
+
+    def fake_get(url, params=None, timeout=None):
+        calls.append(params.get("groups"))
+        gid = f"g{params.get('groups')}"
+        class R:
+            @staticmethod
+            def raise_for_status(): pass
+            @staticmethod
+            def json():
+                return {"events": [{"id": gid}, {"id": "shared"}]}
+        return R()
+
+    monkeypatch.setattr("src.espn_scoreboard.requests.get", fake_get)
+    monkeypatch.setattr("src.espn_scoreboard.parse_events",
+                        lambda payload: [{"game_id": e["id"]} for e in payload["events"]])
+    out = sb.fetch("x/y", date(2026, 1, 10), groups=(80, 81))
+    assert calls == [80, 81]
+    ids = {g["game_id"] for g in out}
+    assert ids == {"g80", "g81", "shared"}, "the shared game must appear once, not twice"
+
+
+def test_one_failing_group_does_not_lose_the_others(monkeypatch):
+    """A partial slate beats an empty one, but only if the working groups survive."""
+    def fake_get(url, params=None, timeout=None):
+        if params.get("groups") == 80:
+            raise RuntimeError("ESPN hiccup")
+        class R:
+            @staticmethod
+            def raise_for_status(): pass
+            @staticmethod
+            def json(): return {"events": [{"id": "kept"}]}
+        return R()
+
+    monkeypatch.setattr("src.espn_scoreboard.requests.get", fake_get)
+    monkeypatch.setattr("src.espn_scoreboard.parse_events",
+                        lambda payload: [{"game_id": e["id"]} for e in payload["events"]])
+    out = sb.fetch("x/y", date(2026, 1, 10), groups=(80, 81))
+    assert [g["game_id"] for g in out] == ["kept"]
+
+
+def test_total_failure_still_returns_empty(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("down")
+    monkeypatch.setattr("src.espn_scoreboard.requests.get", boom)
+    assert sb.fetch("x/y", date(2026, 1, 10), groups=(80, 81)) == []
+
+
+def test_adapters_declare_their_group_and_limit_needs():
+    """NCAAF deliberately carries no groups (the default is FBS, which is what this
+    product means by college football). Single-league sports need neither."""
+    for lg in ("NFL", "NBA", "NHL", "NCAAF"):
+        a = get_adapter(lg)
+        assert getattr(a, "espn_groups", ()) == (), f"{lg} should not need groups"
+        assert getattr(a, "espn_limit", 100) == 100
