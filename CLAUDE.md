@@ -40,7 +40,8 @@ team-level read and says which it is. NFL still scores **no props** onto the sla
 - **Product** — [Vision](docs/product/VISION.md) · [Experience Principles](docs/product/EXPERIENCE_PRINCIPLES.md) · [Roadmap](docs/product/ROADMAP.md) · [Sport Plans](docs/product/SPORT_PLANS.md) (by-sport tiers + NFL deep-dive spec)
 - **Design** — [Design System](docs/design/DESIGN_SYSTEM.md) (mirrors `styles/app.css`)
 - **Engineering** — [Architecture](docs/engineering/ARCHITECTURE.md) (structure, "where to add X", glossary) · [Decision Log](docs/engineering/DECISION_LOG.md) · [Testing](docs/engineering/TESTING.md) · [Setup](docs/engineering/SETUP.md)
-- **Historical data** — [Historical Data](docs/engineering/HISTORICAL_DATA.md) (what we hold, the gaps, and what it measurably can't do)
+- **Method** — [Method](docs/engineering/METHOD.md) — **the tests that decide whether a signal is real.** Read before proposing any scoring or editorial change; most obvious-looking ideas here died to one of these checks.
+- **Historical data** — [Historical Data](docs/engineering/HISTORICAL_DATA.md) (what we hold, the gaps, and what it measurably can't do) · [CBB](docs/engineering/CBB.md) (the most promising unbuilt sport, and why it stays team-level)
 - **Per-league pages** — [MLB](docs/engineering/MLB_GAME_PAGE.md) · [WNBA](docs/engineering/WNBA_GAME_PAGE.md) · [MLS](docs/engineering/MLS_GAME_PAGE.md) · [NFL](docs/engineering/NFL_GAME_PAGE.md)
 
 ## How to contribute (the short version)
@@ -56,6 +57,10 @@ team-level read and says which it is. NFL still scores **no props** onto the sla
   style → `styles/app.css`.
 - **Don't reverse a logged decision** without reading its entry in the
   [Decision Log](docs/engineering/DECISION_LOG.md).
+- **Prove it before you build it.** [Method](docs/engineering/METHOD.md) is the short list
+  of checks — lift over base rate, split-half persistence, leakage, `√(2 ln k)`, and "would
+  the market already know?". Roughly two thirds of this project's investigations are
+  negative results, and they are the entries that saved the most time.
 
 ## Non-negotiable product rules
 

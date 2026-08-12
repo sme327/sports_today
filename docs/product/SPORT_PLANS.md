@@ -50,7 +50,15 @@ foundation → T2 props (P/R/A + threes, stocks) → T3 matchup page (reuse WNBA
 T4 Playoffs/Finals (series + bracket).
 
 **NCAA Basketball (M/W)** — ⬜ T0 schedule-only → editorial matchup (team stories first;
-**no player props for now** — data breadth). Feeds March Madness.
+**no player props** — and now with evidence, not just instinct: **63% of CBB players turn
+over annually** (3,149 of 8,503 returned between our two seasons), median 19 games each.
+Feeds March Madness.
+
+Two seasons of vendor data are already ingested and read by nothing. CBB is the sport where
+competitiveness is **most predictable** — `corr(line, |margin|)` **+0.531**, against +0.195
+NBA and +0.047 MLB — which makes it the strongest candidate for a "worth watching" read.
+The blocker is volume: 100+ games on a weeknight needs a curation gate before CBB earns
+slate space. Data, reasoning and the phased plan: **[CBB](../engineering/CBB.md)**.
 
 **March Madness (M/W)** — ⬜ T4 the marquee tournament spotlight: configurable bracket
 (don't hardcode 68), seeds/regions, upset watch, tournament-specific matchup pages over

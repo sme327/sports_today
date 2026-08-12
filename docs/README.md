@@ -38,6 +38,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
 | [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
 | [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, and the bridge that joins the live slate to it (and when it honestly cannot). |
+| [Method](engineering/METHOD.md) | **How we decide whether a signal is real.** The tests that gate every scoring and editorial change — read before proposing one. |
+| [CBB](engineering/CBB.md) | College basketball: what the ingested data holds, why it stays team-level, and the phased plan. |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Historical Data](engineering/HISTORICAL_DATA.md) | Ingested box-score history: coverage, gaps, and which model ideas are already tested and dead. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
