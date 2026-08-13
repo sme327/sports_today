@@ -75,6 +75,47 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-12 — NHL market priority is backwards; goals is unservable
+
+**Finding.** With a full 2025-26 NHL season collected (1,306 games, 47,013 skater rows,
+2,755 goalie rows), the reachable-bar discipline was applied *before* building anything —
+the check the architecture doc demands after total bases was scored daily for a reader who
+never saw it. It reorders the roadmap.
+
+| market | servable share | next-game clear | verdict |
+|---|---|---|---|
+| **goalie saves** | **99.9%** | **65.4%** | build first |
+| blocked shots | 39.1% | 58.8% | viable |
+| shots on goal | 32.9% | 55.3% | viable, weaker |
+| points (G+A) | 20.1% | 54.1% | marginal |
+| **goals alone** | **1.6%** | — | **dead** |
+
+("Servable" = a bar exists that the player cleared in ≥60% of their last 10 games.
+"Next-game clear" is leakage-safe: the bar chosen from prior games, graded on the next.)
+
+**The roadmap had it inverted.** It lists shots on goal and points as Tier 1 with goalie
+saves as Tier 2. Goalie saves is the only NHL market that is *comfortably* servable and it
+converts at **65.4%** — better than the WNBA base rate of 63.7% that supports three live
+markets. Points is the weakest thing worth considering at 20.1% and 54.1%.
+
+**Goals is the total-bases shape.** Servable in **599 of 38,633** player-games. A skater
+scores in 15% of games; no ten-game window makes 1+ goal a 60% proposition except for a
+handful of elite forwards on heaters. Building it would mean scoring a market daily that
+nobody is ever shown. **Do not build it.**
+
+**Why hockey differs from basketball.** WNBA points/rebounds/assists accumulate in every
+game — a 15-point scorer clears 10+ routinely. NHL skater events are *rare and discrete*:
+a good forward takes 2-3 shots and records a point every third game. The reachable-bar
+model needs a stat with a floor, and only a goalie's save count has one — they face ~25
+shots whenever they start.
+
+**Consequence for build order:** goalie saves, then blocked shots, then shots on goal.
+Points last or never. This also lowers the value of NHL props overall — one strong market
+plus two moderate ones, against WNBA's three — which is worth knowing before committing
+weeks to it.
+
+---
+
 ## 2026-08-12 — Two scorers shipped without their version strings; ledger corrected
 
 **What happened.** `batter-hit-v5` (2026-08-10 18:08) and `sp-v3` (17:16) changed the

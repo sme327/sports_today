@@ -89,8 +89,13 @@ Standalone, but the **best-fitting new prop sport**: its core stats are per-game
 that drop straight into the reachable-bar model.
 
 - **T0** 🟡 Schedule-only shipped. **T1** ⬜ period+clock live-state.
-- **T2** ⬜ Props from ESPN box scores: **shots on goal**, **points** (G+A) — over-only,
-  reachable-bar; then **goalie saves**; blocks/hits if reliable. Collector mirrors
+- **T2** ⬜ Props from ESPN box scores. **Priority corrected 2026-08-12 against a full
+  collected season — the original order was backwards.** Measured servability under the
+  reachable-bar floor: **goalie saves 99.9% servable / 65.4% next-game clear** (build
+  first), blocked shots 39.1% / 58.8%, shots on goal 32.9% / 55.3%, points (G+A) 20.1% /
+  54.1% (marginal), **goals alone 1.6% — unservable, do not build**. NHL skater events are
+  rare and discrete where basketball counting stats accumulate; only a goalie's save count
+  has a floor. Collector mirrors
   `src/wnba_collector.py`. **Feasibility confirmed 2026-08-12**: ESPN's `summary` endpoint
   returns TOI (with PP/SH/ES splits), SOG, G, A, blocks, hits, takeaways, faceoffs and PIM
   for skaters, and saves/SA/SV% for goalies — with athlete ids, back to **2011**. NHL is the
