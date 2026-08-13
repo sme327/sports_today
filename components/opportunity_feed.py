@@ -73,6 +73,31 @@ def _evidence(kind: str, heading: str, body: str = "") -> str:
             f'{body_html}</div>')
 
 
+def _line_html(opp: Opportunity) -> str:
+    """The actual recent games, oldest to newest, with cleared games marked.
+
+    A score compresses ten games into one number and hides the shape — three players can
+    all score 100 while going 10/10, 9/10 and 9/10 with very different distributions. The
+    evidence lines are our judgement; this is the fact underneath, and it is what lets a
+    reader disagree with us. Renders nothing when the scorer supplied no line.
+    """
+    if not opp.recent_line:
+        return ""
+    cleared = opp.line_cleared
+    chips = []
+    for i, value in enumerate(opp.recent_line):
+        hit = cleared[i] if i < len(cleared) else False
+        text = f"{value:g}"
+        chips.append(f'<span class="op-lv{" hit" if hit else ""}">{escape(text)}</span>')
+    n = len(cleared)
+    tally = f"{sum(cleared)}/{n}" if n else ""
+    return ('<div class="op-line">'
+            f'<span class="op-line-label">Last {len(opp.recent_line)}</span>'
+            f'<span class="op-line-vals">{"".join(chips)}</span>'
+            f'<span class="op-line-tally">{escape(tally)}</span>'
+            '</div>')
+
+
 def _row_html(opp: Opportunity) -> str:
     support_fb, risk_fb = _FALLBACKS.get(opp.league, _DEFAULT_FALLBACK)
     support = opp.primary_support or support_fb
@@ -93,6 +118,7 @@ def _row_html(opp: Opportunity) -> str:
         '</div></div>'
         f'{_evidence("good", "Why it stands out", support)}'
         f'{risk_html}'
+        f'{_line_html(opp)}'
         '</div>'
     )
 

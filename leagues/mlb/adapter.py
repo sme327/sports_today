@@ -195,6 +195,8 @@ class MLBAdapter:
                     stability_score=int(row.stability_score),
                     supporting_evidence=support,
                     negative_evidence=risks,
+                    recent_line=list(getattr(row, "recent_line", []) or []),
+                    line_threshold=1,
                     image_url=None,  # stamped with team logo by the feed builder
                     headshot_url=(f"https://img.mlbstatic.com/mlb-photos/image/upload/"
                                   f"w_120,q_auto:best/v1/people/{int(row.batter_id)}/headshot/67/current"),

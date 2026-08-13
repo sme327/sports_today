@@ -52,6 +52,8 @@ def build_pitcher_opportunities(pa: pd.DataFrame, probable_names: list[tuple[str
             stability_score=int(r.stability_score),
             supporting_evidence=support,
             negative_evidence=risks,
+            recent_line=list(getattr(r, "recent_line", []) or []),
+            line_threshold=float(r.threshold),
             image_url=None,                       # team logo stamped by the feed builder
             headshot_url=_headshot(str(r.pitcher_id)),
             mode=OpportunityMode.SLATE,

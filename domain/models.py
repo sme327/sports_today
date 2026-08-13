@@ -339,6 +339,14 @@ class Opportunity:
     direction: str | None = None
     supporting_evidence: list[str] = field(default_factory=list)
     negative_evidence: list[str] = field(default_factory=list)
+    # The actual recent results this prop was scored from, **oldest first** so the row
+    # reads left-to-right as time. A score compresses ten games into one number and hides
+    # the shape — "4, 4, 4, 7, 4, 3, 9" and "7, 7, 11, 4, 4" can score alike while telling
+    # very different stories. Evidence lines are our judgement; this is the fact under it,
+    # and it lets a reader disagree with us.
+    recent_line: list[float] = field(default_factory=list)
+    # The bar each value is judged against, so the renderer can mark which games cleared.
+    line_threshold: float | None = None
     image_url: str | None = None
     # Optional secondary image (e.g. player headshot alongside a team logo).
     headshot_url: str | None = None
@@ -360,3 +368,17 @@ class Opportunity:
     @property
     def primary_risk(self) -> str:
         return self.negative_evidence[0] if self.negative_evidence else ""
+
+    @property
+    def line_cleared(self) -> list[bool]:
+        """Which recent games cleared the bar, respecting the prop's direction.
+
+        An **under** clears at or below the bar, so testing ``>=`` would mark exactly the
+        wrong games — a pitcher's best starts would render as failures. Empty when there
+        is no bar to judge against.
+        """
+        if self.line_threshold is None:
+            return []
+        if (self.direction or "over") == "under":
+            return [v <= self.line_threshold for v in self.recent_line]
+        return [v >= self.line_threshold for v in self.recent_line]
