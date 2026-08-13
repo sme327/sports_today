@@ -111,7 +111,7 @@ def score_wnba_opportunities(
         "market", "market_label", "threshold", "display_market",
         "opportunity_score", "stability_score", "minutes_l5", "minutes_l10",
         "average_l5", "average_l10", "hit_rate_l5", "hit_rate_l10",
-        "support", "risks",
+        "support", "risks", "recent_line",
     ]
     if logs.empty:
         return pd.DataFrame(columns=columns)
@@ -285,6 +285,9 @@ def score_wnba_opportunities(
                 "hit_rate_l10": hit_l10,
                 "support": support,
                 "risks": risks,
+                # The actual games, oldest first. `_played` drops DNPs and returns
+                # newest-first, so reverse it: a form line reads left-to-right as time.
+                "recent_line": [float(v) for v in played.head(10)][::-1],
             })
 
         player_rows.sort(

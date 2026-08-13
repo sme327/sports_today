@@ -15,7 +15,7 @@ _REQUIRED_COLUMNS = {
 _RESULT_COLUMNS = [
     "batter_id", "player", "team", "market", "opportunity_score",
     "stability_score", "last_25_hit_rate", "last_50_hit_rate",
-    "pa_per_game", "k_rate", "lineup_slot", "support", "risks",
+    "pa_per_game", "k_rate", "lineup_slot", "support", "risks", "recent_line",
 ]
 
 # Shrinkage: pull a batter's noisy recent per-PA hit rate toward the league mean before
@@ -67,6 +67,21 @@ _PITCHER_SHRINK_BF = 200   # regress a pitcher's rate toward league over this ma
 _PITCHER_MIN_BF = 100      # below this we say nothing rather than guess
 _HITTABLE = 1.10           # allows hits >=10% above league -> favourable for the batter
 _STINGY = 0.90             # >=10% below league -> a real headwind
+
+
+def _recent_game_line(frame: pd.DataFrame, column: str, games: int = 10) -> list[float]:
+    """The last ``games`` games' totals for ``column``, oldest first.
+
+    ``frame`` is plate-appearance grain and already sorted oldest-first by the caller, so
+    grouping preserves order. This has to be regrouped by game: the scorer reasons per
+    plate appearance, and showing a reader a row of 0s and 1s would never match the
+    "1+ Hit" bar the prop is graded on. Returns ``[]`` when there are no game ids rather
+    than inventing a sequence.
+    """
+    if frame.empty or "game_id" not in frame.columns:
+        return []
+    per_game = frame.groupby("game_id", sort=False)[column].sum()
+    return [float(v) for v in per_game.tail(games)]
 
 
 def opposing_starter_note(pa: pd.DataFrame, pitcher_id: str | None) -> tuple[str, str] | None:
@@ -197,6 +212,10 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
             "lineup_slot": slot,
             "support": support[:3],
             "risks": risks[:2],
+            # Hits per *game*, oldest first — the grain the prop is graded at. The scorer
+            # reasons per plate appearance, so this has to be regrouped or the reader
+            # would be shown a row of 0s and 1s that never matches "1+ Hit".
+            "recent_line": _recent_game_line(recent, "is_hit"),
         })
     result = pd.DataFrame(rows, columns=_RESULT_COLUMNS)
     if result.empty:

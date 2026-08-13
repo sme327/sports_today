@@ -527,7 +527,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
     "score identity identity"
-    ".     good     risk";
+    ".     good     risk"
+    ".     line     line";
   column-gap: .8rem;
   row-gap: .72rem;
   align-items: start;
@@ -542,6 +543,53 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .op-identity { grid-area: identity; align-self: center; }
 .op-good { grid-area: good; }
 .op-risk, .op-flat { grid-area: risk; }   /* neutral "no notable risk" occupies the risk slot too */
+
+/* The raw recent line — the fact under the evidence, so a reader can disagree with us.
+   Deliberately quiet: tabular figures, low contrast, and a single accent for games that
+   cleared the bar. It adds one short row, not a block. */
+.op-line {
+  grid-area: line;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+  padding-top: .1rem;
+  border-top: 1px solid var(--hairline, rgba(255,255,255,.06));
+  margin-top: .1rem;
+}
+.op-line-label {
+  font-size: .68rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+.op-line-vals {
+  display: flex;
+  gap: .28rem;
+  overflow-x: auto;
+  min-width: 0;
+  scrollbar-width: none;
+}
+.op-line-vals::-webkit-scrollbar { display: none; }
+.op-lv {
+  font-variant-numeric: tabular-nums;
+  font-size: .74rem;
+  line-height: 1;
+  padding: .2rem .34rem;
+  border-radius: 4px;
+  color: var(--text-3);
+  background: var(--surface-2);
+  flex: 0 0 auto;
+}
+.op-lv.hit { color: var(--positive); background: var(--positive-bg, rgba(122,193,120,.12)); }
+.op-line-tally {
+  font-size: .7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 
 /* Score — compact rounded rect, thin orange border, dark interior, orange number */
 .op-score {

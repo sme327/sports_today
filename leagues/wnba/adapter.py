@@ -155,6 +155,8 @@ class WNBAAdapter:
                     stability_score=int(row.stability_score),
                     supporting_evidence=support,
                     negative_evidence=risks,
+                    recent_line=list(getattr(row, "recent_line", []) or []),
+                    line_threshold=float(row.threshold),
                     image_url=None,          # team logo stamped by the feed builder
                     headshot_url=headshot,   # player headshot for the merged avatar
                     mode=mode,

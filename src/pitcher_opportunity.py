@@ -30,7 +30,7 @@ _STALE_STABILITY_PENALTY = 25
 RECENT_STARTS = 6
 MIN_START_BF = 10                      # batters faced to count as a start (excludes openers)
 
-_RESULT_COLUMNS = ["pitcher_id", "player", "team", "market", "threshold", "kind",
+_RESULT_COLUMNS = ["recent_line", "pitcher_id", "player", "team", "market", "threshold", "kind",
                    "direction", "opportunity_score", "stability_score", "starts",
                    "recent_avg", "recent_hit_rate", "support", "risks"]
 
@@ -208,6 +208,7 @@ def _is_stale_window(span_days: int | None, starts: int) -> bool:
 
 def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds,
                span_days: int | None = None) -> dict:
+    """``values`` arrives newest-first; the line is reversed so it reads as time."""
     d = _best_direction(values, thresholds, _OVER_PENALTY.get(kind, 1.0), kind)
     thr, n, avg, hit = d["threshold"], d["n"], d["avg"], d["hit_rate"]
     cleared = int(round(hit * n))
@@ -230,12 +231,14 @@ def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds,
     if _is_stale_window(span_days, n):
         stability = max(0, stability - _STALE_STABILITY_PENALTY)
     return _row(pid, name, team, market, thr, kind, d["direction"], d["score"],
-                stability, n, avg, hit, support=support, risks=risks)
+                stability, n, avg, hit, support=support, risks=risks,
+                recent_line=[float(v) for v in values][::-1])
 
 
 def _row(pid, name, team, market, threshold, kind, direction, score, stability, starts,
-         avg, hit_rate, *, support, risks) -> dict:
+         avg, hit_rate, *, support, risks, recent_line=None) -> dict:
     return {"pitcher_id": str(pid), "player": name, "team": team, "market": market,
+            "recent_line": list(recent_line or []),
             "threshold": threshold, "kind": kind, "direction": direction,
             "opportunity_score": score, "stability_score": stability, "starts": starts,
             "recent_avg": round(avg, 2), "recent_hit_rate": round(hit_rate, 3),

@@ -75,6 +75,45 @@ signal at zero cost, which is the whole argument for keeping odds offline.
 
 ---
 
+## 2026-08-12 — Show the raw recent line on every prop
+
+**Decision.** Every prop now carries `recent_line` (the actual last-10 results, oldest
+first) and `line_threshold`, rendered as a compact strip under the evidence with cleared
+games marked and a tally. All four live markets supply it — 448 of 448 props on the slate
+it shipped against.
+
+**Why.** A score compresses ten games into one number and hides the shape. On the day this
+shipped, six props all scored 99-100 and looked interchangeable:
+
+| player | line | cleared |
+|---|---|---|
+| Steven Kwan | 1 2 3 1 1 1 3 1 2 2 | **10/10** |
+| Royce Lewis | 1 2 4 1 1 2 2 0 2 2 | 9/10 |
+| Jonathan Aranda | 0 1 4 1 1 2 1 1 2 0 | 8/10 |
+| Yandy Diaz | 1 2 0 0 2 0 0 4 3 1 | **6/10** |
+
+Kwan and Diaz score the same and are not the same bet. **The evidence lines are our
+judgement; this is the fact underneath**, and it is what lets a reader disagree with us —
+which is the stated point of the product ("know what my options are… improve my
+predictions"), and the "explainable, always" rule taken literally.
+
+**Direction-aware, because the obvious version is backwards.** An *under* clears at or
+below the bar. Testing `>=` would have marked a pitcher's best starts as failures — every
+strong under would render as a near-total miss. `line_cleared` reads `Opportunity.direction`
+rather than assuming overs.
+
+**Grain matters more than it looks.** The batter scorer reasons per *plate appearance*, so
+its raw values are 0s and 1s. Shown directly they would never match the "1+ Hit" bar the
+prop is graded on. `_recent_game_line` regroups to per-game totals — the grain the prop is
+actually settled at.
+
+**Deliberately quiet.** One short row, tabular figures, low contrast, a single accent for
+cleared games, and it renders nothing at all when a scorer supplies no line. A prop card
+that grew a block for this would fail the experience principles; the value is that it is
+scannable, not that it is prominent.
+
+---
+
 ## 2026-08-12 — NHL market priority is backwards; goals is unservable
 
 **Finding.** With a full 2025-26 NHL season collected (1,306 games, 47,013 skater rows,
