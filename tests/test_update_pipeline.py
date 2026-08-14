@@ -39,11 +39,18 @@ def test_rebuild_with_collectors(monkeypatch):
     monkeypatch.setattr("src.mls_collector.collect",
                         lambda **k: SimpleNamespace(events_collected=1, standings_rows=30))
     monkeypatch.setattr("services.data_store.is_configured", lambda: True)
-    monkeypatch.setattr("services.data_store.publish_db", lambda: True)
+    # The real publish_db takes the file to upload; a zero-arg fake would pass while the
+    # pipeline actually publishes the *slim* build, which is the behaviour that matters.
+    published: list = []
+    monkeypatch.setattr("services.data_store.publish_db",
+                        lambda src=None: (published.append(src), True)[1])
     out = P.rebuild("feed.xlsx")
     assert out["wnba"] == {"games": 3, "rows": 60}
     assert out["mls"] == {"matches": 1, "standings": 30}
     assert out["published"] is True
+    assert published and published[0] is not None
+    assert published[0].name == "sportshub-deploy.db", (
+        "the deployed copy must be the slim build, not the working database")
 
 
 def test_collector_failure_is_captured(monkeypatch):

@@ -24,17 +24,34 @@ generous free tier.
 
 ## 2. Seed the bucket with your current database
 
-So the app has data on first boot, upload your already-built local DB once:
+**Publish the slim build, not the working database.** The local file carries research
+tables (NBA/CBB/NHL box scores, MLB box scores) that **nothing in the app reads** — about
+86% of the rows. A deployed copy is downloaded on every cold boot, so on a phone that is
+the difference between ~107MB and ~309MB for identical functionality.
 
 ```bash
 cd "/Users/sme/Documents/Projects/sports today" && source .venv/bin/activate
+
+# See what would be kept and dropped, and how much smaller it gets.
+python -m scripts.build_deploy_db --check
+
+# Build database/sportshub-deploy.db
+python -m scripts.build_deploy_db
+
 export SPORTS_TODAY_S3_BUCKET=sports-today
 export SPORTS_TODAY_S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
 export SPORTS_TODAY_S3_REGION=auto
 export SPORTS_TODAY_S3_KEY_ID=<key-id>
 export SPORTS_TODAY_S3_SECRET=<secret>
-python -c "from services.data_store import publish_db; print('published' if publish_db() else 'failed')"
+python -c "
+from pathlib import Path
+from services.data_store import publish_db
+ok = publish_db(Path('database/sportshub-deploy.db'))
+print('published' if ok else 'failed')"
 ```
+
+After the first time you never do this by hand: `update.command` builds and publishes the
+slim copy automatically whenever the S3 settings are present.
 
 ## 3. Deploy on Streamlit Community Cloud
 
@@ -62,8 +79,9 @@ Bookmark the URL / add it to your phone's home screen. It works on any device's 
   in cloud mode) → upload the day's `MM-DD-YYYY-mlb-season-pbp-feed.xlsx` from Big Data
   Ball → "Rebuild and publish". The app rebuilds, refreshes WNBA + MLS, and publishes
   to the bucket; every device sees it on next load.
-- **From your Mac:** run `update.command` as before — with the S3 env/secrets present
-  it now also publishes the rebuilt DB to the bucket. The cloud app just reads it.
+- **From your Mac:** run `update.command` as before — with the S3 env/secrets present it
+  rebuilds, **slims** the database (dropping the research tables) and publishes it. The
+  cloud app just reads it.
 
 ## Caveats & fallbacks
 

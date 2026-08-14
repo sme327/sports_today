@@ -80,7 +80,22 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
 
     try:
         from services.data_store import is_configured, publish_db
-        out["published"] = bool(is_configured() and publish_db())
+        if is_configured():
+            # Publish the **slim** build, not the working database. The research tables
+            # (NBA/CBB/NHL box scores, ~86% of the rows) are read by nothing in the app,
+            # and a deployed copy is downloaded on every cold boot — 309MB against 107MB
+            # on someone's phone. Falls back to the full file if the build fails, since a
+            # stale deployment is worse than a large one.
+            from scripts.build_deploy_db import build
+            from src.config import DB_PATH
+            try:
+                slim = build(DB_PATH, DB_PATH.with_name("sportshub-deploy.db"))
+            except Exception:                       # noqa: BLE001
+                slim = None
+            out["published"] = bool(publish_db(slim or DB_PATH))
+            out["published_slim"] = slim is not None
+        else:
+            out["published"] = False
     except Exception as exc:
         out["publish_error"] = str(exc)
         out["published"] = False

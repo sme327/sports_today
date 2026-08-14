@@ -30,6 +30,7 @@
 | a new **archive browser** (browse ingested history, not today's slate) | `views/<league>_archive.py` + a `view` value in `router.py` and a dispatch branch in `app.py` (see `?view=nfl`) |
 | a new **editorial signal** (team-level curation, no player props needed) | a rule in `services/editorial.py` returning a `Signal` with its evidence **and** caveats; add it to `_CARD_WORTHY` only if it belongs on a card. Rendering is `components/editorial.py` |
 | **competition context** for a league (season, phase, week, round, series) | populate the typed `SlateGame` fields in that league's adapter; `notable_context` decides what is worth showing |
+| a **research table** (held for later, not read by the app) | add it wherever it belongs, and **do not** add it to `scripts/build_deploy_db.KEEP` — the deploy build is an allow-list, so it is excluded by default and never ships to a phone |
 | a **schema table** | add DDL to the store module and call it from `services/migrations.ensure_schema` |
 | a **style/token** | `styles/app.css` (one stylesheet) |
 | a **test** | `tests/test_<area>.py` (offline; no network) |
