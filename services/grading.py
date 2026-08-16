@@ -283,12 +283,14 @@ def load_graded_range(start: date, end: date, db_path: Path = DB_PATH) -> list[d
     cols = ("snapshot_date", "league", "game_id", "player_id", "player_name", "team_name",
             "opponent", "market", "market_key", "direction", "threshold",
             "opportunity_score", "result", "actual_value", "void_reason",
-            "scoring_engine_version", "captured_on")
+            "scoring_engine_version", "captured_on", "featured", "featured_rank")
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         try:
+            available = {row[1] for row in conn.execute(f"PRAGMA table_info({_SNAP})")}
+            select_cols = [col for col in cols if col in available]
             rows = conn.execute(
-                f"SELECT {', '.join(cols)} FROM {_SNAP} "
+                f"SELECT {', '.join(select_cols)} FROM {_SNAP} "
                 f"WHERE snapshot_date BETWEEN ? AND ? ORDER BY captured_on ASC",
                 (start.isoformat(), end.isoformat())).fetchall()
         except sqlite3.OperationalError:
@@ -296,7 +298,7 @@ def load_graded_range(start: date, end: date, db_path: Path = DB_PATH) -> list[d
     latest: dict[tuple, dict] = {}
     for r in rows:
         latest[(r["snapshot_date"], r["league"], r["player_id"], r["market"])] = dict(r)
-    return list(latest.values())
+    return with_featured_ranks(list(latest.values()))
 
 
 def _tally(subset: list[dict]) -> dict:
@@ -351,24 +353,56 @@ def summarize_by_market(rows: list[dict]) -> dict:
 # --- Score bands (mutually-exclusive; the finer six) + sample gating -----------
 MIN_SAMPLE = 30          # graded props below this = "small sample", don't over-trust
 
-# The score at or above which a prop is actually shown on the Today screen. Defined
-# here rather than in the view because it is an analysis concept first: the ledger
-# records the whole scored population, and a hit rate that mixes in props nobody was
-# ever shown is not measuring what the product recommends. Measured over one season
-# to date the gap is 13.2 points (46.5% scored vs 59.8% served) across 5,782 rows,
-# 77% of which never reached a reader.
+# The score at or above which a prop becomes a public qualifying prediction. All
+# qualifying predictions appear on matchup pages; the highest-ranked eight are also
+# featured on Today. Rows below the floor remain research observations.
 CURATION_FLOOR = 70
+FEATURED_MAX = 8
 
 
 def split_served(rows: list[dict]) -> tuple[list[dict], list[dict]]:
-    """``(served, below_floor)`` — what a reader was shown, and what only the ledger saw."""
+    """Compatibility alias returning ``(qualifying, research_only)`` populations."""
     served = [r for r in rows if (r.get("opportunity_score") or 0) >= CURATION_FLOOR]
     below = [r for r in rows if (r.get("opportunity_score") or 0) < CURATION_FLOOR]
     return served, below
 
-# (lo, hi, label) — inclusive, non-overlapping. Below 75 is not a served band.
+
+def qualifying(rows: list[dict]) -> list[dict]:
+    """Every public prediction clearing the publication floor."""
+    return split_served(rows)[0]
+
+
+def with_featured_ranks(rows: list[dict]) -> list[dict]:
+    """Annotate latest-capture rows with the deterministic Today rank per slate.
+
+    Persisted ``featured``/``featured_rank`` values win when present. Older ledger
+    rows are reconstructed only from their stored pregame scores, never outcomes.
+    """
+    by_slate: dict[str, list[dict]] = {}
+    for original in rows:
+        row = dict(original)
+        by_slate.setdefault(str(row.get("snapshot_date") or ""), []).append(row)
+    out: list[dict] = []
+    for slate_rows in by_slate.values():
+        ordered = sorted(
+            qualifying(slate_rows),
+            key=lambda r: (-(r.get("opportunity_score") or 0), str(r.get("league") or ""),
+                           str(r.get("player_name") or ""), str(r.get("market") or "")),
+        )
+        inferred = {id(row): rank for rank, row in enumerate(ordered[:FEATURED_MAX], 1)}
+        for row in slate_rows:
+            if row.get("featured") is None:
+                rank = inferred.get(id(row))
+                row["featured"] = bool(rank)
+                row["featured_rank"] = rank
+            else:
+                row["featured"] = bool(row["featured"])
+            out.append(row)
+    return out
+
+# (lo, hi, label) — inclusive, non-overlapping across the full qualifying range.
 SCORE_BANDS: list[tuple[int, int, str]] = [
-    (75, 79, "75–79"), (80, 84, "80–84"), (85, 89, "85–89"),
+    (70, 74, "70–74"), (75, 79, "75–79"), (80, 84, "80–84"), (85, 89, "85–89"),
     (90, 94, "90–94"), (95, 98, "95–98"), (99, 100, "99–100"),
 ]
 

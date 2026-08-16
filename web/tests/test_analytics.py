@@ -52,12 +52,27 @@ def test_results_show_the_complete_daily_audit_without_dead_pagination(load):
 
 
 @patch("web.analytics.grading.load_graded_range")
-def test_performance_context_leads_with_served_predictions(load):
+def test_performance_context_defaults_to_all_qualifying_predictions(load):
     load.return_value = [row(), row(player_id="2", result="miss", opportunity_score=60)]
     context = performance_context(QueryDict("period=30"), date(2026, 8, 15))
     assert context["has_rows"]
-    assert "shown as picks" in context["summary_html"]
+    assert "All qualifying" in context["summary_html"]
+    assert "1–0" in context["summary_html"]
     assert context["calibration_read"]
+
+
+@patch("web.analytics.grading.load_graded_range")
+def test_performance_cohort_can_isolate_featured_predictions(load):
+    load.return_value = [
+        row(featured=True, featured_rank=1),
+        row(player_id="2", result="miss", opportunity_score=88,
+            featured=False, featured_rank=None),
+    ]
+    context = performance_context(
+        QueryDict("period=30&cohort=featured"), date(2026, 8, 15))
+    assert "Featured" in context["summary_html"]
+    assert "1–0" in context["summary_html"]
+    assert context["cohort"] == "featured"
 
 
 @patch("web.analytics.grading.load_graded_range")

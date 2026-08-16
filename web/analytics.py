@@ -13,6 +13,7 @@ from urllib.parse import urlencode
 from components.results_feed import (
     calibration_interpretation,
     calibration_table_html,
+    cohort_comparison_html,
     consistency_html,
     daily_summary_html,
     edge_table_html,
@@ -106,6 +107,16 @@ def load_performance_range(start: date, end: date) -> list[dict]:
     ]
 
 
+def apply_cohort(rows: list[dict], cohort: str) -> list[dict]:
+    """Public cohorts: every 70+ prediction, Today's eight, or the remainder."""
+    qualifying = grading.qualifying(rows)
+    if cohort == "featured":
+        return [row for row in qualifying if row.get("featured")]
+    if cohort == "other":
+        return [row for row in qualifying if not row.get("featured")]
+    return qualifying
+
+
 def filter_groups(path: str, params, active: dict[str, str], *, include_band: bool = True,
                   market_keys=None):
     market_keys = list(market_keys if market_keys is not None else ORDER)
@@ -122,7 +133,7 @@ def performance_url(params, **updates) -> str:
     """Bound the public Performance state to combinations we can publish statically."""
     values = {
         key: params.get(key)
-        for key in ("period", "market", "direction")
+        for key in ("period", "cohort", "market", "direction")
         if params.get(key) not in (None, "", "all")
     }
     values.update(updates)
@@ -152,6 +163,7 @@ def performance_filter_groups(params, active: dict[str, str], market_keys: list[
         category_label = "⚾" if league == "MLB" else "🏀"
         groups.append({
             "key": f"market-{league.lower()}", "label": category_label,
+            "accessible_label": "Baseball markets" if league == "MLB" else "Basketball markets",
             "options": [
                 {"value": key, "label": LABELS[key],
                  "active": active.get("market") == key,
@@ -205,7 +217,8 @@ def parse_results_date(raw: str | None, today: date) -> date:
 
 def results_context(params, today: date) -> dict:
     selected_date = parse_results_date(params.get("date"), today)
-    rows = grading.load_graded_slate(selected_date)
+    snapshot_rows = grading.load_graded_slate(selected_date)
+    rows = grading.qualifying(snapshot_rows)
     active = _active(params)
     filtered = apply_filters(rows, active)
     query = (params.get("q") or "").strip().lower()
@@ -244,16 +257,8 @@ def results_context(params, today: date) -> dict:
         "previous_href": query_url("/results/", params, date=(selected_date - timedelta(days=1)).isoformat()),
         "next_href": query_url("/results/", params, date=(selected_date + timedelta(days=1)).isoformat()),
         "can_go_next": selected_date < today - timedelta(days=1),
-        "recent_dates": [
-            {
-                "date": today - timedelta(days=offset),
-                "active": selected_date == today - timedelta(days=offset),
-                "href": query_url(
-                    "/results/", {}, date=(today - timedelta(days=offset)).isoformat()
-                ),
-            }
-            for offset in range(1, 8)
-        ],
+        "recent_dates": [_result_date_option(today - timedelta(days=offset), selected_date)
+                         for offset in range(1, 8)],
         "filter_groups": [],
         "active_filters": [
             {"key": key, "value": value}
@@ -279,6 +284,7 @@ def results_context(params, today: date) -> dict:
         "page_previous": query_url("/results/", params, page=page - 1) if page > 1 else None,
         "page_next": query_url("/results/", params, page=page + 1) if page < total_pages else None,
         "has_rows": bool(rows),
+        "has_snapshot": bool(snapshot_rows),
         "query_text": params.get("q", ""),
         "sort": sort,
     }
@@ -297,31 +303,56 @@ def period_range(period: str, today: date) -> tuple[date, date, str]:
     return end - timedelta(days=29), end, "Last 30 days"
 
 
+def _result_date_option(day: date, selected: date) -> dict:
+    rows = grading.load_graded_slate(day)
+    qualifying = grading.qualifying(rows)
+    tally = grading.tally(qualifying)
+    if not rows:
+        state, state_label = "missing", "No snapshot"
+    elif not qualifying:
+        state, state_label = "none", "No 70+"
+    elif tally["pending"] and not (tally["hit"] or tally["miss"] or tally["void"]):
+        state, state_label = "pending", "Pending"
+    else:
+        state, state_label = "graded", "Graded"
+    return {"date": day, "active": selected == day,
+            "href": query_url("/results/", {}, date=day.isoformat()),
+            "state": state, "state_label": state_label}
+
+
 def performance_context(params, today: date) -> dict:
     period = params.get("period", "30")
     if period not in {key for key, _ in PERIODS}:
         period = "30"
     min_sample = 30
+    cohort = params.get("cohort", "qualifying")
+    if cohort not in {"qualifying", "featured", "other"}:
+        cohort = "qualifying"
     start, end, label = period_range(period, today)
     active = _active(params, include_band=False)
     performance_markets = [key for key in ORDER if key not in PERFORMANCE_EXCLUDED_TYPES]
     eligible_rows = load_performance_range(start, end)
-    rows = apply_filters(eligible_rows, active)
+    filtered_eligible = apply_filters(eligible_rows, active)
+    rows = apply_cohort(filtered_eligible, cohort)
     if not rows:
         return {
             "section": "performance", "has_rows": False, "period": period,
-            "min_sample": min_sample, "period_label": label,
+            "min_sample": min_sample, "period_label": label, "cohort": cohort,
+            "cohort_options": _cohort_options(params, cohort),
             "period_options": _period_options(params, period),
             "filter_groups": performance_filter_groups(params, active, performance_markets),
         }
 
     overall = grading.tally(rows)
-    served = grading.tally(grading.split_served(rows)[0])
     scores = [row["opportunity_score"] for row in rows if row.get("opportunity_score") is not None]
+    slates = len({row.get("snapshot_date") for row in rows if row.get("snapshot_date")})
+    qualifying_rows = apply_cohort(filtered_eligible, "qualifying")
+    featured_rows = apply_cohort(filtered_eligible, "featured")
+    other_rows = apply_cohort(filtered_eligible, "other")
     span = (end - start).days + 1
-    prior_rows = apply_filters(
-        load_performance_range(start - timedelta(days=span), start - timedelta(days=1)), active
-    )
+    prior_rows = apply_filters(apply_cohort(
+        load_performance_range(start - timedelta(days=span), start - timedelta(days=1)), cohort
+    ), active)
     prior = grading.tally(prior_rows)
     bands = grading.summarize_by_band(rows, min_sample=min_sample)
     empty = grading.tally([])
@@ -350,9 +381,11 @@ def performance_context(params, today: date) -> dict:
     def window(days: int, offset: int = 0):
         window_end = end - timedelta(days=offset)
         window_start = window_end - timedelta(days=days - 1)
-        return grading.tally(apply_filters(load_performance_range(window_start, window_end), active))
+        return grading.tally(apply_filters(
+            apply_cohort(load_performance_range(window_start, window_end), cohort), active))
 
-    all_rows = apply_filters(load_performance_range(date(2020, 1, 1), end), active)
+    all_rows = apply_filters(apply_cohort(
+        load_performance_range(date(2020, 1, 1), end), cohort), active)
     all_rate = grading.tally(all_rows)["hit_rate"]
     months = sorted(grading.summarize_by(
         all_rows, lambda row: (row.get("snapshot_date") or "")[:7] or None
@@ -373,13 +406,18 @@ def performance_context(params, today: date) -> dict:
     )
     return {
         "section": "performance", "has_rows": True, "period": period,
-        "min_sample": min_sample, "period_label": label,
+        "min_sample": min_sample, "period_label": label, "cohort": cohort,
+        "cohort_options": _cohort_options(params, cohort),
         "period_options": _period_options(params, period),
         "filter_groups": performance_filter_groups(params, active, performance_markets),
         "summary_html": period_summary_html(
             overall, sum(scores) / len(scores) if scores else None, label,
-            served=served, floor=grading.CURATION_FLOOR,
+            cohort={"qualifying": "All qualifying", "featured": "Featured",
+                    "other": "Other qualifying"}[cohort], slates=slates,
         ),
+        "cohort_comparison_html": cohort_comparison_html(
+            grading.tally(qualifying_rows), grading.tally(featured_rows),
+            grading.tally(other_rows)),
         "comparison_html": period_comparison_html(overall, prior, f"previous {label.lower()}", min_sample),
         "calibration_read": calibration_interpretation(bands),
         "calibration_html": calibration_table_html(bands, overall["hit_rate"]),
@@ -391,7 +429,7 @@ def performance_context(params, today: date) -> dict:
             ("Last 7", window(7)), ("Last 30", window(30)),
             ("Prev 30", window(30, 30)),
             ("Season", grading.tally(apply_filters(
-                load_performance_range(date(end.year, 3, 1), end), active))),
+                apply_cohort(load_performance_range(date(end.year, 3, 1), end), cohort), active))),
             ("All time", grading.tally(all_rows)),
         ]),
         "monthly_html": monthly_table_html(months, all_rate),
@@ -402,6 +440,16 @@ def performance_context(params, today: date) -> dict:
 def _period_options(params, current):
     return [{"key": key, "label": label, "active": key == current,
              "href": performance_url(params, period=key)} for key, label in PERIODS]
+
+
+def _cohort_options(params, current):
+    return [
+        {"key": key, "label": label, "active": key == current,
+         "href": performance_url(params, cohort=key)}
+        for key, label in (("qualifying", "All qualifying"),
+                           ("featured", "Featured"),
+                           ("other", "Other qualifying"))
+    ]
 
 
 def _sample_options(params, current):

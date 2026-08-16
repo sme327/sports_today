@@ -5,6 +5,24 @@
 > **Update when** — The setup steps, command files, or daily pipeline change.
 > **Related** — [Architecture](ARCHITECTURE.md) · [README](../../README.md) · [Docs index](../README.md)
 
+## Current public workflow
+
+The public site is a static Cloudflare Pages deployment. The Mac is needed only while
+updating and publishing; it does not need to stay on to serve the site.
+
+Normal operator steps:
+
+1. Manually download the newest gated MLB workbook and leave it in `~/Downloads`.
+2. Double-click `update_and_publish.command`.
+3. Wait for the data update, prediction snapshots, grading, static page build, link
+   audit, and Cloudflare publish to complete.
+4. Open `sports.sme327.com` on any device. The published snapshot remains available
+   after the Mac is turned off; supported live scores refresh in the browser.
+
+Use `update_only.command` when you want to refresh local data without publishing. The
+older Streamlit commands below remain useful for local review and operator diagnostics,
+but Django/static Pages is the public product.
+
 ## Part A — One-time installation
 
 ### 1. Put the project somewhere permanent

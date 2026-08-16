@@ -1,10 +1,4 @@
-"""Served vs scored — the headline must measure the advice, not the whole output.
-
-The ledger deliberately records every prop that was scored, but only those clearing
-the curation floor are ever shown. Mixing them measures the scorer's entire output
-rather than what it recommended, and on real data the two differ by 13.2 points
-(46.5% scored against 59.8% served, with 77% of rows never reaching a reader).
-"""
+"""Qualifying vs research-only and the explicitly named Performance cohort."""
 
 from __future__ import annotations
 
@@ -45,23 +39,23 @@ def test_the_two_populations_are_disjoint_and_complete():
     assert not ({id(r) for r in served} & {id(r) for r in below})
 
 
-def test_headline_leads_with_what_was_recommended():
+def test_headline_names_the_evaluated_cohort_and_independent_slates():
     rows = [_row(90, "hit")] * 6 + [_row(90, "miss")] * 4 + [_row(20, "miss")] * 50
     overall = grading.tally(rows)
-    served = grading.tally(grading.split_served(rows)[0])
-    html = period_summary_html(overall, 55.0, "Last 30 days",
-                               served=served, floor=grading.CURATION_FLOOR)
+    qualifying = grading.tally(grading.split_served(rows)[0])
+    html = period_summary_html(qualifying, 90.0, "Last 30 days",
+                               cohort="All qualifying", slates=4)
     text = " ".join(re.sub(r"<[^>]+>", " ", html).split())
-    assert text.index("60.0%") < text.index("10.0%"), "served must come first"
-    assert "shown as picks (70+)" in text
-    assert "never cleared the bar" in text          # the population is labelled, not hidden
+    assert "60.0%" in text
+    assert "All qualifying" in text
+    assert "4 slates" in text
 
 
 def test_the_old_single_number_headline_still_works():
     """Callers that pass no served tally keep the previous rendering."""
     html = period_summary_html(grading.tally([_row(90, "hit")]), None, "Season")
     text = " ".join(re.sub(r"<[^>]+>", " ", html).split())
-    assert "100.0%" in text and "shown as picks" not in text
+    assert "100.0%" in text and "Predictions" in text
 
 
 def test_served_rate_beats_the_population_on_real_shape():

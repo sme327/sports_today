@@ -2,10 +2,10 @@
 <section class="analytics-filters" aria-label="Filters">
   {% for group in filter_groups %}
   <div class="analytics-filter-group">
-    <span class="filter-label">{{ group.label }}</span>
-    <div class="filter-pills">
+    <span class="filter-label" {% if group.accessible_label %}title="{{ group.accessible_label }}" aria-label="{{ group.accessible_label }}"{% endif %}>{{ group.label }}</span>
+    <div class="filter-pills" {% if group.accessible_label %}aria-label="{{ group.accessible_label }}"{% endif %}>
       {% for option in group.options %}
-      <a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>
+      <a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}" {% if option.active %}aria-current="true"{% endif %}>{{ option.label }}</a>
       {% endfor %}
     </div>
   </div>

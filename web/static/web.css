@@ -46,6 +46,8 @@ a { color: inherit; }
   font-size: .85rem; font-weight: 650; transition: .16s ease;
 }
 .filter-pill:hover, .thr-pill:hover, .games-toggle:hover { transform: translateY(-1px); color: var(--text-1); }
+.filter-pill:focus-visible, .thr-pill:focus-visible, .games-toggle:focus-visible,
+.site-header a:focus-visible, .text-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .filter-pill.active, .thr-pill.active { color: var(--on-brand); border-color: transparent; background: var(--brand-grad); }
 .opportunity-section { margin-top: 2rem; }
 .thresholds { display: flex; align-items: center; gap: .35rem; color: var(--text-3); font-size: .75rem; }
@@ -107,6 +109,16 @@ a { color: inherit; }
 .performance-controls .filter-label { flex-basis: auto; }
 .compact-pills { margin-bottom: .8rem; }
 .daily-summary, .perf-headline { margin-top: 1rem; }
+.cohort-comparison { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; margin: .65rem 0 1rem; }
+.cohort-cell { display: grid; grid-template-columns: 1fr auto auto auto; align-items: baseline; gap: .55rem; padding: .65rem .75rem; border-radius: var(--r-sm); background: var(--surface-1); color: var(--text-3); font-size: .72rem; }
+.cohort-cell strong, .cohort-cell b { color: var(--text-1); }
+.cohort-cell small { color: var(--text-4); }
+.result-date-pill { display: inline-flex; flex-direction: column; align-items: center; gap: .08rem; }
+.result-date-state { color: var(--text-4); font-size: .56rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.result-date-pill.active .result-date-state { color: currentColor; opacity: .78; }
+.result-date-pill.missing:not(.active) { border-style: dashed; }
+.result-date-pill.none:not(.active) { opacity: .7; }
+.result-date-pill.pending:not(.active) .result-date-state { color: var(--brand-2); }
 .pagination { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-top: 1rem; color: var(--text-3); font-size: .82rem; }
 .pagination a { color: var(--brand-2); text-decoration: none; font-weight: 700; }
 .pagination a:last-child { text-align: right; }
@@ -120,4 +132,13 @@ a { color: inherit; }
   .web-market-row span:nth-child(4), .web-market-row span:nth-child(5) { display: none; }
   .search-sort-row { grid-template-columns: 1fr; }
   .performance-controls > div { align-items: flex-start; flex-direction: column; gap: .35rem; }
+  .cohort-comparison { grid-template-columns: 1fr; }
+}
+@media (max-width: 430px) {
+  .site-brand-name { font-size: 1rem; }
+  .site-date { max-width: 7.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .site-header nav { gap: .4rem; }
+  .nav-day-toggle { min-width: 7.9rem; }
+  .nav-day-toggle a { padding-inline: .34rem; font-size: .7rem; }
+  .performance-link { font-size: .68rem; }
 }

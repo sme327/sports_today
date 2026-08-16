@@ -9,7 +9,7 @@
 <section class="date-nav">
   <span class="filter-label">Date</span>
   <div class="filter-pills results-date-pills">
-    {% for option in recent_dates %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.date|date:"D M j" }}</a>{% endfor %}
+    {% for option in recent_dates %}<a class="filter-pill result-date-pill {{ option.state }} {% if option.active %}active{% endif %}" href="{{ option.href }}" title="{{ option.state_label }}" {% if option.active %}aria-current="date"{% endif %}>{{ option.date|date:"D M j" }}<span class="result-date-state">{{ option.state_label }}</span></a>{% endfor %}
   </div>
 </section>
 
@@ -30,6 +30,8 @@
     <div class="section-row"><h2>Props</h2><span class="section-count">Showing {{ visible_start }}–{{ visible_end }} of {{ prop_count }}</span></div>
     {{ prop_html|safe }}
   </section>
+{% elif has_snapshot %}
+  <section class="empty-card"><h2>No qualifying predictions</h2><p>A prediction snapshot was captured, but no score reached the public 70+ threshold on this date.</p></section>
 {% else %}
   <section class="empty-card"><h2>No prediction snapshot captured</h2><p>The daily ledger has no saved predictions for this date. Historical predictions are not reconstructed later because newer data would introduce hindsight.</p></section>
 {% endif %}
