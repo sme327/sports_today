@@ -341,6 +341,20 @@ def precompute_day(slate_date: date) -> dict:
             matchup_pages_by_league["WNBA"] = matchup_pages_by_league.get("WNBA", 0) + 1
         except Exception:
             matchup_errors += 1
+    from services.mls_game_page import (
+        ENGINE_VERSION as MLS_ENGINE_VERSION,
+        build_mls_game_page,
+    )
+    for game in slates.get("MLS", ([], None))[0]:
+        try:
+            page = build_mls_game_page(game, slate_date, slate_date)
+            matchup_cache.store(
+                "MLS", str(game.game_id), slate_date, MLS_ENGINE_VERSION, page
+            )
+            matchup_pages += 1
+            matchup_pages_by_league["MLS"] = matchup_pages_by_league.get("MLS", 0) + 1
+        except Exception:
+            matchup_errors += 1
     return {
         "date": slate_date.isoformat(),
         "games": len(games),
