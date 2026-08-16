@@ -163,8 +163,8 @@ class MLBAdapter:
         # awareness lifts confirmed hitters and demotes anyone scratched pregame.
         lineups = None
         try:
-            from services.app_cache import cached_lineups
-            lineups = cached_lineups(as_of.isoformat())
+            from services.lineups import get_lineups
+            lineups = get_lineups(as_of)
         except Exception:
             lineups = None
 
@@ -234,8 +234,8 @@ class MLBAdapter:
             return []
         lineups = None
         try:
-            from services.app_cache import cached_lineups
-            lineups = cached_lineups(as_of.isoformat())
+            from services.lineups import get_lineups
+            lineups = get_lineups(as_of)
         except Exception:
             lineups = None
 

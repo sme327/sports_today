@@ -67,6 +67,13 @@ def main() -> int:
                   f"(feeds the editorial calibration).")
         elif "game_outcomes_error" in result:
             print(f"Game outcomes skipped: {result['game_outcomes_error']}", file=sys.stderr)
+        for feed in result.get("daily_feed", []):
+            print(
+                f"Daily feed {feed['date']}: {feed['games']} games, "
+                f"{feed['opportunities']} opportunities in {feed['total_seconds']:.1f}s."
+            )
+        if "daily_feed_error" in result:
+            print(f"Daily feed precompute skipped: {result['daily_feed_error']}", file=sys.stderr)
         for iso, g in (result.get("regraded") or {}).items():
             print(f"Re-graded {iso}: {g['hit']} hit, {g['miss']} miss, {g['void']} void.")
         if result.get("published"):

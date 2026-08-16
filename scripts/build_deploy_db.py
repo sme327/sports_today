@@ -38,7 +38,8 @@ KEEP: dict[str, tuple[str, ...]] = {
     "NFL (season archive + bridge)": ("nfl_team_games", "nfl_player_games", "nfl_teams",
                                       "nfl_feed_runs"),
     "results, grading, editorial": ("opportunity_snapshots", "game_outcomes"),
-    "infrastructure": ("schedule_cache", "schema_version", "sqlite_sequence"),
+    "infrastructure": ("schedule_cache", "daily_opportunity_feed", "schema_version",
+                       "sqlite_sequence"),
 }
 
 # Named only so `--check` can explain what it is dropping and why, rather than listing a

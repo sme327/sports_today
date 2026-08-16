@@ -78,6 +78,15 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
     except Exception as exc:
         out["game_outcomes_error"] = str(exc)
 
+    # Build the public read model after every source has refreshed. This deliberately
+    # moves network and Pandas work out of visitor requests; Django reads only SQLite.
+    try:
+        from services.daily_feed import precompute_days
+        today = date.today()
+        out["daily_feed"] = precompute_days([today, today + timedelta(days=1)])
+    except Exception as exc:
+        out["daily_feed_error"] = str(exc)
+
     try:
         from services.data_store import is_configured, publish_db
         if is_configured():

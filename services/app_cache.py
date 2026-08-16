@@ -57,11 +57,8 @@ def cached_mls_game_page(cache_key: str, _game, as_of_iso: str):
 def cached_lineups(slate_iso: str):
     """Today's posted MLB batting lineups, cached with a short TTL so late-posted
     lineups get picked up on refresh. Degrades to empty on any network error."""
-    from src.mlb_lineups import EMPTY_LINEUPS, fetch_lineups
-    try:
-        return fetch_lineups(date.fromisoformat(slate_iso))
-    except Exception:
-        return EMPTY_LINEUPS
+    from services.lineups import get_lineups
+    return get_lineups(date.fromisoformat(slate_iso))
 
 
 

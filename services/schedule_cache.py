@@ -129,3 +129,35 @@ def read_latest_usable(
     except (ValueError, TypeError):
         fetched = datetime.now()
     return games, fetched
+
+
+def read_latest(
+    *,
+    league: str,
+    slate_date: date | str,
+    db_path: Path = DB_PATH,
+) -> tuple[list[SlateGame], SourceStatus, datetime, str | None] | None:
+    """Return the newest cached result, including a legitimate empty slate."""
+    if not Path(db_path).exists():
+        return None
+    with sqlite3.connect(db_path) as conn:
+        ensure_table(conn)
+        row = conn.execute(
+            f"""
+            SELECT payload, status, fetched_at, source
+            FROM {_TABLE}
+            WHERE league = ? AND slate_date = ?
+            ORDER BY fetched_at DESC
+            LIMIT 1
+            """,
+            (league, _slate_token(slate_date)),
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        games = [game_from_dict(item) for item in json.loads(row[0] or "[]")]
+        status = SourceStatus(row[1])
+        fetched_at = datetime.fromisoformat(row[2])
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    return games, status, fetched_at, row[3]

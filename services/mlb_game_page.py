@@ -571,8 +571,8 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
     heating, cooling = _build_trends(pa, [away, home])
     lineups = None
     try:
-        from services.app_cache import cached_lineups
-        lineups = cached_lineups(slate_date.isoformat())
+        from services.lineups import get_lineups
+        lineups = get_lineups(slate_date)
     except Exception:
         lineups = None
     opportunities = _build_opportunities(pa, game, [away, home], lineups)
