@@ -1,0 +1,9 @@
+{% extends "web/base.html" %}
+{% block title %}{{ page.hero.away }} at {{ page.hero.home }} · Sports Today{% endblock %}
+{% block content %}
+<div class="matchup-toolbar">
+  <a class="text-link" href="{% url 'nfl-archive' %}">← Back to the NFL archive</a>
+  <span>Historical pregame analysis</span>
+</div>
+{{ content|safe }}
+{% endblock %}

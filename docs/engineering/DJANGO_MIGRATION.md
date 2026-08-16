@@ -34,8 +34,11 @@ SQLite data, and the Downloads-based morning update remain shared.
 - MLS matchup pages using the existing leakage-safe team analysis, tactical and
   attacking comparisons, storylines, lineups, watch timeline, and honest data-gap
   states; pages use the same versioned persistent cache and morning prewarm path
+- NFL archive at `/nfl/` with season/week navigation and leakage-safe historical
+  matchup pages; matchup models persist by game/date/engine version, and eligible live
+  slate links bridge from ESPN game IDs to their season-feed archive IDs
 
-The NFL archive and data-update pages still use Streamlit until their Django versions
+The private data-update/operator pages still use Streamlit until their Django versions
 are implemented.
 
 ## Local run

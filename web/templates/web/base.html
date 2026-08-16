@@ -17,6 +17,7 @@
       <a class="{% if section == 'today' or not section %}active{% endif %}" href="{% url 'today' %}">Today</a>
       <a class="{% if section == 'results' %}active{% endif %}" href="{% url 'results' %}">Results</a>
       <a class="{% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}">Performance</a>
+      <a class="{% if section == 'nfl' %}active{% endif %}" href="{% url 'nfl-archive' %}">NFL Archive</a>
     </nav>
   </header>
   <main class="site-shell">

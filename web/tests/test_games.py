@@ -80,6 +80,15 @@ def test_mls_endpoint_uses_mls_page_context(find, context):
     context.assert_called_once()
 
 
+@patch("services.nfl_bridge.feed_game_id", return_value="45904-DAL@PHI")
+@patch("web.views.find_game")
+def test_live_nfl_route_bridges_to_archive_matchup(find, _feed_id):
+    find.return_value = game("NFL", "espn-1")
+    response = Client().get("/game/NFL/espn-1/?day=today")
+    assert response.status_code == 302
+    assert response.url == "/nfl/game/45904-DAL@PHI/"
+
+
 @patch("web.views.find_game", return_value=None)
 def test_unknown_game_is_404(_find):
     assert Client().get("/game/MLB/missing/").status_code == 404
