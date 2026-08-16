@@ -201,6 +201,27 @@ def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str) -> tu
 
 def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | None:
     tg = load_team_games(db_path=db_path)
+    pg = load_player_games(db_path=db_path)
+    return _build_nfl_game_page(game_id, tg, pg)
+
+
+def build_nfl_game_pages(
+    game_ids: list[str], db_path: Path = DB_PATH
+) -> dict[str, NFLGamePage]:
+    """Build many archive pages while loading the season tables only once."""
+    tg = load_team_games(db_path=db_path)
+    pg = load_player_games(db_path=db_path)
+    pages = {}
+    for game_id in game_ids:
+        page = _build_nfl_game_page(str(game_id), tg, pg)
+        if page is not None:
+            pages[str(game_id)] = page
+    return pages
+
+
+def _build_nfl_game_page(
+    game_id: str, tg: pd.DataFrame, pg: pd.DataFrame
+) -> NFLGamePage | None:
     if tg.empty:
         return None
     rows = tg[tg["game_id"].astype("string") == str(game_id)]
@@ -259,7 +280,6 @@ def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | 
     note = ("Season opener — no prior-form data yet." if games_in == 0 else
             "Early-season sample — form is thin." if games_in < 4 else "")
 
-    pg = load_player_games(db_path=db_path)
     if not pg.empty and "season" in pg.columns and pd.notna(season):
         pg = pg[pg["season"] == season]
     away_spot = _spotlights(pg, game_id, game_date, away)

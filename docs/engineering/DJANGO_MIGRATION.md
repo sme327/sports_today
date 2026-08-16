@@ -41,6 +41,29 @@ SQLite data, and the Downloads-based morning update remain shared.
 The private data-update/operator pages still use Streamlit until their Django versions
 are implemented.
 
+## Zero-cost Cloudflare Pages path
+
+The public Django routes can also be exported as a static Pages deployment. Django
+remains the tested rendering engine on the Mac; Cloudflare serves the finished HTML,
+CSS, and JavaScript without an always-on Python host or published SQLite database.
+
+```bash
+python -m scripts.publish_pages --build-only
+```
+
+The export writes `site-dist/`, follows all public Today/Tomorrow matchup links and the
+complete NFL archive, batches immutable NFL model construction, collects static assets,
+and removes the Django-only deferred HTMX refresh. The generated bundle is disposable
+and gitignored.
+
+`update_and_publish.command` runs the normal Downloads-based update, builds this static
+bundle, and deploys it with Cloudflare Wrangler. The first publish requires a one-time
+Cloudflare login and Pages project creation.
+
+A Pages Function at `/api/scores` reads the same ESPN scoreboards used by the local app.
+Published Today/Tomorrow pages request it once on load and every 60 seconds while open.
+Failures are deliberately silent: the last published schedule remains fully usable.
+
 ## Local run
 
 ```bash

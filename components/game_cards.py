@@ -133,7 +133,8 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     compact_cls = "" if footer else " game-card--compact"
     # The card body isn't clickable — only the footer links act (filter / deep-dive).
     return (
-        f'<div class="game-card{state_cls}{compact_cls}">'
+        f'<div class="game-card{state_cls}{compact_cls}" data-live-game="{escape(str(game.game_id))}" '
+        f'data-league="{escape(game.league)}" data-away="{escape(away)}" data-home="{escape(home)}">'
         f'<div class="game-top"><span class="game-top-left">{best_html}'
         f'<span class="league-name">{escape(league_label)}</span>{context_html}</span>'
         f'{time_html}{_state_badge(game)}</div>'
