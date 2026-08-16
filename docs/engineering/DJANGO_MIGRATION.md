@@ -29,8 +29,10 @@ SQLite data, and the Downloads-based morning update remain shared.
   edge-finder segments, consistency windows, monthly results, and model versions
 - MLB matchup pages using the existing analytical model and section renderers; models
   are prewarmed by the morning update and persisted by game/date/engine version
+- WNBA matchup pages using the existing basketball-specific model, snapshots, trends,
+  battlefields, and opportunity feed with the same persistent prewarm path
 
-WNBA/MLS matchup pages, the NFL archive, and data-update pages still use Streamlit
+MLS matchup pages, the NFL archive, and data-update pages still use Streamlit
 until their Django versions are implemented.
 
 ## Local run

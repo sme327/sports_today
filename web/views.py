@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from web.today import build_context
 from web.analytics import performance_context, results_context
-from web.games import find_game, mlb_context
+from web.games import find_game, mlb_context, wnba_context
 from services.daily_feed import load_cached_schedules, refresh_schedules
 
 
@@ -39,16 +39,20 @@ def game(request, league: str, game_id: str):
     slate_game = find_game(league, game_id, slate_date)
     if slate_game is None:
         raise Http404("Game not found in the cached slate")
-    if league != "MLB":
+    if league not in {"MLB", "WNBA"}:
         return render(
             request,
             "web/game_pending.html",
             {"section": "today", "game": slate_game, "league": league, "day": day},
             status=501,
         )
-    context = mlb_context(slate_game, slate_date)
+    context = (
+        mlb_context(slate_game, slate_date)
+        if league == "MLB"
+        else wnba_context(slate_game, slate_date)
+    )
     context["day"] = day
-    response = render(request, "web/mlb_game.html", context)
+    response = render(request, "web/matchup.html", context)
     response["Server-Timing"] = f"matchup;dur={context['build_ms']}"
     response["X-Sports-Today-Cache"] = context["cache_source"]
     return response
