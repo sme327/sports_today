@@ -116,6 +116,63 @@ def filter_groups(path: str, params, active: dict[str, str], *, include_band: bo
         ("result", "Result", [("all", "All"), ("hit", "Hit"), ("miss", "Miss"),
                                   ("void", "Void"), ("pending", "Pending")]),
     ]
+
+
+def performance_url(params, **updates) -> str:
+    """Bound the public Performance state to combinations we can publish statically."""
+    values = {
+        key: params.get(key)
+        for key in ("period", "league", "market", "direction")
+        if params.get(key) not in (None, "", "all")
+    }
+    values.update(updates)
+    if "market" in updates:
+        values.pop("league", None)
+    if "league" in updates:
+        values.pop("market", None)
+    return query_url("/performance/", values)
+
+
+def performance_filter_groups(params, active: dict[str, str], market_keys: list[str]):
+    by_league = {"MLB": [], "WNBA": []}
+    for key in market_keys:
+        leagues = {
+            spec.league for spec in markets.MARKETS.values()
+            if spec.prop_type == key
+        }
+        for league in by_league:
+            if league in leagues:
+                by_league[league].append(key)
+
+    groups = [{
+        "key": "league", "label": "League",
+        "options": [
+            {"value": value, "label": label,
+             "active": active.get("league", "all") == value and active.get("market", "all") == "all",
+             "href": performance_url(params, league=value)}
+            for value, label in (("all", "All"), ("MLB", "MLB"), ("WNBA", "WNBA"))
+        ],
+    }]
+    for league in ("MLB", "WNBA"):
+        groups.append({
+            "key": f"market-{league.lower()}", "label": f"{league} markets",
+            "options": [
+                {"value": key, "label": LABELS[key],
+                 "active": active.get("market") == key,
+                 "href": performance_url(params, market=key)}
+                for key in by_league[league]
+            ],
+        })
+    groups.append({
+        "key": "direction", "label": "Direction",
+        "options": [
+            {"value": value, "label": label,
+             "active": active.get("direction", "all") == value,
+             "href": performance_url(params, direction=value)}
+            for value, label in (("all", "All"), ("over", "Over"), ("under", "Under"))
+        ],
+    })
+    return groups
     if include_band:
         specs.insert(
             2,
@@ -173,7 +230,7 @@ def results_context(params, today: date) -> dict:
         sort = "score-desc"
     filtered = sorted(filtered, key=sorters[sort])
     total_filtered = len(filtered)
-    per_page = 100
+    per_page = 10_000
     total_pages = max(1, ceil(total_filtered / per_page))
     try:
         page = int(params.get("page", "1"))
@@ -191,7 +248,17 @@ def results_context(params, today: date) -> dict:
         "previous_href": query_url("/results/", params, date=(selected_date - timedelta(days=1)).isoformat()),
         "next_href": query_url("/results/", params, date=(selected_date + timedelta(days=1)).isoformat()),
         "can_go_next": selected_date < today - timedelta(days=1),
-        "filter_groups": filter_groups("/results/", params, active),
+        "recent_dates": [
+            {
+                "date": today - timedelta(days=offset),
+                "active": selected_date == today - timedelta(days=offset),
+                "href": query_url(
+                    "/results/", {}, date=(today - timedelta(days=offset)).isoformat()
+                ),
+            }
+            for offset in range(1, 8)
+        ],
+        "filter_groups": [],
         "active_filters": [
             {"key": key, "value": value}
             for key, value in active.items() if value != "all"
@@ -238,12 +305,7 @@ def performance_context(params, today: date) -> dict:
     period = params.get("period", "30")
     if period not in {key for key, _ in PERIODS}:
         period = "30"
-    try:
-        min_sample = int(params.get("min", "30"))
-    except ValueError:
-        min_sample = 30
-    if min_sample not in MIN_SAMPLES:
-        min_sample = 30
+    min_sample = 30
     start, end, label = period_range(period, today)
     active = _active(params, include_band=False)
     performance_markets = [key for key in ORDER if key not in PERFORMANCE_EXCLUDED_TYPES]
@@ -254,11 +316,7 @@ def performance_context(params, today: date) -> dict:
             "section": "performance", "has_rows": False, "period": period,
             "min_sample": min_sample, "period_label": label,
             "period_options": _period_options(params, period),
-            "sample_options": _sample_options(params, min_sample),
-            "filter_groups": filter_groups(
-                "/performance/", params, active, include_band=False,
-                market_keys=performance_markets,
-            ),
+            "filter_groups": performance_filter_groups(params, active, performance_markets),
         }
 
     overall = grading.tally(rows)
@@ -321,16 +379,7 @@ def performance_context(params, today: date) -> dict:
         "section": "performance", "has_rows": True, "period": period,
         "min_sample": min_sample, "period_label": label,
         "period_options": _period_options(params, period),
-        "sample_options": _sample_options(params, min_sample),
-        "group_options": [
-            {"key": key, "label": value[0], "active": key == grouping,
-             "href": query_url("/performance/", params, group=key)}
-            for key, value in groupings.items()
-        ],
-        "filter_groups": filter_groups(
-            "/performance/", params, active, include_band=False,
-            market_keys=performance_markets,
-        ),
+        "filter_groups": performance_filter_groups(params, active, performance_markets),
         "summary_html": period_summary_html(
             overall, sum(scores) / len(scores) if scores else None, label,
             served=served, floor=grading.CURATION_FLOOR,
@@ -356,7 +405,7 @@ def performance_context(params, today: date) -> dict:
 
 def _period_options(params, current):
     return [{"key": key, "label": label, "active": key == current,
-             "href": query_url("/performance/", params, period=key)} for key, label in PERIODS]
+             "href": performance_url(params, period=key)} for key, label in PERIODS]
 
 
 def _sample_options(params, current):

@@ -42,13 +42,13 @@ def test_results_context_uses_centralized_grades(load):
 
 
 @patch("web.analytics.grading.load_graded_slate")
-def test_results_are_paginated_without_changing_the_summary(load):
+def test_results_show_the_complete_daily_audit_without_dead_pagination(load):
     load.return_value = [row(player_id=str(index), player_name=f"Player {index}") for index in range(205)]
-    context = results_context(QueryDict("date=2026-08-14&page=2"), date(2026, 8, 15))
+    context = results_context(QueryDict("date=2026-08-14"), date(2026, 8, 15))
     assert context["prop_count"] == 205
-    assert context["visible_start"] == 101 and context["visible_end"] == 200
-    assert context["total_pages"] == 3
-    assert context["prop_html"].count("prop-item") == 100
+    assert context["visible_start"] == 1 and context["visible_end"] == 205
+    assert context["total_pages"] == 1
+    assert context["prop_html"].count("prop-item") == 205
 
 
 @patch("web.analytics.grading.load_graded_range")
@@ -72,3 +72,30 @@ def test_performance_excludes_total_bases_and_walks(load):
     assert "Total Bases" not in str(context["filter_groups"])
     assert "Walks" not in str(context["filter_groups"])
     assert "1–0" in context["summary_html"]
+
+
+@patch("web.analytics.grading.load_graded_range")
+def test_performance_markets_are_split_into_sport_rows_and_all_links_are_bounded(load):
+    load.return_value = [row()]
+    context = performance_context(QueryDict("period=7&league=MLB"), date(2026, 8, 15))
+    groups = {group["label"]: group for group in context["filter_groups"]}
+    assert set(groups) == {"League", "MLB markets", "WNBA markets", "Direction"}
+    assert [option["label"] for option in groups["MLB markets"]["options"]] == [
+        "Batter Hits", "Batter Ks", "SP Strikeouts", "SP Hits Allowed",
+    ]
+    assert [option["label"] for option in groups["WNBA markets"]["options"]] == [
+        "Points", "Rebounds", "Assists",
+    ]
+    market_href = groups["MLB markets"]["options"][0]["href"]
+    assert "market=hits" in market_href and "league=" not in market_href
+    assert "result=" not in str(context["filter_groups"])
+
+
+@patch("web.analytics.grading.load_graded_slate")
+def test_results_offer_only_the_seven_published_dates(load):
+    load.return_value = [row()]
+    context = results_context(QueryDict(""), date(2026, 8, 15))
+    assert len(context["recent_dates"]) == 7
+    assert context["recent_dates"][0]["date"] == date(2026, 8, 14)
+    assert context["recent_dates"][-1]["date"] == date(2026, 8, 8)
+    assert context["filter_groups"] == []
