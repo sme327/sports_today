@@ -274,8 +274,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 200px;
-  padding: 1rem 1.1rem .95rem;
+  min-height: 184px;
+  padding: .78rem .95rem .7rem;
   border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
   border: 1px solid var(--hairline);        /* softer edge — layered surface + shadow carry the card */
@@ -304,15 +304,15 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .game-card--final:hover { background: linear-gradient(165deg, #181d25, #12161c); }
 /* Compact: schedule-only cards (no analysis footer) sit shorter — just enough for
    the matchup + time. The reader only needs awareness that the game is on. */
-.game-card--compact { min-height: 132px; padding-bottom: 1rem; }
+.game-card--compact { min-height: 122px; padding-bottom: .72rem; }
 
 .game-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: .6rem;
-  margin-bottom: .55rem;
-  min-height: 30px;
+  margin-bottom: .3rem;
+  min-height: 26px;
 }
 .game-top-left { display: inline-flex; align-items: center; gap: .55rem; min-width: 0; }
 .league-name { color: var(--text-2); flex: 0 0 auto; }
@@ -369,7 +369,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .teams {
   display: flex;
   flex-direction: column;
-  gap: .28rem;
+  gap: .2rem;
   margin: auto 0;
 }
 .team-row {
@@ -432,8 +432,8 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .team-row.win .team-name { color: var(--text-1); }
 
 .game-meta {
-  margin-top: .7rem;
-  padding-top: .62rem;
+  margin-top: .42rem;
+  padding-top: .4rem;
   border-top: 1px solid var(--divider);
   display: flex;
   align-items: center;
@@ -456,7 +456,7 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
    in-page filter action. */
 .matchup-link {
   flex: 0 0 auto;
-  padding: .26rem .6rem;
+  padding: .2rem .56rem;
   border-radius: var(--r-pill);
   background: var(--surface-2);
   box-shadow: var(--edge-hi), inset 0 0 0 1px var(--hairline-2);

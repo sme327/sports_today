@@ -5,10 +5,10 @@
 
 ## Strategy
 
-The Django application lives in `web/` and runs alongside `app.py`. Streamlit remains
-the complete production reference until every screen reaches parity. The migration does
-not fork the analytics: league adapters, scoring, editorial logic, ingestion scripts,
-SQLite data, and the Downloads-based morning update remain shared.
+The Django application in `web/` is the public renderer. It is exported to static HTML
+and hosted by Cloudflare Pages; Streamlit remains only as a local reference/operator
+surface. League adapters, scoring, editorial logic, ingestion scripts, SQLite data,
+and the Downloads-based morning update remain shared.
 
 ## Current milestone
 
@@ -23,10 +23,11 @@ SQLite data, and the Downloads-based morning update remain shared.
   Pandas scoring run during the morning update
 - Deferred schedule fragment refresh: cached games paint immediately, then stale live
   schedules refresh after first paint with a short anti-stampede lock
-- Public Daily Results with date navigation, shared filters, search, sorting, market
-  summaries, evidence, and 100-row URL pagination
-- Public Performance with served-vs-scored headlines, calibration, over/under,
-  edge-finder segments, consistency windows, monthly results, and model versions
+- Public Daily Results with seven dated audit views, date status, market summaries,
+  evidence, and the complete qualifying prediction list
+- Public Performance with All qualifying / Featured / Other qualifying cohorts,
+  calibration, over/under, edge-finder segments, consistency windows, monthly results,
+  and model versions
 - MLB matchup pages using the existing analytical model and section renderers; models
   are prewarmed by the morning update and persisted by game/date/engine version
 - WNBA matchup pages using the existing basketball-specific model, snapshots, trends,
@@ -34,12 +35,11 @@ SQLite data, and the Downloads-based morning update remain shared.
 - MLS matchup pages using the existing leakage-safe team analysis, tactical and
   attacking comparisons, storylines, lineups, watch timeline, and honest data-gap
   states; pages use the same versioned persistent cache and morning prewarm path
-- NFL archive at `/nfl/` with season/week navigation and leakage-safe historical
-  matchup pages; matchup models persist by game/date/engine version, and eligible live
-  slate links bridge from ESPN game IDs to their season-feed archive IDs
+- The NFL archive and historical deep dives remain available locally but are excluded
+  from the public export by product decision.
 
-The private data-update/operator pages still use Streamlit until their Django versions
-are implemented.
+The data-update/operator workflow remains local on the Mac because the MLB provider is
+gated and requires a manual download. The Mac does not need to remain on afterward.
 
 ## Zero-cost Cloudflare Pages path
 
@@ -51,10 +51,10 @@ CSS, and JavaScript without an always-on Python host or published SQLite databas
 python -m scripts.publish_pages --build-only
 ```
 
-The export writes `site-dist/`, follows all public Today/Tomorrow matchup links and the
-complete NFL archive, batches immutable NFL model construction, collects static assets,
-and removes the Django-only deferred HTMX refresh. The generated bundle is disposable
-and gitignored.
+The export writes `site-dist/`, follows public Today/Tomorrow matchup links plus Results
+and every supported Performance filter combination, collects static assets, audits all
+internal links, and removes the Django-only deferred HTMX refresh. The generated bundle
+is disposable and gitignored; the NFL archive is not crawled or published.
 
 `update_and_publish.command` runs the normal Downloads-based update, builds this static
 bundle, and deploys it with Cloudflare Wrangler. The first publish requires a one-time

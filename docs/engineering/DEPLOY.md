@@ -1,97 +1,66 @@
-# Deploy — multi-device cloud access
+# Deploy — Cloudflare Pages
 
-> **Purpose** — Put Sports Today on the web so it works from your phone, iPad, and
-> computer without your Mac being on, with daily updates you can run from any device.
-> **Audience** — You (the owner) doing the one-time cloud setup.
-> **Update when** — The hosting, storage, or secrets change.
-> **Related** — [Setup](SETUP.md) · [Decision Log](DECISION_LOG.md) · [Architecture](ARCHITECTURE.md)
+> **Purpose** — Publish Sports Today for phone, tablet, and computer access without
+> an always-on Mac or paid application server.
+> **Audience** — The owner/operator.
+> **Update when** — Cloudflare project, hostname, build, or update workflow changes.
+> **Related** — [Setup](SETUP.md) · [Django Migration](DJANGO_MIGRATION.md) ·
+> [Prediction Evaluation](PREDICTION_EVALUATION.md)
 
-The app already contains everything needed; this is account wiring, not code. The
-design: **Streamlit Community Cloud** runs the app, a **private S3-compatible bucket**
-holds the SQLite database (Community Cloud's disk is wiped on restart), and an
-**in-app uploader** lets you refresh the data from any device. A password gates the
-public URL.
+## Architecture
 
-## 1. Create a private bucket (Cloudflare R2 recommended — free tier)
+Django renders the public routes locally into `site-dist/`. Cloudflare Pages serves
+that static bundle at `sports.sme327.com`. The private SQLite database and gated MLB
+workbook never leave the Mac. The Mac can be off after a publish.
 
-Any S3-compatible store works (R2, AWS S3, Backblaze B2). R2 has no egress fees and a
-generous free tier.
+The public bundle includes Today/Tomorrow, current matchup pages, seven Results dates,
+and every supported Performance cohort/period/market/direction view. It deliberately
+excludes the local NFL archive and operator tools. Supported live scores refresh from
+the browser; the published schedule remains usable if that refresh fails.
 
-1. Create a bucket, e.g. `sports-today`.
-2. Create an API token / access key with read+write to that bucket.
-3. Note: **account endpoint URL**, **access key id**, **secret**, **bucket name**.
-   (R2 endpoint looks like `https://<account>.r2.cloudflarestorage.com`; region `auto`.)
+## One-time Cloudflare setup
 
-## 2. Seed the bucket with your current database
+1. Authenticate Wrangler with the Cloudflare account that owns `sme327.com`.
+2. Create or select the Pages project named `sports-today`.
+3. Attach the custom domain `sports.sme327.com` in the Pages project.
+4. Keep the generated `sports-today-clr.pages.dev` address as a diagnostic fallback.
 
-**Publish the slim build, not the working database.** The local file carries research
-tables (NBA/CBB/NHL box scores, MLB box scores) that **nothing in the app reads** — about
-86% of the rows. A deployed copy is downloaded on every cold boot, so on a phone that is
-the difference between ~107MB and ~309MB for identical functionality.
+No R2 bucket, database service, Worker, always-on process, or paid plan is required for
+the current static architecture.
+
+## Normal publish
+
+1. Download the latest gated MLB workbook to `~/Downloads`.
+2. Double-click `update_and_publish.command`.
+3. The workflow imports data, updates connected feeds, creates immutable prediction
+   snapshots, grades available results, precomputes Today/Tomorrow and matchup pages,
+   exports the site, audits every internal link, and deploys to Pages.
+4. Verify `https://sports.sme327.com` after the command reports success.
+
+## Build and validate without deploying
 
 ```bash
-cd "/Users/sme/Documents/Projects/sports today" && source .venv/bin/activate
-
-# See what would be kept and dropped, and how much smaller it gets.
-python -m scripts.build_deploy_db --check
-
-# Build database/sportshub-deploy.db
-python -m scripts.build_deploy_db
-
-export SPORTS_TODAY_S3_BUCKET=sports-today
-export SPORTS_TODAY_S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
-export SPORTS_TODAY_S3_REGION=auto
-export SPORTS_TODAY_S3_KEY_ID=<key-id>
-export SPORTS_TODAY_S3_SECRET=<secret>
-python -c "
-from pathlib import Path
-from services.data_store import publish_db
-ok = publish_db(Path('database/sportshub-deploy.db'))
-print('published' if ok else 'failed')"
+source .venv/bin/activate
+python -m scripts.publish_pages --build-only
 ```
 
-After the first time you never do this by hand: `update.command` builds and publishes the
-slim copy automatically whenever the S3 settings are present.
+The generated `site-dist/` directory is disposable and gitignored. A successful build
+prints both the rendered page count and `Static link audit passed.`
 
-## 3. Deploy on Streamlit Community Cloud
+## Manual deployment command
 
-1. Push is already done — the repo is `sme327/sports_today` (branch `main`).
-2. At <https://share.streamlit.io>, "New app" → pick the repo/branch, main file `app.py`.
-3. In the app's **Settings → Secrets**, paste (TOML):
+```bash
+source .venv/bin/activate
+python -m scripts.publish_pages
+```
 
-   ```toml
-   SPORTS_TODAY_PASSWORD   = "choose-a-passphrase"
-   SPORTS_TODAY_S3_BUCKET  = "sports-today"
-   SPORTS_TODAY_S3_ENDPOINT = "https://<account>.r2.cloudflarestorage.com"
-   SPORTS_TODAY_S3_REGION  = "auto"
-   SPORTS_TODAY_S3_KEY_ID  = "<key-id>"
-   SPORTS_TODAY_S3_SECRET  = "<secret>"
-   # SPORTS_TODAY_DB_OBJECT = "sportshub.db"   # optional; defaults to the DB filename
-   ```
+The project and branch can be overridden with `SPORTS_TODAY_PAGES_PROJECT` and
+`SPORTS_TODAY_PAGES_BRANCH`.
 
-4. Deploy. Open the URL, enter the password — you should see the seeded slate.
+## Failure behavior
 
-Bookmark the URL / add it to your phone's home screen. It works on any device's browser.
-
-## 4. Daily updates — two ways
-
-- **From any device (no Mac):** open the app → **Update data** (link shown top-right
-  in cloud mode) → upload the day's `MM-DD-YYYY-mlb-season-pbp-feed.xlsx` from Big Data
-  Ball → "Rebuild and publish". The app rebuilds, refreshes WNBA + MLS, and publishes
-  to the bucket; every device sees it on next load.
-- **From your Mac:** run `update.command` as before — with the S3 env/secrets present it
-  rebuilds, **slims** the database (dropping the research tables) and publishes it. The
-  cloud app just reads it.
-
-## Caveats & fallbacks
-
-- **Cold starts:** a Community Cloud app sleeps after inactivity and wakes in ~30s.
-- **Rebuild memory:** rebuilding ~130k rows from a 30 MB xlsx *in the cloud* (the
-  in-app uploader path) may strain Community Cloud's ~1 GB RAM. If it fails there, use
-  the Mac update path (rebuild locally, auto-publish) — the app still runs in the
-  cloud — or move hosting to a small always-on box (Fly.io / Render, ~$0–5/mo) where
-  you control resources; the same secrets apply.
-- **Licensing:** the Big Data Ball feed lives only in your private bucket, never in
-  the public repo (`database/` and `data/` stay gitignored).
-- **Correctness without the store:** with no secrets set the app behaves exactly as
-  the local build — the cloud path is entirely opt-in.
+- A missing daily snapshot remains visibly missing; never reconstruct it after results.
+- A collector failure is reported but does not erase previously good data.
+- A failed export or broken internal link stops deployment.
+- A failed Cloudflare deployment leaves the previous production bundle online.
+- Source data, database files, logs, and generated bundles remain outside Git.

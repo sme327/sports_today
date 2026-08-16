@@ -227,37 +227,31 @@ def calibration_interpretation(bands: dict) -> str:
 
 
 def period_summary_html(overall: dict, avg_score: float | None, label: str,
-                        served: dict | None = None, floor: int | None = None) -> str:
-    """Record / hit-rate / sample headline for a period.
-
-    When ``served`` is given it leads, because it is what the product actually
-    recommended; the full scored population follows as context. The ledger records
-    every prop that was scored, most of which never cleared the curation floor and so
-    were never shown to anyone — mixing those into the headline measures the scorer's
-    whole output rather than its advice, and the two differ by double digits.
-    """
+                        cohort: str | None = None, slates: int | None = None) -> str:
+    """Record / hit-rate / sample headline for an explicitly named public cohort."""
     dec = overall["hit"] + overall["miss"]
     avg = f" · avg score {avg_score:.0f}" if avg_score is not None else ""
-    if served is None:
-        sample = f'<span class="ds-sub">n={dec}</span>' if dec else ""
-        return (f'<div class="perf-headline"><span class="ph-label">{escape(label)}</span>'
-                f'<span class="ph-rec">{overall["hit"]}–{overall["miss"]}</span>'
-                f'<span class="ph-rate">{_rate(overall)}</span>{sample}'
-                f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg}</span></div>')
+    sample = f'<span class="ds-sub">n={dec}</span>' if dec else ""
+    slate_text = f" · {slates} slate{'s' if slates != 1 else ''}" if slates is not None else ""
+    cohort_text = escape(cohort or "Predictions")
+    return (f'<div class="perf-headline"><span class="ph-label">{escape(label)} · {cohort_text}</span>'
+            f'<span class="ph-rec">{overall["hit"]}–{overall["miss"]}</span>'
+            f'<span class="ph-rate">{_rate(overall)}</span>{sample}'
+            f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending'
+            f'{avg}{slate_text}</span></div>')
 
-    srv_dec = served["hit"] + served["miss"]
-    floor_txt = f" ({floor}+)" if floor is not None else ""
-    return (
-        f'<div class="perf-headline"><span class="ph-label">{escape(label)}</span>'
-        f'<span class="ph-rec">{served["hit"]}–{served["miss"]}</span>'
-        f'<span class="ph-rate">{_rate(served)}</span>'
-        f'<span class="ds-sub">n={srv_dec}</span>'
-        f'<span class="ph-meta">shown as picks{floor_txt}</span></div>'
-        f'<div class="perf-subline">Whole scored population '
-        f'<strong>{overall["hit"]}–{overall["miss"]}</strong> '
-        f'<span>{_rate(overall)}</span> <span class="ds-sub">n={dec}</span>'
-        f'<span class="ph-meta">{overall["void"]} void · {overall["pending"]} pending{avg} · '
-        f'includes props that never cleared the bar</span></div>')
+
+def cohort_comparison_html(qualifying: dict, featured: dict, other: dict) -> str:
+    """Side-by-side model coverage and ranking check for the three public cohorts."""
+    def cell(label: str, tally: dict) -> str:
+        decided = tally["hit"] + tally["miss"]
+        return (f'<div class="cohort-cell"><span>{escape(label)}</span>'
+                f'<strong>{tally["hit"]}–{tally["miss"]}</strong>'
+                f'<b>{_rate(tally)}</b><small>n={decided}</small></div>')
+    return ('<div class="cohort-comparison" aria-label="Cohort comparison">'
+            + cell("All qualifying", qualifying)
+            + cell("Featured", featured)
+            + cell("Other qualifying", other) + '</div>')
 
 
 def _diff_html(rate: float | None, overall: float | None) -> str:

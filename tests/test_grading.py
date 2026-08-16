@@ -150,7 +150,7 @@ def test_void_reason_recorded(tmp_path):
 
 def test_score_bands_and_small_sample():
     from services.grading import band_of, record, summarize_by_band
-    assert band_of(77) == "75–79" and band_of(99) == "99–100" and band_of(70) is None
+    assert band_of(70) == "70–74" and band_of(77) == "75–79" and band_of(99) == "99–100"
     rows = [{"opportunity_score": s, "result": r} for s, r in
             [(77, "hit"), (77, "miss"), (99, "hit"), (99, "hit"), (91, "void")]]
     bands = summarize_by_band(rows, min_sample=2)

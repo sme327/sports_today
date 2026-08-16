@@ -102,6 +102,8 @@ _ADDED_COLUMNS = {
     "opposing_sp": "TEXT",     # MLB: the starting pitcher the player faces (else NULL)
     "start_time": "TEXT",      # scheduled first-pitch/tip ISO (stored; no sort UI yet)
     "void_reason": "TEXT",     # why a void was recorded (e.g. "did not play")
+    "featured": "INTEGER",     # among the eight highest qualifying predictions
+    "featured_rank": "INTEGER",# 1..8 on the Today page; NULL otherwise
 }
 
 
@@ -206,6 +208,16 @@ def write_daily_snapshot(
         if _already_captured(conn, slate_token, captured_on):
             return 0
         written = 0
+        from services.grading import CURATION_FLOOR, FEATURED_MAX
+        qualifying = sorted(
+            (opp for opp in opportunities
+             if (opp.opportunity_score or 0) >= CURATION_FLOOR),
+            key=lambda opp: (-(opp.opportunity_score or 0), opp.league,
+                             opp.player_name or "", opp.market or ""),
+        )
+        featured_rank = {
+            id(opp): rank for rank, opp in enumerate(qualifying[:FEATURED_MAX], 1)
+        }
         for opp in opportunities:
             status = schedule_status.get(opp.league)
             opponent, opposing_sp, start_time = _game_context(opp, games)
@@ -220,8 +232,8 @@ def write_daily_snapshot(
                     support_evidence, risk_evidence, schedule_source_status,
                     historical_data_cutoff, lineups_available,
                     matchup_context_available, injury_context_available,
-                    scoring_engine_version
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    scoring_engine_version, featured, featured_rank
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     slate_token,
@@ -252,6 +264,7 @@ def write_daily_snapshot(
                     int(matchup_context_available),
                     int(injury_context_available),
                     _model_version(mkey, opp.league),
+                    int(id(opp) in featured_rank), featured_rank.get(id(opp)),
                 ),
             )
             written += 1

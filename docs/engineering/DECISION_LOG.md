@@ -2319,3 +2319,21 @@ persistent data (`database/`, `data/`, `logs/`).
 would sweep in unrelated files. Data artifacts don't belong in version control.
 **Tradeoffs.** Data must be rebuilt on a fresh clone (documented in README).
 **Future.** —
+## 2026-08-16 — Grade every 70+ prediction; measure Featured separately
+
+**Decision.** Every Opportunity Score >= 70 is a public qualifying prediction and is
+graded. The top eight on Today are additionally stored as `featured` with ranks 1–8;
+Performance exposes All qualifying, Featured, and Other qualifying cohorts.
+
+**Reason.** Matchup pages publish the complete 70+ population, so all of it is valid
+forward evidence and is needed to improve rating meaning over time. Featured answers a
+different question: whether the cross-market ranking identifies a stronger shortlist.
+
+**Tradeoffs.** Rows are correlated within a much smaller number of slates. The UI
+therefore reports prediction and slate counts together, and scores remain ranking
+signals rather than probabilities. Historical Featured membership is reconstructed
+from stored pregame scores only; missing snapshots are never reconstructed.
+
+**Future.** Add clustered uncertainty, precision@k, formal baselines, and market-specific
+calibration before treating raw scores as comparable across markets. See
+[`PREDICTION_EVALUATION.md`](PREDICTION_EVALUATION.md).

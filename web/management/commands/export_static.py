@@ -16,8 +16,9 @@ from django.core.management import BaseCommand, call_command
 from django.test import Client
 
 _PERFORMANCE_SEEDS = tuple(
-    f"/performance/?period={period}&direction={direction}"
+    f"/performance/?period={period}&cohort={cohort}&direction={direction}"
     for period in ("7", "30", "90", "season", "all")
+    for cohort in ("qualifying", "featured", "other")
     for direction in ("all", "over", "under")
 )
 _PERFORMANCE_MARKET_SEEDS = tuple(
@@ -55,7 +56,7 @@ def should_crawl(url: str) -> bool:
         return True
     if parts.path == "/performance/":
         keys = set(dict(parse_qsl(parts.query)))
-        return keys <= {"period", "market", "direction"}
+        return keys <= {"period", "cohort", "market", "direction"}
     if parts.path == "/results/":
         return set(dict(parse_qsl(parts.query))) == {"date"}
     return False

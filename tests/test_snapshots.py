@@ -33,9 +33,10 @@ def test_write_captures_context_once_per_day(tmp_path):
     with sqlite3.connect(db) as conn:
         row = conn.execute(
             "SELECT schedule_source_status, historical_data_cutoff, "
-            "lineups_available, scoring_engine_version FROM opportunity_snapshots"
+            "lineups_available, scoring_engine_version, featured, featured_rank "
+            "FROM opportunity_snapshots"
         ).fetchone()
-    assert row == ("live", "2026-07-15", 0, "batter-hit-v5")   # per-market model version
+    assert row == ("live", "2026-07-15", 0, "batter-hit-v5", 1, 1)
 
 
 def test_no_opportunities_writes_nothing(tmp_path):

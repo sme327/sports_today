@@ -20,12 +20,11 @@ opportunities on merit (no per-league quota), explains **why** each stands out a
 ## How the repo is organized
 
 ```
-app.py            # thin shell: config, styles, migration, router, error boundary
-router.py         # query-param navigation → Today, Game, Results, Performance, NFL archive
+web/              # public Django renderer: Today, matchups, Results, Performance
+app.py / views/   # legacy local Streamlit reference and operator tools
 domain/           # normalized models: SlateGame, Opportunity, Evidence, DataStatus
 leagues/          # one adapter per league (8: MLB, WNBA, MLS, World Cup, NFL, NHL, NBA, NCAAF) + registry
 services/         # data access (as_of), schedules, cache, snapshots, migrations, freshness, analytics
-views/            # screens: Today, Game, Results, Performance, NFL archive, Update
 components/       # reusable UI/HTML (cards, feed, filters, date switch, …)
 styles/app.css    # the single design-system stylesheet
 src/              # ingestion + scorers (kept from the original build)
@@ -38,12 +37,12 @@ data/ database/ logs/   # persistent local data (gitignored, not in the repo)
 Where to add things (leagues, views, components, services, domain objects) is a
 one-glance table in [Architecture](docs/engineering/ARCHITECTURE.md#where-things-live-quick-reference).
 
-## Run it
+## Run the public site locally
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m streamlit run app.py
+python manage.py runserver
 ```
 
 The app needs `database/sportshub.db`, which is **not** in the repo (data is
@@ -56,6 +55,7 @@ Mac only needs to be online during that workflow; Cloudflare serves the site aft
 Exact steps and the macOS double-click workflow: [Setup](docs/engineering/SETUP.md).
 
 - Tests (offline): `pip install -r requirements-dev.txt && python -m pytest`
+- Build and audit the static site: `python -m scripts.publish_pages --build-only`
 - Data diagnostics: `python -m scripts.diagnostics`
 
 ## Add a new league
@@ -97,9 +97,22 @@ without reading why it was made.
   competition context (a football week, a neutral site, "Elimination game", or where
   a baseball game sits in its series) whenever it says something the reader doesn't
   already assume.
-- **NFL has a deep-dive matchup page reached through the season archive**, not the
-  daily slate — `?view=nfl` browses ingested seasons by week and opens any matchup
-  ([NFL Game Page](docs/engineering/NFL_GAME_PAGE.md)).
+- The historical NFL archive remains a local development/review tool and is deliberately
+  excluded from the public static site.
 - If a league's live schedule is briefly unavailable, the most recent **cached**
   slate is shown; a genuinely empty slate shows no fallback
   ([degraded mode](docs/engineering/DECISION_LOG.md)).
+
+## Prediction evaluation
+
+- Every published prediction scoring **70+** is a **qualifying prediction** and is
+  graded, including predictions reached through a matchup page.
+- The highest-ranked eight are additionally marked **Featured** because they appear
+  on Today. Performance can compare All qualifying, Featured, and Other qualifying.
+- Lower-scored rows may remain in the private ledger for score research, but are not
+  included in public performance results.
+- Performance reports prediction counts alongside independent slate counts. Scores
+  are ranking signals, not probabilities.
+
+See [Prediction Evaluation](docs/engineering/PREDICTION_EVALUATION.md) for the full
+evaluation contract and model-development guardrails.
