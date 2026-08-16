@@ -11,23 +11,30 @@ a { color: inherit; }
 .site-header {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 1.1rem 1.5rem;
+  padding: .85rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--hairline);
 }
-.site-brand { text-decoration: none; font-weight: 850; letter-spacing: -.025em; }
-.site-brand span { color: var(--brand); }
-.site-header nav { display: flex; gap: 1.25rem; color: var(--text-3); font-size: .9rem; }
+.site-brand { display: flex; flex-direction: column; gap: .15rem; text-decoration: none; }
+.site-brand-name { color: var(--text-1); font-size: 1.2rem; font-weight: 850; letter-spacing: -.025em; }
+.site-brand-name b { color: var(--brand); }
+.site-date { color: var(--text-4); font-size: .62rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.site-header nav { display: flex; align-items: center; gap: 1rem; color: var(--text-3); font-size: .82rem; }
 .site-header nav a { text-decoration: none; }
 .site-header nav .active { color: var(--text-1); }
+.nav-day-toggle { display: grid; grid-template-columns: 1fr 1fr; min-width: 13rem; padding: .2rem; border: 1px solid var(--divider); border-radius: var(--r-pill); background: var(--surface-2); }
+.nav-day-toggle a { padding: .4rem .8rem; border-radius: var(--r-pill); text-align: center; font-weight: 750; }
+.nav-day-toggle a.active { color: var(--on-brand); background: var(--brand-grad); }
+.performance-link { font-weight: 700; }
 .nav-future { opacity: .5; cursor: default; }
 .site-shell { max-width: 1160px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 1rem; }
 .eyebrow { color: var(--text-3); font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .45rem; }
 .hero-copy { color: var(--text-3); margin: .2rem 0 0; }
 .freshness-strip { display: flex; align-items: center; gap: .65rem; margin-bottom: 1.35rem; color: var(--text-3); font-size: .78rem; }
+.freshness-below-games { margin-top: .85rem; }
 .freshness-strip span:not(:last-child)::after { content: "·"; margin-left: .65rem; color: var(--text-4); }
 .public-chip { margin-left: auto; padding: .25rem .55rem; border-radius: var(--r-pill); background: var(--brand-soft); color: var(--brand-2); font-weight: 700; }
 .filter-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
@@ -52,8 +59,11 @@ a { color: inherit; }
 .quiet-note { color: var(--text-3); font-size: .82rem; }
 .site-footer { max-width: 1160px; margin: 0 auto; padding: 1.25rem 1.5rem 2rem; color: var(--text-4); border-top: 1px solid var(--hairline); font-size: .78rem; }
 @media (max-width: 720px) {
-  .site-header { align-items: flex-start; }
-  .site-header nav { gap: .75rem; }
+  .site-header { align-items: center; padding-inline: .9rem; }
+  .site-header nav { gap: .55rem; }
+  .nav-day-toggle { min-width: 9.25rem; }
+  .nav-day-toggle a { padding: .36rem .48rem; }
+  .performance-link { font-size: .74rem; }
   .hero-row { align-items: flex-start; flex-direction: column; gap: 1rem; }
   .filter-row { align-items: flex-start; flex-direction: column; }
   .thresholds > span { display: none; }

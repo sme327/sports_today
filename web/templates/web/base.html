@@ -13,12 +13,16 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="site-brand" href="/">Sports <span>Today</span></a>
-    <nav aria-label="Main navigation">
-      <a class="{% if section == 'today' or not section %}active{% endif %}" href="{% url 'today' %}">Today</a>
-      <a class="{% if section == 'results' %}active{% endif %}" href="{% url 'results' %}">Results</a>
-      <a class="{% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}">Performance</a>
-      <a class="{% if section == 'nfl' %}active{% endif %}" href="{% url 'nfl-archive' %}">NFL Archive</a>
+    <a class="site-brand" href="/">
+      <span class="site-brand-name">Sports <b>Today</b></span>
+      <span class="site-date">{% if slate_date %}{{ slate_date|date:"l, F j" }}{% else %}{% now "l, F j" %}{% endif %}</span>
+    </a>
+    <nav class="compact-nav" aria-label="Main navigation">
+      <span class="nav-day-toggle">
+        <a class="{% if day != 'tomorrow' %}{% if section == 'today' or not section %}active{% endif %}{% endif %}" href="/?day=today">Today</a>
+        <a class="{% if day == 'tomorrow' %}active{% endif %}" href="/?day=tomorrow">Tomorrow</a>
+      </span>
+      <a class="performance-link {% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}">Performance</a>
     </nav>
   </header>
   <main class="site-shell">

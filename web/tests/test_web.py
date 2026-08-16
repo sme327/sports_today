@@ -76,7 +76,7 @@ class EndpointTests(SimpleTestCase):
         response = Client().get("/")
         assert response.status_code == 200
         assert b"Sports" in response.content
-        assert b"Public preview" in response.content
+        assert b"The games and player performances worth your attention" not in response.content
         assert "app;dur=3" in response["Server-Timing"]
         build_context.assert_called_once()
 

@@ -6,9 +6,7 @@ import hashlib
 import html as html_module
 import re
 import shutil
-import sqlite3
 from collections import deque
-from datetime import date
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
@@ -16,12 +14,13 @@ from django.conf import settings
 from django.core.management import BaseCommand, call_command
 from django.test import Client
 
-from services import matchup_cache
-from services.nfl_game_page import ENGINE_VERSION as NFL_ENGINE_VERSION, build_nfl_game_pages
-from src.config import DB_PATH
-
-
-_SEEDS = ("/", "/?day=tomorrow", "/results/", "/performance/", "/nfl/")
+_PERFORMANCE_SEEDS = tuple(
+    f"/performance/?period={period}&min={minimum}&league={league}"
+    for period in ("7", "30", "90", "season", "all")
+    for minimum in (10, 30, 50)
+    for league in ("all", "MLB", "WNBA")
+)
+_SEEDS = ("/", "/?day=tomorrow", "/results/", "/performance/", *_PERFORMANCE_SEEDS)
 _SKIP_PATHS = ("/health/", "/fragments/", "/static/")
 _HREF = re.compile(r'href=(["\'])(.*?)\1', re.IGNORECASE)
 _HTMX = re.compile(r"\s+hx-(?:get|trigger|swap)=([\"']).*?\1", re.IGNORECASE)
@@ -35,11 +34,15 @@ def should_crawl(url: str) -> bool:
     parts = urlsplit(url)
     if parts.path.startswith(("/game/", "/nfl/game/")):
         return True
+    if parts.path.startswith("/nfl/"):
+        return False
     if not parts.query:
-        return True
+        return parts.path != "/nfl/"
     if parts.path == "/":
         return True
-    return parts.path == "/nfl/"
+    if parts.path == "/performance/":
+        return set(dict(parse_qsl(parts.query))) <= {"period", "min", "league"}
+    return False
 
 
 def canonical_url(raw: str, base: str = "/") -> str | None:
@@ -89,30 +92,6 @@ class Command(BaseCommand):
         if out.exists():
             shutil.rmtree(out)
         out.mkdir(parents=True)
-
-        # Historical NFL pages are immutable. Batch-build any missing models while the
-        # large team/player tables are in memory once, then normal page requests use the
-        # same persistent cache as production Django.
-        if DB_PATH.exists():
-            with sqlite3.connect(DB_PATH) as conn:
-                rows = conn.execute(
-                    "SELECT game_id, MIN(game_date) FROM nfl_team_games GROUP BY game_id"
-                ).fetchall()
-            missing = [
-                (str(game_id), str(game_date)[:10])
-                for game_id, game_date in rows
-                if matchup_cache.load(
-                    "NFL", str(game_id), date.fromisoformat(str(game_date)[:10]),
-                    NFL_ENGINE_VERSION,
-                ) is None
-            ]
-            built = build_nfl_game_pages([game_id for game_id, _ in missing])
-            for game_id, iso in missing:
-                if game_id in built:
-                    matchup_cache.store(
-                        "NFL", game_id, date.fromisoformat(iso), NFL_ENGINE_VERSION,
-                        built[game_id],
-                    )
 
         client = Client(HTTP_HOST="localhost")
         queue = deque(_SEEDS)

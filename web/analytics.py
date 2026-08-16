@@ -36,6 +36,8 @@ PERIODS = [
 ]
 MIN_SAMPLES = (10, 30, 50)
 RESULT_ORDER = {"hit": 0, "miss": 1, "void": 2, None: 3, "pending": 3}
+PERFORMANCE_EXCLUDED_MARKETS = {"batter_tb", "batter_bb"}
+PERFORMANCE_EXCLUDED_TYPES = {"tb", "batter_bb"}
 
 
 def query_url(path: str, params, **updates) -> str:
@@ -96,10 +98,20 @@ def apply_filters(rows: list[dict], active: dict[str, str]) -> list[dict]:
     return out
 
 
-def filter_groups(path: str, params, active: dict[str, str], *, include_band: bool = True):
+def load_performance_range(start: date, end: date) -> list[dict]:
+    return [
+        row for row in grading.load_graded_range(start, end)
+        if row.get("market_key") not in PERFORMANCE_EXCLUDED_MARKETS
+        and _market_type(row) not in PERFORMANCE_EXCLUDED_TYPES
+    ]
+
+
+def filter_groups(path: str, params, active: dict[str, str], *, include_band: bool = True,
+                  market_keys=None):
+    market_keys = list(market_keys if market_keys is not None else ORDER)
     specs = [
         ("league", "League", [("all", "All"), ("MLB", "MLB"), ("WNBA", "WNBA")]),
-        ("market", "Market", [("all", "All")] + [(key, LABELS[key]) for key in ORDER]),
+        ("market", "Market", [("all", "All")] + [(key, LABELS[key]) for key in market_keys]),
         ("direction", "Direction", [("all", "All"), ("over", "Over"), ("under", "Under")]),
         ("result", "Result", [("all", "All"), ("hit", "Hit"), ("miss", "Miss"),
                                   ("void", "Void"), ("pending", "Pending")]),
@@ -234,14 +246,19 @@ def performance_context(params, today: date) -> dict:
         min_sample = 30
     start, end, label = period_range(period, today)
     active = _active(params, include_band=False)
-    rows = apply_filters(grading.load_graded_range(start, end), active)
+    performance_markets = [key for key in ORDER if key not in PERFORMANCE_EXCLUDED_TYPES]
+    eligible_rows = load_performance_range(start, end)
+    rows = apply_filters(eligible_rows, active)
     if not rows:
         return {
             "section": "performance", "has_rows": False, "period": period,
             "min_sample": min_sample, "period_label": label,
             "period_options": _period_options(params, period),
             "sample_options": _sample_options(params, min_sample),
-            "filter_groups": filter_groups("/performance/", params, active, include_band=False),
+            "filter_groups": filter_groups(
+                "/performance/", params, active, include_band=False,
+                market_keys=performance_markets,
+            ),
         }
 
     overall = grading.tally(rows)
@@ -249,14 +266,14 @@ def performance_context(params, today: date) -> dict:
     scores = [row["opportunity_score"] for row in rows if row.get("opportunity_score") is not None]
     span = (end - start).days + 1
     prior_rows = apply_filters(
-        grading.load_graded_range(start - timedelta(days=span), start - timedelta(days=1)), active
+        load_performance_range(start - timedelta(days=span), start - timedelta(days=1)), active
     )
     prior = grading.tally(prior_rows)
     bands = grading.summarize_by_band(rows, min_sample=min_sample)
     empty = grading.tally([])
     directions = grading.summarize_by(rows, _direction)
     market_ou = []
-    for key in ORDER:
+    for key in performance_markets:
         subset = [row for row in rows if _market_type(row) == key]
         if subset:
             summary = grading.summarize_by(subset, _direction)
@@ -279,9 +296,9 @@ def performance_context(params, today: date) -> dict:
     def window(days: int, offset: int = 0):
         window_end = end - timedelta(days=offset)
         window_start = window_end - timedelta(days=days - 1)
-        return grading.tally(apply_filters(grading.load_graded_range(window_start, window_end), active))
+        return grading.tally(apply_filters(load_performance_range(window_start, window_end), active))
 
-    all_rows = apply_filters(grading.load_graded_range(date(2020, 1, 1), end), active)
+    all_rows = apply_filters(load_performance_range(date(2020, 1, 1), end), active)
     all_rate = grading.tally(all_rows)["hit_rate"]
     months = sorted(grading.summarize_by(
         all_rows, lambda row: (row.get("snapshot_date") or "")[:7] or None
@@ -310,7 +327,10 @@ def performance_context(params, today: date) -> dict:
              "href": query_url("/performance/", params, group=key)}
             for key, value in groupings.items()
         ],
-        "filter_groups": filter_groups("/performance/", params, active, include_band=False),
+        "filter_groups": filter_groups(
+            "/performance/", params, active, include_band=False,
+            market_keys=performance_markets,
+        ),
         "summary_html": period_summary_html(
             overall, sum(scores) / len(scores) if scores else None, label,
             served=served, floor=grading.CURATION_FLOOR,
@@ -326,7 +346,7 @@ def performance_context(params, today: date) -> dict:
             ("Last 7", window(7)), ("Last 30", window(30)),
             ("Prev 30", window(30, 30)),
             ("Season", grading.tally(apply_filters(
-                grading.load_graded_range(date(end.year, 3, 1), end), active))),
+                load_performance_range(date(end.year, 3, 1), end), active))),
             ("All time", grading.tally(all_rows)),
         ]),
         "monthly_html": monthly_table_html(months, all_rate),
