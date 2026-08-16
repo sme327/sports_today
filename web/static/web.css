@@ -28,6 +28,7 @@ a { color: inherit; }
 .nav-day-toggle a { padding: .4rem .8rem; border-radius: var(--r-pill); text-align: center; font-weight: 750; }
 .nav-day-toggle a.active { color: var(--on-brand); background: var(--brand-grad); }
 .performance-link { font-weight: 700; }
+.site-header nav .performance-link.active { color: var(--brand-2); }
 .nav-future { opacity: .5; cursor: default; }
 .site-shell { max-width: 1160px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 1rem; }
