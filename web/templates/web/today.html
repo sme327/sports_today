@@ -34,7 +34,7 @@
 </section>
 {% endif %}
 
-<div id="schedule-region"
+<div id="schedule-region" data-live-scores-date="{{ slate_date|date:'Y-m-d' }}"
      hx-get="{% url 'schedule-fragment' %}{% if refresh_query %}?{{ refresh_query }}{% endif %}"
      hx-trigger="load delay:750ms"
      hx-swap="innerHTML">

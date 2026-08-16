@@ -49,6 +49,10 @@ python -m streamlit run app.py
 The app needs `database/sportshub.db`, which is **not** in the repo (data is
 gitignored). On a fresh clone, build it via the daily pipeline — drop a dated MLB
 feed in `~/Downloads` and run `update.command` (or `python -m scripts.morning_update`).
+
+For the zero-cost Cloudflare Pages deployment, `update_and_publish.command` runs the
+same local update, exports the public site, and publishes the finished snapshot. The
+Mac only needs to be online during that workflow; Cloudflare serves the site afterward.
 Exact steps and the macOS double-click workflow: [Setup](docs/engineering/SETUP.md).
 
 - Tests (offline): `pip install -r requirements-dev.txt && python -m pytest`

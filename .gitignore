@@ -34,3 +34,6 @@ data/mls/*.csv
 
 # Frozen experiment captures (analysis records, not app data)
 data/experiments/
+# Generated Cloudflare Pages bundle
+site-dist/
+staticfiles/
