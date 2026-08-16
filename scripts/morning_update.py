@@ -70,7 +70,8 @@ def main() -> int:
         for feed in result.get("daily_feed", []):
             print(
                 f"Daily feed {feed['date']}: {feed['games']} games, "
-                f"{feed['opportunities']} opportunities in {feed['total_seconds']:.1f}s."
+                f"{feed['opportunities']} opportunities, {feed.get('matchup_pages', 0)} "
+                f"MLB matchup pages in {feed['total_seconds']:.1f}s."
             )
         if "daily_feed_error" in result:
             print(f"Daily feed precompute skipped: {result['daily_feed_error']}", file=sys.stderr)

@@ -8,11 +8,12 @@ by the Streamlit page.
 from __future__ import annotations
 
 import dataclasses
+import re
 from collections import defaultdict
 from datetime import date, timedelta
 from html import escape
 from time import perf_counter
-from urllib.parse import urlencode
+from urllib.parse import quote, unquote_plus, urlencode
 
 from django.core.cache import cache
 
@@ -36,6 +37,24 @@ CURATION_MAX = 8
 
 def query_link(**values: str | int | None) -> str:
     return "?" + urlencode({k: v for k, v in values.items() if v is not None})
+
+
+_MATCHUP_LINK = re.compile(
+    r'href="\?day=([^&"]+)&amp;league=([^&"]+)&amp;game=([^&"]+)"'
+    r'|href="\?day=([^&"]+)&league=([^&"]+)&game=([^&"]+)"'
+)
+
+
+def django_matchup_links(html: str) -> str:
+    """Translate shared Streamlit query links into Django matchup routes."""
+    def replace(match: re.Match) -> str:
+        values = match.groups()[:3] if match.group(1) is not None else match.groups()[3:]
+        day, league, game_id = (unquote_plus(value) for value in values)
+        return (
+            f'href="/game/{quote(league, safe="")}/{quote(game_id, safe="")}/'
+            f'?day={quote(day, safe="")}"'
+        )
+    return _MATCHUP_LINK.sub(replace, html)
 
 
 def parse_day(raw: str | None, today: date) -> tuple[str, date]:
@@ -219,7 +238,9 @@ def build_context(params, local_today: date) -> dict:
         best_ids, unjudged = best_per_league(all_visible)
         norms = league_norms(all_visible)
         schedule_groups = [
-            schedule_grid_html(group, day, counts, threshold, set(best_ids.values()), norms)
+            django_matchup_links(
+                schedule_grid_html(group, day, counts, threshold, set(best_ids.values()), norms)
+            )
             for group in group_games_by_state(all_visible)
             if group
         ]

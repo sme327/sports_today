@@ -27,9 +27,11 @@ SQLite data, and the Downloads-based morning update remain shared.
   summaries, evidence, and 100-row URL pagination
 - Public Performance with served-vs-scored headlines, calibration, over/under,
   edge-finder segments, consistency windows, monthly results, and model versions
+- MLB matchup pages using the existing analytical model and section renderers; models
+  are prewarmed by the morning update and persisted by game/date/engine version
 
-Matchup, NFL archive, and data-update pages still use Streamlit until their Django
-versions are implemented.
+WNBA/MLS matchup pages, the NFL archive, and data-update pages still use Streamlit
+until their Django versions are implemented.
 
 ## Local run
 

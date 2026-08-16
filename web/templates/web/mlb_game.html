@@ -1,0 +1,9 @@
+{% extends "web/base.html" %}
+{% block title %}{{ game.away_display }} at {{ game.home_display }} · Sports Today{% endblock %}
+{% block content %}
+<div class="matchup-toolbar">
+  <a class="text-link" href="/?day={{ day }}">← Back to {{ day }}’s slate</a>
+  <span>MLB matchup · {{ slate_date|date:"F j, Y" }}</span>
+</div>
+{% for chunk in content_chunks %}{{ chunk|safe }}{% endfor %}
+{% endblock %}

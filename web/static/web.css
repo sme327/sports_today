@@ -99,6 +99,8 @@ a { color: inherit; }
 .pagination { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-top: 1rem; color: var(--text-3); font-size: .82rem; }
 .pagination a { color: var(--brand-2); text-decoration: none; font-weight: 700; }
 .pagination a:last-child { text-align: right; }
+.matchup-toolbar { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1rem; color: var(--text-4); font-size: .78rem; }
+@media (max-width: 720px) { .matchup-toolbar { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 720px) {
   .analytics-hero { align-items: flex-start; flex-direction: column; }
   .analytics-filter-group { align-items: flex-start; flex-direction: column; gap: .35rem; }
