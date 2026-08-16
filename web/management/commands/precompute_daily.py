@@ -16,6 +16,7 @@ class Command(BaseCommand):
                 self.style.SUCCESS(
                     f"{result['date']}: {result['games']} games, "
                     f"{result['opportunities']} opportunities, "
+                    f"{result.get('matchup_pages', 0)} MLB matchup pages, "
                     f"{result['total_seconds']:.1f}s"
                 )
             )

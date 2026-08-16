@@ -313,11 +313,26 @@ def precompute_day(slate_date: date) -> dict:
         schedule_status=statuses,
         games=games,
     )
+    matchup_started = perf_counter()
+    matchup_pages = 0
+    matchup_errors = 0
+    from services import matchup_cache
+    from services.mlb_game_page import ENGINE_VERSION, build_mlb_game_page
+    for game in slates.get("MLB", ([], None))[0]:
+        try:
+            page = build_mlb_game_page(game, slate_date, slate_date)
+            matchup_cache.store("MLB", str(game.game_id), slate_date, ENGINE_VERSION, page)
+            matchup_pages += 1
+        except Exception:
+            matchup_errors += 1
     return {
         "date": slate_date.isoformat(),
         "games": len(games),
         "opportunities": len(opportunities),
         "ledger_rows": ledger_rows,
+        "matchup_pages": matchup_pages,
+        "matchup_errors": matchup_errors,
+        "matchup_seconds": round(perf_counter() - matchup_started, 3),
         "schedule_seconds": round(schedule_seconds, 3),
         "scoring_seconds": round(scoring_seconds, 3),
         "total_seconds": round(perf_counter() - started, 3),
