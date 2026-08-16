@@ -75,18 +75,20 @@ def test_performance_excludes_total_bases_and_walks(load):
 
 
 @patch("web.analytics.grading.load_graded_range")
-def test_performance_markets_are_split_into_sport_rows_and_all_links_are_bounded(load):
+def test_performance_markets_use_emoji_sport_rows_and_all_links_are_bounded(load):
     load.return_value = [row()]
     context = performance_context(QueryDict("period=7&league=MLB"), date(2026, 8, 15))
     groups = {group["label"]: group for group in context["filter_groups"]}
-    assert set(groups) == {"League", "⚾ Baseball", "🏀 Basketball", "Direction"}
-    assert [option["label"] for option in groups["⚾ Baseball"]["options"]] == [
+    assert set(groups) == {"Market", "⚾", "🏀", "Direction"}
+    assert [option["label"] for option in groups["Market"]["options"]] == ["All"]
+    assert groups["Market"]["options"][0]["active"]
+    assert [option["label"] for option in groups["⚾"]["options"]] == [
         "Batter Hits", "Batter Ks", "SP Strikeouts", "SP Hits Allowed",
     ]
-    assert [option["label"] for option in groups["🏀 Basketball"]["options"]] == [
+    assert [option["label"] for option in groups["🏀"]["options"]] == [
         "Points", "Rebounds", "Assists",
     ]
-    market_href = groups["⚾ Baseball"]["options"][0]["href"]
+    market_href = groups["⚾"]["options"][0]["href"]
     assert "market=hits" in market_href and "league=" not in market_href
     assert "result=" not in str(context["filter_groups"])
 

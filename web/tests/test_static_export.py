@@ -23,8 +23,8 @@ def test_primary_export_paths_are_readable():
 
 
 def test_crawler_keeps_bounded_performance_controls_and_excludes_nfl_archive():
-    assert should_crawl("/performance/?period=30&league=MLB")
     assert should_crawl("/performance/?period=30&market=hits&direction=over")
+    assert not should_crawl("/performance/?period=30&league=MLB")
     assert not should_crawl("/performance/?period=30&league=MLB&market=hits")
     assert should_crawl("/results/?date=2026-08-14")
     assert not should_crawl("/results/?date=2026-08-14&league=MLB")

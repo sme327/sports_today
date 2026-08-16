@@ -122,14 +122,10 @@ def performance_url(params, **updates) -> str:
     """Bound the public Performance state to combinations we can publish statically."""
     values = {
         key: params.get(key)
-        for key in ("period", "league", "market", "direction")
+        for key in ("period", "market", "direction")
         if params.get(key) not in (None, "", "all")
     }
     values.update(updates)
-    if "market" in updates:
-        values.pop("league", None)
-    if "league" in updates:
-        values.pop("market", None)
     return query_url("/performance/", values)
 
 
@@ -145,16 +141,15 @@ def performance_filter_groups(params, active: dict[str, str], market_keys: list[
                 by_league[league].append(key)
 
     groups = [{
-        "key": "league", "label": "League",
-        "options": [
-            {"value": value, "label": label,
-             "active": active.get("league", "all") == value and active.get("market", "all") == "all",
-             "href": performance_url(params, league=value)}
-            for value, label in (("all", "All"), ("MLB", "MLB"), ("WNBA", "WNBA"))
-        ],
+        "key": "market", "label": "Market",
+        "options": [{
+            "value": "all", "label": "All",
+            "active": active.get("market", "all") == "all",
+            "href": performance_url(params, market="all"),
+        }],
     }]
     for league in ("MLB", "WNBA"):
-        category_label = "⚾ Baseball" if league == "MLB" else "🏀 Basketball"
+        category_label = "⚾" if league == "MLB" else "🏀"
         groups.append({
             "key": f"market-{league.lower()}", "label": category_label,
             "options": [
