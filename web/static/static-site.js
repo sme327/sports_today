@@ -4,6 +4,41 @@
   if (!region || !document.querySelector("[data-live-game]")) return;
   const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const cards = [...document.querySelectorAll("[data-live-game]")];
+  const scoreLeagues = [
+    ["MLB", "baseball", "mlb"], ["WNBA", "basketball", "wnba"],
+    ["MLS", "soccer", "usa.1"], ["NFL", "football", "nfl"],
+  ];
+
+  function normalizeEspnEvent(event, league) {
+    const competition = event.competitions?.[0];
+    const away = competition?.competitors?.find((team) => team.homeAway === "away");
+    const home = competition?.competitors?.find((team) => team.homeAway === "home");
+    if (!away || !home) return null;
+    return {
+      league,
+      away: away.team?.shortDisplayName || away.team?.displayName || away.team?.abbreviation,
+      home: home.team?.shortDisplayName || home.team?.displayName || home.team?.abbreviation,
+      awayScore: away.score ?? null, homeScore: home.score ?? null,
+      state: event.status?.type?.state || "pre",
+      detail: event.status?.type?.shortDetail || event.status?.type?.detail || "",
+    };
+  }
+
+  async function directScores(date) {
+    const espnDate = date.replaceAll("-", "");
+    const batches = await Promise.all(scoreLeagues.map(async ([league, sport, slug]) => {
+      try {
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport}/${slug}/scoreboard?dates=${espnDate}&limit=200`;
+        const response = await fetch(url);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return (data.events || []).map((event) => normalizeEspnEvent(event, league)).filter(Boolean);
+      } catch (_) {
+        return [];
+      }
+    }));
+    return batches.flat();
+  }
 
   function updateCard(card, game) {
     const rows = card.querySelectorAll(".team-row");
@@ -37,13 +72,11 @@
 
   async function refresh() {
     try {
-      const response = await fetch(`/api/scores?date=${encodeURIComponent(region.dataset.liveScoresDate)}`);
-      if (!response.ok) return;
-      const payload = await response.json();
+      const games = await directScores(region.dataset.liveScoresDate);
       for (const card of cards) {
         const away = normalize(card.dataset.away);
         const home = normalize(card.dataset.home);
-        const match = payload.games.find((game) =>
+        const match = games.find((game) =>
           game.league === card.dataset.league &&
           normalize(game.away) === away && normalize(game.home) === home
         );

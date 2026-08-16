@@ -60,9 +60,11 @@ and gitignored.
 bundle, and deploys it with Cloudflare Wrangler. The first publish requires a one-time
 Cloudflare login and Pages project creation.
 
-A Pages Function at `/api/scores` reads the same ESPN scoreboards used by the local app.
-Published Today/Tomorrow pages request it once on load and every 60 seconds while open.
-Failures are deliberately silent: the last published schedule remains fully usable.
+Published Today/Tomorrow pages read the same ESPN scoreboards used by the local app
+directly from the browser once on load and every 60 seconds while open. ESPN permits
+cross-origin browser reads but blocks Cloudflare's server network, so this avoids a
+needless Function and keeps static requests outside Worker quotas. Failures are
+deliberately silent: the last published schedule remains fully usable.
 
 ## Local run
 
