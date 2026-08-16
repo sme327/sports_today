@@ -39,6 +39,7 @@ class EndpointTests(SimpleTestCase):
         response = Client().get("/results/")
         assert response.status_code == 200
         assert b"Daily Results" in response.content
+        assert b"favicons/results.svg" in response.content
 
     @patch("web.views.performance_context", return_value={
         "section": "performance", "has_rows": False, "period_options": [],
@@ -48,6 +49,7 @@ class EndpointTests(SimpleTestCase):
         response = Client().get("/performance/")
         assert response.status_code == 200
         assert b"Performance" in response.content
+        assert b"favicons/performance.svg" in response.content
 
     @patch("web.views.build_context")
     def test_today_renders_public_page(self, build_context):
@@ -76,6 +78,7 @@ class EndpointTests(SimpleTestCase):
         response = Client().get("/")
         assert response.status_code == 200
         assert b"Sports" in response.content
+        assert b"favicons/sports-today.svg" in response.content
         assert b"The games and player performances worth your attention" not in response.content
         assert "app;dur=3" in response["Server-Timing"]
         build_context.assert_called_once()

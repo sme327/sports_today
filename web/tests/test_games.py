@@ -36,13 +36,15 @@ def test_game_resolution_uses_cached_slate(load):
 def test_mlb_endpoint_renders_existing_page_chunks(find, context):
     find.return_value = game()
     context.return_value = {
-        "section": "today", "game": find.return_value, "slate_date": date(2026, 8, 15),
+        "section": "today", "league": "MLB", "game": find.return_value,
+        "slate_date": date(2026, 8, 15),
         "day": "today", "content_chunks": ["<div>Team Identity</div>"],
         "cache_source": "built", "build_ms": 12.5,
     }
     response = Client().get("/game/MLB/401/?day=today")
     assert response.status_code == 200
     assert b"Team Identity" in response.content
+    assert b"favicons/mlb.svg" in response.content
     assert response["Server-Timing"] == "matchup;dur=12.5"
 
 
@@ -59,6 +61,7 @@ def test_wnba_endpoint_uses_wnba_page_context(find, context):
     response = Client().get("/game/WNBA/w1/?day=today")
     assert response.status_code == 200
     assert b"Game Snapshot" in response.content
+    assert b"favicons/wnba.svg" in response.content
     assert response["X-Sports-Today-Cache"] == "database"
     context.assert_called_once()
 
@@ -76,6 +79,7 @@ def test_mls_endpoint_uses_mls_page_context(find, context):
     response = Client().get("/game/MLS/m1/?day=today")
     assert response.status_code == 200
     assert b"Tactical Matchup" in response.content
+    assert b"favicons/mls.svg" in response.content
     assert response["X-Sports-Today-Cache"] == "database"
     context.assert_called_once()
 
