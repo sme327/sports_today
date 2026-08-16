@@ -137,7 +137,7 @@ class Command(BaseCommand):
         call_command("collectstatic", interactive=False, verbosity=0)
         shutil.copytree(static_root, out / "static", dirs_exist_ok=True)
         (out / "_headers").write_text(
-            "/static/*\n  Cache-Control: public, max-age=31536000, immutable\n"
+            "/static/*\n  Cache-Control: public, max-age=300, must-revalidate\n"
             "/*.html\n  Cache-Control: public, max-age=60\n",
             encoding="utf-8",
         )
