@@ -79,14 +79,14 @@ def test_performance_markets_are_split_into_sport_rows_and_all_links_are_bounded
     load.return_value = [row()]
     context = performance_context(QueryDict("period=7&league=MLB"), date(2026, 8, 15))
     groups = {group["label"]: group for group in context["filter_groups"]}
-    assert set(groups) == {"League", "MLB markets", "WNBA markets", "Direction"}
-    assert [option["label"] for option in groups["MLB markets"]["options"]] == [
+    assert set(groups) == {"League", "⚾ Baseball", "🏀 Basketball", "Direction"}
+    assert [option["label"] for option in groups["⚾ Baseball"]["options"]] == [
         "Batter Hits", "Batter Ks", "SP Strikeouts", "SP Hits Allowed",
     ]
-    assert [option["label"] for option in groups["WNBA markets"]["options"]] == [
+    assert [option["label"] for option in groups["🏀 Basketball"]["options"]] == [
         "Points", "Rebounds", "Assists",
     ]
-    market_href = groups["MLB markets"]["options"][0]["href"]
+    market_href = groups["⚾ Baseball"]["options"][0]["href"]
     assert "market=hits" in market_href and "league=" not in market_href
     assert "result=" not in str(context["filter_groups"])
 

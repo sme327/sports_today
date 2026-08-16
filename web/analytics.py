@@ -154,8 +154,9 @@ def performance_filter_groups(params, active: dict[str, str], market_keys: list[
         ],
     }]
     for league in ("MLB", "WNBA"):
+        category_label = "⚾ Baseball" if league == "MLB" else "🏀 Basketball"
         groups.append({
-            "key": f"market-{league.lower()}", "label": f"{league} markets",
+            "key": f"market-{league.lower()}", "label": category_label,
             "options": [
                 {"value": key, "label": LABELS[key],
                  "active": active.get("market") == key,
