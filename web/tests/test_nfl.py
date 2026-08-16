@@ -30,6 +30,7 @@ def test_nfl_matchup_endpoint(context):
     response = Client().get("/nfl/game/g1/")
     assert response.status_code == 200
     assert b"Team identity" in response.content
+    assert b"favicons/nfl.svg" in response.content
     assert response["Server-Timing"] == "matchup;dur=1.4"
     assert response["X-Sports-Today-Cache"] == "database"
 

@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A calm guide to today's games and explainable player opportunities.">
   <title>{% block title %}Sports Today{% endblock %}</title>
+  {% if league == "MLB" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/mlb.svg' %}?v=1">
+  {% elif league == "WNBA" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/wnba.svg' %}?v=1">
+  {% elif league == "MLS" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/mls.svg' %}?v=1">
+  {% elif league == "NFL" or section == "nfl" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/nfl.svg' %}?v=1">
+  {% elif section == "performance" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/performance.svg' %}?v=1">
+  {% elif section == "results" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/results.svg' %}?v=1">
+  {% else %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/sports-today.svg' %}?v=1">{% endif %}
   <link rel="stylesheet" href="{% static 'app.css' %}?v=20260815-2">
   <link rel="stylesheet" href="{% static 'web.css' %}?v=20260815-2">
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
