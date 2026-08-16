@@ -8,11 +8,16 @@ from time import perf_counter
 from django.core.cache import cache
 
 from components import mlb_game as mlb_components
+from components import mls_game as mls_components
 from components import wnba_game as wnba_components
 from components.opportunity_feed import opportunity_feed_html
 from domain.models import SlateGame
 from services.daily_feed import load_cached_schedules
 from services.mlb_game_page import ENGINE_VERSION, build_mlb_game_page
+from services.mls_game_page import (
+    ENGINE_VERSION as MLS_ENGINE_VERSION,
+    build_mls_game_page,
+)
 from services.wnba_game_page import (
     ENGINE_VERSION as WNBA_ENGINE_VERSION,
     build_wnba_game_page,
@@ -129,6 +134,51 @@ def wnba_context(game: SlateGame, slate_date: date) -> dict:
     return {
         "section": "today",
         "league": "WNBA",
+        "game": game,
+        "slate_date": slate_date,
+        "day": "tomorrow" if slate_date > date.today() else "today",
+        "content_chunks": [chunk for chunk in chunks if chunk],
+        "cache_source": cache_source,
+        "build_ms": round((perf_counter() - started) * 1000, 1),
+    }
+
+
+def mls_context(game: SlateGame, slate_date: date) -> dict:
+    started = perf_counter()
+    cache_key = f"django:mls-page:{MLS_ENGINE_VERSION}:{slate_date.isoformat()}:{game.game_id}"
+    page = cache.get(cache_key)
+    cache_source = "memory" if page is not None else None
+    if page is None:
+        page = matchup_cache.load("MLS", str(game.game_id), slate_date, MLS_ENGINE_VERSION)
+        if page is not None:
+            cache.set(cache_key, page, timeout=900)
+            cache_source = "database"
+    if page is None:
+        page = build_mls_game_page(game, slate_date, slate_date)
+        matchup_cache.store("MLS", str(game.game_id), slate_date, MLS_ENGINE_VERSION, page)
+        cache.set(cache_key, page, timeout=900)
+        cache_source = "built"
+
+    chunks = [
+        mls_components.hero_html(page.hero),
+        mls_components.snapshot_html(
+            page.snapshot, page.hero.away.short, page.hero.home.short
+        ),
+        mls_components.tactical_html(page.tactical),
+        mls_components.storylines_html(page.storylines),
+        mls_components.lineups_html(page.lineups),
+        mls_components.players_html(page.players),
+        mls_components.attacking_html(page.attacking),
+        mls_components.discipline_html(page.discipline),
+        mls_components.timeline_html(page.timeline),
+        mls_components.honest_gaps_html(page.honest_gaps),
+        mls_components.data_context_html(page.data_status.detail)
+        if page.data_status and page.data_status.detail
+        else "",
+    ]
+    return {
+        "section": "today",
+        "league": "MLS",
         "game": game,
         "slate_date": slate_date,
         "day": "tomorrow" if slate_date > date.today() else "today",

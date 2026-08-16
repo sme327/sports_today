@@ -63,6 +63,23 @@ def test_wnba_endpoint_uses_wnba_page_context(find, context):
     context.assert_called_once()
 
 
+@patch("web.views.mls_context")
+@patch("web.views.find_game")
+def test_mls_endpoint_uses_mls_page_context(find, context):
+    find.return_value = game("MLS", "m1")
+    context.return_value = {
+        "section": "today", "league": "MLS", "game": find.return_value,
+        "slate_date": date(2026, 8, 15), "day": "today",
+        "content_chunks": ["<div>Tactical Matchup</div>"],
+        "cache_source": "database", "build_ms": 1.8,
+    }
+    response = Client().get("/game/MLS/m1/?day=today")
+    assert response.status_code == 200
+    assert b"Tactical Matchup" in response.content
+    assert response["X-Sports-Today-Cache"] == "database"
+    context.assert_called_once()
+
+
 @patch("web.views.find_game", return_value=None)
 def test_unknown_game_is_404(_find):
     assert Client().get("/game/MLB/missing/").status_code == 404
