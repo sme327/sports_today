@@ -19,6 +19,11 @@ def main(argv: list[str] | None = None) -> int:
         default=os.environ.get("SPORTS_TODAY_PAGES_PROJECT", "sports-today"),
         help="Cloudflare Pages project name (default: sports-today).",
     )
+    parser.add_argument(
+        "--branch",
+        default=os.environ.get("SPORTS_TODAY_PAGES_BRANCH", "main"),
+        help="Cloudflare Pages deployment branch (default: main/production).",
+    )
     parser.add_argument("--build-only", action="store_true")
     args = parser.parse_args(argv)
 
@@ -34,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     command = [
         "npx", "wrangler", "pages", "deploy", str(OUTPUT),
         "--project-name", args.project,
+        "--branch", args.branch,
     ]
     try:
         return subprocess.call(command, cwd=ROOT)
