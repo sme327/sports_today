@@ -21,6 +21,12 @@ def _fake_import(monkeypatch):
     # Recording game outcomes fetches finished slates, so it must be faked here too —
     # this file's contract is that the pipeline runs with no network at all.
     monkeypatch.setattr("scripts.record_game_outcomes.run", lambda **k: 7)
+    monkeypatch.setattr(
+        "services.daily_feed.precompute_days",
+        lambda days: [{"date": d.isoformat(), "games": 0, "opportunities": 0,
+                       "ledger_rows": 0, "schedule_seconds": 0,
+                       "scoring_seconds": 0, "total_seconds": 0} for d in days],
+    )
 
 
 def test_rebuild_mlb_only(monkeypatch):
@@ -30,6 +36,7 @@ def test_rebuild_mlb_only(monkeypatch):
     assert out["mlb"] == _MLB
     assert "wnba" not in out and "mls" not in out
     assert out["published"] is False
+    assert len(out["daily_feed"]) == 2
 
 
 def test_rebuild_with_collectors(monkeypatch):

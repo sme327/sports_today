@@ -1,0 +1,8 @@
+{% if errors %}<section class="notice warning">{% for error in errors %}<p>{{ error }}</p>{% endfor %}</section>{% endif %}
+
+{% if schedule_groups %}
+  {% for group in schedule_groups %}{{ group|safe }}{% endfor %}
+  {% if unjudged %}<p class="quiet-note">Not enough of {{ unjudged }} playing today to name a best game fairly.</p>{% endif %}
+{% elif not game_count %}
+  <section class="empty-card"><h2>No games on the slate</h2><p>There is nothing scheduled across the connected leagues for this date.</p></section>
+{% endif %}

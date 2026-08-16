@@ -45,6 +45,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
 | [Setup](engineering/SETUP.md) | One-time install and the daily data/run workflow. |
 | [Deploy](engineering/DEPLOY.md) | Put it on the web for phone/iPad/computer: Streamlit Cloud + private bucket + in-app uploader + password gate. |
+| [Django Migration](engineering/DJANGO_MIGRATION.md) | Incremental public-web replacement for Streamlit; current milestone and runbook. |
 
 ## AI
 

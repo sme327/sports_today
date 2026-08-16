@@ -1,0 +1,27 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A calm guide to today's games and explainable player opportunities.">
+  <title>{% block title %}Sports Today{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'app.css' %}">
+  <link rel="stylesheet" href="{% static 'web.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-brand" href="/">Sports <span>Today</span></a>
+    <nav aria-label="Main navigation">
+      <a class="active" href="/">Today</a>
+      <span class="nav-future" title="Coming during migration">Results</span>
+      <span class="nav-future" title="Coming during migration">Performance</span>
+    </nav>
+  </header>
+  <main class="site-shell">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">Sports Today · explainable signals, honest uncertainty</footer>
+</body>
+</html>

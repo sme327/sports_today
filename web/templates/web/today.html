@@ -1,0 +1,66 @@
+{% extends "web/base.html" %}
+{% block content %}
+<section class="hero-row">
+  <div>
+    <div class="eyebrow">{{ slate_date|date:"l, F j" }}</div>
+    <h1 class="page-title">Sports <span class="title-accent">Today</span></h1>
+    <p class="hero-copy">The games and player performances worth your attention.</p>
+  </div>
+  <div class="date-toggle-wrap"><div class="date-toggle">
+    <a class="{% if day == 'today' %}active{% endif %}" href="?day=today{% if collapsed %}&games=off{% endif %}">Today</a>
+    <a class="{% if day == 'tomorrow' %}active{% endif %}" href="?day=tomorrow{% if collapsed %}&games=off{% endif %}">Tomorrow</a>
+  </div></div>
+</section>
+
+<section class="freshness-strip" aria-label="Data freshness">
+  {% if freshness.mlb_through %}<span>MLB through {{ freshness.mlb_through|date:"M j" }}</span>{% endif %}
+  {% if freshness.wnba_through %}<span>WNBA through {{ freshness.wnba_through|date:"M j" }}</span>{% endif %}
+  {% if feed_calculated_at %}<span>Feed built {{ feed_calculated_at|date:"g:i A" }}</span>{% endif %}
+  <span class="public-chip">Public preview</span>
+</section>
+
+{% if league_filters %}
+<section class="filter-row" aria-label="League filters">
+  <div class="filter-pills">
+    <a class="filter-pill {% if not current_leagues %}active{% endif %}" href="?day={{ day }}">All</a>
+    {% for league in league_filters %}
+      <a class="filter-pill {% if league.active %}active{% endif %}" href="?day={{ day }}&league={{ league.key|urlencode }}">{{ league.label }}</a>
+    {% endfor %}
+  </div>
+  {% if game_count %}
+    {% if collapsed %}<a class="games-toggle" href="?day={{ day }}">Show {{ game_count }} games ▾</a>
+    {% else %}<a class="games-toggle" href="?day={{ day }}&games=off">Hide games ▴</a>{% endif %}
+  {% endif %}
+</section>
+{% endif %}
+
+<div id="schedule-region"
+     hx-get="{% url 'schedule-fragment' %}{% if refresh_query %}?{{ refresh_query }}{% endif %}"
+     hx-trigger="load delay:750ms"
+     hx-swap="innerHTML">
+  {% include "web/_schedule.html" %}
+</div>
+
+{% if has_analysis %}
+<section id="opps" class="opportunity-section">
+  <div class="section-row">
+    <h2>Top Opportunities</h2>
+    <div class="thresholds"><span>Strong pick</span>
+      <a class="thr-pill {% if threshold == 85 %}active{% endif %}" href="?day={{ day }}&thr=85#opps">85+</a>
+      <a class="thr-pill {% if threshold == 90 %}active{% endif %}" href="?day={{ day }}&thr=90#opps">90+</a>
+      <a class="thr-pill {% if threshold == 95 %}active{% endif %}" href="?day={{ day }}&thr=95#opps">95+</a>
+    </div>
+  </div>
+  {% if focus_label %}<div class="focus-chip"><span>Filtered to <b>{{ focus_label }}</b></span><a href="?day={{ day }}#opps">Clear ×</a></div>{% endif %}
+  {% if prop_filters|length > 1 %}<div class="filter-pills prop-pills">
+    <a class="filter-pill {% if not chosen_prop %}active{% endif %}" href="?day={{ day }}#opps">All</a>
+    {% for prop in prop_filters %}<a class="filter-pill {% if prop.active %}active{% endif %}" href="?day={{ day }}&prop={{ prop.key|urlencode }}#opps">{{ prop.label }}</a>{% endfor %}
+  </div>{% endif %}
+  {% if opportunity_summary %}<div class="opp-count">{{ opportunity_summary }}</div>{% endif %}
+  {% if opportunity_html %}{{ opportunity_html|safe }}
+  {% elif has_scored_opportunities %}<div class="notice">No standout opportunity cleared the curation bar today.</div>
+  {% else %}<div class="notice">No opportunity cleared the current role and sample requirements.</div>{% endif %}
+  <div class="opp-disclaimer">Scores reflect recent player performance only. Opposing starter, park, weather, and bullpen are not modeled yet.</div>
+</section>
+{% endif %}
+{% endblock %}

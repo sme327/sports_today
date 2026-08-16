@@ -11,7 +11,7 @@ import sqlite3
 from pathlib import Path
 
 from src.config import DB_PATH
-from services import schedule_cache, snapshots
+from services import daily_feed, schedule_cache, snapshots
 from src import mls_store
 
 SCHEMA_VERSION = 1
@@ -32,6 +32,7 @@ def ensure_schema(db_path: Path = DB_PATH) -> None:
         )
         schedule_cache.ensure_table(conn)
         snapshots.ensure_table(conn)
+        daily_feed.ensure_table(conn)
         mls_store.ensure_tables(conn)
         conn.execute(
             "INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, ?)",
