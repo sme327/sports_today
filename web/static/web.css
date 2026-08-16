@@ -59,3 +59,52 @@ a { color: inherit; }
   .thresholds > span { display: none; }
   .site-shell { padding: 1.35rem .9rem 3rem; }
 }
+
+/* Django Results + Performance */
+.analytics-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
+.text-link { color: var(--brand-2); text-decoration: none; font-weight: 700; font-size: .88rem; }
+.date-nav { display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; }
+.date-arrow { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: var(--r-pill); background: var(--surface-2); text-decoration: none; font-size: 1.3rem; }
+.date-arrow.disabled { opacity: .35; }
+.date-form { display: flex; align-items: center; gap: .55rem; }
+.date-form label { position: absolute; width: 1px; height: 1px; overflow: hidden; }
+.date-form input, .search-sort-row input, .search-sort-row select {
+  min-height: 2.35rem; border: 1px solid var(--divider); border-radius: var(--r-sm);
+  background: var(--surface-1); color: var(--text-1); padding: 0 .75rem; font: inherit;
+}
+.date-form button, .search-sort-row button {
+  min-height: 2.35rem; border: 0; border-radius: var(--r-pill); padding: 0 .9rem;
+  background: var(--brand-grad); color: var(--on-brand); font-weight: 750; cursor: pointer;
+}
+.analytics-filters { display: grid; gap: .65rem; padding: .85rem; margin-bottom: 1rem; border-radius: var(--r-md); background: rgba(255,255,255,.025); }
+.analytics-filter-group { display: flex; align-items: center; gap: .8rem; min-width: 0; }
+.filter-label { flex: 0 0 6rem; color: var(--text-3); font-size: .72rem; font-weight: 750; text-transform: uppercase; letter-spacing: .04em; }
+.analytics-filter-group .filter-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.analytics-filter-group .filter-pills::-webkit-scrollbar { display: none; }
+.analytics-filter-group .filter-pill, .compact-pills .filter-pill, .performance-controls .filter-pill { white-space: nowrap; padding: .36rem .68rem; font-size: .78rem; }
+.analytics-section { margin-top: 2rem; }
+.analytics-section > h2 { margin: 0 0 .7rem; font-size: 1.15rem; }
+.section-read { color: var(--text-2); margin: -.2rem 0 .8rem; }
+.web-market-table { overflow: hidden; border-radius: var(--r-md); background: var(--surface-1); }
+.web-market-row { display: grid; grid-template-columns: 1.5fr repeat(4, .75fr); gap: .75rem; padding: .7rem .9rem; border-bottom: 1px solid var(--divider); color: var(--text-2); font-size: .84rem; }
+.web-market-row:last-child { border-bottom: 0; }
+.web-market-head { color: var(--text-4); font-size: .7rem; font-weight: 750; text-transform: uppercase; }
+.web-market-row small { color: var(--text-4); }
+.search-sort-row { display: grid; grid-template-columns: minmax(0, 1fr) 10rem auto; gap: .6rem; margin-bottom: .8rem; }
+.performance-controls { display: flex; flex-wrap: wrap; gap: 1.2rem 2rem; margin-bottom: 1rem; }
+.performance-controls > div { display: flex; align-items: center; gap: .65rem; }
+.performance-controls .filter-label { flex-basis: auto; }
+.compact-pills { margin-bottom: .8rem; }
+.daily-summary, .perf-headline { margin-top: 1rem; }
+.pagination { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-top: 1rem; color: var(--text-3); font-size: .82rem; }
+.pagination a { color: var(--brand-2); text-decoration: none; font-weight: 700; }
+.pagination a:last-child { text-align: right; }
+@media (max-width: 720px) {
+  .analytics-hero { align-items: flex-start; flex-direction: column; }
+  .analytics-filter-group { align-items: flex-start; flex-direction: column; gap: .35rem; }
+  .filter-label { flex-basis: auto; }
+  .web-market-row { grid-template-columns: 1.4fr 1fr .8fr; }
+  .web-market-row span:nth-child(4), .web-market-row span:nth-child(5) { display: none; }
+  .search-sort-row { grid-template-columns: 1fr; }
+  .performance-controls > div { align-items: flex-start; flex-direction: column; gap: .35rem; }
+}

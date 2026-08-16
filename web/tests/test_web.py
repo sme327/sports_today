@@ -34,6 +34,21 @@ class EndpointTests(SimpleTestCase):
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
+    @patch("web.views.results_context", return_value={"section": "results", "has_rows": False})
+    def test_results_endpoint(self, _context):
+        response = Client().get("/results/")
+        assert response.status_code == 200
+        assert b"Daily Results" in response.content
+
+    @patch("web.views.performance_context", return_value={
+        "section": "performance", "has_rows": False, "period_options": [],
+        "sample_options": [], "filter_groups": [],
+    })
+    def test_performance_endpoint(self, _context):
+        response = Client().get("/performance/")
+        assert response.status_code == 200
+        assert b"Performance" in response.content
+
     @patch("web.views.build_context")
     def test_today_renders_public_page(self, build_context):
         build_context.return_value = {

@@ -1,0 +1,59 @@
+{% extends "web/base.html" %}
+{% block title %}Results · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero">
+  <div><div class="eyebrow">Did the signals hold up?</div><h1 class="page-title">Daily Results</h1></div>
+  <a class="text-link" href="{% url 'performance' %}">Performance overview →</a>
+</section>
+
+<section class="date-nav">
+  <a class="date-arrow" href="{{ previous_href }}" aria-label="Previous day">‹</a>
+  <form method="get" action="{% url 'results' %}" class="date-form">
+    <label for="results-date">Slate date</label>
+    <input id="results-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" max="{{ latest_date|date:'Y-m-d' }}">
+    <button type="submit">Go</button>
+  </form>
+  {% if can_go_next %}<a class="date-arrow" href="{{ next_href }}" aria-label="Next day">›</a>{% else %}<span class="date-arrow disabled">›</span>{% endif %}
+</section>
+
+{% if has_rows %}
+  {% include "web/_filters.html" %}
+  {{ summary_html|safe }}
+
+  <section class="analytics-section">
+    <h2>By market</h2>
+    <div class="web-market-table">
+      <div class="web-market-row web-market-head"><span>Market</span><span>Record</span><span>Hit rate</span><span>Void</span><span>Pending</span></div>
+      {% for market in market_rows %}
+      <div class="web-market-row"><span>{{ market.label }}</span><span>{{ market.hit }}–{{ market.miss }} <small>n={{ market.decided }}</small></span><span>{{ market.hit_rate_display }}</span><span>{{ market.void }}</span><span>{{ market.pending }}</span></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="analytics-section">
+    <div class="section-row"><h2>Props</h2><span class="section-count">Showing {{ visible_start }}–{{ visible_end }} of {{ prop_count }}</span></div>
+    <form method="get" class="search-sort-row">
+      <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+      {% for active in active_filters %}<input type="hidden" name="{{ active.key }}" value="{{ active.value }}">{% endfor %}
+      <input type="search" name="q" value="{{ query_text }}" placeholder="Search player, team, or opponent">
+      <select name="sort" aria-label="Sort results">
+        <option value="score-desc" {% if sort == 'score-desc' %}selected{% endif %}>Score ↓</option>
+        <option value="score-asc" {% if sort == 'score-asc' %}selected{% endif %}>Score ↑</option>
+        <option value="player" {% if sort == 'player' %}selected{% endif %}>Player</option>
+        <option value="result" {% if sort == 'result' %}selected{% endif %}>Result</option>
+      </select>
+      <button type="submit">Apply</button>
+    </form>
+    {{ prop_html|safe }}
+    {% if total_pages > 1 %}<nav class="pagination" aria-label="Results pages">
+      {% if page_previous %}<a href="{{ page_previous }}">← Previous</a>{% else %}<span></span>{% endif %}
+      <span>Page {{ page }} of {{ total_pages }}</span>
+      {% if page_next %}<a href="{{ page_next }}">Next →</a>{% else %}<span></span>{% endif %}
+    </nav>{% endif %}
+  </section>
+{% else %}
+  <section class="empty-card"><h2>No predictions recorded</h2><p>The daily ledger has no predictions for this date.</p></section>
+{% endif %}
+
+<div class="opp-disclaimer">Results are graded from stored plate appearances and box scores. Voids and pending results are excluded from hit rate. Opportunity Score is a ranking signal, not a probability.</div>
+{% endblock %}

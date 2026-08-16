@@ -6,11 +6,28 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from web.today import build_context
+from web.analytics import performance_context, results_context
 from services.daily_feed import load_cached_schedules, refresh_schedules
 
 
 def health(request):
     return JsonResponse({"status": "ok", "service": "sports-today"})
+
+
+def results(request):
+    return render(
+        request,
+        "web/results.html",
+        results_context(request.GET, timezone.localdate()),
+    )
+
+
+def performance(request):
+    return render(
+        request,
+        "web/performance.html",
+        performance_context(request.GET, timezone.localdate()),
+    )
 
 
 def today(request):

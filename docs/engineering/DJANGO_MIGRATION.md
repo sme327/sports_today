@@ -23,9 +23,13 @@ SQLite data, and the Downloads-based morning update remain shared.
   Pandas scoring run during the morning update
 - Deferred schedule fragment refresh: cached games paint immediately, then stale live
   schedules refresh after first paint with a short anti-stampede lock
+- Public Daily Results with date navigation, shared filters, search, sorting, market
+  summaries, evidence, and 100-row URL pagination
+- Public Performance with served-vs-scored headlines, calibration, over/under,
+  edge-finder segments, consistency windows, monthly results, and model versions
 
-Matchup, Results, Performance, NFL archive, and data-update pages still use Streamlit
-until their Django versions are implemented.
+Matchup, NFL archive, and data-update pages still use Streamlit until their Django
+versions are implemented.
 
 ## Local run
 

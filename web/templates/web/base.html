@@ -14,9 +14,9 @@
   <header class="site-header">
     <a class="site-brand" href="/">Sports <span>Today</span></a>
     <nav aria-label="Main navigation">
-      <a class="active" href="/">Today</a>
-      <span class="nav-future" title="Coming during migration">Results</span>
-      <span class="nav-future" title="Coming during migration">Performance</span>
+      <a class="{% if section == 'today' or not section %}active{% endif %}" href="{% url 'today' %}">Today</a>
+      <a class="{% if section == 'results' %}active{% endif %}" href="{% url 'results' %}">Results</a>
+      <a class="{% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}">Performance</a>
     </nav>
   </header>
   <main class="site-shell">
