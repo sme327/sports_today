@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+{% block title %}NFL Archive · Sports Today{% endblock %}
+{% block content %}
+<div class="page-title">NFL <span class="title-accent">Archive</span></div>
+<p class="page-kicker">Browse the loaded season feed by week, then open any matchup for its leakage-safe pregame read.</p>
+{% if not seasons %}
+  <div class="empty-panel">No NFL season data has been loaded yet.</div>
+{% else %}
+  {% if seasons|length > 1 %}
+  <div class="nfl-weeks" aria-label="NFL seasons">
+    <span class="nfl-season-lbl">Season</span>
+    {% for option in seasons %}<a class="thr-pill{% if option == season %} active{% endif %}" href="?season={{ option }}">{{ option }}</a>{% endfor %}
+  </div>
+  {% endif %}
+  <div class="nfl-weeks" aria-label="NFL weeks">
+    {% for option in weeks %}<a class="thr-pill{% if option.week == week %} active{% endif %}" href="?season={{ season }}&amp;week={{ option.week }}">{{ option.label }}</a>{% endfor %}
+  </div>
+  <div class="nfl-arc-list">
+    {% for game in games %}
+    <a class="nfl-arc-game" href="{% url 'nfl-matchup' game.game_id %}">
+      <span class="nfl-arc-team{% if game.away_won %} win{% endif %}">{{ game.away }}</span>
+      <span class="nfl-arc-at">@</span>
+      <span class="nfl-arc-team home{% if game.home_won %} win{% endif %}">{{ game.home }}</span>
+      {% if game.away_score is not None and game.home_score is not None %}<span class="nfl-arc-score">{{ game.away_score }} – {{ game.home_score }}</span>{% endif %}
+      <span class="nfl-arc-go">→</span>
+    </a>
+    {% empty %}<div class="empty-panel">No games are available for this week.</div>{% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
