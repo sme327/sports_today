@@ -30,3 +30,9 @@ def test_crawler_keeps_bounded_performance_controls_and_excludes_nfl_archive():
     assert should_crawl("/game/MLB/401/")
     assert should_crawl("/game/MLB/401/?day=today")
     assert should_crawl("/?day=today&league=MLB")
+
+
+def test_public_assets_are_not_cached_immutably():
+    source = Path("web/management/commands/export_static.py").read_text()
+    assert "max-age=300, must-revalidate" in source
+    assert "max-age=31536000, immutable" not in source
