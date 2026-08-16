@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+from datetime import date
+from unittest.mock import patch
+
+from django.http import QueryDict
+
+from web.analytics import apply_filters, parse_results_date, performance_context, results_context
+
+
+def row(**overrides):
+    base = {
+        "snapshot_date": "2026-08-14", "league": "MLB", "game_id": "g1",
+        "player_id": "1", "player_name": "A Player", "team_name": "Seattle",
+        "opponent": "Texas", "market": "1+ Hit", "market_key": "batter_hit",
+        "direction": "over", "threshold": 1, "opportunity_score": 90,
+        "stability_score": 80, "result": "hit", "actual_value": 1,
+        "void_reason": None, "support_evidence": "[]", "risk_evidence": "[]",
+        "captured_on": "2026-08-14", "scoring_engine_version": "batter-hit-v5",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_results_date_never_allows_today_or_future():
+    assert parse_results_date("2026-08-20", date(2026, 8, 15)) == date(2026, 8, 14)
+
+
+def test_filters_combine_market_result_and_score_band():
+    rows = [row(), row(player_id="2", result="miss", opportunity_score=82)]
+    filtered = apply_filters(rows, {"market": "hits", "result": "hit", "band": "90-94"})
+    assert [item["player_id"] for item in filtered] == ["1"]
+
+
+@patch("web.analytics.grading.load_graded_slate")
+def test_results_context_uses_centralized_grades(load):
+    load.return_value = [row()]
+    context = results_context(QueryDict("date=2026-08-14"), date(2026, 8, 15))
+    assert context["prop_count"] == 1
+    assert "1–0" in context["summary_html"]
+    assert "A Player" in context["prop_html"]
+
+
+@patch("web.analytics.grading.load_graded_slate")
+def test_results_are_paginated_without_changing_the_summary(load):
+    load.return_value = [row(player_id=str(index), player_name=f"Player {index}") for index in range(205)]
+    context = results_context(QueryDict("date=2026-08-14&page=2"), date(2026, 8, 15))
+    assert context["prop_count"] == 205
+    assert context["visible_start"] == 101 and context["visible_end"] == 200
+    assert context["total_pages"] == 3
+    assert context["prop_html"].count("prop-item") == 100
+
+
+@patch("web.analytics.grading.load_graded_range")
+def test_performance_context_leads_with_served_predictions(load):
+    load.return_value = [row(), row(player_id="2", result="miss", opportunity_score=60)]
+    context = performance_context(QueryDict("period=30"), date(2026, 8, 15))
+    assert context["has_rows"]
+    assert "shown as picks" in context["summary_html"]
+    assert context["calibration_read"]

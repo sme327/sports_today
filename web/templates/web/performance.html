@@ -1,0 +1,34 @@
+{% extends "web/base.html" %}
+{% block title %}Performance · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero">
+  <div><div class="eyebrow">Are the signals earning trust?</div><h1 class="page-title">Performance</h1></div>
+  <a class="text-link" href="{% url 'results' %}">Daily results →</a>
+</section>
+
+<section class="performance-controls">
+  <div><span class="filter-label">Period</span><div class="filter-pills">{% for option in period_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div></div>
+  <div><span class="filter-label">Minimum sample</span><div class="filter-pills">{% for option in sample_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div></div>
+</section>
+{% include "web/_filters.html" %}
+
+{% if has_rows %}
+  {{ summary_html|safe }}
+  {{ comparison_html|safe }}
+
+  <section class="analytics-section"><h2>Does a higher score perform better?</h2><p class="section-read">{{ calibration_read }}</p>{{ calibration_html|safe }}</section>
+  <section class="analytics-section"><h2>Over vs Under</h2>{{ over_under_html|safe }}</section>
+  <section class="analytics-section">
+    <h2>Edge finder</h2>
+    <div class="filter-pills compact-pills">{% for option in group_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div>
+    {{ edge_html|safe }}
+  </section>
+  <section class="analytics-section"><h2>Consistency</h2>{{ consistency_html|safe }}</section>
+  <section class="analytics-section"><h2>By month</h2>{{ monthly_html|safe }}</section>
+  <section class="analytics-section"><h2>Model versions</h2>{{ version_html|safe }}</section>
+{% else %}
+  <section class="empty-card"><h2>No graded predictions in this period</h2><p>Try a wider period or clear the current filters.</p></section>
+{% endif %}
+
+<div class="opp-disclaimer">Observed hit rates only. Small samples are marked and separated. Opportunity Score is a ranking signal, not a probability.</div>
+{% endblock %}
