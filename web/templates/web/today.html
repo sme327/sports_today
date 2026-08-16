@@ -1,24 +1,5 @@
 {% extends "web/base.html" %}
 {% block content %}
-<section class="hero-row">
-  <div>
-    <div class="eyebrow">{{ slate_date|date:"l, F j" }}</div>
-    <h1 class="page-title">Sports <span class="title-accent">Today</span></h1>
-    <p class="hero-copy">The games and player performances worth your attention.</p>
-  </div>
-  <div class="date-toggle-wrap"><div class="date-toggle">
-    <a class="{% if day == 'today' %}active{% endif %}" href="?day=today{% if collapsed %}&games=off{% endif %}">Today</a>
-    <a class="{% if day == 'tomorrow' %}active{% endif %}" href="?day=tomorrow{% if collapsed %}&games=off{% endif %}">Tomorrow</a>
-  </div></div>
-</section>
-
-<section class="freshness-strip" aria-label="Data freshness">
-  {% if freshness.mlb_through %}<span>MLB through {{ freshness.mlb_through|date:"M j" }}</span>{% endif %}
-  {% if freshness.wnba_through %}<span>WNBA through {{ freshness.wnba_through|date:"M j" }}</span>{% endif %}
-  {% if feed_calculated_at %}<span>Feed built {{ feed_calculated_at|date:"g:i A" }}</span>{% endif %}
-  <span class="public-chip">Public preview</span>
-</section>
-
 {% if league_filters %}
 <section class="filter-row" aria-label="League filters">
   <div class="filter-pills">
@@ -40,6 +21,12 @@
      hx-swap="innerHTML">
   {% include "web/_schedule.html" %}
 </div>
+
+<section class="freshness-strip freshness-below-games" aria-label="Data freshness">
+  {% if freshness.mlb_through %}<span>MLB through {{ freshness.mlb_through|date:"M j" }}</span>{% endif %}
+  {% if freshness.wnba_through %}<span>WNBA through {{ freshness.wnba_through|date:"M j" }}</span>{% endif %}
+  {% if feed_calculated_at %}<span>Feed built {{ feed_calculated_at|date:"g:i A" }}</span>{% endif %}
+</section>
 
 {% if has_analysis %}
 <section id="opps" class="opportunity-section">

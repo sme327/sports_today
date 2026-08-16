@@ -21,10 +21,12 @@ def test_primary_export_paths_are_readable():
     assert public_href(query_path) == f"/{query_path.parent.as_posix()}/"
 
 
-def test_crawler_bounds_analytics_combinations_but_keeps_archive_navigation():
-    assert not should_crawl("/performance/?period=30&league=MLB")
+def test_crawler_keeps_bounded_performance_controls_and_excludes_nfl_archive():
+    assert should_crawl("/performance/?period=30&league=MLB")
+    assert not should_crawl("/performance/?period=30&league=MLB&market=hits")
     assert not should_crawl("/results/?date=2026-08-14")
-    assert should_crawl("/nfl/?season=2025&week=4")
+    assert not should_crawl("/nfl/?season=2025&week=4")
+    assert not should_crawl("/nfl/")
     assert should_crawl("/game/MLB/401/")
     assert should_crawl("/game/MLB/401/?day=today")
     assert should_crawl("/?day=today&league=MLB")

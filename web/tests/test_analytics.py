@@ -58,3 +58,17 @@ def test_performance_context_leads_with_served_predictions(load):
     assert context["has_rows"]
     assert "shown as picks" in context["summary_html"]
     assert context["calibration_read"]
+
+
+@patch("web.analytics.grading.load_graded_range")
+def test_performance_excludes_total_bases_and_walks(load):
+    load.return_value = [
+        row(),
+        row(player_id="2", market="2+ Total Bases", market_key="batter_tb"),
+        row(player_id="3", market="1+ Walks", market_key="batter_bb"),
+    ]
+    context = performance_context(QueryDict("period=7"), date(2026, 8, 15))
+    assert context["has_rows"]
+    assert "Total Bases" not in str(context["filter_groups"])
+    assert "Walks" not in str(context["filter_groups"])
+    assert "1–0" in context["summary_html"]
