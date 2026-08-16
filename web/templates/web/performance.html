@@ -8,7 +8,6 @@
 
 <section class="performance-controls">
   <div><span class="filter-label">Period</span><div class="filter-pills">{% for option in period_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div></div>
-  <div><span class="filter-label">Minimum sample</span><div class="filter-pills">{% for option in sample_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div></div>
 </section>
 {% include "web/_filters.html" %}
 
@@ -20,7 +19,6 @@
   <section class="analytics-section"><h2>Over vs Under</h2>{{ over_under_html|safe }}</section>
   <section class="analytics-section">
     <h2>Edge finder</h2>
-    <div class="filter-pills compact-pills">{% for option in group_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div>
     {{ edge_html|safe }}
   </section>
   <section class="analytics-section"><h2>Consistency</h2>{{ consistency_html|safe }}</section>

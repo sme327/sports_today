@@ -7,6 +7,7 @@ import html as html_module
 import re
 import shutil
 from collections import deque
+from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
@@ -15,12 +16,25 @@ from django.core.management import BaseCommand, call_command
 from django.test import Client
 
 _PERFORMANCE_SEEDS = tuple(
-    f"/performance/?period={period}&min={minimum}&league={league}"
+    f"/performance/?period={period}&league={league}&direction={direction}"
     for period in ("7", "30", "90", "season", "all")
-    for minimum in (10, 30, 50)
     for league in ("all", "MLB", "WNBA")
+    for direction in ("all", "over", "under")
 )
-_SEEDS = ("/", "/?day=tomorrow", "/results/", "/performance/", *_PERFORMANCE_SEEDS)
+_PERFORMANCE_MARKET_SEEDS = tuple(
+    f"/performance/?period={period}&market={market}&direction={direction}"
+    for period in ("7", "30", "90", "season", "all")
+    for market in ("hits", "batter_k", "sp_k", "sp_hits", "points", "rebounds", "assists")
+    for direction in ("all", "over", "under")
+)
+_RESULT_SEEDS = tuple(
+    f"/results/?date={(date.today() - timedelta(days=offset)).isoformat()}"
+    for offset in range(1, 8)
+)
+_SEEDS = (
+    "/", "/?day=tomorrow", "/results/", "/performance/",
+    *_RESULT_SEEDS, *_PERFORMANCE_SEEDS, *_PERFORMANCE_MARKET_SEEDS,
+)
 _SKIP_PATHS = ("/health/", "/fragments/", "/static/")
 _HREF = re.compile(r'href=(["\'])(.*?)\1', re.IGNORECASE)
 _HTMX = re.compile(r"\s+hx-(?:get|trigger|swap)=([\"']).*?\1", re.IGNORECASE)
@@ -41,7 +55,12 @@ def should_crawl(url: str) -> bool:
     if parts.path == "/":
         return True
     if parts.path == "/performance/":
-        return set(dict(parse_qsl(parts.query))) <= {"period", "min", "league"}
+        keys = set(dict(parse_qsl(parts.query)))
+        return keys <= {"period", "league", "market", "direction"} and not (
+            "league" in keys and "market" in keys
+        )
+    if parts.path == "/results/":
+        return set(dict(parse_qsl(parts.query))) == {"date"}
     return False
 
 
