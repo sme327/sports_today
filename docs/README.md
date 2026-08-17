@@ -41,6 +41,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Method](engineering/METHOD.md) | **How we decide whether a signal is real.** The tests that gate every scoring and editorial change — read before proposing one. |
 | [Prediction Evaluation](engineering/PREDICTION_EVALUATION.md) | Public cohorts, grading truth, model-version discipline, and promotion guardrails. |
 | [CBB](engineering/CBB.md) | College basketball: what the ingested data holds, why it stays team-level, and the phased plan. |
+| [Structure Review 2026-08-17](engineering/STRUCTURE_REVIEW_2026-08-17.md) | Post-migration audit: what was removed, what is duplicated, what the docs still get wrong. |
+| [UX Review 2026-08-17](design/UX_REVIEW_2026-08-17.md) | The published site as a phone reader meets it — findings and ranked fixes. |
 | [Decision Log](engineering/DECISION_LOG.md) | Why things are the way they are; what not to reverse blindly. |
 | [Historical Data](engineering/HISTORICAL_DATA.md) | Ingested box-score history: coverage, gaps, and which model ideas are already tested and dead. |
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
