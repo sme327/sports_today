@@ -254,6 +254,100 @@ def cohort_comparison_html(qualifying: dict, featured: dict, other: dict) -> str
             + cell("Other qualifying", other) + '</div>')
 
 
+def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
+    """One-view market pulse across recent graded slates.
+
+    Cell color is relative to that market's own period average, so unlike raw score
+    comparison it does not imply that different prop families share a baseline.
+    """
+    from datetime import date
+    from domain.markets import ORDER, prop_type
+
+    decided_rows = [r for r in rows if r.get("result") in {"hit", "miss"}]
+    dates = sorted({str(r.get("snapshot_date")) for r in decided_rows
+                    if r.get("snapshot_date")})[-max_slates:]
+    if not dates:
+        return '<div class="mlb-empty">No decided slates to chart in this period.</div>'
+
+    by_market: dict[str, list[dict]] = {}
+    for row in decided_rows:
+        key = row.get("market_key") or prop_type(row.get("league"), row.get("market"))
+        # market_key is more specific than the UI prop type for legacy rows.
+        ui_key = prop_type(row.get("league"), row.get("market"))
+        by_market.setdefault(ui_key or key, []).append(row)
+
+    def rate(subset: list[dict]) -> tuple[float | None, int]:
+        hit = sum(r.get("result") == "hit" for r in subset)
+        miss = sum(r.get("result") == "miss" for r in subset)
+        n = hit + miss
+        return ((hit / n) if n else None, n)
+
+    def date_label(token: str) -> str:
+        try:
+            parsed = date.fromisoformat(token)
+            return f'{parsed.strftime("%b")}<b>{parsed.day}</b>'
+        except ValueError:
+            return escape(token)
+
+    header_dates = "".join(
+        f'<span class="mtp-date" role="columnheader">{date_label(token)}</span>'
+        for token in dates)
+    head = (f'<div class="mtp-row mtp-head" role="row"><span role="columnheader">Market</span>'
+            f'{header_dates}<span role="columnheader">Period</span></div>')
+    body = []
+    for key in ORDER:
+        market_rows = by_market.get(key, [])
+        if not market_rows:
+            continue
+        overall, overall_n = rate(market_rows)
+        league = next((r.get("league") for r in market_rows if r.get("league")), "")
+        emoji = "⚾" if league == "MLB" else "🏀" if league in {"WNBA", "NBA"} else ""
+        cells = []
+        for token in dates:
+            cell_rate, cell_n = rate([
+                r for r in market_rows if str(r.get("snapshot_date")) == token
+            ])
+            if cell_rate is None:
+                cells.append('<span class="mtp-cell empty" role="cell" aria-label="No decided predictions">—</span>')
+                continue
+            diff = cell_rate - (overall or 0)
+            tone = "above" if diff >= .05 else "below" if diff <= -.05 else "near"
+            small = " small" if cell_n < 5 else ""
+            cells.append(
+                f'<span class="mtp-cell {tone}{small}" role="cell" '
+                f'title="{cell_rate:.0%} · n={cell_n} · {diff:+.0%} vs this market average" '
+                f'aria-label="{cell_rate:.0%}, {cell_n} predictions">'
+                f'<b>{cell_rate:.0%}</b><small>n={cell_n}</small></span>')
+
+        recent_dates = set(dates[-3:])
+        prior_dates = set(dates[-6:-3])
+        recent_rate, recent_n = rate([r for r in market_rows
+                                      if str(r.get("snapshot_date")) in recent_dates])
+        prior_rate, prior_n = rate([r for r in market_rows
+                                    if str(r.get("snapshot_date")) in prior_dates])
+        if recent_rate is not None and prior_rate is not None and min(recent_n, prior_n) >= 10:
+            delta = (recent_rate - prior_rate) * 100
+            arrow = "↑" if delta >= 3 else "↓" if delta <= -3 else "→"
+            trend_cls = "up" if delta >= 3 else "down" if delta <= -3 else "flat"
+            trend = f'<small class="{trend_cls}">{arrow} {delta:+.0f} pp</small>'
+        else:
+            trend = '<small class="flat">building sample</small>'
+        summary = (f'<span class="mtp-total" role="cell"><b>{overall:.0%}</b>'
+                   f'<small>n={overall_n}</small>{trend}</span>')
+        label = (f'<span class="mtp-market" role="rowheader"><i aria-hidden="true">{emoji}</i>'
+                 f'{escape(LABELS.get(key, key))}</span>')
+        body.append(f'<div class="mtp-row" role="row">{label}{"".join(cells)}{summary}</div>')
+
+    if not body:
+        return '<div class="mlb-empty">No market trend data matches these filters.</div>'
+    return (f'<div class="market-trend-scroll"><div class="market-trend" role="table" '
+            f'aria-label="Market hit rates by recent slate" style="--trend-cols:{len(dates)}">'
+            f'{head}{"".join(body)}</div></div>'
+            '<div class="mtp-legend"><span class="above">Above own average</span>'
+            '<span class="near">Near own average</span><span class="below">Below own average</span>'
+            '<span>Faded cells have fewer than 5 decisions</span></div>')
+
+
 def _diff_html(rate: float | None, overall: float | None) -> str:
     if rate is None or overall is None:
         return ""

@@ -23,6 +23,12 @@ Every result identifies its cohort, filters, period, and model version when rele
 Prediction count and independent slate count appear together. Voids and pending rows do
 not enter hit rate, but their counts and reasons remain visible.
 
+The Performance page's **Market pulse** combines active markets in one matrix across the
+latest graded slates. Each cell is judged against that market's own selected-period
+average, never a universal hit-rate target; the period summary and recent-versus-prior
+three-slate direction remain visible at the row edge. Cells under five decisions are
+faded so volatility does not masquerade as evidence.
+
 Core measurements are record, hit rate, coverage, void rate, predictions per slate,
 score-band reliability, Featured precision at 1/3/5/8, results by market/threshold/
 direction/version, and—once enough slates exist—uncertainty clustered by slate or game.
