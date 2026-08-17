@@ -2350,3 +2350,17 @@ scarce phone space after their informational value had fallen.
 **Tradeoffs.** Completed-game visibility is a temporary choice for the current page;
 it intentionally resets after navigation. The published schedule remains the fallback
 when browser score refresh is unavailable.
+## 2026-08-17 — One-view market pulse uses within-market baselines
+
+**Decision.** Add a combined Performance matrix with one row per active market and the
+latest eight graded slates as columns. Cells show hit rate and sample, colored above /
+near / below that market's own period average. Each row ends with its selected-period
+rate and a latest-three-versus-prior-three-slate direction.
+
+**Reason.** Separate diagnostic tables made it difficult to see whether market behavior
+was improving, declining, volatile, or simply absent. A single view makes cross-market
+patterns scannable without claiming that every market shares the same natural baseline.
+
+**Tradeoffs.** Slate cells are descriptive, not independent confidence estimates.
+Samples under five are faded, and direction requires at least ten decisions in both
+three-slate windows; otherwise the UI says the sample is still building.

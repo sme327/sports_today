@@ -18,6 +18,7 @@ from components.results_feed import (
     daily_summary_html,
     edge_table_html,
     monthly_table_html,
+    market_trend_matrix_html,
     over_under_html,
     period_comparison_html,
     period_summary_html,
@@ -418,6 +419,7 @@ def performance_context(params, today: date) -> dict:
         "cohort_comparison_html": cohort_comparison_html(
             grading.tally(qualifying_rows), grading.tally(featured_rows),
             grading.tally(other_rows)),
+        "market_trend_html": market_trend_matrix_html(rows),
         "comparison_html": period_comparison_html(overall, prior, f"previous {label.lower()}", min_sample),
         "calibration_read": calibration_interpretation(bands),
         "calibration_html": calibration_table_html(bands, overall["hit_rate"]),

@@ -17,6 +17,12 @@
   {{ cohort_comparison_html|safe }}
   {{ comparison_html|safe }}
 
+  <section class="analytics-section market-pulse-section">
+    <h2>Market pulse</h2>
+    <p class="section-read">Recent slate hit rates compared with each market’s own average. The right edge shows the selected period and the latest three slates versus the prior three.</p>
+    {{ market_trend_html|safe }}
+  </section>
+
   <section class="analytics-section"><h2>Does a higher score perform better?</h2><p class="section-read">{{ calibration_read }}</p>{{ calibration_html|safe }}</section>
   <section class="analytics-section"><h2>Over vs Under</h2>{{ over_under_html|safe }}</section>
   <section class="analytics-section">
