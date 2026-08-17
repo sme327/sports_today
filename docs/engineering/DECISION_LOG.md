@@ -2337,3 +2337,16 @@ from stored pregame scores only; missing snapshots are never reconstructed.
 **Future.** Add clustered uncertainty, precision@k, formal baselines, and market-specific
 calibration before treating raw scores as comparable across markets. See
 [`PREDICTION_EVALUATION.md`](PREDICTION_EVALUATION.md).
+## 2026-08-17 — Live-state normalization and completed-game control
+
+**Decision.** Normalize ESPN browser score states `pre` / `in` / `post` to the site's
+pre / live / final vocabulary, replace scheduled time with the live/final badge, and
+add a client-side Hide completed / Show completed control beside Hide games.
+
+**Reason.** Scores were updating while active games retained their scheduled time
+because ESPN calls the active state `in`, not `live`. Completed games also consumed
+scarce phone space after their informational value had fallen.
+
+**Tradeoffs.** Completed-game visibility is a temporary choice for the current page;
+it intentionally resets after navigation. The published schedule remains the fallback
+when browser score refresh is unavailable.

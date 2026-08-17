@@ -41,6 +41,14 @@ def test_public_assets_are_not_cached_immutably():
     assert "max-age=31536000, immutable" not in source
 
 
+def test_live_score_script_normalizes_espn_states_and_hides_completed_games():
+    source = Path("web/static/static-site.js").read_text()
+    assert 'sourceState === "in" ? "live"' in source
+    assert 'sourceState === "post" ? "final"' in source
+    assert "data-toggle-completed" in Path("web/templates/web/today.html").read_text()
+    assert "applyCompletedVisibility" in source
+
+
 def test_static_link_audit_rejects_server_query_links(tmp_path):
     (tmp_path / "index.html").write_text(
         '<a href="/performance/?market=hits">Broken static filter</a>'
