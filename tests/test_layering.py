@@ -73,10 +73,19 @@ def test_domain_is_a_pure_leaf(path: Path):
     )
 
 
-def test_src_does_not_import_streamlit():
-    """No UI in the ingestion/scoring layer — it must run headless from a CLI."""
-    offenders = [p.name for p in _modules(SRC) if "streamlit" in _imported_roots(p)]
-    assert not offenders, f"src/ modules importing streamlit: {offenders}"
+def test_nothing_imports_streamlit():
+    """Streamlit retired on 2026-08-17; the product is a Django static export.
+
+    Broadened from "src/ must run headless" to the whole tree, because the failure mode
+    changed: an import that used to make one module untestable now makes it *unrunnable*
+    — the dependency is gone from requirements.txt. This is the guard that keeps a
+    copy-pasted snippet from silently reintroducing it.
+    """
+    offenders = []
+    for layer in (DOMAIN, SRC, "services", "components", "leagues", WEB, "scripts"):
+        offenders += [f"{layer}/{p.name}" for p in _modules(layer)
+                      if "streamlit" in _imported_roots(p)]
+    assert not offenders, f"modules importing streamlit: {offenders}"
 
 
 # --- the web layer (2026-08-17) ------------------------------------------------------

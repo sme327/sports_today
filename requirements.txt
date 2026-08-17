@@ -2,7 +2,6 @@
 # reinstalls. Bump deliberately, not incidentally. (plotly removed — unused.)
 pandas>=2.2,<4
 openpyxl>=3.1,<4
-streamlit>=1.36,<2
 requests>=2.32,<3
 Django>=5.2,<6
 gunicorn>=23,<24

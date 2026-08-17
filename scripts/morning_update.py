@@ -31,7 +31,7 @@ def main() -> int:
     parser.add_argument(
         "--no-launch",
         action="store_true",
-        help="Update data and database without launching Streamlit.",
+        help="Kept for compatibility; nothing is launched either way.",
     )
     args = parser.parse_args()
 
@@ -81,10 +81,9 @@ def main() -> int:
             print("Published database to the cloud store.")
 
         if not args.no_launch:
-            print("Launching Sports Today...")
-            return subprocess.call(
-                [sys.executable, "-m", "streamlit", "run", "app.py"]
-            )
+            # The Streamlit app retired 2026-08-17; the site is published rather than
+            # launched. `update_and_publish.command` runs this then scripts.publish_pages.
+            print("Data updated. Run `python -m scripts.publish_pages` to publish.")
         return 0
     except KeyboardInterrupt:
         print("\nUpdate cancelled.")

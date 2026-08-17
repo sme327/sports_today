@@ -194,7 +194,7 @@ def test_footer_fire_and_matchup_links():
 
 
 def test_game_counts_by_threshold():
-    from views.today import _game_counts
+    from web.today import _game_counts
     from domain.models import Opportunity
 
     def opp(gid, s):

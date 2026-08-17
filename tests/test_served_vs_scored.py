@@ -13,10 +13,17 @@ def _row(score, result, league="MLB"):
 
 
 def test_the_floor_has_one_definition():
-    """It was a view constant while Performance needed it too — two copies of a
-    number that must agree is how they stop agreeing."""
-    import views.today as today
-    assert today._CURATION_FLOOR == grading.CURATION_FLOOR
+    """It was a view constant while Performance needed it too — two copies of a number
+    that must agree is how they stop agreeing. Re-pointed at the web layer when the
+    Streamlit views retired; the invariant is what matters, not which surface holds it."""
+    import inspect
+
+    from web import today as web_today
+    src = inspect.getsource(web_today)
+    assert "grading.CURATION_FLOOR" in src, (
+        "web/today.py must read the shared floor, not redeclare its own copy")
+    assert not re.search(r"^_CURATION_FLOOR\s*=", src, re.M), (
+        "a second definition of the curation floor has appeared")
 
 
 def test_split_uses_the_floor_inclusively():

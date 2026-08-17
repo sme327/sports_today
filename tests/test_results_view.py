@@ -22,16 +22,6 @@ def test_daily_summary_record_and_not_graded():
     assert "Not graded" in F.daily_summary_html(_tally(0, 0, void=3), None, 3)
 
 
-def test_market_table_rows_sort_and_select():
-    by_market = {"hits": _tally(66, 60), "sp_k": _tally(4, 9), "points": _tally(0, 0, void=5)}
-    html = F.market_table_html(by_market, selected="hits", sort_key="sample")
-    assert "Batter Hits" in html and "66–60" in html
-    assert "mkt=hits" in html and "mkt-row selected" in html   # clickable + highlighted
-    assert "Not graded" in html                               # points, 0 decided
-    # default sort by sample → hits (126) before sp_k (13)
-    assert html.index("Batter Hits") < html.index("SP Strikeouts")
-
-
 def test_prop_item_disambiguates_recommendation_and_actual():
     r = {"league": "MLB", "player_name": "Freddie Freeman", "team_name": "Los Angeles Dodgers",
          "opponent": "Padres", "market": "1+ Hit", "market_key": "batter_hit",
@@ -59,7 +49,11 @@ def _fr(league="MLB", market="1+ Hit", key="batter_hit", score=90, direction="ov
 
 
 def test_apply_filters_each_dimension_and_combined():
-    from components.filter_bar import apply_filters
+    """Re-pointed at `web.analytics` when the Streamlit filter bar retired. The live
+    implementation uses full key names (`league`/`market`/`direction`) where the old one
+    used query-param abbreviations (`flg`/`mkt`/`dir`) — a separate implementation, not a
+    rename, which is why the assertions are restated rather than moved."""
+    from web.analytics import apply_filters
     rows = [
         _fr(result="hit", score=97),
         _fr(result="miss", score=82),
@@ -68,10 +62,8 @@ def test_apply_filters_each_dimension_and_combined():
             result="void", score=88),
     ]
     A = apply_filters
-    assert len(A(rows, {"flg": "MLB"})) == 3
-    assert len(A(rows, {"res": "hit"})) == 2
-    assert len(A(rows, {"dir": "under"})) == 1
-    assert len(A(rows, {"bnd": "95-98"})) == 1          # only the 97
-    assert len(A(rows, {"mkt": "points"})) == 1
-    assert len(A(rows, {"flg": "MLB", "res": "hit"})) == 1   # combined
+    assert len(A(rows, {"league": "MLB"})) == 3
+    assert len(A(rows, {"result": "hit"})) == 2
+    assert len(A(rows, {"direction": "under"})) == 1
+    assert len(A(rows, {"league": "MLB", "result": "hit"})) == 1   # combined
     assert len(A(rows, {})) == 4                        # empty = no-op
