@@ -77,3 +77,31 @@ def test_src_does_not_import_streamlit():
     """No UI in the ingestion/scoring layer — it must run headless from a CLI."""
     offenders = [p.name for p in _modules(SRC) if "streamlit" in _imported_roots(p)]
     assert not offenders, f"src/ modules importing streamlit: {offenders}"
+
+
+# --- the web layer (2026-08-17) ------------------------------------------------------
+
+WEB = "web"
+
+
+def test_web_is_a_top_layer_that_nothing_below_it_imports():
+    """`web/` (Django + static export) sits above everything, like `views/` did for
+    Streamlit. If a scorer or service ever imports it, the headless CLI path — the daily
+    update, the collectors, the backtests — starts requiring Django to be configured."""
+    offenders = []
+    for layer in (DOMAIN, SRC, "services", "components", "leagues"):
+        for path in _modules(layer):
+            if WEB in _imported_roots(path):
+                offenders.append(f"{layer}/{path.name}")
+    assert not offenders, (
+        f"{offenders} import `web/`. The web layer is a consumer, not a dependency — "
+        f"importing it upward would make `python -m scripts.morning_update` need Django."
+    )
+
+
+def test_web_does_not_import_streamlit():
+    """The two front ends must stay independent. `web/` reusing a Streamlit helper would
+    tie the static export to a framework it does not run, and retiring Streamlit would
+    then break the published site."""
+    offenders = [p.name for p in _modules(WEB) if "streamlit" in _imported_roots(p)]
+    assert not offenders, f"web/ modules importing streamlit: {offenders}"
