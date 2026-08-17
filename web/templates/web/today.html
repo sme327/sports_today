@@ -1,5 +1,15 @@
 {% extends "web/base.html" %}
 {% block content %}
+{% comment %}
+The slate's subject is the day itself. Results and Performance already name themselves in
+a heading; this page announced nothing, so a screen reader met a level-2 heading with no
+context and search engines saw a page with no stated topic. Visually hidden because the
+header already shows the date on screen — this states it in the document outline.
+
+Django's {# #} is single-line only: written as a multi-line block it renders the
+continuation lines as page text, which is exactly what happened here first time.
+{% endcomment %}
+<h1 class="visually-hidden">{% if slate_date %}{{ slate_date|date:"l, F j" }}{% else %}{% now "l, F j" %}{% endif %} — games and opportunities</h1>
 {% if league_filters %}
 <section class="filter-row" aria-label="League filters">
   <div class="filter-pills">
