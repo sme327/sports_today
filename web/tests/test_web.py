@@ -58,9 +58,9 @@ class EndpointTests(SimpleTestCase):
             "slate_date": date(2026, 8, 15),
             "collapsed": False,
             "threshold": 90,
-            "league_filters": [],
+            "league_filters": [{"key": "MLB", "label": "⚾ MLB", "active": False}],
             "schedule_groups": [],
-            "game_count": 0,
+            "game_count": 2,
             "unjudged": "",
             "errors": [],
             "has_analysis": False,
@@ -79,6 +79,8 @@ class EndpointTests(SimpleTestCase):
         assert response.status_code == 200
         assert b"Sports" in response.content
         assert b"favicons/sports-today.svg" in response.content
+        assert b'data-toggle-completed' in response.content
+        assert b"Hide completed" in response.content
         assert b"The games and player performances worth your attention" not in response.content
         assert "app;dur=3" in response["Server-Timing"]
         build_context.assert_called_once()

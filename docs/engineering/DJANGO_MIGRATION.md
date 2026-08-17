@@ -64,7 +64,10 @@ Published Today/Tomorrow pages read the same ESPN scoreboards used by the local 
 directly from the browser once on load and every 60 seconds while open. ESPN permits
 cross-origin browser reads but blocks Cloudflare's server network, so this avoids a
 needless Function and keeps static requests outside Worker quotas. Failures are
-deliberately silent: the last published schedule remains fully usable.
+deliberately silent: the last published schedule remains fully usable. ESPN's
+`pre`/`in`/`post` states are normalized to pre/live/final in the browser so a live or
+final badge replaces the scheduled time. The schedule controls can also hide completed
+games without another server request, including games that become final while open.
 
 ## Local run
 

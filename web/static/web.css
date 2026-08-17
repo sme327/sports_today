@@ -45,6 +45,8 @@ a { color: inherit; }
   background: var(--surface-2); color: var(--text-2); padding: .5rem .85rem;
   font-size: .85rem; font-weight: 650; transition: .16s ease;
 }
+.games-toggle { font-family: inherit; cursor: pointer; }
+.schedule-actions { display: flex; align-items: center; justify-content: flex-end; gap: .45rem; }
 .filter-pill:hover, .thr-pill:hover, .games-toggle:hover { transform: translateY(-1px); color: var(--text-1); }
 .filter-pill:focus-visible, .thr-pill:focus-visible, .games-toggle:focus-visible,
 .site-header a:focus-visible, .text-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
@@ -69,6 +71,7 @@ a { color: inherit; }
   .performance-link { font-size: .74rem; }
   .hero-row { align-items: flex-start; flex-direction: column; gap: 1rem; }
   .filter-row { align-items: flex-start; flex-direction: column; }
+  .schedule-actions { align-self: stretch; justify-content: flex-end; flex-wrap: wrap; }
   .thresholds > span { display: none; }
   .site-shell { padding: 1.35rem .9rem 3rem; }
 }

@@ -9,8 +9,11 @@
     {% endfor %}
   </div>
   {% if game_count %}
-    {% if collapsed %}<a class="games-toggle" href="?day={{ day }}">Show {{ game_count }} games ▾</a>
-    {% else %}<a class="games-toggle" href="?day={{ day }}&games=off">Hide games ▴</a>{% endif %}
+    <div class="schedule-actions">
+      {% if not collapsed %}<button class="games-toggle" type="button" data-toggle-completed aria-pressed="false">Hide completed</button>{% endif %}
+      {% if collapsed %}<a class="games-toggle" href="?day={{ day }}">Show {{ game_count }} games ▾</a>
+      {% else %}<a class="games-toggle" href="?day={{ day }}&games=off">Hide games ▴</a>{% endif %}
+    </div>
   {% endif %}
 </section>
 {% endif %}
