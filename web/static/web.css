@@ -171,3 +171,53 @@ a { color: inherit; }
   .nav-day-toggle a { padding-inline: .34rem; font-size: .7rem; }
   .performance-link { font-size: .68rem; }
 }
+
+/* --- accessibility utilities ------------------------------------------------------ */
+
+/* Content that belongs in the document outline but not on screen. Clip rather than
+   `display:none` or `visibility:hidden`, both of which remove it from the accessibility
+   tree — which would defeat the point. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The nav renders before the slate, so a keyboard or switch user otherwise tabs through
+   every filter pill and league toggle before reaching the first game. Hidden until
+   focused, then pinned to the top-left. */
+.skip-link {
+  position: absolute;
+  left: .5rem;
+  top: -3rem;
+  z-index: 100;
+  padding: .6rem .9rem;
+  background: var(--surface-2);
+  color: var(--text-1);
+  border-radius: var(--r-sm, 6px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  transition: top var(--dur, .18s) var(--ease, ease);
+}
+.skip-link:focus { top: .5rem; }
+
+/* `tabindex="-1"` on <main> lets the skip link move focus there; the outline it would
+   otherwise draw on click is noise, but focus-visible keeps it for keyboard users. */
+.site-shell:focus { outline: none; }
+.site-shell:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
+
+/* Readers who ask for less motion get less motion. The stylesheet animates a live-game
+   dot and transitions several controls; none of it carries meaning that is lost when
+   stilled. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -13,12 +13,19 @@
   {% elif section == "performance" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/performance.svg' %}?v=1">
   {% elif section == "results" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/results.svg' %}?v=1">
   {% else %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/sports-today.svg' %}?v=1">{% endif %}
+  <meta name="theme-color" content="#090d11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sports Today">
+  <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+  <link rel="manifest" href="{% static 'site.webmanifest' %}">
   <link rel="stylesheet" href="{% static 'app.css' %}?v=20260816-1">
   <link rel="stylesheet" href="{% static 'web.css' %}?v=20260817-2">
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
   <script src="{% static 'static-site.js' %}?v=20260817-1" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <a class="site-brand" href="/">
       <span class="site-brand-name">Sports <b>Today</b></span>
@@ -32,7 +39,7 @@
       <a class="performance-link {% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}" {% if section == 'performance' %}aria-current="page"{% endif %}>Performance</a>
     </nav>
   </header>
-  <main class="site-shell">
+  <main class="site-shell" id="main" tabindex="-1">
     {% block content %}{% endblock %}
   </main>
   <footer class="site-footer">Sports Today · explainable signals, honest uncertainty</footer>
