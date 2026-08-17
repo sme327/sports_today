@@ -1,23 +1,7 @@
-"""Visual system loading for the Streamlit app."""
+"""Marks `styles/` as a package so Django can list it in STATICFILES_DIRS.
 
-from __future__ import annotations
-
-from pathlib import Path
-
-import streamlit as st
-
-_CSS_PATH = Path(__file__).resolve().parent / "app.css"
-
-
-@st.cache_data(show_spinner=False)
-def _read_css(path: str, mtime: float) -> str:
-    """Read the stylesheet. ``mtime`` busts the cache when the file changes."""
-    return Path(path).read_text(encoding="utf-8")
-
-
-def load_css() -> None:
-    """Inject the Sports Today stylesheet once per session."""
-    if not _CSS_PATH.exists():
-        return
-    css = _read_css(str(_CSS_PATH), _CSS_PATH.stat().st_mtime)
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+The Streamlit CSS loader that used to live here retired with the Streamlit app; the
+stylesheet itself (`app.css`) is now collected by `collectstatic` and served by the
+static site. Kept deliberately empty — `export_static` ignores `*.py` so nothing here
+is ever published, but there is no reason to put anything here either.
+"""

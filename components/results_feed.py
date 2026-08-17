@@ -94,44 +94,6 @@ def daily_summary_html(overall: dict, avg_score: float | None, total: int) -> st
             f'<div class="ds-status">{escape(status)}</div>')
 
 
-def market_table_html(by_market: dict, selected: str | None, sort_key: str) -> str:
-    """Sortable 'By market' table; each row links to filter the prop list (preserving
-    the other active filters). Sort by graded sample (default) or hit rate."""
-    from components.filter_bar import filter_href
-
-    if not by_market:
-        return ""
-    items = list(by_market.items())
-    if sort_key == "rate":
-        items.sort(key=lambda kv: (kv[1]["hit_rate"] is not None,
-                                   kv[1]["hit_rate"] or 0), reverse=True)
-    else:
-        items.sort(key=lambda kv: kv[1]["hit"] + kv[1]["miss"], reverse=True)
-
-    def hdr(key, label):
-        arrow = " ↓" if sort_key == key else ""
-        return (f'<a class="mkt-h sortable" target="_self" '
-                f'href="{filter_href(msort=key)}">{label}{arrow}</a>')
-
-    head = (f'<div class="mkt-row mkt-head">'
-            f'<span class="mkt-h">Market</span>{hdr("sample", "Record / sample")}'
-            f'{hdr("rate", "Hit rate")}<span class="mkt-h">Voids</span>'
-            f'<span class="mkt-h">Pending</span></div>')
-    rows = []
-    for pt, t in items:
-        decided = t["hit"] + t["miss"]
-        sel = " selected" if pt == selected else ""
-        rows.append(
-            f'<a class="mkt-row{sel}" target="_self" href="{filter_href(mkt=pt)}">'
-            f'<span class="mkt-name">{escape(LABELS.get(pt, pt))}</span>'
-            f'<span class="mkt-rec">{t["hit"]}–{t["miss"]} <span class="ds-sub">'
-            f'n={decided}</span></span>'
-            f'<span class="mkt-rate">{_rate(t)}</span>'
-            f'<span class="mkt-num">{t["void"]}</span>'
-            f'<span class="mkt-num">{t["pending"]}</span></a>')
-    return f'<div class="mkt-table">{head}{"".join(rows)}</div>'
-
-
 def _evidence_list(raw) -> list[str]:
     try:
         v = json.loads(raw) if isinstance(raw, str) else (raw or [])
