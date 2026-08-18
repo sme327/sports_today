@@ -92,6 +92,7 @@ class ScheduleOnlyESPN:
                 round_name=espn_scoreboard.round_label(g, with_week=self.with_week)
                            or self.default_round or None,
                 neutral_site=bool(g.get("neutral_site")),
+                doubleheader_game=g.get("doubleheader_game"),
                 conference_game=bool(g.get("conference_game")),
                 away_record=g.get("away_record"),
                 home_record=g.get("home_record"),

@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Iterable
 
+import re
 import requests
 
 _BASE = "https://site.api.espn.com/apis/site/v2/sports/{path}/scoreboard"
@@ -55,6 +56,26 @@ def _int(value: object) -> int | None:
         return int(value)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return None
+
+
+_DH_GAME = re.compile(r"doubleheader\s*[-–—]\s*game\s*(\d+)", re.I)
+
+
+def _doubleheader_game(comp: dict) -> int | None:
+    """Which game of a doubleheader this is, from ESPN's own note, or ``None``.
+
+    Read rather than inferred. Counting duplicate matchups on a slate would also flag a
+    single postponed game listed twice, and would number them by whatever order the
+    schedule happened to return — ESPN states it outright:
+
+        "Doubleheader - Game 1 - Makeup from May 24"
+        "Doubleheader - Game 2"
+    """
+    for note in comp.get("notes") or []:
+        match = _DH_GAME.search(str(note.get("headline") or ""))
+        if match:
+            return int(match.group(1))
+    return None
 
 
 def _logo(team: dict) -> str | None:
@@ -120,6 +141,7 @@ def parse_events(payload: dict) -> list[dict]:
             "home_rank": _rank(home),
             "venue": (comp.get("venue") or {}).get("fullName"),
             "neutral_site": bool(comp.get("neutralSite")),
+            "doubleheader_game": _doubleheader_game(comp),
             "broadcast": ", ".join(dict.fromkeys(broadcasts)),
             "away_score": _score(away.get("score")),
             "home_score": _score(home.get("score")),

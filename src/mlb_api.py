@@ -44,6 +44,20 @@ def _phase(game_type: object) -> str | None:
     return _GAME_TYPE_PHASE.get(str(game_type or "").upper().strip())
 
 
+def _doubleheader_game(game: dict) -> int | None:
+    """Which game of a doubleheader this is, or ``None`` for an ordinary fixture.
+
+    Gated on ``doubleHeader`` rather than reading ``gameNumber`` alone: StatsAPI sets
+    that field on *every* game, so trusting it directly would stamp "Game 1" on the whole
+    slate. ``"S"`` is a split doubleheader (separate admissions) and ``"Y"`` a traditional
+    one; ``"N"`` is the ordinary case.
+    """
+    if str(game.get("doubleHeader") or "N").upper() not in ("S", "Y"):
+        return None
+    number = game.get("gameNumber")
+    return int(number) if str(number).isdigit() else None
+
+
 def _record(side: dict) -> str | None:
     """"W-L" (or "W-L-T") from StatsAPI's structured leagueRecord. None when the
     block is absent — a team with no games yet must not read as 0-0."""
@@ -104,6 +118,7 @@ def _parse_schedule(payload: dict) -> list[dict]:
                 "phase": _phase(game.get("gameType")),
                 # e.g. "Regular Season", "World Series" — MLB's own round wording.
                 "series_description": game.get("seriesDescription"),
+                "doubleheader_game": _doubleheader_game(game),
                 **_series(game),
                 "away_record": _record(away_side),
                 "home_record": _record(home_side),

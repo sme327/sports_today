@@ -275,3 +275,52 @@ def test_rows_cached_before_these_fields_existed_still_load():
     assert g.season is None and g.phase is None and g.week is None
     assert g.neutral_site is False
     assert g.context_label is None
+
+
+# --- doubleheaders (2026-08-17) -----------------------------------------------------
+
+def test_a_doubleheader_game_is_named_on_the_card():
+    """Without this a slate lists the same matchup twice at different times with nothing
+    to tell them apart — two "Matchup →" links to different pages, reading as a bug.
+    Observed live on 2026-08-17: Cardinals at Reds appeared at 12:40 and 17:40."""
+    g = SlateGame(league="MLB", game_id="1", away_name="Cardinals", home_name="Reds",
+                  doubleheader_game=1)
+    assert g.notable_context == "Game 1"
+
+
+def test_the_doubleheader_marker_leads_the_context_line():
+    """It is the part that disambiguates two otherwise identical cards, so it has to be
+    read first — ahead of series position, which both games share."""
+    g = SlateGame(league="MLB", game_id="2", away_name="Cardinals", home_name="Reds",
+                  doubleheader_game=2, series_game=2, series_total=3,
+                  series_summary="STL leads 1-0")
+    context = g.notable_context
+    assert context.startswith("Game 2"), context
+    assert "STL leads 1-0" in context
+
+
+def test_an_ordinary_game_says_nothing_about_doubleheaders():
+    g = SlateGame(league="MLB", game_id="3", away_name="Cardinals", home_name="Reds")
+    assert g.notable_context is None
+
+
+def test_statsapi_game_number_alone_does_not_make_a_doubleheader():
+    """StatsAPI sets `gameNumber` on *every* game, so reading it without checking
+    `doubleHeader` would stamp "Game 1" across the whole slate."""
+    from src.mlb_api import _doubleheader_game
+    assert _doubleheader_game({"doubleHeader": "N", "gameNumber": 1}) is None
+    assert _doubleheader_game({"doubleHeader": "S", "gameNumber": 2}) == 2   # split DH
+    assert _doubleheader_game({"doubleHeader": "Y", "gameNumber": 1}) == 1   # traditional
+    assert _doubleheader_game({}) is None
+
+
+def test_espn_doubleheader_is_read_from_its_note_not_inferred():
+    """ESPN states it outright — "Doubleheader - Game 2". Counting duplicate matchups on
+    a slate would also flag a single postponed game listed twice, and would number them
+    by whatever order the schedule happened to return."""
+    from src.espn_scoreboard import _doubleheader_game
+    note = lambda text: {"notes": [{"type": "event", "headline": text}]}
+    assert _doubleheader_game(note("Doubleheader - Game 1 - Makeup from May 24")) == 1
+    assert _doubleheader_game(note("Doubleheader - Game 2")) == 2
+    assert _doubleheader_game(note("Rivalry Week")) is None
+    assert _doubleheader_game({}) is None
