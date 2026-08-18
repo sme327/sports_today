@@ -51,6 +51,7 @@ class MLBAdapter:
                     game_id=str(g.get("game_pk")),
                     start_time=_parse_start(g.get("game_date")),
                     status=g.get("status"),
+                    doubleheader_game=g.get("doubleheader_game"),
                     away_id=str(g.get("away_id")) if g.get("away_id") else None,
                     home_id=str(g.get("home_id")) if g.get("home_id") else None,
                     away_name=g.get("away"),

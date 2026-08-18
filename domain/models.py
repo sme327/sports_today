@@ -142,6 +142,10 @@ class SlateGame:
     # opener, when there is nothing to report.
     series_game: int | None = None
     series_total: int | None = None
+    # Which game of a doubleheader this is (1 or 2), from the source's own note. Without
+    # it a slate lists the same matchup twice at different times and reads as a bug —
+    # two "Matchup →" links to different pages with nothing to tell them apart.
+    doubleheader_game: int | None = None
     series_summary: str | None = None
     # The leading side's tally and the trailing side's, not away/home — which team
     # leads is named in ``series_summary``. These two carry the shape of the series,
@@ -182,7 +186,10 @@ class SlateGame:
         else:
             base = self.context_label if notable else None
 
-        parts = [p for p in (base, self.series_note) if p]
+        # The doubleheader marker leads: it is what disambiguates two otherwise
+        # identical cards, so it has to be the first thing read.
+        dh = f"Game {self.doubleheader_game}" if self.doubleheader_game else None
+        parts = [p for p in (dh, base, self.series_note) if p]
         return " · ".join(parts) or None
 
     @property
