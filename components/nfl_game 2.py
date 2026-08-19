@@ -143,19 +143,12 @@ def spotlights_html(page: NFLGamePage) -> str:
         return ""
     a = page.hero.away.split()[-1]
     h = page.hero.home.split()[-1]
-    spots = page.away_spotlights + page.home_spotlights
-    footnote = ""
-    if any(s.matchup is not None and s.matchup.direction == "not-a-factor" for s in spots):
-        footnote = ('<div class="nfl-mx-note">Receivers carry no matchup call: across three '
-                    'ingested seasons the gap between the softest and toughest defences is '
-                    'about <b>2 receiving yards</b>, against a 35-yard game-to-game swing. '
-                    'We measured it rather than assuming it.</div>')
     return (
         '<div class="nfl-section-head">Player spotlights '
         '<span>(pick from prior games · ✓/✗ = result this game · matchup effect is '
         'measured, and only flagged where it is real)</span></div>'
         f'<div class="nfl-spots">{_spot_col(a, page.away_spotlights)}'
-        f'{_spot_col(h, page.home_spotlights)}</div>{footnote}'
+        f'{_spot_col(h, page.home_spotlights)}</div>'
     )
 
 

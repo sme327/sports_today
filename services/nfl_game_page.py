@@ -16,6 +16,8 @@ from pathlib import Path
 import pandas as pd
 
 from services import nfl_analytics as A
+from services import nfl_matchup
+from services.nfl_matchup import MatchupCall
 from services.nfl_repository import load_player_games, load_team_games
 from src import nfl_opportunity
 from src.config import DB_PATH
@@ -74,6 +76,10 @@ class NFLSpotlight:
     support: str                # e.g. "96.8 avg · cleared 60% (6/10)"
     actual: float | None        # what the player did in this game
     result: str | None          # "hit" | "miss" | None (backtest of the leakage-safe pick)
+    # The opponent's measured effect on this player, or None where no stat he plays is
+    # matchup-sensitive. Receivers carry a "not-a-factor" call rather than nothing —
+    # see services/nfl_matchup for why that is the honest answer and not an omission.
+    matchup: "MatchupCall | None" = None
 
 
 @dataclass(frozen=True)
@@ -173,9 +179,11 @@ def _rest_note(a: str, h: str, ar: int | None, hr: int | None) -> str:
     return "; ".join(parts)
 
 
-def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str) -> tuple[NFLSpotlight, ...]:
+def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str,
+                opponent: str = "", pg_all: pd.DataFrame | None = None) -> tuple[NFLSpotlight, ...]:
     """Key players' leakage-safe prop picks (from prior games) + how they actually did
-    in this game — a per-player backtest of the pick."""
+    in this game — a per-player backtest of the pick — each with the opponent's measured
+    effect on that player."""
     if pg.empty:
         return ()
     prior = pg[pg["game_date"].astype("string") < game_date]
@@ -194,8 +202,14 @@ def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str) -> tu
                 result = "hit" if actual >= prop["threshold"] else "miss"
         cleared = int(round(prop["clear_rate"] * prop["games"]))
         support = f"{prop['avg']} avg · cleared {prop['clear_rate']:.0%} ({cleared}/{prop['games']})"
+        # Props are scored on this season; the *defence* rating spans seasons, because a
+        # defence has faced only a handful of qualifying quarterbacks by midseason and a
+        # season-only rating would stay silent exactly when the page is most used.
+        call = (nfl_matchup.outlook(pg_all if pg_all is not None else pg,
+                                    pid, name, str(pos), opponent, game_date)
+                if opponent else None)
         out.append(NFLSpotlight(name, str(pos), f"{prop['threshold']}+ {prop['label']}",
-                                support, actual, result))
+                                support, actual, result, call))
     return tuple(out)
 
 
@@ -280,10 +294,12 @@ def _build_nfl_game_page(
     note = ("Season opener — no prior-form data yet." if games_in == 0 else
             "Early-season sample — form is thin." if games_in < 4 else "")
 
+    pg_all = pg
     if not pg.empty and "season" in pg.columns and pd.notna(season):
         pg = pg[pg["season"] == season]
-    away_spot = _spotlights(pg, game_id, game_date, away)
-    home_spot = _spotlights(pg, game_id, game_date, home)
+    # Each side's players are rated against the *other* side's defence.
+    away_spot = _spotlights(pg, game_id, game_date, away, home, pg_all)
+    home_spot = _spotlights(pg, game_id, game_date, home, away, pg_all)
 
     a_rest = A.rest_days(season_tg, away, game_date)
     h_rest = A.rest_days(season_tg, home, game_date)
