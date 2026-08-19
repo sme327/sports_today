@@ -161,6 +161,14 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   is strictly nested inside 1+ Hit, converted 20.6%, and never once scored 75+ so it
   could never be recommended. **Batter walks looks like the same shape** — 1 prop ever
   above 75, and the outcome depends more on how the pitcher attacks than on the batter.
+- **`sp_hits` is flat, not failing — and `batter_k` is starved, not poor.** Measured
+  2026-08-19 with intervals: `sp_hits` runs −4.1 ±6.2 (not significant), so it is not a
+  retirement candidate; the over side carries real signal (+14 to +19 at the top decile,
+  out of sample) but 22 scorer variants all landed inside noise of the incumbent, so
+  nothing shipped. `batter_k` has the **second-highest lift of any market (+18.2 ±9.2) and
+  has been served six times** — its scorer tops out at 75 against a floor of 70. Judge a
+  market on *all recorded props*, not the ones that cleared the floor: good-and-starved
+  looks identical to bad until you separate them.
 - **Editorial signals are records, not forecasts.** They use no odds (a deliberate
   product decision, enforced by a test), no injuries and no weather. A "Game Interest"
   score ranks a slate for attention — it is **not** a win probability and not

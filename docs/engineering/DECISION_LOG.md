@@ -9,6 +9,82 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-19 — `sp_hits` stays, unchanged; and a good market is being starved
+
+**Decision.** Do **not** retire `sp_hits`, and do **not** change its scorer. Record
+`batter_k` as under-served relative to its measured lift, pending more data.
+
+### Retiring `sp_hits` was the wrong call, twice over
+
+I recommended retirement on a −11.3 figure. That was one engine version inside one date
+window, n=45, with a ±15 interval — **a point estimate read as a fact.** With intervals:
+
+| slice | n | lift | 95% CI | significant |
+|---|---|---|---|---|
+| all `sp_hits` | 252 | −4.1 | ±6.2 | **no** |
+| unders | 216 | −4.1 | ±6.7 | no |
+| under 4 | 123 | −8.7 | ±8.6 | marginal |
+| under 5 / 6 | 59 / 34 | **+2.4 / +1.3** | ±12 / ±14 | no |
+
+The market is statistically **flat**, not harmful.
+
+### The over side has real signal — that the scorer already partly captures
+
+Prompted by the right question (*"aren't we only looking at the under?"*), I had been
+measuring **36 served overs** — the scorer's choices, not the market. Over all 2,463
+leakage-safe starts, ranking by the pitcher's own prior hits-allowed rate × the opposing
+offence's hits/game, the top decile out of sample:
+
+| bar | base | top decile | lift |
+|---|---|---|---|
+| over 5+ | .551 | .696 | **+14.4** ±10.9 |
+| over 6+ | .388 | .580 | **+19.1** ±11.6 |
+| over 7+ | .236 | .406 | **+17.0** ±11.6 |
+
+Decomposed, the pitcher's own rate carries it (+10.8 alone); the opposing offence adds
+~0.4 points over that, inside the noise. Durability adds little — a pitcher getting hit
+gets pulled, which caps the volume.
+
+**But no scorer variant ships.** Backtesting the *real* `_best_direction` across
+over-penalties, bar sets and selectivity gates — 22 variants — the best was **+4.7 ±3.8**
+against an incumbent **+4.0**. With k=22, `√(2 ln k)` ≈ 2.49 SE is the best-of-k under pure
+noise; the gap is a fraction of that. The scorer already earns **+7.8** on the overs it
+picks, and every attempt to concentrate them traded volume for no net gain.
+
+**The lesson is the measurement, not the market:** an abstract feature can carry signal
+that the shipping function already captures. Validate the function, not the idea.
+
+### `batter_k` is the real finding
+
+Judging every market on **all recorded props** rather than only those served exposes one
+that is starved rather than poor:
+
+| market | recorded | lift | served 70+ |
+|---|---|---|---|
+| `batter_k` | 110 | **+18.2 ±9.2** | **6** |
+| `batter_hit` | 5,032 | −3.2 ±1.4 | 1,445 |
+| `batter_tb` (retired) | 1,199 | −1.3 ±2.3 | 1 |
+
+`batter_k` has the second-highest lift of any market and **has been served six times.** Its
+scorer tops out at 75 with a median of 59, so it essentially cannot clear the curation
+floor — the market works and the scale does not reach.
+
+That also **vindicates the `batter_tb` retirement for the right reason**: it was retired for
+never clearing the floor, and its lift is −1.3, so nothing was lost. `batter_bb` is likewise
+flat (−1.3 ±10.6). Same symptom, opposite diagnosis — which is exactly why lift, not
+conversion, has to be the test.
+
+**Not acting yet.** Within `batter_k` the score does *not* discriminate — the 50-59 band
+(+22.3) beats 60-69 (+17.9) on n=34 and n=68. Rescaling would serve genuinely good props
+while claiming a ranking the data does not support. Worth revisiting once the sample
+doubles.
+
+**Future.** The general form of this check — *lift over base across all recorded props,
+against how many actually clear the floor* — belongs on the Performance page. A market
+that is good and starved looks identical to a market that is bad, until you separate them.
+
+---
+
 ## 2026-08-19 — The NFL matchup effect is real, small, and one-sided
 
 **Decision.** Add the opponent's measured effect to NFL player spotlights
