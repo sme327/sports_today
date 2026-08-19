@@ -116,3 +116,84 @@ def test_results_offer_only_the_seven_published_dates(load):
     assert context["recent_dates"][0]["date"] == date(2026, 8, 14)
     assert context["recent_dates"][-1]["date"] == date(2026, 8, 8)
     assert context["filter_groups"] == []
+
+
+# --- model versions grouped by market (2026-08-18) ---------------------------------
+
+def _row(market, version, day, result="hit", score=90):
+    return {"market_key": market, "scoring_engine_version": version,
+            "snapshot_date": day, "result": result, "opportunity_score": score,
+            "league": "MLB", "market": "1+ Hit", "direction": "over"}
+
+
+def test_versions_group_by_market_with_the_live_one_expanded():
+    """Fourteen version rows is a wall. The question a reader has is "did the change help
+    *this* market", so each family shows its live version and collapses the rest."""
+    from web.analytics import _version_groups
+
+    rows = ([_row("batter_hit", "batter-hit-v5", "2026-08-12")] * 3
+            + [_row("batter_hit", "batter-hit-v3", "2026-08-09", "miss")] * 2
+            + [_row("batter_hit", "mlb-1hit-v0.1", "2026-07-20", "miss")])
+    groups = {g["key"]: g for g in _version_groups(rows)}
+    hit = groups["batter_hit"]
+    assert hit["current"]["version"] == "batter-hit-v5"
+    assert len(hit["earlier"]) == 2, "older versions collapse into one line"
+    assert hit["earlier_tally"]["hit"] + hit["earlier_tally"]["miss"] == 3
+
+
+def test_a_retired_market_is_separated_from_superseded_engines():
+    """A blanket "old models" row would average total bases — retired for converting 21%
+    because the *market* was unservable — with an engine that simply got better. That
+    makes every superseded scorer look worse than it was."""
+    from web.analytics import _version_groups
+
+    rows = ([_row("batter_hit", "batter-hit-v5", "2026-08-12")] * 2
+            + [_row("batter_tb", "batter-tb-v2", "2026-08-08", "miss")] * 2)
+    groups = {g["key"]: g for g in _version_groups(rows)}
+    assert groups["batter_tb"]["retired"] == "2026-08-09"
+    assert not groups["batter_hit"]["retired"]
+    # A retired market has no "current" version even though MODEL_VERSIONS still names
+    # one — the spec is kept only so old ledger rows resolve.
+    assert groups["batter_tb"]["current"] is None
+
+
+def test_retired_markets_sort_last():
+    from web.analytics import _version_groups
+
+    rows = ([_row("batter_tb", "batter-tb-v2", "2026-08-08", "miss")] * 10
+            + [_row("batter_hit", "batter-hit-v5", "2026-08-12")] * 2)
+    keys = [g["key"] for g in _version_groups(rows)]
+    assert keys[-1] == "batter_tb", "retired markets belong after live ones, not by size"
+
+
+def test_the_rendered_table_labels_the_market_and_names_retirement():
+    from components.results_feed import version_table_html
+    from web.analytics import _version_groups
+
+    rows = ([_row("batter_hit", "batter-hit-v5", "2026-08-12")] * 2
+            + [_row("batter_hit", "batter-hit-v3", "2026-08-09", "miss")]
+            + [_row("batter_tb", "batter-tb-v2", "2026-08-08", "miss")])
+    html = version_table_html(_version_groups(rows), 0.55)
+    assert "MLB Batter Hits" in html
+    assert "1 earlier version" in html, "singular when only one older version exists"
+    assert "Retired markets" in html
+    assert "could not clear the curation floor" in html
+
+
+def test_an_empty_ledger_says_so_rather_than_rendering_an_empty_table():
+    from components.results_feed import version_table_html
+    assert "No versioned props yet" in version_table_html([], None)
+
+
+def test_markets_sharing_a_noun_get_distinct_group_labels():
+    """`spec.noun` is "Strikeouts" for both batter Ks and SP Ks, which rendered two
+    identical group headings. `LABELS` is keyed by prop type and already disambiguates
+    them — and is the same source the filter pills use, so the names match what a reader
+    has already seen."""
+    from web.analytics import _version_groups
+
+    rows = ([_row("batter_k", "batter-k-v1", "2026-08-12")]
+            + [_row("sp_k", "sp-v3", "2026-08-12")])
+    labels = [g["label"] for g in _version_groups(rows)]
+    assert len(set(labels)) == len(labels), f"duplicate group labels: {labels}"
+    assert "MLB Batter Ks" in labels and "MLB SP Strikeouts" in labels
