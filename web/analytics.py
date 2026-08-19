@@ -321,6 +321,70 @@ def _result_date_option(day: date, selected: date) -> dict:
             "state": state, "state_label": state_label}
 
 
+def _version_groups(rows: list[dict]) -> list[dict]:
+    """Model versions grouped by **market family**, not listed one per version.
+
+    Fourteen version rows is a wall, and a flat "old models" roll-up is worse: it would
+    average `batter_tb` — a market **retired** for converting 21% and never clearing the
+    curation floor — together with `batter_hit`, an engine that simply got better. Those
+    are different facts, and merging them makes every superseded scorer look worse than it
+    was while flattering the current one.
+
+    So: one group per market family, its live version expanded, everything earlier
+    collapsed behind a count, and retired markets in a section of their own.
+    """
+    from domain.markets import LABELS, MARKETS
+    from services.snapshots import MODEL_VERSIONS
+
+    families: dict[str, dict] = {}
+    for row in rows:
+        key = row.get("market_key") or "unknown"
+        version = row.get("scoring_engine_version") or "unversioned"
+        fam = families.setdefault(key, {})
+        entry = fam.setdefault(version, {"rows": [], "first": None, "last": None})
+        entry["rows"].append(row)
+        day = row.get("snapshot_date")
+        if day:
+            entry["first"] = min(entry["first"] or day, day)
+            entry["last"] = max(entry["last"] or day, day)
+
+    groups: list[dict] = []
+    for key, by_version in families.items():
+        spec = MARKETS.get(key)
+        live = MODEL_VERSIONS.get(key)
+        # `LABELS` is keyed by prop type and already disambiguates markets that share a
+        # noun — batter and SP strikeouts are both "Strikeouts" in `spec.noun`, which
+        # rendered two identical group headings. The filter pills use the same source,
+        # so the names match what a reader has already seen.
+        label = LABELS.get(spec.prop_type, spec.noun) if spec else key
+        if spec:
+            label = f"{spec.league} {label}" if not label.startswith(spec.league) else label
+        current, earlier = None, []
+        for version, entry in by_version.items():
+            item = {"version": version, "tally": grading.tally(entry["rows"]),
+                    "first": entry["first"] or "—", "last": entry["last"] or "—"}
+            # A retired market has no *current* version even though MODEL_VERSIONS still
+            # names one — the spec is kept only so old ledger rows resolve.
+            if version == live and not (spec and spec.retired):
+                current = item
+            else:
+                earlier.append(item)
+        earlier.sort(key=lambda i: i["last"], reverse=True)
+        pooled = grading.tally([r for v in by_version.values() for r in v["rows"]])
+        groups.append({
+            "key": key, "label": label,
+            "retired": spec.retired if spec else "",
+            "current": current, "earlier": earlier, "pooled": pooled,
+            "earlier_tally": grading.tally(
+                [r for v, e in by_version.items() for r in e["rows"]
+                 if not (v == live and not (spec and spec.retired))]),
+        })
+    # Live markets first, ordered by sample; retired markets last.
+    groups.sort(key=lambda g: (bool(g["retired"]),
+                               -(g["pooled"]["hit"] + g["pooled"]["miss"])))
+    return groups
+
+
 def performance_context(params, today: date) -> dict:
     period = params.get("period", "30")
     if period not in {key for key, _ in PERIODS}:
@@ -391,20 +455,7 @@ def performance_context(params, today: date) -> dict:
     months = sorted(grading.summarize_by(
         all_rows, lambda row: (row.get("snapshot_date") or "")[:7] or None
     ).items())
-    versions: dict[str, list[dict]] = {}
-    version_dates: dict[str, tuple[str, str]] = {}
-    for row in all_rows:
-        version = row.get("scoring_engine_version") or "unversioned"
-        versions.setdefault(version, []).append(row)
-        token = row.get("snapshot_date")
-        if token:
-            low, high = version_dates.get(version, (token, token))
-            version_dates[version] = (min(low, token), max(high, token))
-    version_items = sorted(
-        ((version, grading.tally(version_rows), *version_dates.get(version, ("—", "—")))
-         for version, version_rows in versions.items()),
-        key=lambda item: item[3],
-    )
+    version_items = _version_groups(all_rows)
     return {
         "section": "performance", "has_rows": True, "period": period,
         "min_sample": min_sample, "period_label": label, "cohort": cohort,

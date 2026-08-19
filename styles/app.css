@@ -61,42 +61,10 @@
   --dur: .2s;
 }
 
-/* ----------------------------------------------------------- APP SHELL --- */
-html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"] {
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.stApp {
-  color: var(--text-1);
-  background:
-    radial-gradient(1100px 480px at 10% -10%, rgba(255, 122, 26, .10), transparent 55%),
-    var(--bg);
-  background-attachment: fixed;
-}
-
 .block-container {
   max-width: 1160px;
   padding-top: 1.5rem;
   padding-bottom: 2rem;
-}
-
-[data-testid="stVerticalBlock"] { gap: .42rem; }
-[data-testid="stElementContainer"] { margin-bottom: 0 !important; }
-
-#MainMenu, footer,
-[data-testid="stDeployButton"],
-[data-testid="stToolbar"],
-[data-testid="stToolbarActions"],
-.stAppDeployButton {
-  display: none !important;
-  visibility: hidden !important;
-}
-header[data-testid="stHeader"] {
-  background: transparent !important;
-  height: 0 !important;
-  min-height: 0 !important;
 }
 
 /* ---------------------------------------------------------- TYPOGRAPHY --- */
@@ -142,61 +110,6 @@ header[data-testid="stHeader"] {
 }
 
 /* --------------------------------------------------- BUTTONS / PILLS ----- */
-/* Native Streamlit buttons as compact filter pills in the segmented-control
-   family: rounded, subtle gradient, soft hover lift. */
-div[data-testid="stButton"] > button {
-  min-height: 2.3rem;
-  height: 2.3rem;
-  padding: 0 .95rem !important;
-  border: 1px solid var(--divider) !important;
-  border-radius: var(--r-pill) !important;
-  background: var(--surface-2) !important;
-  color: var(--text-2) !important;
-  box-shadow: var(--edge-hi) !important;
-  font-size: .9rem !important;
-  font-weight: 600 !important;
-  letter-spacing: -.005em;
-  transition: transform var(--dur-fast) var(--ease-out),
-              background var(--dur) var(--ease),
-              border-color var(--dur) var(--ease),
-              box-shadow var(--dur) var(--ease),
-              color var(--dur) var(--ease);
-}
-div[data-testid="stButton"] > button:hover {
-  transform: translateY(-1px);
-  background: var(--surface-3) !important;
-  border-color: var(--hairline-2) !important;
-  color: var(--text-1) !important;
-  box-shadow: var(--edge-hi), var(--shadow-sm) !important;
-}
-div[data-testid="stButton"] > button:active { transform: translateY(0); }
-div[data-testid="stButton"] > button:focus-visible {
-  outline: 2px solid var(--brand) !important;
-  outline-offset: 2px;
-}
-div[data-testid="stButton"] > button p {
-  font-size: inherit !important;
-  font-weight: inherit !important;
-  letter-spacing: inherit !important;
-}
-div[data-testid="stButton"] > button[kind="primary"] {
-  background: var(--brand-grad) !important;
-  border-color: rgba(255, 170, 110, .5) !important;
-  color: var(--on-brand) !important;
-  box-shadow: var(--edge-hi), var(--shadow-brand) !important;
-}
-div[data-testid="stButton"] > button[kind="primary"]:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.04);
-  color: var(--on-brand) !important;
-}
-
-/* League filter group: sits just below the title with tight, grouped spacing. */
-[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) {
-  margin-top: .5rem;
-  gap: .55rem !important;
-}
-
 /* --------------------------------------------- SEGMENTED CONTROL --------- */
 /* Today / Tomorrow: the benchmark. Joined capsule, angled seam, brand gradient
    on the active side, smooth transitions. */
@@ -755,77 +668,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
 .detail-name { color: var(--text-1); font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; }
 .detail-sub { color: var(--text-3); font-size: .76rem; margin-top: .16rem; }
 .detail-at { color: var(--text-4); font-size: .95rem; font-weight: 600; text-align: center; }
-
-/* -------------------------------------------------- STREAMLIT WIDGETS ---- */
-[data-testid="stMetric"] {
-  padding: .6rem .8rem;
-  border-radius: var(--r-md);
-  background: var(--surface-1);
-  box-shadow: var(--edge-hi), var(--shadow-sm);
-}
-[data-testid="stMetricLabel"] p {
-  color: var(--text-3) !important;
-  font-size: .72rem !important;
-  font-weight: 600 !important;
-  letter-spacing: .01em;
-}
-[data-testid="stMetricValue"] {
-  color: var(--text-1) !important;
-  font-weight: 750 !important;
-  letter-spacing: -.02em;
-}
-
-[data-testid="stTabs"] [data-baseweb="tab-list"] {
-  gap: .3rem;
-  margin-top: .35rem;
-  border-bottom: 1px solid var(--hairline);
-}
-[data-testid="stTabs"] [data-baseweb="tab"] {
-  font-size: .92rem;
-  font-weight: 650;
-  color: var(--text-3);
-}
-[data-testid="stTabs"] [aria-selected="true"] { color: var(--text-1) !important; }
-[data-testid="stTabs"] [data-baseweb="tab-highlight"] { background: var(--brand) !important; }
-
-[data-testid="stDataFrame"] {
-  border: 1px solid var(--hairline) !important;
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
-
-[data-testid="stAlert"] {
-  border: 0 !important;
-  border-radius: var(--r-md) !important;
-  background: var(--surface-1) !important;
-  box-shadow: var(--edge-hi), var(--shadow-sm) !important;
-  color: var(--text-2) !important;
-}
-
-[data-testid="stExpander"] details {
-  border: 0 !important;
-  border-radius: var(--r-md) !important;
-  background: var(--surface-1) !important;
-  box-shadow: var(--edge-hi), var(--shadow-sm) !important;
-  overflow: hidden;
-}
-[data-testid="stExpander"] summary { font-weight: 650; }
-[data-testid="stExpander"] summary:hover { color: var(--brand-2); }
-
-[data-testid="stTextInput"] input {
-  border-radius: var(--r-sm) !important;
-  background: var(--surface-2) !important;
-  border: 1px solid var(--hairline) !important;
-  color: var(--text-1) !important;
-}
-
-[data-testid="stSidebar"] {
-  background: var(--surface-1) !important;
-  border-right: 1px solid var(--hairline);
-}
-[data-testid="stSidebar"] p, .stCaption, [data-testid="stCaptionContainer"] p {
-  color: var(--text-3) !important;
-}
 
 /* -------------------------------------------------------- RESPONSIVE ----- */
 @media (max-width: 900px) {
@@ -1644,16 +1486,30 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {
   padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
   font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
 
-/* ---- Refinements (opportunity screen hierarchy) ------------------------- */
-/* Item 6: the prop-type category pills read as a heavy toolbar row. Scope-shrink
-   just those (keyed pt_*) — not the league filters — for less height/padding. */
-[class*="st-key-pt_"] div[data-testid="stButton"] > button {
-  min-height: 2.0rem !important;
-  height: 2.0rem !important;
-  padding: 0 .72rem !important;
-  font-size: .84rem !important;
-  font-weight: 550 !important;
+/* Model versions are grouped by market family: the live version reads normally, earlier
+   versions of the same market collapse into one quieter line beneath it. The label is
+   what makes fourteen version rows scannable as five questions. */
+.ver-group-label {
+  margin: .7rem 0 .2rem;
+  color: var(--text-3);
+  font-size: .7rem;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
+.ver-group-label:first-child { margin-top: .2rem; }
+.ver-current .et-seg { color: var(--text-1); font-weight: 650; }
+/* Superseded: present for comparison, not competing for attention. */
+.ver-earlier { background: transparent; box-shadow: none; color: var(--text-4); }
+.ver-earlier .et-seg { font-style: italic; }
+.ver-retired-head {
+  margin: 1.1rem 0 .1rem;
+  color: var(--text-3);
+  font-size: .74rem;
+  font-weight: 750;
+}
+
+/* ---- Refinements (opportunity screen hierarchy) ------------------------- */
 /* Curation subtext beside "Today's N strongest picks" — muted, so the honest total
    is context, not the headline. */
 .opp-count-sub { color: var(--text-4); font-weight: 500; }

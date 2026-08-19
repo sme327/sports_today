@@ -415,25 +415,65 @@ def monthly_table_html(months: list, overall_rate: float | None) -> str:
     return f'<div class="et-table">{head}{body}</div>'
 
 
-def version_table_html(items: list, overall_rate: float | None) -> str:
-    """Model-version comparison: version, active dates, record, hit rate, sample,
-    diff-vs-overall. ``items`` = [(version, tally, first_date, last_date)]."""
-    if not items:
+def version_table_html(groups: list, overall_rate: float | None) -> str:
+    """Model versions grouped by market family.
+
+    ``groups`` = the output of ``web.analytics._version_groups``. Each row shows the live
+    version expanded; earlier versions of the same market collapse into one line, because
+    fourteen version rows is a wall and the question a reader has is "did the change help
+    *this* market", not "list everything ever stamped".
+
+    Retired markets render in their own section on the rare occasions they appear at all.
+    Performance shows what was *served*, and both retired markets were retired precisely
+    because they could not clear the curation floor — total bases reached 70+ once in
+    2,204 props, walks three times in 98 — so the cohort filter removes them upstream
+    almost every time. The section exists so that when a row does survive, its record is
+    not read as an old engine underperforming: the market was unservable, not the scorer.
+    """
+    if not groups:
         return '<div class="mlb-empty">No versioned props yet.</div>'
-    note = ('<div class="opp-disclaimer">Only one model version in range so far — a '
-            'comparison appears once scoring changes and new props accrue under a new '
-            'version. History is never re-stamped.</div>') if len(items) == 1 else ""
+
+    def line(item, css, prefix=""):
+        t = item["tally"]
+        return (f'<div class="ver-row {css}">'
+                f'<span class="et-seg">{escape(prefix + str(item["version"]))}</span>'
+                f'<span class="ds-sub">{escape(item["first"])}→{escape(item["last"])}</span>'
+                f'<span>{t["hit"]}–{t["miss"]}</span>'
+                f'<span class="cal-rate">{_rate(t)} '
+                f'<span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
+                f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span></div>')
+
     head = ('<div class="ver-row et-head"><span>Version</span><span>Active</span>'
             '<span>Record</span><span>Hit rate</span><span>vs overall</span></div>')
-    body = "".join(
-        f'<div class="ver-row"><span class="et-seg">{escape(str(ver))}</span>'
-        f'<span class="ds-sub">{escape(first)}→{escape(last)}</span>'
-        f'<span>{t["hit"]}–{t["miss"]}</span>'
-        f'<span class="cal-rate">{_rate(t)} <span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
-        f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span></div>'
-        for ver, t, first, last in items)
-    return f'<div class="et-table">{head}{body}</div>{note}'
 
+    live, retired = [], []
+    for group in groups:
+        block = [f'<div class="ver-group-label">{escape(group["label"])}</div>']
+        if group["current"]:
+            block.append(line(group["current"], "ver-current"))
+        earlier = group["earlier"]
+        if earlier:
+            t = group["earlier_tally"]
+            span = f'{earlier[-1]["first"]}→{earlier[0]["last"]}'
+            noun = "earlier version" if len(earlier) == 1 else "earlier versions"
+            block.append(
+                f'<div class="ver-row ver-earlier">'
+                f'<span class="et-seg">{len(earlier)} {noun}</span>'
+                f'<span class="ds-sub">{escape(span)}</span>'
+                f'<span>{t["hit"]}–{t["miss"]}</span>'
+                f'<span class="cal-rate">{_rate(t)} '
+                f'<span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
+                f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span></div>')
+        (retired if group["retired"] else live).append("".join(block))
+
+    out = f'<div class="et-table">{head}{"".join(live)}</div>'
+    if retired:
+        out += ('<div class="ver-retired-head">Retired markets</div>'
+                f'<div class="et-table">{"".join(retired)}</div>'
+                '<div class="opp-disclaimer">No longer scored. Their specs are kept so '
+                'graded history still resolves; the record reflects a market that could '
+                'not clear the curation floor, not a scorer that underperformed.</div>')
+    return out
 
 def period_comparison_html(current: dict, prior: dict, prior_label: str,
                            min_sample: int) -> str:

@@ -39,6 +39,11 @@ class MarketSpec:
     allows_both: bool        # may this market be served over *and* under (SP props)?
     suffix: str = ""         # label suffix, e.g. " (SP)"
     engine_version: str = "mkt-v1"
+    # A retired market has no scorer but keeps its spec so existing ledger rows still
+    # resolve, display and grade. Recorded here rather than in a comment because
+    # Performance needs to *show* it: a retired market's record is not an old engine's
+    # record, and averaging the two makes a superseded scorer look far worse than it was.
+    retired: str = ""        # the date it was retired, e.g. "2026-08-09"
 
 
 # --- The registry. One entry per market family. -------------------------------
@@ -53,7 +58,7 @@ MARKETS: dict[str, MarketSpec] = {
     # 20.6%, and never once scored 75+ so it could never be recommended.
     "batter_tb": MarketSpec(
         "batter_tb", "MLB", "tb", "Total Bases", "total bases", False,
-        "plate_appearances", OVER, allows_both=False),
+        "plate_appearances", OVER, allows_both=False, retired="2026-08-09"),
     "batter_k": MarketSpec(
         "batter_k", "MLB", "batter_k", "Strikeouts", "K", False,
         "plate_appearances", OVER, allows_both=False),
@@ -63,7 +68,7 @@ MARKETS: dict[str, MarketSpec] = {
     # more on how the pitcher attacks than on the batter, which no extra data fixes.
     "batter_bb": MarketSpec(
         "batter_bb", "MLB", "batter_bb", "Walks", "walk", True,
-        "plate_appearances", OVER, allows_both=False),
+        "plate_appearances", OVER, allows_both=False, retired="2026-08-09"),
     "sp_k": MarketSpec(
         "sp_k", "MLB", "sp_k", "Strikeouts", "K", False,
         "plate_appearances", OVER, allows_both=True),
