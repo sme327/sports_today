@@ -9,6 +9,75 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-19 — The NFL matchup effect is real, small, and one-sided
+
+**Decision.** Add the opponent's measured effect to NFL player spotlights
+(`services/nfl_matchup.py`), scoped to what the data supports: **negative calls only**,
+for quarterbacks and running backs only.
+
+**Reason.** The matchup pages showed each player's prop from his own recent form with no
+opponent context — the obvious gap for a page meant to explain a matchup. Before building
+a rating, we measured whether the opponent predicts anything beyond a player's own form.
+
+**Defences are a real trait** (split-half r .14–.52), rated by how far players fell short
+of *their own* baselines against them. Rating against league average instead would credit
+a defence for having faced weak opponents.
+
+### What it is worth splits sharply by stat
+
+| stat | easiest-fifth minus hardest | game sd | rated |
+|---|---|---|---|
+| passing yards | +43 | 96.9 | yes |
+| rushing yards | +10 | 39.1 | yes |
+| receiving yards | +2 | 35.3 | **no** |
+| receptions | +0.3 | 2.5 | **no** |
+| rush attempts | +0.6 | 6.7 | **no** |
+
+Every fantasy surface publishes a receiver matchup rating. Across three seasons here it is
+worth two yards against a 35-yard game-to-game swing — below the noise floor of one game.
+Usage is a coaching decision and defences do not move it at all.
+
+### The part that nearly shipped wrong
+
+The first working version made symmetric excel/struggle calls. Validating the *shipping*
+function — not the analysis one — showed the games it flagged "excel" came in at **−0.4**
+against baseline while "struggle" games came in at **−18.6**. Splitting the full spectrum:
+
+| defence | passing yards | rushing yards |
+|---|---|---|
+| very tough | **−15.1 ±10.5** | **−4.0 ±3.0** |
+| tough | **−21.6 ±12.9** | −2.0 ±3.2 |
+| average | −3.1 ±8.6 | −0.9 ±2.4 |
+| soft | −4.3 ±14.6 | +1.7 ±4.0 |
+| very soft | +4.5 ±15.5 | +1.8 ±3.9 |
+
+**A tough defence reliably suppresses. A soft one does nothing.** Every soft-side interval
+covers zero, and the merely-soft passing band is negative. Game script is the plausible
+mechanism: a bad defence means a lead, and a lead means running the ball and resting
+starters, cancelling the matchup it created.
+
+So there is no `excel` state anywhere in the module and a test guards that no code path
+can predict an above-baseline day. A soft matchup is *named* — "soft on paper, but soft
+defences have not produced above-baseline games, so we make no call" — rather than passed
+off as neutral or dressed up as a rating. **"He faces a bad defence, expect a big day" is
+the most common claim in football previews and this data does not support it.**
+
+**Tradeoffs.** The page makes far fewer calls than a fantasy site would, and most players
+get "not a factor". That is the product working: a stated non-finding beats a number that
+is really zero. Thresholds are the bands whose interval excluded zero (−0.5 sd for
+passing, −1.0 for rushing), not round numbers.
+
+**Lesson worth keeping.** *Validate the function you are shipping, not the one you
+analysed with.* The analysis used all-history ratings; the shipping version uses a rolling
+window, and only re-running the measurement through the real function exposed the
+asymmetry.
+
+**Future.** Re-test once a 2026 season is ingested — three seasons is thin for the
+soft-side question specifically, and a genuine positive effect at the extreme would show
+up first there.
+
+---
+
 ## 2026-08-19 — Performance is measured against base rates, not one blended average
 
 **Decision.** Every comparison on the Performance page — markets, score bands, months,

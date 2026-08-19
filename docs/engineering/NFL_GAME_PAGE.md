@@ -167,6 +167,50 @@ The threshold ladders are measured, recorded inline in `_STAT_MARKETS`: each run
 sample and all lost to the incumbent. Details and the corrected earlier figures are in the
 [Decision Log](DECISION_LOG.md) (2026-08-19).
 
+## Matchup effect on a player
+
+`services/nfl_matchup.py`. A defence is rated by how far players fell short of — or beat —
+**their own** baselines against it, which removes the confound that a defence's schedule
+decides who it faced. Rolling 34-game window: an all-time mean is dominated by rosters that
+no longer exist, a season-only rating is silent until about week 10.
+
+Defences are a real, persistent trait (split-half r .14–.52). What that trait is *worth to
+a player* is where it gets interesting — easiest-fifth minus hardest-fifth, against the
+game-to-game sd:
+
+| stat | swing | game sd | rated? |
+|---|---|---|---|
+| passing yards | +43 | 96.9 | **yes** |
+| rushing yards | +10 | 39.1 | **yes** |
+| receiving yards | +2 | 35.3 | no |
+| receptions | +0.3 | 2.5 | no |
+| rush attempts | +0.6 | 6.7 | no |
+
+**The matchup moves quarterbacks and running backs and does not move receivers or usage.**
+Usage is a coaching decision; defences do not touch it.
+
+### The effect is one-sided — there is no "excel" call
+
+Mean gap against the player's own baseline, 95% intervals, across the full spectrum:
+
+| defence | passing yards | rushing yards |
+|---|---|---|
+| very tough | **−15.1 ±10.5** | **−4.0 ±3.0** |
+| tough | **−21.6 ±12.9** | −2.0 ±3.2 |
+| average | −3.1 ±8.6 | −0.9 ±2.4 |
+| soft | −4.3 ±14.6 | +1.7 ±4.0 |
+| very soft | +4.5 ±15.5 | +1.8 ±3.9 |
+
+A tough defence reliably suppresses; a soft one does nothing. Every soft-side interval
+covers zero and the merely-soft passing band is *negative* — the likely reason is game
+script, since a bad defence means a lead, and a lead means running the ball and resting
+starters. **A test guards that no code path can predict an above-baseline day.**
+
+The page therefore shows one of four states: `Tough matchup` (the only prediction, with
+the yardage), `Soft on paper` (names the non-finding explicitly), `Matchup not a factor`
+(receivers, with one footnote per page rather than one per player), or nothing at all for
+an average defence. Only the negative chip carries colour.
+
 ### Two honesty rules specific to football
 
 - **A window that predates the current season is disclosed, not excluded.** A mostly
