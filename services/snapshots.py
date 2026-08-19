@@ -84,6 +84,14 @@ MODEL_VERSIONS = {
     "wnba_points": "wnba-pra-v3",
     "wnba_rebounds": "wnba-pra-v3",
     "wnba_assists": "wnba-pra-v3",
+    # v1: reachable-bar, over-only, scored mostly on the clear rate. Registered
+    # 2026-08-18 after measuring +32 to +51 points of lift over base rate across
+    # 78,744 ingested player-games.
+    "nfl_pass_yds": "nfl-props-v1",
+    "nfl_rush_yds": "nfl-props-v1",
+    "nfl_rec_yds": "nfl-props-v1",
+    "nfl_receptions": "nfl-props-v1",
+    "nfl_rush_att": "nfl-props-v1",
 }
 
 
