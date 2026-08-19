@@ -138,3 +138,37 @@ def test_the_manifest_is_valid_and_launches_standalone():
     assert manifest["icons"], "a manifest with no icons gives the home screen nothing"
     for icon in manifest["icons"]:
         assert (_DIST / icon["src"].lstrip("/")).exists(), f"missing {icon['src']}"
+
+
+# --- redirects are routes, not failures (2026-08-19) ---------------------------------
+
+def test_the_exporter_follows_a_redirect_instead_of_recording_a_failure():
+    """The NFL card links at a slate game by its ESPN id; the view redirects to the
+    archive page keyed by the *feed* id, because the two sources key games differently.
+    Treating that 302 as a failure meant no NFL matchup page could ever publish — the
+    surface worked locally and was absent from the live site."""
+    import inspect
+
+    from web.management.commands import export_static
+
+    src = inspect.getsource(export_static.Command.handle)
+    assert "301, 302, 307, 308" in src, "redirect statuses must be handled"
+    # The target has to be queued, or the page it points at is never rendered.
+    assert "queue.append(target)" in src
+    assert "redirects[url] = target" in src
+
+
+def test_an_nfl_matchup_url_is_crawlable():
+    from web.management.commands.export_static import canonical_url, should_crawl
+
+    url = canonical_url("/nfl/game/45967-LVR@DEN/")
+    assert should_crawl(url), "the redirect target must be allowed through"
+
+
+def test_the_nfl_page_engine_version_moves_with_the_page_contents():
+    """The matchup page cache is keyed by this string. Adding the matchup outlook without
+    bumping it left every cached page serving the pre-change HTML."""
+    from services.nfl_game_page import ENGINE_VERSION
+
+    assert ENGINE_VERSION != "nfl-matchup-v1", (
+        "bump ENGINE_VERSION whenever the rendered page changes, or cached pages go stale")

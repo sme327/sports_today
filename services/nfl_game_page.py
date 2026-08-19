@@ -22,7 +22,11 @@ from services.nfl_repository import load_player_games, load_team_games
 from src import nfl_opportunity
 from src.config import DB_PATH
 
-ENGINE_VERSION = "nfl-matchup-v1"
+# v2 (2026-08-19): spotlights carry the opponent's measured effect on that player. The
+# cache key is built from this string, so a page's *content* changing without a bump here
+# means every cached page keeps serving the old HTML — which is exactly what happened
+# while this was still v1.
+ENGINE_VERSION = "nfl-matchup-v2"
 
 # (label, season-table column, percentile column, higher-is-better)
 _IDENTITY_ROWS = [

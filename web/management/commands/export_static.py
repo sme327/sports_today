@@ -115,6 +115,9 @@ class Command(BaseCommand):
         pages: dict[str, str] = {}
         paths: dict[str, Path] = {}
         failures: list[tuple[str, int]] = []
+        # url -> where it redirected, so a card's link still resolves in the
+        # exported HTML even though only the target was written to disk.
+        redirects: dict[str, str] = {}
 
         while queue:
             url = canonical_url(queue.popleft())
@@ -123,6 +126,19 @@ class Command(BaseCommand):
             if len(pages) >= options["max_pages"]:
                 raise RuntimeError(f"Export exceeded {options['max_pages']:,} pages")
             response = client.get(url)
+            # A redirect is a route, not a failure. The NFL card links at a slate game
+            # (`/?day=…&league=NFL&game=<espn id>`) and the view redirects to the archive
+            # page keyed by the *feed* id, because the two sources key games differently.
+            # Treating 302 as a failure meant that page was never discovered, so no NFL
+            # matchup page could ever publish — the whole surface was live only locally.
+            # The redirect target is queued and this URL is remapped onto it, so the
+            # card's link still resolves in the exported HTML.
+            if response.status_code in (301, 302, 307, 308):
+                target = canonical_url(response.headers.get("Location", ""), url)
+                if target and should_crawl(target):
+                    queue.append(target)
+                    redirects[url] = target
+                continue
             if response.status_code != 200:
                 failures.append((url, response.status_code))
                 continue
@@ -139,6 +155,11 @@ class Command(BaseCommand):
                 raw = match.group(2)
                 fragment = f"#{urlsplit(raw).fragment}" if urlsplit(raw).fragment else ""
                 target = canonical_url(raw, url)
+                # Follow a redirect chain to the page that was actually written.
+                seen = set()
+                while target in redirects and target not in seen:
+                    seen.add(target)
+                    target = redirects[target]
                 if target not in paths:
                     return match.group(0)
                 return f'href="{public_href(paths[target], fragment)}"'
