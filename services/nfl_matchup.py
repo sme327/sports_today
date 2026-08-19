@@ -181,8 +181,19 @@ def _ordinal(n: int) -> str:
     return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th') }".replace(" ", "")
 
 
+def ratings_for(pg: pd.DataFrame, before: str) -> dict[str, pd.Series]:
+    """Every rated stat's defence table for one as-of date.
+
+    Built once per page and handed to each player. Recomputing it per player made a
+    matchup page ~0.7s and put a full archive export near ten minutes; the ratings do not
+    vary by player, only by date.
+    """
+    return {stat: defence_ratings(pg, stat, before) for stat in RATED}
+
+
 def outlook(pg: pd.DataFrame, player_id: str, player: str, position: str,
-            opponent: str, before: str) -> MatchupCall | None:
+            opponent: str, before: str,
+            ratings: dict[str, pd.Series] | None = None) -> MatchupCall | None:
     """This player's matchup outlook, or ``None`` when he plays no rated stat.
 
     Receivers return a ``not-a-factor`` call rather than nothing: the measured swing for
@@ -210,7 +221,9 @@ def outlook(pg: pd.DataFrame, player_id: str, player: str, position: str,
     if baseline < floor:
         return None
 
-    ratings = defence_ratings(pg, stat, before)
+    ratings = (ratings or {}).get(stat)
+    if ratings is None:
+        ratings = defence_ratings(pg, stat, before)
     label = "Pass Yards" if stat == "passing_yds" else "Rush Yards"
     if ratings.empty or opponent not in ratings.index:
         return MatchupCall(player, pos, stat, label, "neutral", 0.0, baseline, None, None,
@@ -227,10 +240,12 @@ def outlook(pg: pd.DataFrame, player_id: str, player: str, position: str,
 
 
 def outlooks(pg: pd.DataFrame, players, opponent: str, before: str) -> tuple[MatchupCall, ...]:
-    """Outlooks for an iterable of ``(player_id, player, position)``."""
+    """Outlooks for an iterable of ``(player_id, player, position)``, sharing one rating
+    table across all of them."""
+    tables = ratings_for(pg, before)
     out = []
     for pid, name, pos in players:
-        call = outlook(pg, pid, name, pos, opponent, before)
+        call = outlook(pg, pid, name, pos, opponent, before, tables)
         if call is not None:
             out.append(call)
     # Real calls first, then neutral, then the receivers' honest non-call.
