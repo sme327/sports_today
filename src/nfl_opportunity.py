@@ -21,12 +21,26 @@ MIN_GAMES = 4
 _FLOOR = 0.55
 
 # stat column → (label noun, thresholds).
+#
+# **The rungs are measured, not assumed** (2026-08-19, 78,744 ingested player-games from
+# 2023-25). The trailing rate is how often a *candidate* for that market — someone whose
+# per-game mean reaches half the lowest bar — actually clears it league-wide. Each ladder
+# steps down about 10 points of rarity per rung, which is what makes "the highest bar he
+# still clears" a meaningful statement rather than an artefact of round numbers.
+#
+# Checked for the saturation defect that sank `batter-hit-v3`: only 17 of 268 props sit on
+# the top rung and just one clears it ≥80% of the time, so no ladder is too short.
 _STAT_MARKETS = {
-    "passing_yds": ("Pass Yards", (200, 225, 250, 275, 300)),
-    "rushing_yds": ("Rush Yards", (40, 50, 60, 75, 100)),
-    "receiving_yds": ("Rec Yards", (40, 50, 60, 75)),
-    "receiving_rec": ("Receptions", (3, 4, 5, 6, 7)),
-    "rushing_att": ("Rush Att", (10, 12, 15, 18, 20)),
+    #                              200    225    250    275    300
+    "passing_yds": ("Pass Yards", (200, 225, 250, 275, 300)),  # .584 .460 .345 .234 .147
+    #                              40     50     60     75     100
+    "rushing_yds": ("Rush Yards", (40, 50, 60, 75, 100)),      # .471 .366 .282 .177 .083
+    #                               40     50     60     75
+    "receiving_yds": ("Rec Yards", (40, 50, 60, 75)),          # .420 .318 .237 .154
+    #                              3      4      5      6      7
+    "receiving_rec": ("Receptions", (3, 4, 5, 6, 7)),          # .523 .359 .235 .148 .089
+    #                             10     12     15     18     20
+    "rushing_att": ("Rush Att", (10, 12, 15, 18, 20)),         # .503 .400 .253 .152 .096
 }
 # Each position's primary prop stat.
 _POSITION_STAT = {"QB": "passing_yds", "RB": "rushing_yds", "FB": "rushing_yds",
@@ -100,23 +114,58 @@ _RESULT_COLUMNS = ["player_id", "player", "team", "position", "market_key", "mar
 def _score(clear_rate: float, games: int, cushion: float) -> int:
     """0-100, comparable to the other sports' scorers.
 
-    Weighted toward the **clear rate** because that is what the reachable-bar backtest
-    measured: over 78,744 ingested player-games these markets ran +32 to +51 points of
-    lift over their base rates, and the clear rate is the term that earns it. Cushion
-    (how far the recent average sits above the bar) and sample are supporting terms —
-    a player averaging 82 yards against a 60-yard bar is safer than one averaging 61.
+    Weighted toward the **clear rate** because that is the term the backtest says earns
+    its place. Cushion (how far the recent average sits above the bar) and sample are
+    supporting: a player averaging 82 yards against a 60-yard bar is safer than one
+    averaging 61.
+
+    **Measured 2026-08-19**, leakage-safe — every player-game scored on that player's
+    prior games only, then compared against what he actually did. 10,552 scored
+    player-games, base rate .542:
+
+        rushing_att +18.6 · receiving_rec +10.6 · receiving_yds +8.8
+        passing_yds +6.5 · rushing_yds +5.2          (points of lift over base)
+
+    At the curation floor the served population hits **.650, +10.8 over base** (n=1,081) —
+    the same order as MLB `batter_hit`. Bands rise monotonically out of sample (2025 only:
+    +7.0 → +10.8 → +12.8 → +17.8), so the top band is *not* the inverted, saturated shape
+    that forced `batter-hit-v5`; the 85+ bucket holds 15 props, which decides nothing.
+
+    An earlier note here claimed +32 to +51. That came from comparing each market's raw
+    clear rate to its base rate — not a backtest, and not honest. The numbers above are
+    what the scorer actually earns.
+
+    Four alternative shapes were tried against this (cushion capped, cushion dropped,
+    consistency substituted, cushion × consistency). **The incumbent won on both ship-rule
+    terms**, so nothing changed — see the decision log.
     """
     sample = min(games / RECENT_GAMES, 1.0)
     return max(0, min(100, round(100 * (0.62 * clear_rate + 0.23 * min(cushion, 1.0)
                                         + 0.15 * sample))))
 
 
-def _stability(games: int, clear_rate: float, spread: float) -> int:
+def _stability(games: int, clear_rate: float, spread: float,
+               stale_share: float = 0.0) -> int:
     """Confidence in the *sample*, not the pick. A steady role scores higher than a
     boom-or-bust one at the same clear rate — week-to-week volume is the thing football
-    actually makes predictable."""
-    return max(0, min(99, round(40 + min(games, RECENT_GAMES) * 3.5
-                                + clear_rate * 12 - min(spread, 12))))
+    actually makes predictable.
+
+    ``stale_share`` is the fraction of the window from a previous season. It cuts
+    stability rather than the opportunity score, because the pick itself is not wrong —
+    our confidence that the sample still describes this player is what weakens.
+    """
+    base = 40 + min(games, RECENT_GAMES) * 3.5 + clear_rate * 12 - min(spread, 12)
+    return max(0, min(99, round(base - stale_share * 20)))
+
+
+def _prior_season_count(window: pd.DataFrame) -> int:
+    """Games in the window from before the window's newest season."""
+    if "season" not in window.columns or window.empty:
+        return 0
+    seasons = pd.to_numeric(window["season"], errors="coerce").dropna()
+    if seasons.empty:
+        return 0
+    return int((seasons < seasons.max()).sum())
 
 
 def score_nfl_opportunities(player_prior: pd.DataFrame, teams=None,
@@ -128,17 +177,36 @@ def score_nfl_opportunities(player_prior: pd.DataFrame, teams=None,
     """
     if player_prior.empty or "player_id" not in player_prior.columns:
         return pd.DataFrame(columns=_RESULT_COLUMNS)
-    frame = player_prior
+    frame = player_prior.sort_values("game_date")
+    # **A player is one player, not one player per team.** Identity — team, position, the
+    # name we print — comes from his most recent game; his *history* is every game he has
+    # played. Keying the groups on team instead split a traded player into per-team
+    # fragments, which cost 459 players their track record at week 3 of 2025 (Aaron
+    # Rodgers: 20 games played, 2 under his current team, so no prop at all) and hid the
+    # prior-season disclosure from exactly the players it exists for.
+    current = frame.groupby("player_id", dropna=False).tail(1).set_index("player_id")
     if teams:
         wanted = {str(t) for t in teams if t}
-        frame = frame[frame["team"].astype(str).isin(wanted)]
+        keep = current.index[current["team"].astype(str).isin(wanted)]
+        frame = frame[frame["player_id"].isin(set(keep))]
     if frame.empty:
         return pd.DataFrame(columns=_RESULT_COLUMNS)
 
     rows: list[dict] = []
-    for (pid, name, team, position), games in frame.groupby(
-            ["player_id", "player", "team", "position"], dropna=False):
+    for pid, games in frame.groupby("player_id", dropna=False):
+        identity = current.loc[pid]
+        name, team = identity["player"], identity["team"]
+        position = identity["position"]
         recent = games.sort_values("game_date").tail(RECENT_GAMES)
+        # How much of this window predates the current season. In week 1 that is all ten
+        # games, across an offseason of trades and depth-chart churn. Measured over the
+        # ingested seasons, a mostly-prior-season window clears 50.1% against 54.5% for a
+        # clean one — consistent across all five markets (-2.5 to -7.2 points).
+        #
+        # **Disclosed, not excluded.** Dropping prior-season games was tested: it lifts
+        # early-season accuracy by 1.0 point while cutting served props 22%, which is a
+        # bad trade. So the reader is told, and stability takes the hit.
+        stale_games = _prior_season_count(recent)
         for key, stat in _SCORED_MARKETS.items():
             if stat not in recent.columns:
                 continue
@@ -150,6 +218,7 @@ def score_nfl_opportunities(player_prior: pd.DataFrame, teams=None,
                 continue
             threshold, clear = picked
             avg = float(values.mean())
+            stale_share = stale_games / len(values) if len(values) else 0.0
             cushion = (avg - threshold) / threshold if threshold else 0.0
             spread = float(values.std(ddof=0) or 0) / max(threshold, 1) * 10
             cleared = int((values >= threshold).sum())
@@ -159,7 +228,7 @@ def score_nfl_opportunities(player_prior: pd.DataFrame, teams=None,
                 "market": format_market(key, threshold, OVER),
                 "threshold": float(threshold),
                 "opportunity_score": _score(clear, len(values), max(cushion, 0.0)),
-                "stability_score": _stability(len(values), clear, spread),
+                "stability_score": _stability(len(values), clear, spread, stale_share),
                 "clear_rate": round(float(clear), 3),
                 "recent_avg": round(avg, 1), "games": int(len(values)),
                 # Oldest first, so the row reads left-to-right as time.
@@ -168,7 +237,7 @@ def score_nfl_opportunities(player_prior: pd.DataFrame, teams=None,
                     f"{avg:.0f} per game over the last {len(values)}",
                     f"Cleared {threshold}+ in {cleared} of {len(values)}",
                 ],
-                "risks": _risks(values, threshold, clear, len(values)),
+                "risks": _risks(values, threshold, clear, len(values), stale_games),
             })
     result = pd.DataFrame(rows, columns=_RESULT_COLUMNS)
     if result.empty:
@@ -177,7 +246,8 @@ def score_nfl_opportunities(player_prior: pd.DataFrame, teams=None,
                               ascending=False).reset_index(drop=True)
 
 
-def _risks(values, threshold: float, clear: float, games: int) -> list[str]:
+def _risks(values, threshold: float, clear: float, games: int,
+           stale_games: int = 0) -> list[str]:
     """Negative evidence, at least as prominent as the supporting kind.
 
     Football's specific hazard is that a *role* can vanish between weeks — an injury, a
@@ -185,6 +255,10 @@ def _risks(values, threshold: float, clear: float, games: int) -> list[str]:
     risks name volatility and thin samples rather than form.
     """
     out: list[str] = []
+    if stale_games:
+        # Named first: it changes how every other line should be read.
+        out.append(f"{stale_games} of these {games} games are from last season — "
+                   f"before any offseason roster change")
     if games < 6:
         out.append(f"Only {games} games in the window — a role can change week to week")
     recent_three = list(values)[-3:]

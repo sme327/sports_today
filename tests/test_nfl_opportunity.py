@@ -143,3 +143,55 @@ def test_props_go_quiet_when_the_ingested_feed_is_months_old():
     assert not _is_stale(january, date(2026, 2, 10)), "4 weeks is a bye, not an offseason"
     assert _is_stale(pd.DataFrame(), date(2026, 9, 1)), "no data is stale by definition"
     assert _is_stale(pd.DataFrame({"game_date": ["not-a-date"]}), date(2026, 9, 1))
+
+
+# --- traded players (2026-08-19) ----------------------------------------------------
+
+def _traded(stat, old_values, new_values, old_team="Old Team", new_team="New Team"):
+    """One player, one season boundary, two teams — the shape a trade actually makes."""
+    rows = [{"player_id": "p1", "player": "P1", "team": old_team, "position": "TE",
+             "season": 2024, "game_date": f"2024-11-{10 + i:02d}", stat: v}
+            for i, v in enumerate(old_values)]
+    rows += [{"player_id": "p1", "player": "P1", "team": new_team, "position": "TE",
+              "season": 2025, "game_date": f"2025-09-{10 + i:02d}", stat: v}
+             for i, v in enumerate(new_values)]
+    return pd.DataFrame(rows)
+
+
+def test_a_traded_player_keeps_the_history_he_earned_elsewhere():
+    """Grouping on team once split a traded player into per-team fragments, so his prior
+    season vanished and he fell under the games floor. At week 3 of 2025 that cost 459
+    players their track record — Aaron Rodgers had 20 games played and 2 under his
+    current team, so he was offered no prop at all."""
+    from src.nfl_opportunity import score_nfl_opportunities
+
+    scored = score_nfl_opportunities(_traded("receiving_yds", [55, 62, 71, 48, 90], [60]))
+    assert not scored.empty, "a traded player must keep his history"
+    assert int(scored.iloc[0]["games"]) == 6
+
+
+def test_a_traded_player_is_shown_under_the_team_he_plays_for_now():
+    from src.nfl_opportunity import score_nfl_opportunities
+
+    scored = score_nfl_opportunities(_traded("receiving_yds", [55, 62, 71, 48, 90], [60]))
+    assert set(scored["team"]) == {"New Team"}
+
+
+def test_the_team_filter_follows_the_player_not_his_old_games():
+    """A slate lists today's teams. Filtering rows by team kept a traded player's *old*
+    games and dropped the team he now plays for — the wrong half of his career."""
+    from src.nfl_opportunity import score_nfl_opportunities
+
+    frame = _traded("receiving_yds", [55, 62, 71, 48, 90], [60])
+    assert not score_nfl_opportunities(frame, teams=["New Team"]).empty
+    assert score_nfl_opportunities(frame, teams=["Old Team"]).empty
+
+
+def test_prior_season_games_are_disclosed_for_a_traded_player():
+    """The disclosure existed but could never fire for a traded player: each per-team
+    fragment was internally single-season, so nothing looked stale."""
+    from src.nfl_opportunity import score_nfl_opportunities
+
+    scored = score_nfl_opportunities(_traded("receiving_yds", [55, 62, 71, 48, 90], [60]))
+    assert any("5 of these 6 games are from last season" in r
+               for r in scored.iloc[0]["risks"])
