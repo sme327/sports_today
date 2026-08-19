@@ -114,6 +114,52 @@ scannable, not that it is prominent.
 
 ---
 
+## 2026-08-18 — NFL props measure better than anything the app currently serves
+
+**Finding.** Applied the reachable-bar check to the ingested NFL seasons (78,744
+player-games, 2023-2025) before building anything. **Every NFL market shows more lift over
+its base rate than any market the app serves today.** Nothing built yet.
+
+| market | served | clear rate | base rate | **lift** |
+|---|---|---|---|---|
+| rushing attempts | 1,314 | 58.6% | 7.5% | **+51.0** |
+| passing yards | 849 | 53.9% | 4.9% | **+49.0** |
+| rushing yards | 1,178 | 54.1% | 7.7% | **+46.3** |
+| receiving yards | 2,020 | 50.0% | 16.0% | **+33.9** |
+| receptions | 3,895 | 55.8% | 24.2% | **+31.6** |
+
+For comparison: MLB `batter_hit` runs **+11.8** on served props, and `sp_k` overs — the
+best market previously measured — **+17.0**.
+
+**The raw clear rate is the wrong number, and it nearly misled me.** At 50-58% these look
+weaker than MLB's ~65% served conversion, and my first read was that NFL props were
+marginal. They are not: a 250-yard passing game happens 4.9% of the time, so predicting it
+at 53.9% is an enormous edge. MLB's 1+ hit is a ~55% event to begin with. This is
+[Method §1](METHOD.md) — *"a 40% hit rate on a bar that lands 15% of the time is
+excellent"* — and I had to be reminded of it by my own rule.
+
+**Why football suits the reachable-bar model.** Volume roles are stable week to week: a
+lead back gets his carries, a WR1 gets his targets. That is exactly what the model needs —
+`rushing_att` at +51.0 is the purest case, because it measures usage rather than outcome
+and usage is what a coaching staff controls.
+
+**Servable share is low (7-32%) and that is fine.** One NFL slate is ~16 games against
+MLB's 15, but each carries far more rostered players, so even 7% of candidates is a usable
+number of props. Receptions alone would serve ~3,900 across three seasons.
+
+**Correcting an earlier claim.** I logged `nfl_props_registry` as blocked on a 2026 feed.
+That is wrong: the *scorer* runs off ingested seasons and there are three of them. What is
+actually missing is code — the NFL adapter has no `opportunities()` method and
+`domain/markets.py` has **zero** NFL entries, so nothing is scored onto the slate,
+snapshotted or graded. The 2026 feed matters for the slate↔feed **bridge** (matchup pages
+for live games), not for props.
+
+**Timing.** The regular season opens 2026-09-09, 21 days out. Registering these markets
+before then means the first NFL slate is graded from week 1 rather than starting the
+ledger mid-season — and a market's version history only counts forward from when it ships.
+
+---
+
 ## 2026-08-12 — NHL market priority is backwards; goals is unservable
 
 **Finding.** With a full 2025-26 NHL season collected (1,306 games, 47,013 skater rows,
