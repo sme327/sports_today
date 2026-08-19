@@ -9,6 +9,69 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-19 — Performance is measured against base rates, not one blended average
+
+**Decision.** Every comparison on the Performance page — markets, score bands, months,
+model versions — now reads **lift over the base rate of the props it actually contains**.
+The edge table is ranked by lift rather than hit rate. New module:
+`services/base_rates.py`.
+
+**Reason.** The page compared everything to the app's overall hit rate. That is a
+comparison between different questions: 1+ hit lands ~61% of the time for a starting
+batter, a WNBA assists line ~35%. Against one average, common events look good however
+badly they are picked and rare ones look bad however well. This is [Method §1](METHOD.md)
+broken on the one surface that drives retirement decisions — the project already refuses
+this comparison for team records ("win percentage isn't comparable across sports") and had
+simply never applied it to markets.
+
+### It reversed the ranking
+
+| market | served | base | **lift** | old "vs overall" |
+|---|---|---|---|---|
+| WNBA Assists | 68.1% | 35% | **+32.6** | +5.4 |
+| WNBA Rebounds | 62.7% | 34% | **+28.5** | +3.5 |
+| WNBA Points | 69.2% | 45% | **+24.0** | +6.1 |
+| MLB SP Strikeouts | 58.9% | 48% | **+10.5** | −0.0 |
+| MLB Batter Hits | 62.2% | 61% | **+1.5** | +0.8 |
+| MLB SP Hits Allowed | 49.4% | 53% | **−3.5** | −11.5 |
+
+**`batter_hit` has essentially no edge** — +1.5 over base, on 61% of everything served.
+That is the headline finding and it was invisible before.
+
+**`batter-hit-v5` is nonetheless a genuine improvement**: +6.9 over base against +0.0 for
+its three predecessors pooled. Shrinking the recent hit rate did what it was meant to.
+
+**The 99-100 band runs −6.6 over base** (n=102). The top of the scale is *anti*-predictive
+— `v3_top_band_watch` confirmed rather than suspected. Worth acting on separately.
+
+**`sp_hits` remains the retirement candidate**, and its current version is the worst row on
+the board at −11.3. The old column was directionally right here by accident.
+
+### Three ways to get a base rate wrong
+
+- **Re-implementing resolution.** An under is `actual <= threshold`, inclusive. Hand-writing
+  `<` understated the base and manufactured a +12 lift for `sp_hits` that does not exist —
+  I reported that number before catching it. The module asks `domain.markets.grade`.
+- **Post-hoc populations.** Filtering batters to `>= 3 PA` conditions on the outcome: a
+  batter bats again partly because he reached. Base rate ranged .565→.741 across plausible
+  cutoffs, flipping `batter_hit` between +4.9 and −4.5 on a choice no reader sees.
+  Populations are now pre-game: the first nine batters, the first-inning pitcher, the
+  WNBA `started` flag.
+- **Unlike mixes.** Bands and months hold different markets (the 99-100 band is 99% 1+
+  hit; league mix is seasonal). Each group is weighted by the props it holds.
+
+**Tradeoffs.** The base rate depends on a stated population, so it is a modelled number,
+not a fact — the page shows `base 35%` beside every lift so the comparison is inspectable,
+and shows nothing at all when a population is unavailable rather than falling back to the
+average. Ranking by lift also means the top row is no longer the highest hit rate, which
+takes a moment to read; the hit rate is still the second column.
+
+**Future.** The per-market base rates make the curation floor comparable across sports for
+the first time — a 70 currently means different things in different markets. Worth
+revisiting once NFL props have graded rows.
+
+---
+
 ## 2026-08-19 — NFL props backtested properly, and a traded-player bug
 
 **Decision.** Keep the NFL scorer's shape and its threshold ladders **unchanged**, on

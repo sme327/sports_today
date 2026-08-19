@@ -27,7 +27,7 @@ from components.results_feed import (
 )
 from domain import markets
 from domain.markets import LABELS, ORDER, prop_type_for
-from services import grading
+from services import base_rates, grading
 
 PERIODS = [
     ("7", "7 days"),
@@ -361,7 +361,11 @@ def _version_groups(rows: list[dict]) -> list[dict]:
             label = f"{spec.league} {label}" if not label.startswith(spec.league) else label
         current, earlier = None, []
         for version, entry in by_version.items():
+            # Each version against the base rate of the props *it* served. Versions move
+            # thresholds, so two versions of one market can face different base rates;
+            # comparing both to the app-wide average would read that as a quality change.
             item = {"version": version, "tally": grading.tally(entry["rows"]),
+                    "base": base_rates.segment_base_rate(entry["rows"]),
                     "first": entry["first"] or "—", "last": entry["last"] or "—"}
             # A retired market has no *current* version even though MODEL_VERSIONS still
             # names one — the spec is kept only so old ledger rows resolve.
@@ -376,6 +380,9 @@ def _version_groups(rows: list[dict]) -> list[dict]:
             "retired": spec.retired if spec else "",
             "current": current, "earlier": earlier, "pooled": pooled,
             "earlier_tally": grading.tally(
+                [r for v, e in by_version.items() for r in e["rows"]
+                 if not (v == live and not (spec and spec.retired))]),
+            "earlier_base": base_rates.segment_base_rate(
                 [r for v, e in by_version.items() for r in e["rows"]
                  if not (v == live and not (spec and spec.retired))]),
         })
@@ -420,6 +427,14 @@ def performance_context(params, today: date) -> dict:
     ), active)
     prior = grading.tally(prior_rows)
     bands = grading.summarize_by_band(rows, min_sample=min_sample)
+    # Bands hold different market mixes (the top band is almost purely 1+ hit), so each
+    # is compared against the base rate of the props it actually contains.
+    band_rows: dict = {}
+    for row in rows:
+        b = grading.band_of(row.get("opportunity_score"))
+        if b:
+            band_rows.setdefault(b, []).append(row)
+    band_base = {b: base_rates.segment_base_rate(rs) for b, rs in band_rows.items()}
     empty = grading.tally([])
     directions = grading.summarize_by(rows, _direction)
     market_ou = []
@@ -442,6 +457,16 @@ def performance_context(params, today: date) -> dict:
         grouping = "market"
     by_segment = grading.summarize_by(rows, groupings[grouping][1])
     recent = {key: tally["hit_rate"] for key, tally in by_segment.items()}
+    # Each segment against *its own* base rate, not the app-wide average. A segment can
+    # mix markets and bars (grouping by team or player does), so it is weighted by the
+    # exact props it contains. See services/base_rates for why the shared average is the
+    # wrong comparison.
+    seg_rows: dict = {}
+    for row in rows:
+        seg = groupings[grouping][1](row)
+        if seg not in (None, ""):
+            seg_rows.setdefault(seg, []).append(row)
+    seg_base = {seg: base_rates.segment_base_rate(rs) for seg, rs in seg_rows.items()}
 
     def window(days: int, offset: int = 0):
         window_end = end - timedelta(days=offset)
@@ -452,9 +477,15 @@ def performance_context(params, today: date) -> dict:
     all_rows = apply_filters(apply_cohort(
         load_performance_range(date(2020, 1, 1), end), cohort), active)
     all_rate = grading.tally(all_rows)["hit_rate"]
-    months = sorted(grading.summarize_by(
-        all_rows, lambda row: (row.get("snapshot_date") or "")[:7] or None
-    ).items())
+    def _month_of(row):
+        return (row.get("snapshot_date") or "")[:7] or None
+    months = sorted(grading.summarize_by(all_rows, _month_of).items())
+    month_rows: dict = {}
+    for row in all_rows:
+        m = _month_of(row)
+        if m:
+            month_rows.setdefault(m, []).append(row)
+    month_base = {m: base_rates.segment_base_rate(rs) for m, rs in month_rows.items()}
     version_items = _version_groups(all_rows)
     return {
         "section": "performance", "has_rows": True, "period": period,
@@ -472,12 +503,13 @@ def performance_context(params, today: date) -> dict:
             grading.tally(other_rows)),
         "market_trend_html": market_trend_matrix_html(rows),
         "comparison_html": period_comparison_html(overall, prior, f"previous {label.lower()}", min_sample),
-        "calibration_read": calibration_interpretation(bands),
-        "calibration_html": calibration_table_html(bands, overall["hit_rate"]),
+        "calibration_read": calibration_interpretation(bands, band_base),
+        "calibration_html": calibration_table_html(bands, overall["hit_rate"], band_base),
         "over_under_html": over_under_html(
             directions.get("over", empty), directions.get("under", empty), market_ou
         ),
-        "edge_html": edge_table_html(by_segment, overall["hit_rate"], min_sample, recent, {}),
+        "edge_html": edge_table_html(by_segment, overall["hit_rate"], min_sample, recent, {},
+                                     seg_base=seg_base),
         "consistency_html": consistency_html([
             ("Last 7", window(7)), ("Last 30", window(30)),
             ("Prev 30", window(30, 30)),
@@ -485,7 +517,7 @@ def performance_context(params, today: date) -> dict:
                 apply_cohort(load_performance_range(date(end.year, 3, 1), end), cohort), active))),
             ("All time", grading.tally(all_rows)),
         ]),
-        "monthly_html": monthly_table_html(months, all_rate),
+        "monthly_html": monthly_table_html(months, all_rate, month_base),
         "version_html": version_table_html(version_items, all_rate),
     }
 
