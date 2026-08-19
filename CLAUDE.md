@@ -32,8 +32,18 @@ browsed through the **season archive** (`?view=nfl`). `services/nfl_bridge.py` m
 live ESPN slate game to its feed row **by date + teams** (the two sources key games
 differently), so a slate game whose season is loaded opens the same matchup page. A game
 the feed does not cover — **preseason always, and any season not yet ingested** — shows the
-team-level read and says which it is. NFL still scores **no props** onto the slate. See
+team-level read and says which it is. NFL **does** score props onto the slate now (five
+over-only markets, since 2026-08-18), and goes quiet when the ingested feed is more than
+six weeks stale — which is every preseason day. See
 [NFL Game Page](docs/engineering/NFL_GAME_PAGE.md).
+
+**The NFL matchup effect is one-sided, and the page says so.** Measured over three ingested
+seasons: a tough defence reliably suppresses passing (−15 to −22 yards) and, weakly,
+rushing; **a soft defence does nothing** — every soft-side interval covers zero. Receivers
+and usage are not moved at all (2 yards, 0.3 receptions). So `services/nfl_matchup.py` makes
+**negative calls only**, has no `excel` state, and a test guards that no code path can
+predict an above-baseline day. "He faces a bad defence, expect a big day" is the most common
+claim in football previews and this data does not support it.
 
 ## Read before you build
 
