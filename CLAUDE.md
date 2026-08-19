@@ -127,13 +127,21 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   **not** in the score — folding it in was backtested as `batter-hit-v4` and rejected
   for making discrimination worse. Scoring still excludes weather, park and bullpen
   context. Do not represent scores as hit probabilities.
-- **1+ hit is a hard ~55% event, and it is mostly about chances, not form.**
+- **1+ hit is a hard event, and it is mostly about chances, not form.**
   `batter-hit-v5` shrinks the recent per-PA hit rate hard toward the league mean
   (`_HIT_SHRINK = 0.25`) because **plate appearances per game predict a hit more than
   twice as well as recent hitting does** (+0.130 vs +0.054 over 28k batter-games).
-  Shrinkage also fixes a saturated, *inverted* top band. Overall discrimination is still
-  modest by design — don't read a 100 as near-certainty, and note the 90+ band remains
-  this market's weak spot (`v3_top_band_watch`).
+  Overall discrimination is still modest by design — don't read a 100 as near-certainty.
+  **Measured against its own base rate (2026-08-19), the market runs +1.5 on 1,337 served
+  props** — close to no edge, and it is 61% of everything we serve. `batter-hit-v5` is
+  nonetheless a real gain (+6.9, against +0.0 for its three predecessors pooled). The
+  **99-100 band runs −6.6 over base** on n=102: the top of the scale is *anti*-predictive,
+  which is `v3_top_band_watch` confirmed rather than suspected. Base rate for a starting
+  batter is ~61%, not the ~55% quoted before — that older figure counted everyone who
+  batted, pinch hitters included.
+- **Compare a hit rate only against a base rate.** `services/base_rates.py` holds them;
+  the Performance page ranks by lift. A shared average across markets is the one
+  comparison the project treats as a bug — it reversed the true market ranking once.
 - **Total bases was retired (2026-08-09)** and its `MarketSpec` kept only so old ledger
   rows still resolve. Don't re-add a scorer for it without reading the decision log: it
   is strictly nested inside 1+ Hit, converted 20.6%, and never once scored 75+ so it

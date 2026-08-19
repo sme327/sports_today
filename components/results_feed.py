@@ -143,22 +143,33 @@ def prop_list_html(rows: list[dict]) -> str:
 
 
 # --------------------------------------------------- R4 — Score calibration ---
-def calibration_table_html(bands: dict, overall_rate: float | None) -> str:
-    """Per-band record / hit rate / sample / voids / diff-vs-overall, small-sample
-    marked. ``bands`` is ordered low→high (from grading.summarize_by_band)."""
+def calibration_table_html(bands: dict, overall_rate: float | None,
+                           band_base: dict | None = None) -> str:
+    """Per-band record / hit rate / sample / voids / lift-over-base, small-sample marked.
+    ``bands`` is ordered low→high (from grading.summarize_by_band).
+
+    **Each band against its own base rate**, because the bands do not hold the same
+    markets. The 99-100 band is 99% 1+ hit while the 70-74 band is half that, with a
+    sixth SP hits and a fifth WNBA. Measured against one blended average, a band's score
+    and its market mix are indistinguishable — the table would credit the top band for
+    being full of a common event rather than for being well scored.
+    """
     if not bands:
         return '<div class="mlb-empty">No graded props in this period yet.</div>'
+    band_base = band_base or {}
     head = ('<div class="cal-row cal-head"><span>Score band</span><span>Record</span>'
             '<span>Hit rate</span><span>Sample</span><span>Voids</span>'
-            '<span>vs overall</span></div>')
+            '<span>vs base</span></div>')
     out = []
     for label, t in bands.items():
         dec = t["hit"] + t["miss"]
         diff = ""
-        if t["hit_rate"] is not None and overall_rate is not None:
-            pp = (t["hit_rate"] - overall_rate) * 100
+        base = band_base.get(label)
+        if t["hit_rate"] is not None and base is not None:
+            pp = (t["hit_rate"] - base) * 100
             cls = "pos" if pp >= 0 else "neg"
-            diff = f'<span class="cal-diff {cls}">{"+" if pp >= 0 else ""}{pp:.1f} pp</span>'
+            diff = (f'<span class="cal-diff {cls}">{"+" if pp >= 0 else ""}{pp:.1f} pp</span>'
+                    f'<span class="et-prev"> base {base:.0%}</span>')
         badge = '<span class="cal-small">Small sample</span>' if t.get("small_sample") else ""
         out.append(
             f'<div class="cal-row"><span class="cal-band">{label}{badge}</span>'
@@ -168,9 +179,15 @@ def calibration_table_html(bands: dict, overall_rate: float | None) -> str:
     return f'<div class="cal-table">{head}{"".join(out)}</div>'
 
 
-def calibration_interpretation(bands: dict) -> str:
+def calibration_interpretation(bands: dict, band_base: dict | None = None) -> str:
     """A one-line read of the calibration, from the data only — never a claim a small
-    sample can't support."""
+    sample can't support.
+
+    Reads the trend in **lift over each band's own base rate** when those are available.
+    Raw band rates would let a shift in market mix read as a change in calibration: the
+    top band is almost purely 1+ hit, whose event is far more common than a WNBA line's.
+    """
+    band_base = band_base or {}
     reliable = [(l, t) for l, t in bands.items()
                 if not t.get("small_sample") and t["hit_rate"] is not None]
     small = [l for l, t in bands.items()
@@ -179,7 +196,10 @@ def calibration_interpretation(bands: dict) -> str:
             f"remain{'' if len(small) > 1 else 's'} small.") if small else ""
     if len(reliable) < 2:
         return "Not enough graded props yet to judge whether higher scores perform better." + note
-    rates = [t["hit_rate"] for _, t in reliable]   # bands ordered low → high
+    if all(band_base.get(l) is not None for l, _ in reliable):
+        rates = [t["hit_rate"] - band_base[l] for l, t in reliable]
+    else:
+        rates = [t["hit_rate"] for _, t in reliable]   # bands ordered low → high
     trend = rates[-1] - rates[0]
     if trend > 0.03:
         return "Higher score bands have generally produced higher observed hit rates." + note
@@ -310,6 +330,20 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
             '<span>Faded cells have fewer than 5 decisions</span></div>')
 
 
+def _lift_html(rate: float | None, base: float | None) -> str:
+    """Lift over this row's own base rate, with the base shown beside it.
+
+    Empty when the base is unknown — a missing comparison is honest, and the alternative
+    (falling back to the app-wide average) is the thing this replaced.
+    """
+    if rate is None or base is None:
+        return '<span class="et-prev">—</span>'
+    pp = (rate - base) * 100
+    return (f'<span class="cal-diff {"pos" if pp >= 0 else "neg"}">'
+            f'{"+" if pp >= 0 else ""}{pp:.1f} pp</span>'
+            f'<span class="et-prev"> base {base:.0%}</span>')
+
+
 def _diff_html(rate: float | None, overall: float | None) -> str:
     if rate is None or overall is None:
         return ""
@@ -318,17 +352,38 @@ def _diff_html(rate: float | None, overall: float | None) -> str:
 
 
 def edge_table_html(by_segment: dict, overall_rate: float | None, min_sample: int,
-                    recent: dict, prev: dict) -> str:
-    """Reliability-first edge table: segments meeting the min sample first (sorted by
-    hit rate), then a separated, marked 'below minimum sample' group — so a 3–0 never
-    outranks a 55–40. Columns include diff-vs-overall and a 30-day trend."""
+                    recent: dict, prev: dict, seg_base: dict | None = None) -> str:
+    """Reliability-first edge table: segments meeting the min sample first, then a
+    separated, marked 'below minimum sample' group — so a 3–0 never outranks a 55–40.
+
+    **Ranked by lift over each segment's own base rate, not by hit rate.** A market whose
+    event is naturally rare converts lower and is not thereby worse: WNBA assists hit 66%
+    against a 35% base (+31), while 1+ hit hits 61% against a 61% base (+0.7). Sorting on
+    the raw rate put them in the opposite order, and the old "vs overall" column — every
+    market measured against one blended average — said the same wrong thing. That is
+    [Method §1](../docs/engineering/METHOD.md); ``services/base_rates`` holds the reasoning
+    and the populations.
+
+    ``seg_base`` maps segment → its own base rate. Absent, the lift column stays empty
+    rather than falling back to a comparison known to mislead.
+    """
     if not by_segment:
         return '<div class="mlb-empty">No graded props to segment in this period.</div>'
 
+    seg_base = seg_base or {}
+
     def dec(t):
         return t["hit"] + t["miss"]
+
+    def lift(k, t):
+        base = seg_base.get(k)
+        return None if base is None or t["hit_rate"] is None else t["hit_rate"] - base
+
+    def rank(kt):
+        # Segments with no measurable base sort last rather than pretending to a 0 lift.
+        return (lift(*kt) if lift(*kt) is not None else float("-inf"))
     meets = sorted(((k, t) for k, t in by_segment.items() if dec(t) >= min_sample),
-                   key=lambda kt: kt[1]["hit_rate"] or 0, reverse=True)
+                   key=rank, reverse=True)
     small = sorted(((k, t) for k, t in by_segment.items() if 0 < dec(t) < min_sample),
                    key=lambda kt: dec(kt[1]), reverse=True)
 
@@ -343,16 +398,29 @@ def edge_table_html(by_segment: dict, overall_rate: float | None, min_sample: in
             return f'<span class="et-trend">{rc:.0%} <span class="et-prev">30d</span></span>'
         return '<span class="et-prev">—</span>'
 
+    def lift_cell(label, t):
+        base = seg_base.get(label)
+        if base is None or t["hit_rate"] is None:
+            return '<span class="et-prev">—</span>'
+        pp = (t["hit_rate"] - base) * 100
+        cls = "pos" if pp >= 0 else "neg"
+        # The base is shown, not just the difference: a lift means nothing without the
+        # number it is a lift over, and this table exists because that number was hidden.
+        return (f'<span class="cal-diff {cls}">{"+" if pp >= 0 else ""}{pp:.1f} pp</span>'
+                f'<span class="et-prev"> base {base:.0%}</span>')
+
     def row(label, t, small_flag=False):
         badge = '<span class="cal-small">Small</span>' if small_flag else ""
+        # Lift sits third so it survives the mobile rule, which hides columns 4 and 5.
+        # It is the column the reader should act on, so it outranks the raw record.
         return (f'<div class="et-row"><span class="et-seg">{escape(str(label))}{badge}</span>'
-                f'<span>{t["hit"]}–{t["miss"]}</span>'
                 f'<span class="cal-rate">{_rate(t)} <span class="ds-sub">n={dec(t)}</span></span>'
-                f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span>'
+                f'<span>{lift_cell(label, t)}</span>'
+                f'<span>{t["hit"]}–{t["miss"]}</span>'
                 f'<span>{trend_cell(label)}</span></div>')
 
-    head = ('<div class="et-row et-head"><span>Segment</span><span>Record</span>'
-            '<span>Hit rate</span><span>vs overall</span><span>30-day trend</span></div>')
+    head = ('<div class="et-row et-head"><span>Segment</span><span>Hit rate</span>'
+            '<span>vs base</span><span>Record</span><span>30-day trend</span></div>')
     body = "".join(row(k, t) for k, t in meets)
     if small:
         body += ('<div class="et-divider">Below minimum sample</div>'
@@ -399,18 +467,25 @@ def consistency_html(windows: list) -> str:
     return f'<div class="cons-row">{"".join(cards)}</div>'
 
 
-def monthly_table_html(months: list, overall_rate: float | None) -> str:
-    """Chronological monthly table (record, hit rate, sample, diff-vs-overall) — is
-    accuracy improving or deteriorating, without over-weighting single days."""
+def monthly_table_html(months: list, overall_rate: float | None,
+                       month_base: dict | None = None) -> str:
+    """Chronological monthly table (record, hit rate, sample, lift over base) — is
+    accuracy improving or deteriorating, without over-weighting single days.
+
+    Each month against its own base rate, because the slate's league mix is seasonal: a
+    month with a WNBA slate carries markets whose events are far rarer than 1+ hit, and
+    against a single blended average that reads as the scorer improving.
+    """
     if not months:
         return '<div class="mlb-empty">No graded months in range yet.</div>'
+    month_base = month_base or {}
     head = ('<div class="et-row et-head"><span>Month</span><span>Record</span>'
-            '<span>Hit rate</span><span>vs overall</span><span></span></div>')
+            '<span>Hit rate</span><span>vs base</span><span></span></div>')
     body = "".join(
         f'<div class="et-row"><span class="et-seg">{escape(label)}</span>'
         f'<span>{t["hit"]}–{t["miss"]}</span>'
         f'<span class="cal-rate">{_rate(t)} <span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
-        f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span><span></span></div>'
+        f'<span>{_lift_html(t["hit_rate"], month_base.get(label))}</span><span></span></div>'
         for label, t in months)
     return f'<div class="et-table">{head}{body}</div>'
 
@@ -441,10 +516,10 @@ def version_table_html(groups: list, overall_rate: float | None) -> str:
                 f'<span>{t["hit"]}–{t["miss"]}</span>'
                 f'<span class="cal-rate">{_rate(t)} '
                 f'<span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
-                f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span></div>')
+                f'<span>{_lift_html(t["hit_rate"], item.get("base"))}</span></div>')
 
     head = ('<div class="ver-row et-head"><span>Version</span><span>Active</span>'
-            '<span>Record</span><span>Hit rate</span><span>vs overall</span></div>')
+            '<span>Record</span><span>Hit rate</span><span>vs base</span></div>')
 
     live, retired = [], []
     for group in groups:
@@ -463,7 +538,7 @@ def version_table_html(groups: list, overall_rate: float | None) -> str:
                 f'<span>{t["hit"]}–{t["miss"]}</span>'
                 f'<span class="cal-rate">{_rate(t)} '
                 f'<span class="ds-sub">n={t["hit"] + t["miss"]}</span></span>'
-                f'<span>{_diff_html(t["hit_rate"], overall_rate)}</span></div>')
+                f'<span>{_lift_html(t["hit_rate"], group.get("earlier_base"))}</span></div>')
         (retired if group["retired"] else live).append("".join(block))
 
     out = f'<div class="et-table">{head}{"".join(live)}</div>'

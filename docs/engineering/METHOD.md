@@ -30,6 +30,35 @@ edge. A refit (`sp-v2`) had penalised them for it.
 **Applies to:** any hit-rate comparison, any threshold choice, any "which market is
 working" question. See `sp-v3` and the 2026-08-10 entries.
 
+### 1a. The base rate belongs on the surface, not just in the analysis
+
+The rule was being followed in investigations and broken on the **Performance page**,
+which compared every market, band, month and model version to one blended average. That
+column reversed the true ranking: WNBA assists (+31 over base) sat below 1+ hit (+0.7),
+because 1+ hit converts higher. Retiring the wrong market was one click away.
+
+Fixed 2026-08-19 — `services/base_rates.py`, four tables, ranked by lift. Three things
+that pass a review and are still wrong:
+
+- **Re-implementing the resolution rule.** An under is `actual <= threshold`, *inclusive*.
+  Writing `<` by hand produced a base rate wrong in the flattering direction and turned a
+  losing market into an apparent +12. Ask `domain.markets.grade`; never restate it.
+- **Defining the population post-hoc.** Filtering batters to `>= 3 PA` looks like "count
+  the regulars" and actually conditions on the outcome — a batter bats a fourth time
+  partly *because* he reached. It moved the 1+ hit base rate from .565 to .741 across
+  plausible cutoffs and flipped the verdict from +4.9 to −4.5. Use status known before
+  the event: the first nine batters, the first-inning pitcher, the `started` flag.
+- **Comparing groups with different mixes.** Score bands are not like-for-like — the
+  99-100 band is 99% 1+ hit, the 70-74 band half that. Any per-group comparison needs
+  each group weighted by what it actually contains.
+
+**What it changed.** `batter_hit` runs **+0.7** over base across 1,337 served props —
+essentially no edge, and 61% of everything we serve. `batter-hit-v5` is nonetheless a real
+gain (**+6.9**, against **+0.0** for its three predecessors pooled). The 99-100 band runs
+**−6.6** over base on n=102: the very top of the scale is anti-predictive, which is
+`v3_top_band_watch` measured rather than suspected. And `sp_hits` is the worst thing on the
+board at **−11.3** for its current version.
+
 ## 2. Split-half persistence: is it a trait, or a run of luck?
 
 Split the population in half — by time, by odd/even occurrences — compute the effect in

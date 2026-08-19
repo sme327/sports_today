@@ -1,0 +1,138 @@
+"""How often a prop's event happens on its own — the number a hit rate is judged against.
+
+These tests exist because the comparison they replace was wrong in a way that changed
+decisions: every market measured against one blended average, which flatters common events
+and punishes rare ones.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+
+import pytest
+
+from components.results_feed import edge_table_html
+from services import base_rates
+
+
+@pytest.fixture
+def db(tmp_path):
+    """A tiny league: 2 games, 9 starters a side, plus a bench bat who never starts."""
+    path = tmp_path / "t.db"
+    conn = sqlite3.connect(path)
+    conn.execute("""CREATE TABLE plate_appearances (game_id TEXT, batting_team TEXT,
+        pitching_team TEXT, batter_id TEXT, pitcher_id TEXT, inning TEXT, is_hit INT,
+        is_strikeout INT, is_walk INT, total_bases INT)""")
+    rows = []
+    for g in ("g1", "g2"):
+        for slot in range(9):
+            # Starters 0-3 get a hit; 4-8 do not. Base rate for 1+ hit is therefore 4/9.
+            hit = 1 if slot < 4 else 0
+            rows.append((g, "TeamA", "TeamB", f"b{slot}", "sp1", "1T", hit, 0, 0, hit))
+        # A bench bat with one plate appearance and no hit. He must not count: including
+        # him would drag the base rate down and flatter every pick we make.
+        rows.append((g, "TeamA", "TeamB", "bench", "sp1", "9T", 0, 0, 0, 0))
+    conn.executemany("INSERT INTO plate_appearances VALUES (?,?,?,?,?,?,?,?,?,?)", rows)
+    conn.commit()
+    conn.close()
+    base_rates._values.cache_clear()
+    base_rates.base_rate.cache_clear()
+    return str(path)
+
+
+def test_the_base_rate_counts_starters_not_everyone_who_batted(db):
+    """Nine starters, four with a hit -> 4/9. The bench bat is excluded."""
+    assert base_rates.base_rate("batter_hit", 1, "over", db_path=db) == pytest.approx(4 / 9)
+
+
+def test_an_under_is_inclusive_of_the_bar(db):
+    """`markets.grade` resolves an under as `actual <= threshold`. Writing that comparison
+    out by hand as `<` once produced a base rate wrong in the flattering direction, which
+    turned a losing market into an apparent +12."""
+    # Starters allow 0 or 1 total bases each; "under 0" must count the four-of-nine zeros.
+    incl = base_rates.base_rate("batter_tb", 0, "under", db_path=db)
+    assert incl == pytest.approx(5 / 9), "under 0 must include exactly the players at 0"
+
+
+def test_no_population_means_no_comparison_rather_than_a_guess(tmp_path):
+    empty = tmp_path / "empty.db"
+    sqlite3.connect(empty).close()
+    base_rates._values.cache_clear()
+    base_rates.base_rate.cache_clear()
+    assert base_rates.base_rate("batter_hit", 1, "over", db_path=str(empty)) is None
+
+
+def test_a_segment_mixing_markets_is_weighted_by_the_props_it_holds(db):
+    """Grouping by team or player mixes markets and bars, so the segment's base rate is
+    the mean of its own rows' base rates."""
+    rows = [{"market_key": "batter_hit", "threshold": 1, "direction": "over"},
+            {"market_key": "batter_hit", "threshold": 1, "direction": "over"}]
+    assert base_rates.segment_base_rate(rows, db_path=db) == pytest.approx(4 / 9)
+
+
+# --- the table ----------------------------------------------------------------------
+
+def _tally(hit, miss, rate):
+    return {"hit": hit, "miss": miss, "void": 0, "pending": 0, "hit_rate": rate}
+
+
+def test_the_edge_table_ranks_by_lift_not_by_hit_rate():
+    """The defect this column was built to fix: 1+ hit converts higher than WNBA assists
+    and is the weaker market, because its event is far more common."""
+    seg = {"Batter Hits": _tally(61, 39, 0.614), "WNBA Assists": _tally(66, 34, 0.660)}
+    base = {"Batter Hits": 0.607, "WNBA Assists": 0.347}
+    html = edge_table_html(seg, 0.62, 10, {}, {}, seg_base=base)
+    assert html.index("WNBA Assists") < html.index("Batter Hits")
+    assert "+31.3 pp" in html and "+0.7 pp" in html
+
+
+def test_the_table_shows_the_base_it_compares_against():
+    """A lift means nothing without the number it is a lift over."""
+    html = edge_table_html({"WNBA Assists": _tally(66, 34, 0.660)}, 0.62, 10, {}, {},
+                           seg_base={"WNBA Assists": 0.347})
+    assert "base 35%" in html
+
+
+def test_a_segment_with_no_measurable_base_shows_nothing_not_a_zero():
+    html = edge_table_html({"Mystery": _tally(5, 5, 0.5)}, 0.62, 1, {}, {}, seg_base={})
+    assert "pp" not in html
+
+
+def test_the_old_vs_overall_column_is_gone():
+    """It compared every market to one blended average and reversed the true ranking."""
+    html = edge_table_html({"Batter Hits": _tally(61, 39, 0.614)}, 0.62, 10, {}, {},
+                           seg_base={"Batter Hits": 0.607})
+    assert "vs overall" not in html
+    assert "vs base" in html
+
+
+def test_calibration_bands_are_measured_against_their_own_mix():
+    """The 99-100 band is almost purely 1+ hit; the 70-74 band is half WNBA and SP lines.
+    Against one blended average, a band's market mix and its score are indistinguishable."""
+    from components.results_feed import calibration_table_html
+
+    bands = {"70–74": _tally(60, 40, 0.60), "99–100": _tally(55, 45, 0.55)}
+    html = calibration_table_html(bands, 0.60, {"70–74": 0.53, "99–100": 0.61})
+    assert "+7.0 pp" in html and "-6.0 pp" in html
+    assert "vs base" in html and "vs overall" not in html
+
+
+def test_the_calibration_read_follows_lift_not_raw_rate():
+    """A top band converting higher can still be the weaker band once its easier mix is
+    accounted for — the sentence must not call that an improvement."""
+    from components.results_feed import calibration_interpretation
+
+    bands = {"70–74": _tally(60, 40, 0.60), "99–100": _tally(64, 36, 0.64)}
+    rising = calibration_interpretation(bands, {"70–74": 0.50, "99–100": 0.45})
+    assert "higher" in rising.lower()
+    falling = calibration_interpretation(bands, {"70–74": 0.50, "99–100": 0.66})
+    assert "not produced higher" in falling
+
+
+def test_a_month_is_compared_to_its_own_seasonal_mix():
+    """League mix is seasonal — a WNBA-heavy month carries rarer events."""
+    from components.results_feed import monthly_table_html
+
+    html = monthly_table_html([("2026-07", _tally(64, 36, 0.64))], 0.60,
+                              {"2026-07": 0.60})
+    assert "+4.0 pp" in html and "base 60%" in html
