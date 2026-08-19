@@ -339,3 +339,48 @@ def test_market_breakdown_html_needs_two_markets():
     html = market_breakdown_html(two)
     assert "By market" in html and "Batter Hits" in html and "SP Strikeouts" in html
     assert html.count("<div") == html.count("</div>")
+
+
+# --- NFL grading (2026-08-18) -------------------------------------------------------
+
+def test_nfl_props_stay_pending_until_the_weekly_feed_covers_that_date():
+    """NFL feeds land weekly, not nightly. A Sunday slate can legitimately sit ungraded
+    for days — pending keeps that honest, where void would freeze every prop as a
+    non-result the moment it was captured, and grading is idempotent."""
+    from services import grading
+
+    row = {"league": "NFL", "market": "3+ Receptions", "market_key": "nfl_receptions",
+           "direction": "over", "threshold": 3, "player_id": "p1",
+           "snapshot_date": "2026-09-13", "game_id": "g1"}
+    # Feed has not reached this week.
+    result = grading._grade_row(row, {}, {}, {}, {}, {}, set(), {"mlb": True},
+                                {}, set())
+    assert result == (None, None, None), "must be pending, not void"
+
+
+def test_nfl_prop_grades_against_the_feed_once_it_lands():
+    from services import grading
+
+    row = {"league": "NFL", "market": "60+ Rush Yards", "market_key": "nfl_rush_yds",
+           "direction": "over", "threshold": 60, "player_id": "p1",
+           "snapshot_date": "2026-09-13", "game_id": "g1"}
+    lines = {"p1": {"rushing_yds": 84.0, "receiving_rec": 2.0}}
+    covered = {"2026-09-13"}
+    assert grading._grade_row(row, {}, {}, {}, {}, {}, set(), {"mlb": True},
+                             lines, covered) == ("hit", 84.0, None)
+    row["threshold"] = 100
+    assert grading._grade_row(row, {}, {}, {}, {}, {}, set(), {"mlb": True},
+                             lines, covered)[0] == "miss"
+
+
+def test_a_player_who_did_not_appear_is_void_not_a_miss():
+    """Same rule as a scratched batter: absence is not a wrong prediction."""
+    from services import grading
+
+    row = {"league": "NFL", "market": "4+ Receptions", "market_key": "nfl_receptions",
+           "direction": "over", "threshold": 4, "player_id": "missing",
+           "snapshot_date": "2026-09-13", "game_id": "g1"}
+    result, actual, reason = grading._grade_row(
+        row, {}, {}, {}, {}, {}, set(), {"mlb": True},
+        {"p1": {"receiving_rec": 5.0}}, {"2026-09-13"})
+    assert result == "void" and reason == "did not appear"

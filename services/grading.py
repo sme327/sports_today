@@ -62,6 +62,10 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
         # timestamp (a night game rolls to the next UTC day), so a date match never
         # aligns. {(game_id, player_id): line} plus the set of games actually loaded.
         wnba_lines, wnba_games = _wnba_lines_by_game(conn)
+        # NFL props grade off the ingested vendor feed. That feed arrives weekly rather
+        # than nightly, so a graded Sunday may sit pending for days — which is correct.
+        # A prop whose result has not been published is *unknown*, not a miss.
+        nfl_lines, nfl_dates = _nfl_lines_by_date(conn, token)
         # Data-availability gate: only grade a source once that date's results are
         # actually loaded. Otherwise a slate captured in the morning would grade to
         # all-void before its feed arrives, and idempotency would freeze that mistake.
@@ -70,7 +74,8 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
 
         for r in rows:
             result, actual, reason = _grade_row(r, mlb, mlb_tb, mlb_kbb, mlb_sp,
-                                                wnba_lines, wnba_games, avail)
+                                                wnba_lines, wnba_games, avail,
+                                                nfl_lines, nfl_dates)
             if result is None:               # results genuinely not available yet
                 summary["pending"] += 1
                 continue
@@ -85,7 +90,8 @@ def grade_slate(slate_date: date, *, db_path: Path = DB_PATH, force: bool = Fals
 
 
 def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_kbb: dict, mlb_sp: dict, wnba_lines: dict,
-               wnba_games: set, avail: dict) -> tuple[str | None, float | None, str | None]:
+               wnba_games: set, avail: dict, nfl_lines: dict | None = None,
+               nfl_dates: set | None = None) -> tuple[str | None, float | None, str | None]:
     """Grade one snapshot row via the market registry. Returns
     ``(result, actual_value, void_reason)``. Reads the stored ``market_key`` /
     ``direction`` when present, else resolves them from the legacy market text.
@@ -129,6 +135,15 @@ def _grade_row(r, mlb: dict, mlb_tb: dict, mlb_kbb: dict, mlb_sp: dict, wnba_lin
         if line is None:
             return "void", None, "did not start"
         actual = line["k"] if key == "sp_k" else line["hits"]
+    elif key in markets.NFL_STAT_COLUMN:
+        if not nfl_dates or (_row_get(r, "snapshot_date") or "") not in nfl_dates:
+            return None, None, None          # feed has not covered this week yet
+        line = (nfl_lines or {}).get(str(pid))
+        if line is None:
+            return "void", None, "did not appear"
+        actual = line.get(markets.NFL_STAT_COLUMN[key])
+        if actual is None:
+            return "void", None, "no box score"
     elif key in _WNBA_COL:
         gid = str(_row_get(r, "game_id") or "")
         if gid not in wnba_games:            # this game's box scores not loaded yet
@@ -226,6 +241,29 @@ def _mlb_pitcher_lines(conn: sqlite3.Connection, token: str) -> dict:
     return {r["pid"]: {"k": int(r["k"] or 0), "hits": int(r["hits"] or 0)}
             for r in rows if r["pid"] in started}
 
+
+
+def _nfl_lines_by_date(conn, token: str) -> tuple[dict, set]:
+    """``({player_id: {stat: value}}, {dates the feed covers})`` for one slate date.
+
+    The date set is the availability gate. NFL feeds land weekly, so a Sunday slate can
+    legitimately sit ungraded for days — returning "pending" keeps that honest instead of
+    freezing every prop as void the moment it is captured.
+    """
+    stats = sorted(set(markets.NFL_STAT_COLUMN.values()))
+    try:
+        rows = conn.execute(
+            f"SELECT player_id, {', '.join(stats)} FROM nfl_player_games "
+            f"WHERE game_date = ?", (token,)).fetchall()
+        covered = {r[0] for r in conn.execute(
+            "SELECT DISTINCT game_date FROM nfl_player_games WHERE game_date = ?",
+            (token,))}
+    except sqlite3.OperationalError:
+        return {}, set()
+    lines = {}
+    for row in rows:
+        lines[str(row[0])] = {stat: row[i + 1] for i, stat in enumerate(stats)}
+    return lines, covered
 
 def _wnba_lines_by_game(conn: sqlite3.Connection) -> tuple[dict, set]:
     """All WNBA box-score lines keyed by ``(game_id, player_id)``, plus the set of

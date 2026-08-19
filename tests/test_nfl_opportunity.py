@@ -53,3 +53,93 @@ def test_key_players_picks_qb_rb_and_receivers():
     ])
     ids = {p[0] for p in key_players(df)}
     assert {"qb", "rb", "wr1", "wr2"} <= ids and "wr3" not in ids
+
+
+# --- slate scoring + registry (2026-08-18) ------------------------------------------
+
+def _slate_games(stat, values, player="P1", team="Team A", position="WR"):
+    import pandas as pd
+    return pd.DataFrame([{
+        "player_id": player.lower(), "player": player, "team": team,
+        "position": position, "game_date": f"2025-09-{10 + i:02d}", stat: v,
+    } for i, v in enumerate(values)])
+
+
+def test_a_player_is_scored_in_every_market_they_reach_not_just_their_position():
+    """`best_prop` picks one prop for a spotlight; the slate wants the population. A
+    receiving back is a genuine receptions prop and a running QB is a rush-attempts
+    prop, so scoring only the position's primary stat would drop real props."""
+    import pandas as pd
+
+    from src.nfl_opportunity import score_nfl_opportunities
+    frame = _slate_games("receiving_yds", [55, 62, 71, 48, 90], position="RB")
+    frame["receiving_rec"] = [5, 6, 5, 4, 7]
+    frame["rushing_att"] = [12, 15, 11, 14, 13]
+    keys = set(score_nfl_opportunities(frame).market_key)
+    assert {"nfl_rec_yds", "nfl_receptions", "nfl_rush_att"} <= keys
+
+
+def test_a_bar_the_player_rarely_clears_is_never_offered():
+    """The reachable-bar discipline, which is what earns the lift: a player is only
+    offered a bar they clear in at least 55% of recent games."""
+    from src.nfl_opportunity import score_nfl_opportunities
+    # 40 yards is the lowest bar; this player clears it twice in six games.
+    scored = score_nfl_opportunities(_slate_games("receiving_yds", [12, 8, 45, 15, 60, 9]))
+    assert scored.empty
+
+
+def test_the_recent_line_is_oldest_first_and_matches_the_bar():
+    from src.nfl_opportunity import score_nfl_opportunities
+    scored = score_nfl_opportunities(_slate_games("receiving_rec", [4, 5, 6, 4, 7]))
+    row = scored.iloc[0]
+    assert row.recent_line == [4.0, 5.0, 6.0, 4.0, 7.0], "left-to-right must read as time"
+    assert row.threshold <= min(row.recent_line) or row.clear_rate >= 0.55
+
+
+def test_risks_name_role_volatility_rather_than_form():
+    """Football's hazard is that a *role* vanishes between weeks — injury, game script, a
+    committee backfield — in a way a baseball lineup slot does not."""
+    from src.nfl_opportunity import score_nfl_opportunities
+    scored = score_nfl_opportunities(_slate_games("receiving_rec", [8, 9, 7, 2, 1]))
+    risks = " ".join(scored.iloc[0].risks).lower()
+    assert "last 3" in risks or "swung widely" in risks or "role" in risks
+
+
+def test_every_nfl_market_is_registered_and_gradeable():
+    """A scorer emitting a market the registry does not know would be scored, shown, and
+    then silently never graded."""
+    from domain.markets import MARKETS, NFL_STAT_COLUMN
+    from src.nfl_opportunity import _SCORED_MARKETS
+
+    for key in _SCORED_MARKETS:
+        assert key in MARKETS, f"{key} is scored but not registered"
+        assert key in NFL_STAT_COLUMN, f"{key} has no column to grade against"
+        assert MARKETS[key].league == "NFL"
+
+
+def test_nfl_markets_are_over_only():
+    """An "under 4 receptions" prop is a bet on absence — the shape that made SP
+    hits-allowed unders carry no information (-0.011 lift over 189 graded rows)."""
+    from domain.markets import MARKETS
+    for key, spec in MARKETS.items():
+        if spec.league == "NFL":
+            assert not spec.allows_both, f"{key} must not offer an under"
+
+
+def test_props_go_quiet_when_the_ingested_feed_is_months_old():
+    """An NFL offseason is seven months of trades, retirements and depth-chart churn.
+    Scoring an August preseason game off January's games produced a confident-looking
+    "Tony Pollard 10+ carries" for a back who may not be on that roster — exactly the
+    failure the honest-data rule exists to prevent. Silence beats a stale number."""
+    import pandas as pd
+    from datetime import date
+
+    from leagues.nfl.adapter import _is_stale
+
+    january = pd.DataFrame({"game_date": ["2026-01-12"]})
+    assert _is_stale(january, date(2026, 8, 18)), "7 months stale must be refused"
+    assert not _is_stale(january, date(2026, 1, 18)), "a week later is current"
+    # A late vendor feed mid-season must not silence the slate.
+    assert not _is_stale(january, date(2026, 2, 10)), "4 weeks is a bye, not an offseason"
+    assert _is_stale(pd.DataFrame(), date(2026, 9, 1)), "no data is stale by definition"
+    assert _is_stale(pd.DataFrame({"game_date": ["not-a-date"]}), date(2026, 9, 1))

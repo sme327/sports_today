@@ -84,6 +84,38 @@ MARKETS: dict[str, MarketSpec] = {
     "wnba_assists": MarketSpec(
         "wnba_assists", "WNBA", "assists", "Assists", "ast", False,
         "wnba_player_game_logs", OVER, allows_both=False),
+    # NFL, registered 2026-08-18. Over-only: these are volume bars a player clears or
+    # does not, and an "under 4 receptions" prop is a bet on absence — the same shape
+    # that made SP hits-allowed unders carry no information.
+    #
+    # Measured on 78,744 ingested player-games (2023-25) before registering, per the
+    # reachable-bar discipline. Lift over base rate, which is the number that matters
+    # here because these are *hard* bars rather than MLB's near-coin-flips:
+    #   rushing attempts +51.0   passing yards +49.0   rushing yards +46.3
+    #   receiving yards  +33.9   receptions    +31.6
+    # For contrast, MLB 1+ hit runs +11.8 and SP strikeout overs +17.0.
+    "nfl_pass_yds": MarketSpec(
+        "nfl_pass_yds", "NFL", "nfl_pass_yds", "Pass Yards", "pass yds", False,
+        "nfl_player_games", OVER, allows_both=False),
+    "nfl_rush_yds": MarketSpec(
+        "nfl_rush_yds", "NFL", "nfl_rush_yds", "Rush Yards", "rush yds", False,
+        "nfl_player_games", OVER, allows_both=False),
+    "nfl_rec_yds": MarketSpec(
+        "nfl_rec_yds", "NFL", "nfl_rec_yds", "Rec Yards", "rec yds", False,
+        "nfl_player_games", OVER, allows_both=False),
+    "nfl_receptions": MarketSpec(
+        "nfl_receptions", "NFL", "nfl_receptions", "Receptions", "rec", True,
+        "nfl_player_games", OVER, allows_both=False),
+    "nfl_rush_att": MarketSpec(
+        "nfl_rush_att", "NFL", "nfl_rush_att", "Rush Attempts", "carries", True,
+        "nfl_player_games", OVER, allows_both=False),
+}
+
+# The stat column each NFL market grades against, in `nfl_player_games`.
+NFL_STAT_COLUMN = {
+    "nfl_pass_yds": "passing_yds", "nfl_rush_yds": "rushing_yds",
+    "nfl_rec_yds": "receiving_yds", "nfl_receptions": "receiving_rec",
+    "nfl_rush_att": "rushing_att",
 }
 
 # WNBA scorers emit a bare stat key ("points"); map those to registry keys.
@@ -202,6 +234,11 @@ PROP_TYPES: list[tuple[str, str]] = [
     ("points", "Points"),
     ("rebounds", "Rebounds"),
     ("assists", "Assists"),
+    ("nfl_pass_yds", "Pass Yards"),
+    ("nfl_rush_yds", "Rush Yards"),
+    ("nfl_rec_yds", "Rec Yards"),
+    ("nfl_receptions", "Receptions"),
+    ("nfl_rush_att", "Rush Attempts"),
 ]
 LABELS: dict[str, str] = dict(PROP_TYPES)
 ORDER: list[str] = [k for k, _ in PROP_TYPES]
