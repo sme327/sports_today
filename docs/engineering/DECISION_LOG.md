@@ -9,6 +9,86 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-19 — NFL props backtested properly, and a traded-player bug
+
+**Decision.** Keep the NFL scorer's shape and its threshold ladders **unchanged**, on
+measurement rather than assumption. Fix a real defect found while measuring: a traded
+player was losing the history he earned elsewhere.
+
+### The bug: a player is one player, not one player per team
+
+`score_nfl_opportunities` grouped on `(player_id, player, team, position)`. A player who
+changed teams therefore split into **per-team fragments**, and two things followed:
+
+- Each fragment fell below the games floor, so the player was offered **no prop at all**.
+  At week 3 of 2025 this hit **459 players** — Aaron Rodgers had 20 games played and 2
+  under his current team.
+- Each fragment was internally single-season, so the prior-season disclosure shipped the
+  day before **could never fire for a traded player** — precisely the population it exists
+  for. Jonnu Smith (Miami → Pittsburgh) scored 84/79 off pure Miami data, labelled Miami,
+  with no mention that his whole window predated the move.
+
+The team filter had the same shape: it filtered *rows* by team, keeping a traded player's
+**old** games and discarding the team he now plays for.
+
+**Fix.** Identity — team, position, printed name — comes from the player's most recent
+game; history is every game he has played; the slate filter follows the player, not his
+old rows. Jonnu Smith now reads Pittsburgh, carries `8 of these 10 games are from last
+season`, and scores **69/60** instead of 84/79. Four regression tests cover it.
+
+**This is the second time a grouping key has quietly changed a population** (the first was
+MLB roster status). Worth naming as a class: *a groupby key is a claim about identity.*
+
+### The honest numbers
+
+Leakage-safe backtest — every player-game scored on that player's prior games only, then
+compared to what he actually did. **10,552 scored player-games, base rate .542.**
+
+| market | lift over base |
+|---|---|
+| rushing attempts | **+18.6** |
+| receptions | **+10.6** |
+| receiving yards | **+8.8** |
+| passing yards | **+6.5** |
+| rushing yards | **+5.2** |
+
+At the curation floor the served population hits **.650, +10.8 over base** (n=1,081) —
+the same order as MLB `batter_hit` (+11.8), not the +31 to +51 logged on 2026-08-18. That
+earlier table divided by a base rate computed over *all* player-games, offensive linemen
+included. **The direction was right and the magnitude was fiction**; the 08-18 entry is
+annotated rather than deleted, because its reasoning about raw clear rate still holds.
+
+### The ladders are measured now
+
+Each rung's league-wide clear rate among genuine candidates is recorded inline in
+`_STAT_MARKETS`. The ladders step down **~10 points of rarity per rung**, so "the highest
+bar he still clears" is a real statement and not an artefact of round numbers. Checked for
+the `batter-hit-v3` saturation defect: only 17 of 268 props sit on the top rung and one
+clears it ≥80%, so no ladder is too short.
+
+### Four alternatives lost
+
+Cushion capped at .35, cushion dropped, consistency substituted, cushion × consistency —
+tested out of sample (choose on 2023-24, evaluate on 2025). **The incumbent won on both
+ship-rule terms** (+10.2 top-20% lift, +12.2 at the floor). Bands rise monotonically out
+of sample: +7.0 → +10.8 → +12.8 → +17.8.
+
+**A hypothesis I had to drop.** The full-sample band table appeared to show the top band
+inverting (85-89 at +4.1, 90+ at −4.2) — the shape that forced `batter-hit-v5`. Out of
+sample it is +13.6. Those buckets hold **15 props**, where the 95% interval is ±25 points;
+they decide nothing. I nearly "fixed" a defect that was sampling noise.
+
+**Version.** `nfl-props-v1` is corrected in place rather than bumped: no NFL prop has ever
+been served, so there are no graded rows to separate. Version strings exist to keep a
+ledger honest, and minting a v2 against an empty ledger would add a phantom row to the
+Performance page forever.
+
+**Future.** `rushing_att` at +18.6 is the standout and is the purest usage market — it
+measures what a coaching staff controls rather than an outcome. If NFL props are ever
+narrowed, narrow toward usage.
+
+---
+
 ## 2026-08-11 — What the ingested odds actually taught us (and what they killed)
 
 **Decision.** Keep odds **offline-only** — validation and benchmarking, never a surface.
@@ -115,6 +195,15 @@ scannable, not that it is prominent.
 ---
 
 ## 2026-08-18 — NFL props measure better than anything the app currently serves
+
+> ⚠️ **The lift figures in this entry are wrong — superseded by
+> [2026-08-19](#2026-08-19--nfl-props-backtested-properly-and-a-traded-player-bug).**
+> The base rates below were computed across *every* player-game, including offensive
+> linemen who never touch the ball, which made a 55% clear rate look like +51 points of
+> lift. Measured against the population that can actually be offered the market, and with
+> a leakage-safe backtest, the real range is **+5 to +19**. The conclusion that NFL props
+> are worth building survived; the magnitude did not. Kept for the reasoning about *why*
+> raw clear rate is the wrong number, which is still correct.
 
 **Finding.** Applied the reachable-bar check to the ingested NFL seasons (78,744
 player-games, 2023-2025) before building anything. **Every NFL market shows more lift over

@@ -152,10 +152,32 @@ in ≥ 55% of their recent games — never an impressive bar they rarely reach.
 - Position → primary stat: QB → pass yards, RB/FB → rush yards, WR/TE → rec yards.
 - `key_players` picks each team's QB (≥ 15 pass att/g), lead RB (≥ 8 rush att/g), and
   top 2 WR/TE (≥ 4 targets/g) by recent role.
+- **Registered and slate-scored** (2026-08-18). Five markets in `domain/markets.py`, all
+  over-only; `score_nfl_opportunities` ranks the whole population, not just spotlights.
 
-**Not registered in `domain/markets.py`.** NFL props exist only as page spotlights;
-they are not scored into the daily slate, snapshotted, or graded. Registering them is
-the natural next step if NFL ever reaches the live slate.
+### What the bars are worth
+
+Backtested leakage-safe on 10,552 scored player-games — each scored on that player's prior
+games only, then checked against the game itself. **Base rate .542**; served props (70+)
+hit **.650, +10.8 over base**. Per market: rushing attempts **+18.6**, receptions
+**+10.6**, receiving yards **+8.8**, passing yards **+6.5**, rushing yards **+5.2**.
+
+The threshold ladders are measured, recorded inline in `_STAT_MARKETS`: each rung is about
+10 points rarer than the one below it. Four alternative score shapes were tested out of
+sample and all lost to the incumbent. Details and the corrected earlier figures are in the
+[Decision Log](DECISION_LOG.md) (2026-08-19).
+
+### Two honesty rules specific to football
+
+- **A window that predates the current season is disclosed, not excluded.** A mostly
+  prior-season window clears 50.1% against 54.5% for a clean one. Dropping those games
+  buys +1.0 point for 22% fewer props — a bad trade, so the risk line names them
+  (`8 of these 10 games are from last season`) and *stability* takes the hit, not the
+  opportunity score. The pick isn't wrong; our confidence that the sample still describes
+  the player is what weakens.
+- **A player is one player, not one player per team.** Identity comes from his most recent
+  game, history from every game he has played. Grouping on team split traded players into
+  fragments and cost 459 of them their track record at week 3 of 2025.
 
 ## Not shown (honest gaps)
 
@@ -168,7 +190,7 @@ current as the last ingested feed.
 
 - The analytics module is football-generic — NCAA Football could reuse it given a
   comparable feed.
-- Reaching the live slate needs an ESPN↔vendor ID bridge and a weekly feed cadence,
-  then flipping `supports_deep_dive` and adding an NFL branch to `web.views.game`.
-- Registering the props in `domain/markets.py` would give NFL grading and Performance
-  coverage for free.
+- ~~Reaching the live slate needs an ESPN↔vendor ID bridge~~ — **done**
+  (`services/nfl_bridge.py`, matched by date + teams).
+- ~~Registering the props in `domain/markets.py`~~ — **done 2026-08-18**; grading and
+  Performance coverage follow once a 2026 feed exists to grade against.
