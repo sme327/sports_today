@@ -172,3 +172,56 @@ def test_the_nfl_page_engine_version_moves_with_the_page_contents():
 
     assert ENGINE_VERSION != "nfl-matchup-v1", (
         "bump ENGINE_VERSION whenever the rendered page changes, or cached pages go stale")
+
+
+# --- accessible names (2026-08-19) ---------------------------------------------------
+
+def _controls(page: str):
+    """(accessible name, had an explicit aria-label) for every interactive element."""
+    import collections
+    import re
+    from html import unescape
+
+    path = _DIST / page
+    if not path.exists():
+        return []
+    html = path.read_text()
+    out = []
+    for m in re.finditer(r'<(a|button|summary)\b([^>]*)>(.*?)</\1>', html, re.S | re.I):
+        attrs, inner = m.group(2), m.group(3)
+        aria = re.search(r'aria-label="([^"]*)"', attrs)
+        text = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", "", inner))).strip()
+        out.append((aria.group(1) if aria else text, bool(aria)))
+    return out
+
+
+def test_no_two_controls_on_a_page_share_an_accessible_name():
+    """A full slate renders 40+ "Matchup →" links. Without a label naming the game they
+    are indistinguishable in a screen reader's link list, and the visible text is only
+    unambiguous because a sighted reader can see which card it sits in."""
+    import collections
+
+    for page in ("index.html", "results/index.html", "performance/index.html"):
+        names = collections.Counter(name for name, _ in _controls(page))
+        dupes = {n: c for n, c in names.items() if c > 1}
+        assert not dupes, f"{page} has ambiguous control names: {dupes}"
+
+
+def test_glyph_only_meaning_is_never_the_accessible_name():
+    """Carets, ×, and the grade check are decoration beside a word that already says it.
+    Announced, they become "up-pointing small triangle" in the middle of a sentence."""
+    import re
+
+    for page in ("index.html", "results/index.html"):
+        for name, _ in _controls(page):
+            assert not re.fullmatch(r"[^\w]*", name or "x"), f"{page}: bare-glyph control"
+            for glyph in ("▴", "▾", "×", "✓", "✗", "🎯"):
+                assert glyph not in name, f"{page}: {glyph!r} reaches the accessible name"
+
+
+def test_the_slate_labels_most_of_its_controls():
+    """Not every control needs one — "Performance" already says what it is — but the
+    cards, pills and prop rows do, and they are the bulk of the page."""
+    controls = _controls("index.html")
+    labelled = sum(1 for _, has in controls if has)
+    assert labelled / len(controls) >= 0.7, f"only {labelled}/{len(controls)} labelled"

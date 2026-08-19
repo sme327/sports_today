@@ -13,16 +13,21 @@ continuation lines as page text, which is exactly what happened here first time.
 {% if league_filters %}
 <section class="filter-row" aria-label="League filters">
   <div class="filter-pills">
-    <a class="filter-pill {% if not current_leagues %}active{% endif %}" href="?day={{ day }}">All</a>
+    {% comment %}Two pill rows on this page each open with "All" — league and market —
+    so the accessible name has to say which. The league labels also start with an emoji,
+    which is announced by name ("soccer ball") before anything useful.{% endcomment %}
+    <a class="filter-pill {% if not current_leagues %}active{% endif %}" href="?day={{ day }}" aria-label="Show all leagues"{% if not current_leagues %} aria-current="true"{% endif %}>All</a>
     {% for league in league_filters %}
-      <a class="filter-pill {% if league.active %}active{% endif %}" href="?day={{ day }}&league={{ league.key|urlencode }}">{{ league.label }}</a>
+      <a class="filter-pill {% if league.active %}active{% endif %}" href="?day={{ day }}&league={{ league.key|urlencode }}" aria-label="Show only {{ league.key }}"{% if league.active %} aria-current="true"{% endif %}>{{ league.label }}</a>
     {% endfor %}
   </div>
   {% if game_count %}
     <div class="schedule-actions">
       {% if not collapsed %}<button class="games-toggle" type="button" data-toggle-completed aria-pressed="false">Hide completed</button>{% endif %}
-      {% if collapsed %}<a class="games-toggle" href="?day={{ day }}">Show {{ game_count }} games ▾</a>
-      {% else %}<a class="games-toggle" href="?day={{ day }}&games=off">Hide games ▴</a>{% endif %}
+      {% comment %}The caret is decorative — aria-hidden keeps it from being announced as
+      "up-pointing small triangle", and the label says what the control actually does.{% endcomment %}
+      {% if collapsed %}<a class="games-toggle" href="?day={{ day }}" aria-label="Show the {{ game_count }} games on this slate">Show {{ game_count }} games <span aria-hidden="true">▾</span></a>
+      {% else %}<a class="games-toggle" href="?day={{ day }}&games=off" aria-label="Hide the game schedule">Hide games <span aria-hidden="true">▴</span></a>{% endif %}
     </div>
   {% endif %}
 </section>
@@ -46,15 +51,15 @@ continuation lines as page text, which is exactly what happened here first time.
   <div class="section-row">
     <h2>Top Opportunities</h2>
     <div class="thresholds"><span>Strong pick</span>
-      <a class="thr-pill {% if threshold == 85 %}active{% endif %}" href="?day={{ day }}&thr=85#opps">85+</a>
-      <a class="thr-pill {% if threshold == 90 %}active{% endif %}" href="?day={{ day }}&thr=90#opps">90+</a>
-      <a class="thr-pill {% if threshold == 95 %}active{% endif %}" href="?day={{ day }}&thr=95#opps">95+</a>
+      <a class="thr-pill {% if threshold == 85 %}active{% endif %}" href="?day={{ day }}&thr=85#opps" aria-label="Set the strong-pick bar to 85 or above"{% if threshold == 85 %} aria-current="true"{% endif %}>85+</a>
+      <a class="thr-pill {% if threshold == 90 %}active{% endif %}" href="?day={{ day }}&thr=90#opps" aria-label="Set the strong-pick bar to 90 or above"{% if threshold == 90 %} aria-current="true"{% endif %}>90+</a>
+      <a class="thr-pill {% if threshold == 95 %}active{% endif %}" href="?day={{ day }}&thr=95#opps" aria-label="Set the strong-pick bar to 95 or above"{% if threshold == 95 %} aria-current="true"{% endif %}>95+</a>
     </div>
   </div>
-  {% if focus_label %}<div class="focus-chip"><span>Filtered to <b>{{ focus_label }}</b></span><a href="?day={{ day }}#opps">Clear ×</a></div>{% endif %}
+  {% if focus_label %}<div class="focus-chip"><span>Filtered to <b>{{ focus_label }}</b></span><a href="?day={{ day }}#opps" aria-label="Clear the {{ focus_label }} filter">Clear <span aria-hidden="true">×</span></a></div>{% endif %}
   {% if prop_filters|length > 1 %}<div class="filter-pills prop-pills">
-    <a class="filter-pill {% if not chosen_prop %}active{% endif %}" href="?day={{ day }}#opps">All</a>
-    {% for prop in prop_filters %}<a class="filter-pill {% if prop.active %}active{% endif %}" href="?day={{ day }}&prop={{ prop.key|urlencode }}#opps">{{ prop.label }}</a>{% endfor %}
+    <a class="filter-pill {% if not chosen_prop %}active{% endif %}" href="?day={{ day }}#opps" aria-label="Show all markets"{% if not chosen_prop %} aria-current="true"{% endif %}>All</a>
+    {% for prop in prop_filters %}<a class="filter-pill {% if prop.active %}active{% endif %}" href="?day={{ day }}&prop={{ prop.key|urlencode }}#opps" aria-label="Show only {{ prop.label }}"{% if prop.active %} aria-current="true"{% endif %}>{{ prop.label }}</a>{% endfor %}
   </div>{% endif %}
   {% if opportunity_summary %}<div class="opp-count">{{ opportunity_summary }}</div>{% endif %}
   {% if opportunity_html %}{{ opportunity_html|safe }}

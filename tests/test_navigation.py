@@ -48,4 +48,10 @@ def test_games_toggle_collapsed_offers_expand_with_count():
 
 
 def test_games_toggle_singular():
-    assert "Show 1 game ▾" in games_toggle_html("today", collapsed=True, count=1)
+    """One game is a game, not "1 games". The caret is asserted separately because it is
+    now wrapped in an aria-hidden span — it is decoration, and a screen reader announcing
+    "up-pointing small triangle" was the point of the accessibility pass."""
+    html = games_toggle_html("today", collapsed=True, count=1)
+    assert "Show 1 game" in html and "Show 1 games" not in html
+    assert 'aria-hidden="true">▾' in html
+    assert 'aria-label="Show the 1 game on this slate"' in html

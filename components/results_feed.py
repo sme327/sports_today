@@ -124,10 +124,19 @@ def _prop_item(r: dict) -> str:
         why = (f'<div class="prop-why"><div class="why-head">Why this score?</div>'
                f'<ul class="why-list">{s}</ul>{rk}</div>')
 
+    # The summary is six adjacent spans with no separators, so its accessible name ran
+    # together as "✓HITPete AlonsoBaltimore Orioles vs Yankees · MLBBatter Hits". An
+    # explicit label reads it as a sentence; the glyph is decorative beside the word it
+    # duplicates, so it is hidden rather than announced as "check mark".
+    spoken = (f'{label.title()} — {r.get("player_name") or "Unknown"}, '
+              f'{team}{f" vs {opp}" if opp else ""}, {r.get("league") or ""}. '
+              f'{market_label}, {rec}. Score {int(r.get("opportunity_score") or 0)}. '
+              f'Actual: {actual}')
     return (
         f'<details class="prop-item r-{result}">'
-        f'<summary class="prop-summary">'
-        f'<span class="prop-grade r-{result}"><span class="pg-icon">{glyph}</span>{label}</span>'
+        f'<summary class="prop-summary" aria-label="{escape(spoken, quote=True)}">'
+        f'<span class="prop-grade r-{result}">'
+        f'<span class="pg-icon" aria-hidden="true">{glyph}</span>{label}</span>'
         f'<span class="prop-id"><b>{escape(str(r.get("player_name") or "Unknown"))}</b>'
         f'<span class="prop-vs">{vs} · {escape(str(r.get("league") or ""))}</span></span>'
         f'<span class="prop-mkt">{escape(market_label)}<span class="prop-rec">Rec: {escape(rec)}</span></span>'

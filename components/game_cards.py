@@ -59,11 +59,22 @@ def _focus_href(day: str, game: SlateGame) -> str:
 def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
             threshold: int, deep_dive: bool, norm: LeagueNorm | None = None) -> str:
     """Footer = a strong-pick filter link (left) + a Matchup link (right). Distinct
-    treatments: the fire link filters the props below; the pill opens the deep-dive."""
+    treatments: the fire link filters the props below; the pill opens the deep-dive.
+
+    Both carry an ``aria-label`` naming the game. On a full slate the page renders forty
+    or more of each, and without one they are announced as forty identical "Matchup"
+    links — a screen reader's link list becomes unusable, and the visible text is only
+    unambiguous because a sighted reader can see which card it sits in. The 🎯 also
+    opens with an emoji, which is announced by name ("direct hit") before anything useful.
+    """
+    matchup_name = f"{game.away_display} at {game.home_display}"
     fire = ""
     if count > 0:
         noun = "prop" if count == 1 else "props"
+        label = (f"Show {count} {noun} scoring {threshold} or above "
+                 f"for {matchup_name}, below")
         fire = (f'<a class="fire-link" target="_self" href="{_focus_href(day, game)}" '
+                f'aria-label="{escape(label, quote=True)}" '
                 f'title="Show these props below">🎯 {count} {noun} {threshold}+ →</a>')
     else:
         # No strong props — either the league has none at all, or none cleared the
@@ -72,8 +83,9 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
         if signal:
             fire = (f'<span class="ed-card-signal" title="{escape(signal.detail, quote=True)}">'
                     f'{escape(signal.label)}</span>')
-    matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}">Matchup →</a>'
-               if deep_dive else "")
+    matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}" '
+               f'aria-label="{escape(f"Matchup detail for {matchup_name}", quote=True)}">'
+               f'Matchup →</a>' if deep_dive else "")
     if not fire and not matchup:
         return ""
     return f'<div class="game-meta">{fire}{matchup}</div>'
@@ -173,6 +185,8 @@ def games_toggle_html(day: str, collapsed: bool, count: int) -> str:
     if collapsed:
         noun = "game" if count == 1 else "games"
         return (f'<div class="games-toggle-row"><a class="games-toggle" target="_self" '
-                f'href="?day={d}">Show {count} {noun} ▾</a></div>')
+                f'href="?day={d}" aria-label="Show the {count} {noun} on this slate">'
+                f'Show {count} {noun} <span aria-hidden="true">▾</span></a></div>')
     return (f'<div class="games-toggle-row"><a class="games-toggle" target="_self" '
-            f'href="?day={d}&games=off">Hide games ▴</a></div>')
+            f'href="?day={d}&games=off" aria-label="Hide the game schedule">'
+            f'Hide games <span aria-hidden="true">▴</span></a></div>')

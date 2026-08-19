@@ -9,7 +9,10 @@
 <section class="date-nav">
   <span class="filter-label">Date</span>
   <div class="filter-pills results-date-pills">
-    {% for option in recent_dates %}<a class="filter-pill result-date-pill {{ option.state }} {% if option.active %}active{% endif %}" href="{{ option.href }}" title="{{ option.state_label }}" {% if option.active %}aria-current="date"{% endif %}>{{ option.date|date:"D M j" }}<span class="result-date-state">{{ option.state_label }}</span></a>{% endfor %}
+    {% comment %}The date and its status sit in adjacent elements with no separator, so the
+    accessible name ran them together as "Aug 18Graded". An explicit label reads them as a
+    sentence and states that the link opens that day's results.{% endcomment %}
+    {% for option in recent_dates %}<a class="filter-pill result-date-pill {{ option.state }} {% if option.active %}active{% endif %}" href="{{ option.href }}" title="{{ option.state_label }}" aria-label="Results for {{ option.date|date:"l, F j" }} — {{ option.state_label }}" {% if option.active %}aria-current="date"{% endif %}>{{ option.date|date:"D M j" }}<span class="result-date-state">{{ option.state_label }}</span></a>{% endfor %}
   </div>
 </section>
 
