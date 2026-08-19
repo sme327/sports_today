@@ -54,10 +54,21 @@ that pass a review and are still wrong:
 
 **What it changed.** `batter_hit` runs **+0.7** over base across 1,337 served props —
 essentially no edge, and 61% of everything we serve. `batter-hit-v5` is nonetheless a real
-gain (**+6.9**, against **+0.0** for its three predecessors pooled). The 99-100 band runs
-**−6.6** over base on n=102: the very top of the scale is anti-predictive, which is
-`v3_top_band_watch` measured rather than suspected. And `sp_hits` is the worst thing on the
-board at **−11.3** for its current version.
+gain (**+6.9**, against **+0.0** for its three predecessors pooled). And `sp_hits` is the
+worst thing on the board at **−11.3** for its current version.
+
+### 1b. Split by engine version before calling a band broken
+
+The first pass at this reported the 99-100 band at −6.6 and called the top of the scale
+anti-predictive. **That was wrong**, and wrong in the way this whole section is about:
+pooling. Split by the engine that produced each prop, `batter_hit` at 99-100 reads −1.7
+across all versions and **+13.4 for `batter-hit-v5` alone** (n=27; +20.3 at 95-98, n=21).
+The negative band was the retired scorers, and a live engine was nearly "fixed" on it.
+
+Both v5 samples are far too small to celebrate — the honest statement is *no evidence of
+inversion under the current engine, and not enough data to say more*. A pooled ledger mixes
+engines the same way a blended average mixes markets; **the version column is part of the
+segmentation, not metadata.**
 
 ## 2. Split-half persistence: is it a trait, or a run of luck?
 

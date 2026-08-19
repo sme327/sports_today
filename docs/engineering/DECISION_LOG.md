@@ -110,8 +110,14 @@ That is the headline finding and it was invisible before.
 **`batter-hit-v5` is nonetheless a genuine improvement**: +6.9 over base against +0.0 for
 its three predecessors pooled. Shrinking the recent hit rate did what it was meant to.
 
-**The 99-100 band runs −6.6 over base** (n=102). The top of the scale is *anti*-predictive
-— `v3_top_band_watch` confirmed rather than suspected. Worth acting on separately.
+**The 99-100 band initially read −6.6 over base, and that was a pooling artifact.**
+Corrected the same day: split by engine version, `batter_hit` at 99-100 is −1.7 across all
+scorers and **+13.4 for `batter-hit-v5` alone** (n=27; +20.3 at 95-98, n=21). The negative
+band belonged to the retired engines. I reported it as a live defect first — the same
+mistake this entry is about, one level down: **a pooled ledger mixes engines exactly as a
+blended average mixes markets.** No evidence of inversion under the current engine; the v5
+samples are far too small to claim the positive either. `v3_top_band_watch` stays open on
+sample size, not on evidence.
 
 **`sp_hits` remains the retirement candidate**, and its current version is the worst row on
 the board at −11.3. The old column was directionally right here by accident.

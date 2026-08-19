@@ -144,9 +144,13 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   Overall discrimination is still modest by design — don't read a 100 as near-certainty.
   **Measured against its own base rate (2026-08-19), the market runs +1.5 on 1,337 served
   props** — close to no edge, and it is 61% of everything we serve. `batter-hit-v5` is
-  nonetheless a real gain (+6.9, against +0.0 for its three predecessors pooled). The
-  **99-100 band runs −6.6 over base** on n=102: the top of the scale is *anti*-predictive,
-  which is `v3_top_band_watch` confirmed rather than suspected. Base rate for a starting
+  nonetheless a real gain (+6.9, against +0.0 for its three predecessors pooled).
+  **The top band is not broken under v5.** Pooled across all engines the 99-100 band reads
+  −1.7, and that is *entirely* the retired scorers: `batter-hit-v5` alone runs **+13.4**
+  there (n=27) and +20.3 at 95-98 (n=21). Both samples are far too small to celebrate —
+  the point is only that the pooled negative is a version artifact, not a live defect, so
+  don't "fix" the top of the scale on it. `v3_top_band_watch` remains open on sample size,
+  not on evidence of inversion. Base rate for a starting
   batter is ~61%, not the ~55% quoted before — that older figure counted everyone who
   batted, pinch hitters included.
 - **Compare a hit rate only against a base rate.** `services/base_rates.py` holds them;
