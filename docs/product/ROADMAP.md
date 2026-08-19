@@ -76,10 +76,11 @@ cards (Final-score V1). This phase grows carefully.
   already expose: MLB inning/state/outs via a `hydrate=linescore` add; WNBA quarter
   + clock (`status.period` / `status.displayClock`); soccer match minute + status
   detail. Presentation grows to show period/clock.
-- **Live Refresh V2** *(follow-on)* — auto-rerun **only while at least one game is
-  live**; no polling when every game is pregame or final; refresh interval TBD after
-  observing source reliability (candidates: `st.fragment(run_every=…)` or
-  `streamlit-autorefresh`). Until then, the 120 s cache TTL + manual refresh apply.
+- **Live Refresh V2** *(follow-on)* — refresh **only while at least one game is live**;
+  no polling when every game is pregame or final. Partly shipped: the static site polls
+  ESPN from the reader's browser every 60 s (`web/static/static-site.js`) and updates
+  cards in place. Still open: stopping the poll once every game is final, and choosing an
+  interval from observed source reliability rather than a round number.
 - **Live opportunity tracking** — is the pick on pace?
 - **Win probability, momentum swings, close-game alerts.** *(future)*
 

@@ -20,8 +20,7 @@ opportunities on merit (no per-league quota), explains **why** each stands out a
 ## How the repo is organized
 
 ```
-web/              # public Django renderer: Today, matchups, Results, Performance
-app.py / views/   # legacy local Streamlit reference and operator tools
+web/              # Django renderer + static export: Today, matchups, Results, Performance
 domain/           # normalized models: SlateGame, Opportunity, Evidence, DataStatus
 leagues/          # one adapter per league (8: MLB, WNBA, MLS, World Cup, NFL, NHL, NBA, NCAAF) + registry
 services/         # data access (as_of), schedules, cache, snapshots, migrations, freshness, analytics
@@ -29,7 +28,7 @@ components/       # reusable UI/HTML (cards, feed, filters, date switch, …)
 styles/app.css    # the single design-system stylesheet
 src/              # ingestion + scorers (kept from the original build)
 scripts/          # CLI entry points (daily update, collectors, feed imports, diagnostics)
-tests/            # offline pytest suite
+tests/            # offline pytest suite (web/tests/ covers the renderer and export)
 docs/             # product / design / engineering / history knowledge base
 data/ database/ logs/   # persistent local data (gitignored, not in the repo)
 ```

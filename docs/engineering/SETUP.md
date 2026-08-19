@@ -19,9 +19,8 @@ Normal operator steps:
 4. Open `sports.sme327.com` on any device. The published snapshot remains available
    after the Mac is turned off; supported live scores refresh in the browser.
 
-Use `update_only.command` when you want to refresh local data without publishing. The
-older Streamlit commands below remain useful for local review and operator diagnostics,
-but Django/static Pages is the public product.
+Use `update.command` when you want to refresh local data **without** publishing —
+`update_and_publish.command` does both and is what you normally want.
 
 ## Part A — One-time installation
 
@@ -43,9 +42,8 @@ You should see:
 
 - `setup.command`
 - `update.command`
-- `update_only.command`
-- `run.command`
-- `app.py`
+- `update_and_publish.command`
+- `manage.py`
 - `scripts/` (`morning_update.py`, `collect_wnba.py`, `diagnostics.py`, `import_feed.py`,
   `import_nfl_feed.py`, `import_boxscore_feed.py`, `sync_mlb_download.py`)
 - `data`
@@ -62,7 +60,7 @@ macOS may display a security confirmation the first time. Choose **Open** again.
 This command:
 
 - Creates a local Python virtual environment at `.venv`
-- Installs Streamlit, pandas, openpyxl, requests, and other requirements
+- Installs Django, pandas, openpyxl, requests, and other requirements
 - Marks the command files as executable
 
 When setup finishes, press any key to close the Terminal window.
@@ -149,19 +147,21 @@ The pipeline keeps all dated source files in the archive and always gives the ap
 
 ## Other commands
 
-### Launch without refreshing data
+### Publish without refreshing data
+
+From Terminal:
+
+```bash
+python -m scripts.publish_pages
+```
+
+Use this when the database is already current — after a code or styling change, say.
+
+### Refresh data without publishing
 
 Double-click:
 
-`run.command`
-
-Use this when the database is already current.
-
-### Refresh data without opening the app
-
-Double-click:
-
-`update_only.command`
+`update.command` (data only) or `update_and_publish.command` (data, then publish)
 
 ### Run through Terminal
 
@@ -249,28 +249,31 @@ never in the feed, so those cards stay schedule-only by design.
 If the vendor changes the workbook layout, the import **fails loudly** and names the
 missing columns rather than writing a half-correct table.
 
-## Deploying to Streamlit Community Cloud (live-schedule build)
+## Deployment — Cloudflare Pages
 
-The app boots against a schema-migrated database, creating an empty one if none
-exists — so it runs anywhere, including Streamlit Community Cloud, **without** the
-local MLB workbook. On a fresh deploy the live-schedule leagues (MLS, World Cup,
-and the MLB/WNBA schedules) work with just an internet connection; the MLB "1+ hit"
-and WNBA opportunity analysis show honest degraded/empty states until their data is
-loaded.
+The public site is a **static export**: `scripts/publish_pages` renders every page to
+`site-dist/`, audits the internal links, and uploads with `wrangler`. There is no server
+and no database in the cloud — the database never leaves this Mac.
 
-To deploy:
+```bash
+python -m scripts.publish_pages                 # build, audit, deploy
+python -m scripts.publish_pages --build-only    # build and audit only
+```
 
-1. Push the repo to GitHub (the DB and vendor feeds are gitignored — nothing
-   sensitive is committed).
-2. At [share.streamlit.io](https://share.streamlit.io), create an app from the repo,
-   branch, and main file `app.py`. Set the Python version to 3.11+.
-3. It installs `requirements.txt` and launches. No secrets are required (the ESPN
-   endpoints are unauthenticated).
+**Consequences worth knowing.**
 
-Caveats: Community Cloud's filesystem is ephemeral, so any collected data written at
-runtime does not persist across restarts. For a build with real MLB/WNBA/MLS
-*analysis* (not just schedules), commit a prebuilt `sportshub.db` to a **private**
-repo, or run the collectors on a host with persistent storage.
+- **Updates come from here.** The Mac builds and pushes; there is no in-app uploader. That
+  was a deliberate trade when Streamlit retired — see the Structure Review.
+- **The published URL is public.** A static export cannot hold a password gate. Nothing
+  personal is in it, but treat the URL as shareable. Cloudflare Access can gate the whole
+  project if that changes.
+- **Live scores come from the reader's own browser**, not the server. ESPN blocks
+  Cloudflare's egress IPs — the identical request returns 200 from this Mac and 403 from a
+  Worker — so a server-side fetch silently returns nothing. See the Structure Review §4.
+- **Cached pages need recomputing after a scoring or card change.** `schedule_cache` and
+  `daily_opportunity_feed` hold rendered output; the site serves those, not live objects.
+  `morning_update` refreshes them, but a mid-day change needs
+  `python -m django precompute_daily --settings=web.settings` or the fix stays invisible.
 
 ## Troubleshooting
 
@@ -298,7 +301,7 @@ Install a current Python 3 release, then rerun `setup.command`.
 
 ### The app says there is no database
 
-Run `update.command` rather than `run.command`.
+Run `update.command` (or `update_and_publish.command`) to build one from the day's feed.
 
 ### The schedule does not load
 

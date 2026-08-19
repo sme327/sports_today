@@ -6,7 +6,7 @@
 > **Related** — [Architecture](ARCHITECTURE.md) · [MLS Provider Audit](../history/MLS_PHASE3A_PROVIDER_AUDIT.md) · [MLS Phase 1 Inspection](../history/MLS_PHASE1_INSPECTION.md) · [Philosophy](MLS_MATCHUP_PHILOSOPHY.md) · [Blueprint](MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
 
 A soccer-designed matchup preview that answers **"what kind of match am I about to
-watch?"** It reuses the shared architecture (router → view → cached builder →
+watch?"** It reuses the shared architecture (route → view → cached builder →
 immutable model → pure-HTML components) and adds soccer-specific pieces (W/D/L form
 dots, a tactical lean bar, a CSS/SVG formation pitch, a "what to watch" timeline).
 
@@ -19,8 +19,9 @@ sections remain honestly unavailable.
 ## Flow
 
 ```
-router → views/game.py (dispatch: league == "MLS")
-       → views/mls_game.py (renders sections in blueprint order)
+web/urls.py  → web.views.game (dispatch by league)
+             → web.games.mls_context (builds the context)
+             → components/mls_game.py (renders sections in blueprint order)
        → services/app_cache.cached_mls_game_page  (cache: game_id | as_of | engine version)
        → services/mls_game_page.build_mls_game_page  (deterministic builder)
              ├── services/mls_repository   (leakage-safe reads of collected team data)
