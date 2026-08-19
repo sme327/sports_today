@@ -13,13 +13,12 @@ graded prop using only pre-slate data. Ship only if it widens the band spread **
 lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (574 tests passing)
+## Test suites (591 tests passing)
 
 | File | Covers |
 | --- | --- |
 | `test_markets.py` | Market registry: canonical labels (byte-identical to scorer output), round-trip `resolve`, "hits allowed" vs bare "hit" ordering, total-bases display/grade, league-optional resolution, grade rules per direction, `actual_display` units, and prop-type taxonomy back-compat |
 | `test_data_store.py` | Durable DB store: unconfigured = no-op, `is_configured` needs all keys, download writes the file, `ensure_db_available` skips when present / fetches when missing, publish uploads (fake S3 client, no network) |
-| `test_auth.py` | Password gate: constant-time match; no-password bypass returns before any Streamlit call |
 | `test_update_pipeline.py` | Shared rebuild pipeline: MLB-only vs. with collectors, collector failures captured non-fatally, publish reflects config (all faked) |
 | `test_team_matching.py` | MLB canonicalization: names/abbrs/relocations, unknowns/blanks |
 | `test_data_access.py` | `as_of` excludes the slate date and later (leakage bound); missing DB → empty |
@@ -32,7 +31,6 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_mlb_odds.py` | Reconciling MLB market lines across two feed vintages: the 2020-22 packing of a total and the favourite's moneyline into one column (and that it is **not** home/road consistent, so position cannot disambiguate it), the richer 2023 per-team layout, total parsing from both shapes, refusing to invent the underdog's price, and empty/missing tables returning empty rather than raising |
 | `test_nfl_feed_refresh.py` | In-season NFL feed pickup: an empty Downloads is silent rather than a warning, a dropped pair imports, the **same** pair does not re-import the next morning (the player feed is ~9MB), a newer pair does, `--force` overrides, drift raises so the caller can treat it as non-fatal, and the automated path searches **Downloads only** |
 | `test_nfl_bridge.py` | The ESPN ↔ vendor-feed id bridge: matching a live game to its feed row, the UTC date boundary (a Sunday-night kickoff is Monday in UTC), home/away not interchangeable, nickname/initial resolution, and the four ordinary ways to get `None` — preseason, an unloaded season, a non-NFL game, and a missing database |
-| `test_nfl_archive_app.py` | The archive as a **running page** via `AppTest`: `?view=nfl` renders, week browsing lists that week's games, opening a matchup reaches the deep-dive with a route back, an unknown id is reported not raised, and an empty DB gives guidance rather than a traceback. Asserts robustness rather than specific seasons, so a fresh clone does not fail for the wrong reason |
 | `test_pitcher_opportunity.py` | SP props: per-start line extraction (inning `1T`/`1B` parse), opener exclusion, two-directional over/under selection, min-starts gate, and **`sp-v3` threshold impressiveness** — that it tracks a bar's measured rarity rather than its position in the list, that a bar the league almost always clears cannot win, that a reliably-cleared moderate bar beats the hardest one, and that an unmeasured threshold falls back inside [0, 1] (an unclamped fallback returned −22.75) |
 | `test_grading.py` | Prop grading hit/miss/void (incl. DNP=void honesty), idempotency, no-grading-today guard, dedup/min-score reads, summary + **`summarize_by_market`**, row classification, market-breakdown render |
 | `test_mlb_trends.py` | MLB trend spotlights: pitcher per-start sparklines/direction/props/min-starts, batter dots/L5-L10-L25 windows/streak/min-games, rendering, empty states |
@@ -45,7 +43,7 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_served_vs_scored.py` | The Performance headline measures the advice, not the whole scored output: one shared definition of the curation floor (it was duplicated between the view and grading), an inclusive split, a missing score counting as below the floor, the two populations disjoint and complete, the served tally rendered first with the population labelled rather than hidden, the single-number headline preserved for callers that pass no served tally, and a guard that curation is actually selecting for something |
 | `test_game_outcomes.py` | The editorial feedback loop: **the leak fix above all** — a completed game's ESPN record already counts that game, so a backfill must rewind it or the winner is always credited; only finished games gradeable; margin/total/signals captured; recording idempotent per game; missing DB yields no rows; and calibration withholding a verdict on a thin sample and reporting **within a league**, since a six-point basketball margin is not a six-run baseball one |
 | `test_calibration.py` | Per-market graded records: a poor market with a real sample flagged, a poor-*looking* market on 21 rows not flagged, healthy markets silent, the note phrased as observed history rather than a forecast (R4 rules out "expected hit rate"), no claim without a database, annotation touching only poor markets and never duplicating |
-| `test_layering.py` | **Structural layer guards** (one case per module): `src/` never imports `services`/`views`/`components`/`leagues`/`router`/`app` — including function-local imports, via `ast`; `domain/` stays a pure stdlib-only leaf; `src/` never imports Streamlit. Written against the dependency *direction*, so new modules never require editing it |
+| `test_layering.py` | **Structural layer guards** (one case per module): `src/` never imports `services`/`views`/`components`/`leagues`/`router`/`app` — including function-local imports, via `ast`; `domain/` stays a pure stdlib-only leaf; **nothing** imports Streamlit (broadened when it retired: an import that once made a module untestable now makes it unrunnable), and `web/` is a top layer nothing below it may import. Written against the dependency *direction*, so new modules never require editing it |
 | `test_registry.py` | All **eight** adapters (MLB, WNBA, World Cup, MLS, NFL, NHL, NBA, NCAAF) registered in order; satisfy Protocol; deep-dive flags |
 | `test_espn_leagues.py` | The shared `ScheduleOnlyESPN` base: the four ESPN schedule-only leagues registered and flagged schedule-only, matchup/rank/logo parsing, round-label variants, NCAAF rank prefix, NFL/NHL league+round mapping |
 | `test_reliability.py` | `highest_reachable_over` — the shared reachable-bar selector (highest bar clearing the floor, inclusive floor, none-when-unreachable, empty series) used by the TB, WNBA, batter K/BB, and NFL scorers |
@@ -60,6 +58,29 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_mlb_game_page.py` | MLB game page (Phase 1): `as_of` leakage, page builds (with/without probable pitchers), pitcher matching, trend min-sample, no hot/cold overlap, matchups cite real metrics, no unsupported metrics emitted, empty-opportunity state, headshot fallback, component rendering, and a deterministic hot/cold regression on synthetic data |
 | `test_mls_game_page.py` | MLS page fallback (no team data): honesty invariants — no fabricated stats/players/formations/tactical leans; ESPN-record/form storylines; hero real; rendering |
 | `test_mls_phase3b.py` | MLS team-data integration: provider parsing (reordered/missing/valid-zero), standings, collector retries/idempotency/duplicate-prevention/ID-reconciliation, **leakage-safe repository** (date bound + selected-match exclusion + home/away splits + last-5 + league averages), tactical proxy selection + **banned-tactical-wording** honesty, storyline triggers/dedup/three-empty-states, snapshot/attacking/discipline suppression, **no metric duplicated across sections**, per-match penalty rule, red-card sample-size note |
+
+### The web layer and export (`web/tests/`)
+
+Collected by the same `pytest` run. These cover the published product rather than the
+logic beneath it.
+
+| File | Covers |
+| --- | --- |
+| `test_web.py` | Route contracts: day parsing and the tomorrow toggle, threshold restriction, health, and that the schedule is deferred to a fragment rather than blocking the first render |
+| `test_analytics.py` | Results and Performance: filters, cohorts, period comparison, and **model versions grouped by market** — the live version expanded, earlier ones collapsed, retired markets separated so an unservable market's record is never read as an old engine's |
+| `test_games.py` · `test_nfl.py` | Per-league matchup contexts; unknown ids 404 rather than raising |
+| `test_static_export.py` | The export itself: canonical URLs, path-traversal refusal, the link audit, and **standards compliance on the built page** — exactly one `<h1>`, mobile web-app metadata, a working skip link, `prefers-reduced-motion`, a `standalone` manifest whose icons exist, and that template comments never leak into the page |
+
+### Ingest, collectors, and tooling
+
+| File | Covers |
+| --- | --- |
+| `test_espn_boxscore.py` | The shared ESPN collector: both header shapes, per-sport season calendars, DNP rows kept, feeds without game ids flagged unjoinable, a thinner file refusing to overwrite a fuller season, and that every declared column has an alias pointing at it |
+| `test_daily_feed.py` · `test_matchup_cache.py` | Precomputed feed and matchup caches — what the published site actually renders from |
+| `test_build_deploy_db.py` | The slim deploy build: research tables dropped, the graded ledger never dropped, allow-list semantics, and that the file genuinely shrinks |
+| `test_market_trends.py` | Market trend aggregation |
+| `test_opportunity.py` · `test_wnba_opportunity.py` | Scorer internals — shrinkage weights, threshold selection, and the constants each engine version is defined by |
+| `test_opportunity_feed.py` | The prop row, including the raw recent line: cleared games marked, direction-aware for unders, absent when a scorer supplies no line |
 
 ## Manual verification performed
 

@@ -1,7 +1,7 @@
 # Design System
 
 > **Purpose** — The visual language of Sports Today: color, type, spacing, radius, shadow, motion, and how components should look and feel.
-> **Audience** — Anyone touching UI (`styles/app.css`, `components/`, `views/`) — humans and AI.
+> **Audience** — Anyone touching UI (`styles/app.css`, `components/`, `web/templates/`) — humans and AI.
 > **Update when** — A visual token or component treatment changes. The implementation of record is `styles/app.css`; keep this document aligned with it.
 > **Related** — [Experience Principles](../product/EXPERIENCE_PRINCIPLES.md) · [Vision](../product/VISION.md) · [Architecture](../engineering/ARCHITECTURE.md) · [Docs index](../README.md)
 
@@ -599,6 +599,6 @@ When someone opens Sports Today they should immediately think:
 
 Not
 
-"This feels like a Streamlit app."
+"This feels like a dashboard someone generated."
 
 Every design decision should move the application toward that goal.

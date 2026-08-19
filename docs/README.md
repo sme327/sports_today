@@ -48,7 +48,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Testing](engineering/TESTING.md) | What's covered, how to run tests. |
 | [Setup](engineering/SETUP.md) | One-time install and the daily data/run workflow. |
 | [Deploy](engineering/DEPLOY.md) | Publish the static Django-rendered site to Cloudflare Pages from the local Mac. |
-| [Django Migration](engineering/DJANGO_MIGRATION.md) | Incremental public-web replacement for Streamlit; current milestone and runbook. |
+| [Django Migration](engineering/DJANGO_MIGRATION.md) | How the public site replaced Streamlit (**completed 2026-08-17**); the runbook and what the two surfaces shared. |
 
 ## AI
 

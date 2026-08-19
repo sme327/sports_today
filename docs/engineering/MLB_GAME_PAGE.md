@@ -12,8 +12,9 @@ architecture (router → view → service/builder → domain model → component
 ## Flow
 
 ```
-router → views/game.py (dispatch by league)
-       → views/mlb_game.py (renders sections)
+web/urls.py  → web.views.game (dispatch by league)
+             → web.games.mlb_context (builds the context)
+             → components/mlb_game.py (renders sections)
        → services/app_cache.cached_mlb_game_page  (cache: game_id | as_of | engine version)
        → services/mlb_game_page.build_mlb_game_page  (assembles the model)
        → services/mlb_analytics  (pure numeric engine)
@@ -110,5 +111,5 @@ Still ahead:
   availability, following the same "omit or label honestly" rule).
 - Projected lineups before official posting; expected plate appearances from slot + pace.
 - New opportunity markets (total bases, batter strikeouts, walks already shipped via
-  `src/tb_opportunity.py` / `src/batter_kbb_opportunity.py`): register a `MarketSpec` in `domain/markets.py` + add a
+  `src/batter_kbb_opportunity.py`; total bases retired 2026-08-09): register a `MarketSpec` in `domain/markets.py` + add a
   scorer; grading/classification/display follow automatically. Reuses the feed.

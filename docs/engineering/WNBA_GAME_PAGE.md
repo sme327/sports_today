@@ -7,14 +7,15 @@
 
 A basketball-designed matchup preview (not translated from baseball). Every claim
 is traceable to collected box-score data; nothing is fabricated. It reuses the
-shared architecture (router → view → cached builder → analytics → immutable model
+shared architecture (route → view → cached builder → analytics → immutable model
 → pure-HTML components) and the design system.
 
 ## Flow
 
 ```
-router → views/game.py (dispatch: league == "WNBA")
-       → views/wnba_game.py (renders sections)
+web/urls.py  → web.views.game (dispatch by league)
+             → web.games.wnba_context (builds the context)
+             → components/wnba_game.py (renders sections)
        → services/app_cache.cached_wnba_game_page  (cache: game_id | as_of | engine version)
        → services/wnba_game_page.build_wnba_game_page  (deterministic builder)
        → services/wnba_analytics  (pure basketball engine, as_of-bounded)

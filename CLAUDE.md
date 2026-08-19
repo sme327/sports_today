@@ -52,7 +52,7 @@ team-level read and says which it is. NFL still scores **no props** onto the sla
   [Experience Principles](docs/product/EXPERIENCE_PRINCIPLES.md) screen checklist.
 - **Where to add code** — see the table in
   [Architecture](docs/engineering/ARCHITECTURE.md#where-things-live-quick-reference):
-  new league → `leagues/<x>/adapter.py` + register; view → `views/`; component →
+  new league → `leagues/<x>/adapter.py` + register; view → `web/`; component →
   `components/`; service → `services/`; domain object → `domain/models.py`;
   style → `styles/app.css`.
 - **Don't reverse a logged decision** without reading its entry in the

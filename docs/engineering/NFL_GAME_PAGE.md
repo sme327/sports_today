@@ -30,7 +30,7 @@ Sunday-night kickoff lands on Monday.
 
 **No match is the ordinary case, not an error.** The feed carries regular season and
 playoffs only, so **preseason never matches**, and a season nobody has ingested never
-matches. `views/game.py` falls through to the team-level read and `unavailable_reason()`
+matches. `web.views.game` falls through to the team-level read and `unavailable_reason()`
 says which case it is — "not preseason", or "the 2026 season is not loaded yet; the feed
 holds 2023, 2024, 2025".
 
@@ -50,15 +50,15 @@ What remains is simply that **the 2026 season cannot be ingested until its games
 played**. That is also why NFL props still cannot be graded (`nfl_props_registry`) — a
 data-availability limit, not a missing piece of code.
 
-Entry point: a **sidebar** link on the Today view (`views/today._nfl_archive_link`),
+Entry point: the `/nfl/` route (`web.views.nfl_archive`),
 rendered only when `nfl_team_games` actually holds data — so a fresh clone with no NFL
 feed shows no dead link.
 
 ## Flow
 
 ```
-router (view == "nfl") → app.py dispatch
-       → views/nfl_archive.py           (season pills → week pills → game cards → matchup)
+web/urls.py (`/nfl/`) → web.views.nfl_archive
+             → services/nfl_game_page.py    (season pills → week pills → game cards → matchup)
        → services/nfl_game_page.build_nfl_game_page(game_id)   (deterministic builder)
        → services/nfl_repository.py     (reads nfl_team_games / nfl_player_games)
        → services/nfl_analytics.py      (pure football engine)
@@ -169,6 +169,6 @@ current as the last ingested feed.
 - The analytics module is football-generic — NCAA Football could reuse it given a
   comparable feed.
 - Reaching the live slate needs an ESPN↔vendor ID bridge and a weekly feed cadence,
-  then flipping `supports_deep_dive` and adding an NFL branch to `views/game.py`.
+  then flipping `supports_deep_dive` and adding an NFL branch to `web.views.game`.
 - Registering the props in `domain/markets.py` would give NFL grading and Performance
   coverage for free.

@@ -134,7 +134,7 @@ obvious* name is the one that leaves your phone showing yesterday's slate.
 
 ---
 
-## 6. Documentation drift
+## 6. ~~Documentation drift~~ — **cleared 2026-08-18**
 
 **14 files still describe Streamlit as the product.** Six of those are in
 `docs/history/`, which is correctly archival and should be left alone. The live docs need
@@ -154,8 +154,28 @@ a pass:
 `docs/engineering/DJANGO_MIGRATION.md` exists and is current — it is the right place to
 point the others at.
 
-**Recommendation.** One documentation pass, ideally before the NFL season starts. The
-test-count claim is the kind of small wrongness that teaches a reader to distrust the rest.
+**Done 2026-08-18.** Every live doc now describes the Django/static product. The pass
+found more than the word "Streamlit":
+
+- `TESTING.md` documented **two suites that no longer exist** (`test_auth.py`,
+  `test_nfl_archive_app.py`) and omitted **thirteen that do** — including the whole
+  `web/tests/` layer. Now 54 documented against 54 real, verified programmatically.
+- `README.md` listed `app.py / views/` in the repo layout — deleted files.
+- `SETUP.md` carried a full **"Deploying to Streamlit Community Cloud"** section, and
+  pointed at three commands that no longer exist (`run.command`, `update_only.command`).
+  Replaced with the Cloudflare Pages reality, including the three consequences worth
+  knowing: updates come from the Mac, the URL is public, and cached pages need
+  recomputing after a card change.
+- Five per-league page docs described the Streamlit dispatch chain
+  (`router → views/game.py`). They now name the Django path.
+- Two docs referenced `src/tb_opportunity.py`, deleted when total bases was retired.
+
+Three mentions were **kept deliberately**: the Decision Log and `docs/history/` are
+archival, and `DESIGN_SYSTEM.md`'s "this should not feel like a dashboard someone
+generated" is a design goal that outlived the framework it named.
+
+**Guard added.** The audit is now mechanical: test count, documented-vs-real suites, and
+referenced module paths are all checked by script rather than by reading.
 
 ---
 

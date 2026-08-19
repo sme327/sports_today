@@ -114,8 +114,9 @@ All weights/thresholds are module constants in `services/mlb_analytics.py`:
 
 ## Where the code lives
 ```
-router → views/game.py (dispatch: league == "MLB")
-       → views/mlb_game.py            # renders sections (order above)
+web/urls.py  → web.views.game (dispatch by league)
+             → web.games.mlb_context       # builds the context
+             → components/mlb_game.py      # renders sections (order above)
        → services/app_cache.cached_mlb_game_page   # cache: game_id | as_of | engine
        → services/mlb_game_page.py    # build_mlb_game_page — assembles the model
        → services/mlb_analytics.py    # pure numeric engine (weights/thresholds here)
@@ -131,7 +132,7 @@ components only format. Tests: `tests/test_mlb_game_page.py`.
 
 ## How to see it
 ```bash
-cd "/Users/sme/Documents/Projects/sports today" && source .venv/bin/activate && python -m streamlit run app.py
+cd "/Users/sme/Documents/Projects/sports today" && source .venv/bin/activate && python manage.py runserver
 ```
 Pick a slate date in the sidebar that your loaded MLB data covers, then click an MLB
 game card. For *current* games, refresh the feed first (`./update.command`).
@@ -154,8 +155,9 @@ Expansions that still need **new data** (each must follow "omit or label honestl
   slot + pace.
 - **Matched-pitcher season lines** once a reliable source exists.
 - **Bullpen freshness, park factors, weather** → new services + matchup types.
-- **New opportunity markets** (total bases, batter strikeouts, walks **already
-  shipped** — `src/tb_opportunity.py`, `src/batter_kbb_opportunity.py`): a `MarketSpec`
+- **New opportunity markets** (batter strikeouts shipped — `src/batter_kbb_opportunity.py`;
+  **total bases and walks were retired 2026-08-09** for never clearing the curation floor,
+  their `MarketSpec` kept only so graded history resolves): a `MarketSpec`
   entry in `domain/markets.py` + a scorer —
   grading, classification, and display then work automatically (see the 2026-08-05 and
   08-06 [Decision Log](DECISION_LOG.md) entries).

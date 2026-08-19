@@ -12,14 +12,14 @@
 | To add… | Put it in… |
 | --- | --- |
 | a new **league** | `leagues/<name>/adapter.py` implementing `LeagueAdapter`, then `register(...)` and import it in `leagues/__init__.py`. **Schedule-only + ESPN-covered?** subclass `leagues/_espn_schedule.ScheduleOnlyESPN` (set `espn_path`, emoji/label) — ~8 lines; the shared `src/espn_scoreboard.py` does fetch/parse |
-| a new **screen/view** | `views/<name>.py`, dispatched from `router.py` |
+| a new **screen/page** | a view in `web/views.py` + a route in `web/urls.py` + a template in `web/templates/web/`. Reusable HTML belongs in `components/`, which is framework-free and shared |
 | a new **component** (reusable UI/HTML) | `components/<name>.py` |
 | a new **service** (data, schedules, cache, snapshots, migrations, repository, analytics) | `services/<name>.py` |
 | a new **domain object** | `domain/models.py`, or a league page model (`domain/<league>_game_page.py`) |
 | to **change a scorer** | edit the scorer **and** its `services/snapshots.MODEL_VERSIONS` string in the same commit — a test ties each version to a property of the engine it names, because a mislabelled slate silently credits a new engine's results to the old one |
 | a new **prop market** | a `MarketSpec` entry in `domain/markets.py` (label, unit, direction, grade rule, source) + a scorer in `src/`; grading/classification/display then work automatically. **Before adding one, check it can actually clear the curation floor** — total bases never scored above 72 in 1,199 graded rows, so it was scored daily for a reader who never saw it |
 | to **retire** a prop market | delete the scorer, adapter entry point, cached builder and slate wiring; **keep** the `MarketSpec` and grading branch so existing ledger rows still resolve. Never delete graded history |
-| **grading / Results & Performance** logic | `services/grading.py` (grade + summarize by band/segment), `views/results.py` (Daily Results), `views/performance.py` (Performance dashboard), `components/results_feed.py`, `components/filter_bar.py` (shared query-param filter bar) |
+| **grading / Results & Performance** logic | `services/grading.py` (grade + summarize by band/segment), `web/analytics.py` (Results + Performance contexts, filters, cohorts, model-version grouping), `components/results_feed.py` (the rendering primitives) |
 | a new **sport's player game logs from ESPN** | add a `SportSpec` to `src/espn_boxscore.SPORTS` (ESPN path, table prefix, stat aliases, columns, plus `groups`/`limit` for college sports) and collect with `scripts/collect_espn_boxscores.py`. Validate against a second source where one exists, and against the sport's own real-world rates where it does not |
 | a new **data collector** (fetch → normalize → SQLite) | `src/<league>_collector.py`, writing via a `src/<league>_store.py` (DDL + upserts; keep it a leaf so the collector stays runnable headless) |
 | a new **vendor season-feed ingest** (workbook → SQLite) | `src/<league>_ingest.py` + a `scripts/import_<league>_feed.py` CLI. Write **additively per season** so loading a new year keeps the others, and declare a **required-column contract** so vendor layout drift fails at import instead of producing a table that quietly breaks a page later (see `src/nfl_ingest.py`) |
@@ -27,7 +27,7 @@
 | a new **sport's box scores** (game logs held for later, not yet surfaced) | `src/boxscore_ingest.py` — add a `Sport` to `SPORTS` (season calendar + period noun + table prefix) and import via `scripts/import_boxscore_feed.py`. Handles both vendor header shapes. **Nothing reads these tables**; they are storage until a feature needs them |
 | to **interpret an awkward vendor encoding** (packed columns, vintage drift) | a `services/<x>_odds.py`-style reader that **interprets without rewriting** the ingested table — `src/` stays faithful to the source, `services/` decides what it means. Validate the interpretation against outcomes (see `services/mlb_odds.py`, whose favourite-attribution is confirmed by a 59.5% win rate) |
 | to **join a live schedule game to ingested vendor data** | a `services/<league>_bridge.py` matching on date + teams (never on ids, which differ by source), returning `None` freely; then a per-game `deep_dive_available(game)` on the adapter so cards only link where a page exists (see `services/nfl_bridge.py`) |
-| a new **archive browser** (browse ingested history, not today's slate) | `views/<league>_archive.py` + a `view` value in `router.py` and a dispatch branch in `app.py` (see `?view=nfl`) |
+| a new **archive browser** (browse ingested history, not today's slate) | a view + route in `web/` and a builder in `services/<league>_game_page.py` (see `/nfl/`) |
 | a new **editorial signal** (team-level curation, no player props needed) | a rule in `services/editorial.py` returning a `Signal` with its evidence **and** caveats; add it to `_CARD_WORTHY` only if it belongs on a card. Rendering is `components/editorial.py` |
 | **competition context** for a league (season, phase, week, round, series) | populate the typed `SlateGame` fields in that league's adapter; `notable_context` decides what is worth showing |
 | a **research table** (held for later, not read by the app) | add it wherever it belongs, and **do not** add it to `scripts/build_deploy_db.KEEP` — the deploy build is an allow-list, so it is excluded by default and never ships to a phone |
@@ -46,8 +46,8 @@ Everything else follows the layers below.
 
 ## Glossary (canonical terminology)
 
-- **View** — a screen module in `views/` (Today, Game). We deliberately do **not**
-  use Streamlit's automatic `pages/`. Say "view", not "page", for code.
+- **View** — a screen module in `web/views.py`, routed from `web/urls.py`. Say "view",
+  not "page", for code; "page" means the exported HTML a reader receives.
 - **Component** — a reusable rendering helper in `components/`. Not "widget".
 - **Service** — an operation module in `services/` (data access, schedules,
   cache, snapshots, migrations). Not "manager".
@@ -278,12 +278,12 @@ Each directory should have a clear purpose. Avoid generic folders.
 domain/       # normalized models
 leagues/      # one adapter per league + registry
 services/     # operations: data access, schedules, cache, snapshots, analytics
-views/        # screens
+web/          # Django views, templates, and the static export
 components/   # reusable rendering helpers
 styles/       # the single stylesheet
 src/          # ingestion + scorers
 scripts/      # CLI entry points
-router.py
+manage.py     # Django entry point
 ```
 
 `src/` and `services/` are the one boundary worth stating explicitly, because both hold
@@ -293,8 +293,8 @@ non-UI logic. The split is **not** about who calls it — adapters and services 
 - **`src/` is a leaf library.** External clients and pure parsing (`*_api.py`,
   `espn_*.py`), ingestion (`ingest.py`, `*_ingest.py`, `*_collector.py`), and the
   per-market **scorers** that rank a population from a dataframe (`*_opportunity.py`).
-  It knows nothing about the app: no Streamlit, and it should import nothing from
-  `services/`, `views/`, `components/`, `domain/`, or `leagues/`.
+  It knows nothing about the app: no web framework, and it should import nothing from
+  `services/`, `web/`, `components/`, or `leagues/`.
 - **`services/` sits above it** and may freely import `src/`. Reads bounded by `as_of`,
   schedules, cache, snapshots, migrations, grading, and the per-league `*_analytics` /
   `*_game_page` builders.
@@ -308,10 +308,16 @@ import, not a cycle.
 
 **This is enforced, not remembered.** `tests/test_layering.py` parses every module's
 imports — including function-local ones — and fails if `src/` reaches into
-`services/`, `views/`, `components/`, `leagues/`, `router`, or `app`, if `domain/`
-stops being a pure leaf, or if `src/` imports Streamlit. When it fails, the fix is to
-move the shared piece **down** (into `src/` or `domain/`) or move the module **up**
-into `services/` — not to add an exception.
+`services/`, `web/`, `components/`, or `leagues/`, if `domain/`
+stops being a pure leaf, if **anything** imports Streamlit (retired 2026-08-17 — the
+dependency is gone, so an import that once made a module untestable now makes it
+unrunnable), or if anything below `web/` imports it. When it fails, the fix is to move the
+shared piece **down** (into `src/` or `domain/`) or move the module **up** — not to add an
+exception.
+
+`web/` is the top layer: it may import everything below and nothing may import it. That is
+what let the entire Streamlit UI be deleted without touching a scorer, an editorial rule,
+or an ingest path — ~2,000 lines removed, 14,000 untouched.
 
 ## CSS
 
