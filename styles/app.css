@@ -1615,6 +1615,23 @@
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nfl-spot-badge.hit { color: var(--green); background: rgba(107, 198, 143, .14); }
 .nfl-spot-badge.miss { color: var(--red); background: rgba(239, 142, 134, .14); }
+
+/* Matchup effect on a spotlight. Only "Tough matchup" is a prediction — it is the one
+   direction the measurement supports — so it is the only chip that carries colour. The
+   flat states are stated non-findings and stay grayscale, so the page never looks like
+   it made a call it did not make. */
+.nfl-spot-mx { margin-top: .4rem; padding-top: .4rem; border-top: 1px solid var(--divider);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .5rem; }
+.nfl-mx { font-size: .68rem; font-weight: 750; letter-spacing: .01em; padding: .1rem .4rem;
+  border-radius: var(--r-pill); text-transform: uppercase; }
+.nfl-mx.down { color: var(--red); background: rgba(239, 142, 134, .14); }
+.nfl-mx.flat { color: var(--text-4); background: rgba(163, 172, 184, .12); }
+.nfl-mx-swing { font-size: .74rem; font-weight: 700; color: var(--red);
+  font-variant-numeric: tabular-nums; }
+.nfl-spot-mx .nfl-spot-sub { flex-basis: 100%; margin-top: 0; line-height: 1.35; }
+.nfl-mx-note { color: var(--text-4); font-size: .74rem; line-height: 1.45; margin-top: .6rem;
+  padding-top: .55rem; border-top: 1px solid var(--divider); }
+.nfl-mx-note b { color: var(--text-2); font-weight: 700; }
 @media (max-width: 720px) { .nfl-spots { grid-template-columns: 1fr; } }
 
 /* NFL thesis + rest/schedule */
