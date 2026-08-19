@@ -5,7 +5,9 @@
     <span class="filter-label" {% if group.accessible_label %}title="{{ group.accessible_label }}" aria-label="{{ group.accessible_label }}"{% endif %}>{{ group.label }}</span>
     <div class="filter-pills" {% if group.accessible_label %}aria-label="{{ group.accessible_label }}"{% endif %}>
       {% for option in group.options %}
-      <a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}" {% if option.active %}aria-current="true"{% endif %}>{{ option.label }}</a>
+      {% comment %}The group name is only next to the pill visually. Without it in the
+      accessible name a page carries six links all announced "All".{% endcomment %}
+      <a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}" aria-label="{{ group.accessible_label|default:group.label }}: {{ option.label }}" {% if option.active %}aria-current="true"{% endif %}>{{ option.label }}</a>
       {% endfor %}
     </div>
   </div>
