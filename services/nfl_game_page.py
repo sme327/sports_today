@@ -188,6 +188,10 @@ def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str,
         return ()
     prior = pg[pg["game_date"].astype("string") < game_date]
     this = pg[pg["game_id"].astype("string") == str(game_id)]
+    # One defence-rating table for the whole column: the ratings vary by date, not by
+    # player, and rebuilding them per player made each page ~0.7s.
+    tables = (nfl_matchup.ratings_for(pg_all if pg_all is not None else pg, game_date)
+              if opponent else None)
     out: list[NFLSpotlight] = []
     for pid, name, pos in nfl_opportunity.key_players(prior[prior["team"] == team]):
         prop = nfl_opportunity.best_prop(prior[prior["player_id"] == pid], pos)
@@ -206,7 +210,7 @@ def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str,
         # defence has faced only a handful of qualifying quarterbacks by midseason and a
         # season-only rating would stay silent exactly when the page is most used.
         call = (nfl_matchup.outlook(pg_all if pg_all is not None else pg,
-                                    pid, name, str(pos), opponent, game_date)
+                                    pid, name, str(pos), opponent, game_date, tables)
                 if opponent else None)
         out.append(NFLSpotlight(name, str(pos), f"{prop['threshold']}+ {prop['label']}",
                                 support, actual, result, call))
