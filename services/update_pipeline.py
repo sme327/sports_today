@@ -1,7 +1,8 @@
-"""The shared "rebuild everything" pipeline, used by both the CLI daily update and
-the in-app uploader so there is one source of truth for what a refresh does:
+"""The shared "rebuild everything" pipeline behind the daily update, so there is
+one source of truth for what a refresh does:
 
-    import the MLB feed → refresh WNBA + MLS → publish the DB to the cloud store.
+    import the MLB feed → refresh WNBA + MLS (+ NFL pickup) → regrade → precompute
+    → publish the DB to the cloud store.
 
 Web-collector failures are captured (non-fatal) and returned in the summary; the
 MLB import is the required step. Publishing is a no-op unless a bucket is configured.
@@ -9,8 +10,10 @@ MLB import is the required step. Publishing is a no-op unless a bucket is config
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Callable
 
 _REGRADE_DAYS = 7       # force-regrade this many recent days after an import
                         # (a week's buffer so a skipped update day can't strand a
@@ -26,32 +29,45 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
     out: dict = {}
     _, out["mlb"] = import_feed(feed_path)
 
-    if collect_web:
-        try:
-            from src.wnba_collector import collect_wnba_season
-            r = collect_wnba_season(season=date.today().year, end_date=date.today())
-            out["wnba"] = {"games": r.games_downloaded, "rows": r.player_rows_written}
-        except Exception as exc:
-            out["wnba_error"] = str(exc)
-        try:
-            from src.mls_collector import collect as collect_mls
-            m = collect_mls(season=date.today().year, verbose=False)
-            out["mls"] = {"matches": m.events_collected, "standings": m.standings_rows}
-        except Exception as exc:
-            out["mls_error"] = str(exc)
+    def _collect_wnba() -> dict:
+        from src.wnba_collector import collect_wnba_season
+        r = collect_wnba_season(season=date.today().year, end_date=date.today())
+        return {"games": r.games_downloaded, "rows": r.player_rows_written}
 
-    # Pick up an NFL season feed if one has been dropped in Downloads. Silent on the
-    # common path (no feed, or the same feed as last time) and non-fatal on failure — a
-    # bad NFL workbook must not take down the MLB daily update. In season this is what
-    # keeps the slate↔feed bridge working on *this* year's games.
-    try:
+    def _collect_mls() -> dict:
+        from src.mls_collector import collect as collect_mls
+        m = collect_mls(season=date.today().year, verbose=False)
+        return {"matches": m.events_collected, "standings": m.standings_rows}
+
+    def _refresh_nfl() -> dict | None:
+        # Pick up an NFL season feed if one has been dropped in Downloads. Silent on
+        # the common path (no feed, or the same feed as last time) and non-fatal on
+        # failure — a bad NFL workbook must not take down the MLB daily update. In
+        # season this is what keeps the slate↔feed bridge working on *this* year's games.
         from services.nfl_feed_refresh import refresh as refresh_nfl
         r = refresh_nfl()
-        if r.status == "imported":
-            out["nfl"] = {"seasons": list(r.seasons), "team_rows": r.team_rows,
-                          "player_rows": r.player_rows, "message": r.message}
-    except Exception as exc:
-        out["nfl_error"] = str(exc)
+        if r.status != "imported":
+            return None
+        return {"seasons": list(r.seasons), "team_rows": r.team_rows,
+                "player_rows": r.player_rows, "message": r.message}
+
+    # The collectors are independent and dominated by network wait, so they run
+    # concurrently. They all write to the one SQLite file, but to disjoint tables in
+    # short transactions — SQLite serializes writers with a 5s busy timeout, and a
+    # collector that loses that race fails non-fatally and retries tomorrow.
+    tasks: list[tuple[str, Callable[[], dict | None]]] = []
+    if collect_web:
+        tasks += [("wnba", _collect_wnba), ("mls", _collect_mls)]
+    tasks.append(("nfl", _refresh_nfl))
+    with ThreadPoolExecutor(max_workers=len(tasks), thread_name_prefix="collect") as pool:
+        futures = [(key, pool.submit(fn)) for key, fn in tasks]
+        for key, future in futures:
+            try:
+                value = future.result()
+                if value is not None:
+                    out[key] = value
+            except Exception as exc:
+                out[f"{key}_error"] = str(exc)
 
     # Re-grade the last few days now that fresh results are loaded — corrects any
     # slate that was graded against partial data (the availability gate leaves such
