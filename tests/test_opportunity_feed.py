@@ -44,3 +44,29 @@ def test_the_line_survives_values_that_are_not_whole_numbers():
     from components.opportunity_feed import opportunity_feed_html
     html = opportunity_feed_html([_op(recent_line=[1.5, 2.0], line_threshold=1)])
     assert "1.5" in html and ">2<" in html            # 2.0 renders as "2", not "2.0"
+
+
+# --- the picks shortlist affordance (2026-08-20) -----------------------------------
+
+def test_rows_carry_the_pick_affordance_and_its_data():
+    """The shortlist script stores exactly what the row declares — it never parses
+    rendered text, so every stored field must ship as a data attribute."""
+    from components.opportunity_feed import opportunity_feed_html
+    html = opportunity_feed_html([_op(market_key="batter_hit")])
+    assert 'class="op-pick"' in html and 'aria-pressed="false"' in html
+    assert 'data-pick-league="MLB"' in html
+    assert 'data-pick-player-id="1"' in html
+    assert 'data-pick-player="A Player"' in html
+    assert 'data-pick-market-key="batter_hit"' in html
+    assert 'data-pick-market="1+ Hit"' in html
+    assert 'data-pick-threshold="1"' in html
+    assert 'data-pick-score="90"' in html
+    assert 'data-pick-team="Cleveland"' in html
+
+
+def test_a_missing_market_key_falls_back_to_the_market_label():
+    """Legacy scorers never set market_key. The Results join uses the same fallback
+    (stored market text), so both sides derive identical keys."""
+    from components.opportunity_feed import opportunity_feed_html
+    html = opportunity_feed_html([_op(market_key=None)])
+    assert 'data-pick-market-key="1+ Hit"' in html

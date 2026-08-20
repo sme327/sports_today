@@ -1,9 +1,14 @@
 # Picks Shortlist
 
-> **Purpose** — The approved plan for prop "selection": the owner marks the props they
+> **Purpose** — The plan for prop "selection": the owner marks the props they
 > like, gets an easy list when placing a bet, and sees their own record the next day.
-> **Audience** — Whoever implements this next (approved by the owner 2026-08-20; not yet built).
-> **Update when** — Scope decisions change, or when it ships (then fold into ROADMAP as shipped).
+> **Status** — **Shipped 2026-08-20** as planned. The affordance is a bookmark button on
+> every `.op-row` (one component serves the Today feed and all game pages, so one tray
+> covers both — the open question resolved itself); the tray, storage and Results join
+> live in `web/static/static-site.js`; rows carry `data-pick-*` / `data-player-id`
+> attributes so the script parses no rendered text. Hard boundaries held: no odds, no
+> stakes, no backend.
+> **Update when** — Scope changes (e.g. a cross-device v2 is considered).
 > **Related** — [Roadmap](ROADMAP.md) · [Vision](VISION.md) · [Decision Log](../engineering/DECISION_LOG.md)
 
 ## What it is

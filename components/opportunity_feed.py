@@ -98,6 +98,31 @@ def _line_html(opp: Opportunity) -> str:
             '</div>')
 
 
+def _pick_attrs(opp: Opportunity) -> str:
+    """``data-pick-*`` attributes carrying everything the shortlist script stores,
+    so the client needs no parsing of rendered text. The market key falls back to
+    the display label for legacy scorers that never set one — the Results join
+    uses the same fallback, so the two sides still agree."""
+    threshold = "" if opp.threshold is None else f"{opp.threshold:g}"
+    fields = {
+        "data-pick-league": opp.league,
+        "data-pick-player-id": opp.player_id,
+        "data-pick-player": opp.player_name,
+        "data-pick-market-key": opp.market_key or opp.market,
+        "data-pick-market": opp.market,
+        "data-pick-threshold": threshold,
+        "data-pick-score": str(opp.opportunity_score),
+        "data-pick-team": opp.team_name or "",
+    }
+    return " ".join(f'{k}="{escape(str(v), quote=True)}"' for k, v in fields.items())
+
+
+# The affordance is a plain button the static-site script wires up; without JS it
+# stays inert and invisible (CSS hides it until the script marks the list ready).
+_PICK_BUTTON = ('<button type="button" class="op-pick" aria-pressed="false" '
+                f'aria-label="Save to shortlist">{icon("shortlist")}</button>')
+
+
 def _row_html(opp: Opportunity) -> str:
     support_fb, risk_fb = _FALLBACKS.get(opp.league, _DEFAULT_FALLBACK)
     support = opp.primary_support or support_fb
@@ -107,7 +132,8 @@ def _row_html(opp: Opportunity) -> str:
     else:
         risk_html = _evidence("risk", "Main risk", risk)
     return (
-        '<div class="op-row">'
+        f'<div class="op-row" {_pick_attrs(opp)}>'
+        f'{_PICK_BUTTON}'
         f'<div class="op-score">{opp.opportunity_score}</div>'
         '<div class="op-identity">'
         f'{_avatar(opp.headshot_url, opp.image_url, opp.player_name, opp.league)}'

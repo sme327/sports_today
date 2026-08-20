@@ -35,6 +35,20 @@ def test_prop_item_disambiguates_recommendation_and_actual():
     assert "<details" in html
 
 
+def test_prop_item_carries_shortlist_join_keys():
+    """The device-local shortlist joins client-side on league|player_id|market_key.
+    The fallback when market_key is absent is the stored market text — the same
+    fallback the feed side uses, so both sides derive identical keys."""
+    r = {"league": "MLB", "player_id": "660271", "player_name": "X", "team_name": "T",
+         "opponent": "O", "market": "1+ Hit", "market_key": "batter_hit",
+         "direction": "over", "threshold": 1, "opportunity_score": 90, "result": "hit"}
+    html = F.prop_list_html([r])
+    assert 'data-league="MLB"' in html and 'data-player-id="660271"' in html
+    assert 'data-market-key="batter_hit"' in html and 'data-result="hit"' in html
+    legacy = F.prop_list_html([{**r, "market_key": None}])
+    assert 'data-market-key="1+ Hit"' in legacy
+
+
 def test_prop_void_shows_reason():
     r = {"league": "MLB", "player_name": "X", "team_name": "T", "opponent": "O",
          "market": "1+ Hit", "market_key": "batter_hit", "direction": "over", "threshold": 1,
