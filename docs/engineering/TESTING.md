@@ -13,7 +13,7 @@ graded prop using only pre-slate data. Ship only if it widens the band spread **
 lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (591 tests passing)
+## Test suites (645 tests passing)
 
 | File | Covers |
 | --- | --- |
@@ -51,6 +51,8 @@ All tests run offline (no network); schedule payloads are stubbed/recorded.
 | `test_results_view.py` | Daily Results rendering: record + not-graded summary, market-table sort/select, recommendation-vs-actual disambiguation, void reason, each filter dimension and combined |
 | `test_nfl_ingest.py` | Big Data Ball header flattening (2-row team feed, 3-row player feed) into unique names, opponent pairing, **additive-per-season** writes, and all tables written on import |
 | `test_nfl_analytics.py` | Defense-by-pairing (allowed = the opponent's offense), season profiles + league percentiles, battlefields pairing offense vs defense, player-frame types/filters, **`rest_days`** (normal week / short week / off a bye, opener → `None` never 0, other teams' games ignored, unparseable date → `None`) |
+| `test_base_rates.py` | **How often each prop's event happens on its own** — the number a hit rate is judged against. Populations must be knowable *before* the event (starting batters, the first-inning pitcher, the WNBA `started` flag), resolution is delegated to `markets.grade` rather than restated (an under is `<=`, and writing `<` by hand once manufactured a +12 lift that did not exist), and a segment mixing markets is weighted by the props it holds. Also the Performance surfaces built on it: the edge table ranks by lift not hit rate, the pulse compares lift where a bar mix moves, and coverage flags a market that is good but never served |
+| `test_nfl_matchup.py` | The opponent's measured effect on a player, and the shape of it: a tough defence produces a negative call, a soft one **never** promises a big day (every soft-side interval covered zero), no code path can return a positive call, receivers are told the matchup is not a factor, and a defence rating never uses the game it describes |
 | `test_nfl_opportunity.py` | NFL reachable-bar props: highest reachable bar, min-games gate, none when no bar is reachable, `key_players` picks QB/lead RB/receivers |
 | `test_nfl_game_page.py` | NFL matchup page: leakage-safe build (records/identity/battlefields from prior games only), rest days, synthesized thesis, small-sample note, season opener empty, archive week/game listing, missing game → `None`. **Player spotlights**: the pick backtested hit/miss against the previewed game, the pick population proven to exclude that game (support reports 5 prior games and their mean — leaking makes it 6), and a player who didn't appear shown with **no result** rather than a miss |
 | `test_wnba_parser.py` | ESPN boxscore parsing over a recorded-shape payload; stat helpers |

@@ -9,6 +9,69 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-20 — Judge a market on everything it predicted, not on what we served
+
+**Decision.** Three changes to the Performance page, plus two infrastructure fixes that
+had been hiding shipped work.
+
+### Market coverage — the blind spot
+
+Every table on the page read **served** predictions. A market whose scorer cannot reach
+the curation floor is therefore invisible *by construction*, and indistinguishable from one
+that does not work. `batter_k` carries the second-highest lift of any market and had been
+served four times. It was found by accident with an ad-hoc script.
+
+| market | all predictions | served (70+) | share |
+|---|---|---|---|
+| Assists | +18.0 (n=170) | +30.5 (n=79) | 46% |
+| **Batter Ks** *starved* | **+16.9 (n=80)** | +28.2 (n=4) | **5%** |
+| Rebounds | +10.7 (n=203) | +31.1 (n=75) | 37% |
+| SP Strikeouts | +7.2 (n=300) | +10.2 (n=225) | 75% |
+| Batter Hits | −3.4 (n=3,383) | +2.5 (n=1,020) | 30% |
+| SP Hits Allowed | −4.0 (n=300) | −3.6 (n=190) | 63% |
+
+The **Starved** flag needs *both* a real edge and a tiny served share, so `sp_hits` — bad,
+not starved — is correctly not flagged. Separating those two is the entire point.
+
+### The pulse compares lift, where that means anything
+
+Cell colour was a day's rate against the market's period rate. Measured before changing it:
+`batter_hit` has one bar so its base never moves (**sd 0.000**), but WNBA assists ranged
+from a **.07 base to a .55 base** across days (sd 0.104) — a 40% day was coloured
+identically in both, when one is outstanding and the other poor, and those are the app's
+best markets. Five cells change; `batter_hit`'s change by **zero**, which is the
+confirmation that the logic is right rather than merely different.
+
+### Calibration reads the current engine only
+
+Pooled across versions the 99-100 band showed −6.6 and looked anti-predictive; split by
+engine it is +13.4 for `batter-hit-v5` alone. **A superseded scorer's calibration is not a
+fact about the one running today.** Scoped, every band is positive (+14.2 → +9.3) with the
+thin ones flagged. Deliberately *not* a bands × versions matrix: that yields cells of n=21
+and would be its own kind of misleading.
+
+### Two things that had been hiding shipped work
+
+- **`element.hidden` did nothing.** It leans on the UA rule `[hidden] { display: none }`,
+  which an author declaration beats at equal specificity — `.game-card` sets
+  `display: flex`, `.schedule-grid` sets `display: grid`. The game-state filter, and the
+  "Hide completed" toggle before it, changed their own label and hid nothing. An
+  author-level `[hidden]` rule now wins.
+- **Publishing could report success after failing.** wrangler errored mid-upload while
+  Python's buffered prints landed *after* it, so the run read as success and the site
+  served stale CSS for another twenty minutes. The exit code is now checked, and the
+  publish verifies the **live URL** serves the stylesheet hashes just built — every local
+  check reads `site-dist/`, the thing we just wrote, which is how a stale cache-buster
+  kept a shipped header rewrite invisible for two days. The check needed two fixes of its
+  own to work at all (macOS ships no CA bundle; Cloudflare 403s urllib's default agent),
+  and caught a real propagation lag on its first run.
+
+**Tradeoff.** Coverage adds a table to an already long page. It earns the space because it
+is the only surface that can express "good and starved" — every other one answers a
+different question.
+
+---
+
 ## 2026-08-19 — `sp_hits` stays, unchanged; and a good market is being starved
 
 **Decision.** Do **not** retire `sp_hits`, and do **not** change its scorer. Record
