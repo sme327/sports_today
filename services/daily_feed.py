@@ -322,44 +322,33 @@ def precompute_day(slate_date: date) -> dict:
     matchup_pages = 0
     matchup_pages_by_league: dict[str, int] = {}
     matchup_errors = 0
+    matchup_error_details: list[str] = []
     from services import matchup_cache
-    from services.mlb_game_page import ENGINE_VERSION, build_mlb_game_page
-    for game in slates.get("MLB", ([], None))[0]:
-        try:
-            page = build_mlb_game_page(game, slate_date, slate_date)
-            matchup_cache.store("MLB", str(game.game_id), slate_date, ENGINE_VERSION, page)
-            matchup_pages += 1
-            matchup_pages_by_league["MLB"] = matchup_pages_by_league.get("MLB", 0) + 1
-        except Exception:
-            matchup_errors += 1
-    from services.wnba_game_page import (
-        ENGINE_VERSION as WNBA_ENGINE_VERSION,
-        build_wnba_game_page,
+    from services.mlb_game_page import ENGINE_VERSION as MLB_ENGINE_VERSION, build_mlb_game_page
+    from services.mls_game_page import ENGINE_VERSION as MLS_ENGINE_VERSION, build_mls_game_page
+    from services.wnba_game_page import ENGINE_VERSION as WNBA_ENGINE_VERSION, build_wnba_game_page
+
+    builders = (
+        ("MLB", build_mlb_game_page, MLB_ENGINE_VERSION),
+        ("WNBA", build_wnba_game_page, WNBA_ENGINE_VERSION),
+        ("MLS", build_mls_game_page, MLS_ENGINE_VERSION),
     )
-    for game in slates.get("WNBA", ([], None))[0]:
-        try:
-            page = build_wnba_game_page(game, slate_date, slate_date)
-            matchup_cache.store(
-                "WNBA", str(game.game_id), slate_date, WNBA_ENGINE_VERSION, page
-            )
-            matchup_pages += 1
-            matchup_pages_by_league["WNBA"] = matchup_pages_by_league.get("WNBA", 0) + 1
-        except Exception:
-            matchup_errors += 1
-    from services.mls_game_page import (
-        ENGINE_VERSION as MLS_ENGINE_VERSION,
-        build_mls_game_page,
-    )
-    for game in slates.get("MLS", ([], None))[0]:
-        try:
-            page = build_mls_game_page(game, slate_date, slate_date)
-            matchup_cache.store(
-                "MLS", str(game.game_id), slate_date, MLS_ENGINE_VERSION, page
-            )
-            matchup_pages += 1
-            matchup_pages_by_league["MLS"] = matchup_pages_by_league.get("MLS", 0) + 1
-        except Exception:
-            matchup_errors += 1
+    for league, build_page, engine_version in builders:
+        for game in slates.get(league, ([], None))[0]:
+            try:
+                page = build_page(game, slate_date, slate_date)
+                matchup_cache.store(league, str(game.game_id), slate_date, engine_version, page)
+                matchup_pages += 1
+                matchup_pages_by_league[league] = matchup_pages_by_league.get(league, 0) + 1
+            except Exception as exc:
+                # A failed page must not fail the day, but a bare count is unactionable —
+                # say which game and why, so the summary names the problem.
+                matchup_errors += 1
+                if len(matchup_error_details) < 20:
+                    matchup_error_details.append(
+                        f"{league} {game.game_id} ({game.away_display} @ {game.home_display}): "
+                        f"{type(exc).__name__}: {exc}"
+                    )
     return {
         "date": slate_date.isoformat(),
         "games": len(games),
@@ -368,6 +357,7 @@ def precompute_day(slate_date: date) -> dict:
         "matchup_pages": matchup_pages,
         "matchup_pages_by_league": matchup_pages_by_league,
         "matchup_errors": matchup_errors,
+        "matchup_error_details": matchup_error_details,
         "matchup_seconds": round(perf_counter() - matchup_started, 3),
         "schedule_seconds": round(schedule_seconds, 3),
         "scoring_seconds": round(scoring_seconds, 3),
