@@ -7,7 +7,7 @@ slate date. Basketball-designed (not translated from baseball). Reuses shared
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from domain.models import DataStatus, Opportunity
 

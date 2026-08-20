@@ -119,18 +119,6 @@ def apply_cohort(rows: list[dict], cohort: str) -> list[dict]:
     return qualifying
 
 
-def filter_groups(path: str, params, active: dict[str, str], *, include_band: bool = True,
-                  market_keys=None):
-    market_keys = list(market_keys if market_keys is not None else ORDER)
-    specs = [
-        ("league", "League", [("all", "All"), ("MLB", "MLB"), ("WNBA", "WNBA")]),
-        ("market", "Market", [("all", "All")] + [(key, LABELS[key]) for key in market_keys]),
-        ("direction", "Direction", [("all", "All"), ("over", "Over"), ("under", "Under")]),
-        ("result", "Result", [("all", "All"), ("hit", "Hit"), ("miss", "Miss"),
-                                  ("void", "Void"), ("pending", "Pending")]),
-    ]
-
-
 def performance_url(params, **updates) -> str:
     """Bound the public Performance state to combinations we can publish statically."""
     values = {
@@ -192,29 +180,6 @@ def performance_filter_groups(params, active: dict[str, str], market_keys: list[
         ],
     })
     return groups
-    if include_band:
-        specs.insert(
-            2,
-            ("band", "Score", [("all", "All")] + [
-                (f"{low}-{high}", label) for low, high, label in grading.SCORE_BANDS
-            ]),
-        )
-    return [
-        {
-            "key": key,
-            "label": label,
-            "options": [
-                {
-                    "value": value,
-                    "label": display,
-                    "active": active.get(key, "all") == value,
-                    "href": query_url(path, params, **{key: value}),
-                }
-                for value, display in options
-            ],
-        }
-        for key, label, options in specs
-    ]
 
 
 def parse_results_date(raw: str | None, today: date) -> date:

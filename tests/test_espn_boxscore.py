@@ -11,7 +11,7 @@ from datetime import date
 
 import pytest
 
-from src.espn_boxscore import (SPORTS, CollectionResult, clean_label, clock_minutes,
+from src.espn_boxscore import (SPORTS, clock_minutes,
                                collect, ensure_tables, made_attempted, number,
                                parse_event, parse_player_rows, stat_columns)
 

@@ -9,7 +9,6 @@ previews, and three seasons of this data do not support it.
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from services import nfl_matchup as M
 

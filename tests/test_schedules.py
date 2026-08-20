@@ -1,6 +1,5 @@
 from datetime import date
 
-import pytest
 
 from domain.models import SlateGame, SourceStatus
 from services import schedule_cache
