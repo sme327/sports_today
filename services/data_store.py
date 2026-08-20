@@ -1,16 +1,16 @@
 """Durable data store for the SQLite database.
 
-Streamlit Community Cloud (and most cheap hosts) wipe local disk on restart, so a
-cloud deployment can't assume ``database/sportshub.db`` persists. This module lets
-the app fetch the DB from a private S3-compatible bucket (Cloudflare R2, AWS S3,
-Backblaze B2, MinIO…) on boot and re-publish it after a rebuild.
+Cheap cloud hosts wipe local disk on restart, so a cloud deployment can't assume
+``database/sportshub.db`` persists. This module lets the app fetch the DB from a
+private S3-compatible bucket (Cloudflare R2, AWS S3, Backblaze B2, MinIO…) on boot
+and re-publish it after a rebuild.
 
 **Correctness never depends on the store.** When no bucket is configured (the local
 / dev default) every function is a no-op and the app uses whatever DB is on local
 disk — exactly today's behavior. When a bucket *is* configured but unreachable, the
 fetch fails soft and the app degrades to the honest empty-DB path. Configuration is
-read from Streamlit secrets first, then environment variables, so nothing is
-hard-coded and local runs need no setup.
+read from environment variables (services/settings.py), so nothing is hard-coded
+and local runs need no setup.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from pathlib import Path
 from services.settings import secret as _cfg
 from src.config import DB_PATH
 
-# Secret / env keys. Set these in Streamlit secrets for a cloud deploy.
+# Env keys. Set these in the environment for a cloud deploy.
 _BUCKET = "SPORTS_TODAY_S3_BUCKET"
 _ENDPOINT = "SPORTS_TODAY_S3_ENDPOINT"    # R2/B2 endpoint URL; omit for AWS S3
 _REGION = "SPORTS_TODAY_S3_REGION"        # "auto" for R2

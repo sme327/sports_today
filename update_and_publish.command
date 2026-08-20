@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "$0")"
 source .venv/bin/activate
-python -m scripts.morning_update --no-launch
+python -m scripts.morning_update
 python -m scripts.publish_pages
 
 echo

@@ -88,16 +88,23 @@ without reading why it was made.
 - Click a game card to open its view. **MLB, WNBA, and MLS games open dedicated
   editorial matchup pages** (see [MLB Game Page](docs/engineering/MLB_GAME_PAGE.md),
   [WNBA Game Page](docs/engineering/WNBA_GAME_PAGE.md), and
-  [MLS Game Page](docs/engineering/MLS_GAME_PAGE.md)); World Cup, NHL, NBA, NCAA
-  Football, and the live NFL slate are schedule-only.
+  [MLS Game Page](docs/engineering/MLS_GAME_PAGE.md)). **An NFL slate game whose
+  season is in the ingested feed opens the NFL deep-dive matchup page** —
+  `services/nfl_bridge.py` joins the live slate to the feed by date + teams; preseason
+  and un-ingested seasons get the schedule-only page instead (see
+  [NFL Game Page](docs/engineering/NFL_GAME_PAGE.md)). NFL also scores five over-only
+  player-prop markets onto the slate when its feed is fresh (silent when it is six-plus
+  weeks stale, which is every preseason day). World Cup, NHL, NBA, and NCAA Football
+  are schedule-only.
 - **Schedule-only doesn't mean uncurated.** Those games carry a team-level read —
   records, ranks, conference and postseason stakes — as a chip on the card and a
   "The read" section on the game page (`services/editorial.py`). Cards also show
   competition context (a football week, a neutral site, "Elimination game", or where
   a baseball game sits in its series) whenever it says something the reader doesn't
   already assume.
-- The historical NFL archive remains a local development/review tool and is deliberately
-  excluded from the public static site.
+- The NFL **archive browser** (`/nfl/`) remains a local development/review tool and is
+  deliberately excluded from the public static site; the NFL **matchup pages** for
+  bridged slate games do publish (the export follows the card's redirect).
 - If a league's live schedule is briefly unavailable, the most recent **cached**
   slate is shown; a genuinely empty slate shows no fallback
   ([degraded mode](docs/engineering/DECISION_LOG.md)).

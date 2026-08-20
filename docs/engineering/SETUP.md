@@ -172,12 +172,6 @@ source .venv/bin/activate
 python -m scripts.morning_update
 ```
 
-Update without launching:
-
-```bash
-python -m scripts.morning_update --no-launch
-```
-
 Use a different Downloads folder:
 
 ```bash

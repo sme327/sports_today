@@ -26,9 +26,6 @@ data/archive/
 data/wnba/*.csv
 logs/*.csv
 
-# --- Streamlit local secrets (if ever added) ---
-.streamlit/secrets.toml
-
 # Icon zips (SVG sources are kept)
 icons/*.zip
 data/mls/*.csv
@@ -37,4 +34,3 @@ data/mls/*.csv
 data/experiments/
 # Generated Cloudflare Pages bundle
 site-dist/
-staticfiles/
