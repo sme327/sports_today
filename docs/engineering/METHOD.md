@@ -69,6 +69,18 @@ Both v5 samples are far too small to celebrate — the honest statement is *no e
 inversion under the current engine, and not enough data to say more*. A pooled ledger mixes
 engines the same way a blended average mixes markets; **the version column is part of the
 segmentation, not metadata.**
+### 1c. Judge a market on everything it predicted, not on what you served
+
+A curation floor hides a market's weakest picks — which is its job — but it also hides
+a market whose scorer **cannot reach the floor at all**. Those two look identical from
+the served side, and only one of them is a bad market. `batter_k` carries the
+second-highest lift measured here (+16.9 over base across everything it predicted) and
+had been served four times, because its scale tops out at 75 against a floor of 70.
+
+**Always compute lift across all recorded predictions alongside how many cleared the
+floor.** A high lift with a tiny served share is a scoring-calibration problem wearing
+a market's clothes. `batter_tb` failed the same served-side test and its recorded lift
+is −1.3, so retiring it lost nothing — same symptom, opposite diagnosis.
 
 ## 2. Split-half persistence: is it a trait, or a run of luck?
 

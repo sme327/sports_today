@@ -168,7 +168,9 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   nothing shipped. `batter_k` has the **second-highest lift of any market (+18.2 ±9.2) and
   has been served six times** — its scorer tops out at 75 against a floor of 70. Judge a
   market on *all recorded props*, not the ones that cleared the floor: good-and-starved
-  looks identical to bad until you separate them.
+  looks identical to bad until you separate them. The Performance page now shows this
+  directly (**Market coverage**), flagging a market as *Starved* when it beats its base
+  by 5+ points yet under a tenth of its predictions ever clear the floor.
 - **Editorial signals are records, not forecasts.** They use no odds (a deliberate
   product decision, enforced by a test), no injuries and no weather. A "Game Interest"
   score ranks a slate for attention — it is **not** a win probability and not
