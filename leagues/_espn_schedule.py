@@ -34,7 +34,21 @@ def _ranked(short: str | None, rank: int | None) -> str | None:
 class ScheduleOnlyESPN:
     """Mixin/base implementing the LeagueAdapter protocol for an ESPN-fed schedule."""
 
-    supports_deep_dive = False
+    # These leagues have no feed, but a schedule still supports an honest matchup page:
+    # records, poll rank, stakes, the team-level read, and a plain statement of what is
+    # missing (web/simple_game.py). Offered **per game**, like NFL: the 2026-08-07
+    # decision keeps a card compact when there is nothing to say, and a link to a page
+    # that can only shrug is exactly that nothing — a 2-0 college team has no readable
+    # record until it has four games.
+    supports_deep_dive = True
+
+    def deep_dive_available(self, game) -> bool:
+        from services.editorial import MIN_GAMES, parse_record
+
+        if game.state in ("live", "final") and game.has_score:
+            return True
+        return any(parse_record(rec).games >= MIN_GAMES
+                   for rec in (game.away_record, game.home_record))
     chip_label = "Game"
 
     # Per-league configuration (set by subclasses):

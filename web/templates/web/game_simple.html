@@ -1,0 +1,34 @@
+{% extends "web/base.html" %}
+{% block title %}{{ game.away_display }} at {{ game.home_display }} · Sports Today{% endblock %}
+{% block content %}
+{% comment %}The matchup page for a league with no player feed — NCAAF, NHL, NBA, the
+World Cup. It shows what the schedule honestly supports (records, rank, stakes, the
+team-level read) and states plainly what it cannot show, rather than implying a deeper
+page exists somewhere. It replaced a stub that told readers the page "has not moved to
+Django yet", which was migration scaffolding left standing after the migration.{% endcomment %}
+<a class="text-link" href="/?day={{ day }}">← Back to {{ day }}’s slate</a>
+
+<section class="simple-hero">
+  <div class="sh-league">{{ league_label }}{% if context %} · {{ context }}{% endif %}</div>
+  <div class="sh-teams">
+    <div class="sh-side">
+      <span class="sh-name">{{ game.away_display }}</span>
+      {% if game.away_record %}<span class="sh-rec">{{ game.away_record }}</span>{% endif %}
+    </div>
+    <span class="sh-at">at</span>
+    <div class="sh-side">
+      <span class="sh-name">{{ game.home_display }}</span>
+      {% if game.home_record %}<span class="sh-rec">{{ game.home_record }}</span>{% endif %}
+    </div>
+  </div>
+  {% if score_line %}<div class="sh-score">{{ score_line }}</div>
+  {% elif start_time %}<div class="sh-time">{{ start_time }}</div>{% endif %}
+</section>
+
+{{ editorial_html|safe }}
+
+<section class="analytics-section">
+  <h2>Not shown</h2>
+  <p class="quiet-note">{{ gaps }}</p>
+</section>
+{% endblock %}

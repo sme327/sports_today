@@ -102,3 +102,50 @@ class EndpointTests(SimpleTestCase):
         response = Client().get("/fragments/schedule/?day=today")
         assert response.status_code == 200
         refresh_schedules.assert_called_once()
+
+
+class SimpleGamePageTests(SimpleTestCase):
+    """The matchup page for a league that arrives as a schedule and nothing else."""
+
+    def _game(self, away_record="2-0", home_record="1-1"):
+        from datetime import datetime
+
+        from domain.models import SlateGame
+
+        return SlateGame(league="NCAAF", game_id="401", status="scheduled",
+                         start_time=datetime(2026, 9, 5, 19, 30),
+                         away_name="Georgia Bulldogs", home_name="Alabama Crimson Tide",
+                         away_record=away_record, home_record=home_record)
+
+    def test_it_states_what_it_cannot_show(self):
+        """These leagues have no feed. Saying so beats implying a richer page exists."""
+        from datetime import date
+
+        from web.simple_game import simple_game_context
+
+        ctx = simple_game_context(self._game(), date(2026, 9, 5), "today")
+        assert "schedule only" in ctx["gaps"]
+        assert "no player props" in ctx["gaps"]
+
+    def test_an_early_season_record_earns_no_read(self):
+        """College football starts before its records mean anything — a 2-0 team may have
+        played nobody. `Standing.win_pct` is None below four games, so the read says so
+        rather than calling a 2-0 team elite."""
+        from datetime import date
+
+        from web.simple_game import simple_game_context
+
+        ctx = simple_game_context(self._game(), date(2026, 9, 5), "today")
+        assert "2-0 on noise" in ctx["editorial_html"]
+
+    def test_the_migration_stub_is_gone(self):
+        """It told readers the page "has not moved to Django yet" — scaffolding that
+        outlived the migration and would have greeted every September reader."""
+        from pathlib import Path
+
+        assert not (Path("web/templates/web") / "game_pending.html").exists()
+
+    def test_schedule_only_leagues_now_offer_the_link(self):
+        from leagues.ncaaf.adapter import NCAAFAdapter
+
+        assert NCAAFAdapter().supports_deep_dive is True

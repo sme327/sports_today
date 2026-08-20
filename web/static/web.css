@@ -237,6 +237,21 @@ a { color: inherit; }
   .mc-row > span:nth-child(4), .mc-head > span:nth-child(4) { display: none; }
 }
 
+/* Simplified matchup page — leagues that arrive as a schedule and nothing else. */
+.simple-hero { padding: 1.1rem 1.2rem; margin: 1rem 0; border-radius: var(--r-md);
+  background: var(--surface-1); box-shadow: var(--edge-hi); }
+.sh-league { color: var(--text-4); font-size: .72rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .05em; }
+.sh-teams { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem 1rem;
+  margin-top: .55rem; }
+.sh-side { display: flex; align-items: baseline; gap: .5rem; }
+.sh-name { color: var(--text-1); font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; }
+.sh-rec { color: var(--text-4); font-size: .82rem; font-weight: 700; }
+.sh-at { color: var(--text-4); font-size: .9rem; }
+.sh-time, .sh-score { color: var(--text-3); font-size: .86rem; font-weight: 650; margin-top: .5rem; }
+.sh-score { color: var(--text-1); font-weight: 750; }
+@media (max-width: 560px) { .sh-teams { flex-direction: column; gap: .35rem; } }
+
 [hidden] { display: none !important; }
 
 /* --- accessibility utilities ------------------------------------------------------ */
