@@ -1,12 +1,31 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from scripts.sync_mlb_download import sync_latest
 from services.update_pipeline import rebuild
-from src.config import CURRENT_FEED, DOWNLOADS_DIR
+from src.config import CURRENT_FEED, DOWNLOADS_DIR, LOG_DIR
+
+RUN_LOG = LOG_DIR / "update_runs.jsonl"
+
+
+def append_run_log(record: dict, path: Path = RUN_LOG) -> str | None:
+    """One JSON line per update run, so "did Tuesday's update actually work?" is
+    answerable after the terminal window closed. The import-history CSV records only
+    the file copy; this records the whole rebuild summary — collectors, regrades,
+    precompute, matchup-page failures and all. Returns an error string instead of
+    raising: the record must never fail the update it records."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, default=str) + "\n")
+        return None
+    except Exception as exc:
+        return str(exc)
 
 
 def main() -> int:
@@ -38,9 +57,19 @@ def main() -> int:
         current_file, changed = sync_latest(args.downloads, force=args.force)
         print(f"Using feed: {current_file}")
 
-        # One shared pipeline for the CLI and the in-app uploader: import the MLB
-        # feed, refresh WNBA + MLS, publish the DB to the cloud store (if configured).
+        # One shared pipeline: import the MLB feed, refresh WNBA + MLS (+ NFL pickup),
+        # regrade, precompute, publish the DB to the cloud store (if configured).
+        started = datetime.now()
         result = rebuild(CURRENT_FEED)
+        log_error = append_run_log({
+            "run_at": started.isoformat(timespec="seconds"),
+            "duration_seconds": round((datetime.now() - started).total_seconds(), 1),
+            "feed": str(current_file),
+            "feed_changed": changed,
+            **result,
+        })
+        if log_error:
+            print(f"Run log not written: {log_error}", file=sys.stderr)
         s = result["mlb"]
         print(
             "Database rebuilt successfully: "
@@ -90,6 +119,10 @@ def main() -> int:
         print("\nUpdate cancelled.")
         return 130
     except Exception as exc:
+        append_run_log({
+            "run_at": datetime.now().isoformat(timespec="seconds"),
+            "error": str(exc),
+        })
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
