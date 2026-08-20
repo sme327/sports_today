@@ -689,6 +689,9 @@
       ".     good"
       ".     risk";
   }
+  /* A name that wraps to two lines beats one that ellipsizes into nothing when
+     something (a zoom setting, font inflation) narrows the column unexpectedly. */
+  .op-player { white-space: normal; }
   .team-name { font-size: 1.2rem; }
   /* Footer links get tight side by side on phones — stack them. */
   .game-meta { flex-direction: column; align-items: flex-start; gap: .45rem; }
