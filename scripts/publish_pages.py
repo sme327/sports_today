@@ -63,8 +63,18 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
 
     built = (OUTPUT / "index.html").read_text(encoding="utf-8")
     want = set(re.findall(r'/static/(\w+\.css\?v=[0-9a-f]{10})', built))
-    if not want:
-        print("No content-versioned stylesheets in the build; skipping live check.")
+    # The data build stamp (base.html meta tag). The CSS hashes only prove the
+    # stylesheets deployed; after a pure data update they are unchanged, so a
+    # half-failed HTML upload would pass that check while the site served
+    # yesterday's slate. The stamp changes on every precompute.
+    def stamp_of(html: str) -> str | None:
+        found = re.search(r'<meta name="sports-today-build" content="([^"]+)"', html)
+        return found.group(1) if found else None
+
+    want_stamp = stamp_of(built)
+    if not want and not want_stamp:
+        print("No content-versioned stylesheets or build stamp in the build; "
+              "skipping live check.")
         return True
     # Python on macOS ships without a CA bundle, so a plain urlopen fails SSL
     # verification against every https host and this check would silently skip forever.
@@ -75,8 +85,14 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
         context = ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         pass
+    # A unique query string busts the edge cache (the _headers file gives HTML a
+    # 60s max-age, so a plain fetch right after deploying reads the *previous*
+    # deploy and every data publish would false-alarm). Pages ignores the query
+    # for routing, so this still fetches the real page from the origin.
+    from time import time as _now
+    probe = url + ("&" if "?" in url else "?") + f"cb={int(_now())}"
     # Cloudflare 403s urllib's default "Python-urllib/3.x" agent.
-    request = urllib.request.Request(url, headers={
+    request = urllib.request.Request(probe, headers={
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
         "Cache-Control": "no-cache",
@@ -91,14 +107,22 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
               file=sys.stderr)
         return True
     missing = sorted(a for a in want if a not in live)
-    if missing:
+    live_stamp = stamp_of(live)
+    stale_data = want_stamp is not None and live_stamp != want_stamp
+    if missing or stale_data:
         print(f"\nPUBLISHED, BUT {url} IS SERVING SOMETHING ELSE.", file=sys.stderr)
-        print(f"  expected: {', '.join(sorted(want))}", file=sys.stderr)
-        print(f"  missing from the live page: {', '.join(missing)}", file=sys.stderr)
+        if missing:
+            print(f"  expected: {', '.join(sorted(want))}", file=sys.stderr)
+            print(f"  missing from the live page: {', '.join(missing)}", file=sys.stderr)
+        if stale_data:
+            print(f"  build stamp: expected {want_stamp}, live page has "
+                  f"{live_stamp or 'none'} — the HTML is stale even though the "
+                  f"stylesheets may match.", file=sys.stderr)
         print("  (Cloudflare may still be propagating — re-check in a minute.)",
               file=sys.stderr)
         return False
-    print(f"Verified live at {url}: {', '.join(sorted(want))}")
+    checks = sorted(want) + ([f"build {want_stamp}"] if want_stamp else [])
+    print(f"Verified live at {url}: {', '.join(checks)}")
     return True
 
 
