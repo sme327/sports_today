@@ -273,3 +273,78 @@ def test_a_changed_stylesheet_changes_its_version(tmp_path, monkeypatch):
     before = assets.stylesheet_version("web.css")
     (tmp_path / "web.css").write_text("a{color:red}")
     assert assets.stylesheet_version("web.css") != before
+
+
+# --- publishing must fail loudly (2026-08-20) ----------------------------------------
+
+def test_a_failed_deploy_does_not_report_success():
+    """wrangler failed mid-upload after the build and link audit passed. Python's prints
+    are buffered, so they landed after wrangler's error and the run read as a success —
+    the site served stale CSS for another twenty minutes while being reported live."""
+    import inspect
+
+    from scripts import publish_pages
+
+    src = inspect.getsource(publish_pages.main)
+    assert "code = subprocess.call" in src, "the exit code must be captured"
+    assert "if code != 0" in src, "a non-zero wrangler exit must short-circuit"
+    assert "PUBLISH FAILED" in src
+
+
+def test_the_live_site_is_checked_against_what_was_built(monkeypatch, tmp_path):
+    """Every local check reads site-dist — the thing we just wrote. Confirming the change
+    reached the reader means asking the origin."""
+    from scripts import publish_pages
+
+    monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
+    (tmp_path / "index.html").write_text(
+        '<link href="/static/web.css?v=abc1234567"><link href="/static/app.css?v=def8901234">'
+    )
+
+    class _Response:
+        def __init__(self, body): self._body = body
+        def read(self): return self._body.encode()
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda *a, **k: _Response("web.css?v=abc1234567 app.css?v=def8901234"))
+    assert publish_pages.verify_live("https://example.test/") is True
+
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda *a, **k: _Response("web.css?v=0000000000"))
+    assert publish_pages.verify_live("https://example.test/") is False
+
+
+def test_an_unreachable_site_is_not_reported_as_a_publish_failure():
+    """The deploy already succeeded; a network problem here is our inability to confirm,
+    not evidence the publish broke."""
+    import urllib.error
+    import urllib.request
+
+    from scripts import publish_pages
+
+    real = urllib.request.urlopen
+    urllib.request.urlopen = lambda *a, **k: (_ for _ in ()).throw(urllib.error.URLError("down"))
+    try:
+        assert publish_pages.verify_live("https://example.test/") is True
+    finally:
+        urllib.request.urlopen = real
+
+
+def test_the_hidden_attribute_actually_hides():
+    """`element.hidden = true` relies on the UA rule `[hidden] { display: none }`, which
+    an author `display` declaration beats at equal specificity. `.game-card` sets
+    `display: flex` and `.schedule-grid` sets `display: grid`, so the game-state filter
+    set a property that never applied — it changed its own label and hid nothing."""
+    import re
+
+    css = (_DIST / "static" / "web.css").read_text()
+    rule = re.search(r'\[hidden\]\s*\{[^}]*display:\s*none\s*!important', css)
+    assert rule, "an author-level [hidden] rule is required to beat .game-card's display"
+
+    app = (_DIST / "static" / "app.css").read_text()
+    for selector in (".game-card", ".schedule-grid"):
+        assert re.search(rf'{re.escape(selector)}\s*\{{[^}}]*display:', app), (
+            f"{selector} still sets display — the [hidden] override must stay")
