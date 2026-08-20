@@ -73,7 +73,7 @@ MODEL_VERSIONS = {
     # scale re-tuned to hold the served share.
     "batter_hit": "batter-hit-v5",
     "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
-    "batter_k": "batter-k-v1",     # two-directional, reachable-bar
+    "batter_k": "batter-k-v2",     # reachable bar + opposing starter
     "batter_bb": "batter-bb-v1",   # over-only, reachable-bar
     # v3: threshold impressiveness from measured league rarity rather than the bar's
     # position in the list. The sp-v2 over-penalties are unchanged underneath.

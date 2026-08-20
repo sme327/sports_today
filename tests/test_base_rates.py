@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sqlite3
 
+import pandas as pd
 import pytest
 
 from components.results_feed import edge_table_html
@@ -243,3 +244,62 @@ def test_calibration_reads_only_the_current_engine():
     src = inspect.getsource(analytics.performance_context)
     assert "MODEL_VERSIONS" in src and "current_rows" in src
     assert "calibration_scope" in src
+
+
+# --- batter-k-v2: the opposing starter (2026-08-20) -----------------------------------
+
+def _k_frame(per_game_ks, team="Team A", pitcher_ks=None, batter="101"):
+    """Plate appearances for one batter, plus an opposing starter's own history."""
+    rows = []
+    for i, k in enumerate(per_game_ks):
+        for j in range(4):
+            rows.append({"batting_team": team, "batter_id": batter, "batter_name": batter,
+                         "game_date": f"2026-06-{i + 1:02d}", "game_id": f"g{i}",
+                         "pitcher_id": "other", "is_walk": 0,
+                         "is_strikeout": 1 if j < k else 0})
+    # A league of starters, so the 10th/90th percentile band the term normalises against
+    # is not degenerate. With a single pitcher there is no league context and the term
+    # correctly falls back to neutral — which would make this test vacuous.
+    for name, rate in (("SP1", pitcher_ks or 0), ("SPlow", 2), ("SPmid", 6), ("SPhigh", 11)):
+        for i in range(8):
+            for j in range(30):
+                rows.append({"batting_team": "Other", "batter_id": str(900 + j),
+                             "batter_name": "x", "game_date": f"2026-06-{i + 1:02d}",
+                             "game_id": f"p{name}{i}", "pitcher_id": name, "is_walk": 0,
+                             "is_strikeout": 1 if j < rate else 0})
+    return pd.DataFrame(rows)
+
+
+def test_the_opposing_starter_moves_a_strikeout_prop():
+    """After the reachable-bar filter the batter's own clear rate is noise (AUC 0.515);
+    the opposing starter is not (0.566). It is the term that carries this market."""
+    from src.batter_kbb_opportunity import score_k_opportunities
+
+    pa = _k_frame([2] * 12, pitcher_ks=14)          # SP1 fans far more than the league
+    hot = score_k_opportunities(pa, ["Team A"], opposing_starters={"Team A": "SP1"})
+    cold = score_k_opportunities(pa, ["Team A"], opposing_starters={})
+    assert not hot.empty and not cold.empty
+    assert hot.iloc[0]["opportunity_score"] != cold.iloc[0]["opportunity_score"]
+
+
+def test_an_unposted_starter_is_named_and_costs_confidence():
+    """Scored neutrally — we cannot rank it down on merit we never measured — so the doubt
+    lands on stability. Otherwise the top prop on a slate is the one we know least about."""
+    from src.batter_kbb_opportunity import (_UNKNOWN_SP_STABILITY_CAP,
+                                            score_k_opportunities)
+
+    pa = _k_frame([2] * 12)
+    scored = score_k_opportunities(pa, ["Team A"], opposing_starters={})
+    assert not scored.empty
+    row = scored.iloc[0]
+    assert any("not posted" in r for r in row["risks"])
+    assert row["stability_score"] <= _UNKNOWN_SP_STABILITY_CAP
+
+
+def test_impressiveness_is_measured_rarity_not_the_bar_number():
+    """`threshold / max(thresholds)` was a constant in practice — the 3+ bar is never
+    reachable, so 100% of picks are the 2+ bar — and it capped the scale at 75."""
+    from src.batter_kbb_opportunity import _K_BASE
+
+    assert _K_BASE[2] > _K_BASE[3], "2+ K must be the commoner event"
+    assert 0.15 < _K_BASE[2] < 0.30
