@@ -66,8 +66,23 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
     if not want:
         print("No content-versioned stylesheets in the build; skipping live check.")
         return True
+    # Python on macOS ships without a CA bundle, so a plain urlopen fails SSL
+    # verification against every https host and this check would silently skip forever.
+    context = None
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+        import certifi
+        import ssl
+        context = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        pass
+    # Cloudflare 403s urllib's default "Python-urllib/3.x" agent.
+    request = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Cache-Control": "no-cache",
+    })
+    try:
+        with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
             live = response.read().decode("utf-8", "replace")
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         # Not a deploy failure — the deploy already reported success. Say what we could
