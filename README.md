@@ -46,7 +46,8 @@ python manage.py runserver
 
 The app needs `database/sportshub.db`, which is **not** in the repo (data is
 gitignored). On a fresh clone, build it via the daily pipeline — drop a dated MLB
-feed in `~/Downloads` and run `update.command` (or `python -m scripts.morning_update`).
+feed in `~/Downloads` and run `python -m scripts.morning_update` (data only;
+`update.command` does the same **and** publishes, so it needs wrangler set up).
 
 For the zero-cost Cloudflare Pages deployment, `update_and_publish.command` runs the
 same local update, exports the public site, and publishes the finished snapshot. The

@@ -108,11 +108,14 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 ## Data & daily workflow
 
 - The app reads `data/current/mlb_pbp_current.xlsx` and `database/sportshub.db`.
-- Daily: drop the dated vendor feed in `~/Downloads`, run `update.command` — it
-  archives, atomically replaces the current workbook, rebuilds SQLite, collects
-  WNBA **and MLS** (both non-fatal on failure), and precomputes the daily feed
-  (nothing is launched — the site is a static export). `NO_CHANGE` is handled
-  safely. Full steps: [Setup](docs/engineering/SETUP.md).
+- Daily: drop the dated vendor feed in `~/Downloads`, run `update.command`
+  (an alias of `update_and_publish.command` since 2026-08-20) — it archives,
+  atomically replaces the current workbook, rebuilds SQLite, collects WNBA **and
+  MLS** concurrently (both non-fatal on failure), precomputes the daily feed, and
+  publishes the static site. It warns loudly when the newest feed is older than
+  yesterday, and appends each run's summary to `logs/update_runs.jsonl`.
+  `NO_CHANGE` is handled safely; data-only is `python -m scripts.morning_update`.
+  Full steps: [Setup](docs/engineering/SETUP.md).
 - **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
   + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there
   is none (most days, and all offseason), skipped when the pair is unchanged since the
