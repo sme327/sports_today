@@ -177,7 +177,12 @@ class Command(BaseCommand):
         # the published site. Harmless today — a 671-byte Streamlit helper — but it means
         # *any* .py placed there ships publicly. Exclude source rather than trusting that
         # nobody ever puts a secret-bearing module next to the stylesheet.
-        call_command("collectstatic", interactive=False, verbosity=0,
+        # `clear` wipes the target first. Without it the hashed filenames that
+        # ManifestStaticFilesStorage generates accumulate forever — every stylesheet edit
+        # leaves its predecessor behind, and all of them get copied into the export and
+        # uploaded. It had reached 436KB of published CSS against 107KB actually loaded,
+        # since the pages reference the unhashed names.
+        call_command("collectstatic", interactive=False, verbosity=0, clear=True,
                      ignore_patterns=["*.py", "*.pyc", "__pycache__"])
         shutil.copytree(static_root, out / "static", dirs_exist_ok=True)
         (out / "_headers").write_text(

@@ -4,8 +4,8 @@
   if (!region || !document.querySelector("[data-live-game]")) return;
   const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const cards = [...document.querySelectorAll("[data-live-game]")];
-  const completedToggle = document.querySelector("[data-toggle-completed]");
-  let hideCompleted = false;
+  const stateFilter = document.querySelector("[data-state-filter]");
+  let gameState = "all";
   const scoreLeagues = [
     ["MLB", "baseball", "mlb"], ["WNBA", "basketball", "wnba"],
     ["MLS", "soccer", "usa.1"], ["NFL", "football", "nfl"],
@@ -29,17 +29,36 @@
     };
   }
 
-  function applyCompletedVisibility() {
+  function applyStateVisibility() {
     for (const card of cards) {
-      card.hidden = hideCompleted && card.classList.contains("game-card--final");
+      card.hidden = gameState !== "all" && !card.classList.contains(`game-card--${gameState}`);
     }
+    // A group heading with every card hidden is a heading over nothing.
     for (const grid of region.querySelectorAll(".schedule-grid")) {
       const gridCards = [...grid.querySelectorAll(".game-card")];
-      grid.hidden = hideCompleted && gridCards.length > 0 && gridCards.every((card) => card.hidden);
+      // Grids are the live/upcoming/final groups themselves (group_games_by_state),
+      // so a grid whose cards are all filtered out has nothing left to frame.
+      grid.hidden = gridCards.length > 0 && gridCards.every((card) => card.hidden);
     }
-    if (completedToggle) {
-      completedToggle.setAttribute("aria-pressed", String(hideCompleted));
-      completedToggle.textContent = hideCompleted ? "Show completed" : "Hide completed";
+    if (stateFilter) {
+      for (const button of stateFilter.querySelectorAll("button")) {
+        const on = button.dataset.state === gameState;
+        button.classList.toggle("active", on);
+        button.setAttribute("aria-pressed", String(on));
+      }
+      // Live scores move cards between states, so a filter can empty itself while the
+      // reader is watching. Saying so beats an unexplained blank slate.
+      const shown = cards.filter((card) => !card.hidden).length;
+      let note = region.querySelector("[data-state-empty]");
+      if (!note) {
+        note = document.createElement("div");
+        note.className = "mlb-empty";
+        note.setAttribute("data-state-empty", "");
+        region.append(note);
+      }
+      note.hidden = shown > 0;
+      note.textContent = gameState === "all" ? "" :
+        `No ${{live: "live", pre: "upcoming", final: "completed"}[gameState]} games right now.`;
     }
   }
 
@@ -93,7 +112,9 @@
       }
       card.classList.toggle("game-card--live", game.state === "live");
       card.classList.toggle("game-card--final", game.state === "final");
-      applyCompletedVisibility();
+      card.classList.toggle("game-card--live", game.state === "live");
+      card.classList.toggle("game-card--pre", game.state !== "final" && game.state !== "live");
+      applyStateVisibility();
     }
   }
 
@@ -113,10 +134,12 @@
       // The published snapshot remains usable when live scores are unavailable.
     }
   }
-  if (completedToggle) {
-    completedToggle.addEventListener("click", () => {
-      hideCompleted = !hideCompleted;
-      applyCompletedVisibility();
+  if (stateFilter) {
+    stateFilter.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-state]");
+      if (!button) return;
+      gameState = button.dataset.state;
+      applyStateVisibility();
     });
   }
   refresh();

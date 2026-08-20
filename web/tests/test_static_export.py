@@ -45,12 +45,30 @@ def test_public_assets_are_not_cached_immutably():
     assert "max-age=31536000, immutable" not in source
 
 
-def test_live_score_script_normalizes_espn_states_and_hides_completed_games():
+def test_live_score_script_normalizes_espn_states_and_filters_by_game_state():
+    """Filtering is client-side on purpose: the site is statically exported, so a
+    URL-param state filter would multiply every published page by four."""
     source = Path("web/static/static-site.js").read_text()
     assert 'sourceState === "in" ? "live"' in source
     assert 'sourceState === "post" ? "final"' in source
-    assert "data-toggle-completed" in Path("web/templates/web/today.html").read_text()
-    assert "applyCompletedVisibility" in source
+    assert "data-state-filter" in Path("web/templates/web/today.html").read_text()
+    assert "applyStateVisibility" in source
+    # Live scores move cards between states, so the filter has to be re-applied after an
+    # update — otherwise a game that just went final stays visible under "Upcoming".
+    assert source.count("applyStateVisibility()") >= 2
+
+
+def test_every_card_carries_an_explicit_state_class():
+    """The filter selects `game-card--<state>` directly. Scheduled games once carried no
+    modifier at all, which would have made "Upcoming" mean "not the other two"."""
+    from domain.models import SlateGame
+    from components.game_cards import game_card_html
+    from datetime import datetime
+
+    game = SlateGame(league="MLB", game_id="1", status="scheduled",
+                     start_time=datetime(2026, 8, 19, 18, 0),
+                     away_name="A", home_name="B")
+    assert "game-card--pre" in game_card_html(game, day="2026-08-19")
 
 
 def test_static_link_audit_rejects_server_query_links(tmp_path):
