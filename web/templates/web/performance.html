@@ -23,11 +23,18 @@
     {{ market_trend_html|safe }}
   </section>
 
-  <section class="analytics-section"><h2>Does a higher score perform better?</h2><p class="section-read">{{ calibration_read }}</p>{{ calibration_html|safe }}</section>
+  <section class="analytics-section"><h2>Does a higher score perform better?</h2><p class="section-read">{{ calibration_read }}</p>{% if calibration_scope %}<p class="quiet-note">{{ calibration_scope }}</p>{% endif %}{{ calibration_html|safe }}</section>
   <section class="analytics-section"><h2>Over vs Under</h2>{{ over_under_html|safe }}</section>
   <section class="analytics-section">
     <h2>Edge finder</h2>
     {{ edge_html|safe }}
+  </section>
+  <section class="analytics-section">
+    <h2>Market coverage</h2>
+    <p class="section-read">Every market's measured edge against how much of it we actually
+    serve. The tables above read served predictions only, so a market that is good but
+    never clears the floor is invisible there — and looks the same as one that does not work.</p>
+    {{ market_coverage_html|safe }}
   </section>
   <section class="analytics-section"><h2>Consistency</h2>{{ consistency_html|safe }}</section>
   <section class="analytics-section"><h2>By month</h2>{{ monthly_html|safe }}</section>

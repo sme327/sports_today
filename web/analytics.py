@@ -18,6 +18,7 @@ from components.results_feed import (
     daily_summary_html,
     edge_table_html,
     monthly_table_html,
+    market_coverage_html,
     market_trend_matrix_html,
     over_under_html,
     period_comparison_html,
@@ -435,15 +436,30 @@ def performance_context(params, today: date) -> dict:
         load_performance_range(start - timedelta(days=span), start - timedelta(days=1)), cohort
     ), active)
     prior = grading.tally(prior_rows)
-    bands = grading.summarize_by_band(rows, min_sample=min_sample)
+    # Calibration reads the **current** engine only. Pooled across versions, the 99-100
+    # band showed −6.6 over base and looked anti-predictive; split by engine it is −1.7
+    # all-time and +13.4 for batter-hit-v5 alone. A ledger mixes engines exactly as a
+    # blended average mixes markets, and a superseded scorer's calibration is not a fact
+    # about the one running today. Per-version records stay in the model table below.
+    from services.snapshots import MODEL_VERSIONS
+
+    def _is_current(row: dict) -> bool:
+        key = row.get("market_key")
+        live = MODEL_VERSIONS.get(key) if key else None
+        return live is None or row.get("scoring_engine_version") == live
+
+    current_rows = [row for row in rows if _is_current(row)]
+    superseded = len(rows) - len(current_rows)
+    band_rows = current_rows or rows
+    bands = grading.summarize_by_band(band_rows, min_sample=min_sample)
     # Bands hold different market mixes (the top band is almost purely 1+ hit), so each
     # is compared against the base rate of the props it actually contains.
-    band_rows: dict = {}
-    for row in rows:
+    band_row_groups: dict = {}
+    for row in band_rows:
         b = grading.band_of(row.get("opportunity_score"))
         if b:
-            band_rows.setdefault(b, []).append(row)
-    band_base = {b: base_rates.segment_base_rate(rs) for b, rs in band_rows.items()}
+            band_row_groups.setdefault(b, []).append(row)
+    band_base = {b: base_rates.segment_base_rate(rs) for b, rs in band_row_groups.items()}
     empty = grading.tally([])
     directions = grading.summarize_by(rows, _direction)
     market_ou = []
@@ -452,6 +468,34 @@ def performance_context(params, today: date) -> dict:
         if subset:
             summary = grading.summarize_by(subset, _direction)
             market_ou.append((LABELS[key], summary.get("over", empty), summary.get("under", empty)))
+
+    # Coverage reads *everything recorded*, not the served cohort — that is the whole
+    # point. A market whose scorer cannot reach the floor is invisible in every other
+    # table on this page, and indistinguishable from one that simply does not work.
+    decided = [r for r in filtered_eligible if r.get("result") in ("hit", "miss")]
+    coverage = []
+    for key in performance_markets:
+        subset = [r for r in decided if _market_type(r) == key]
+        if not subset:
+            continue
+        served = [r for r in subset
+                  if (r.get("opportunity_score") or 0) >= grading.CURATION_FLOOR]
+
+        def _lift(group):
+            if not group:
+                return None
+            base = base_rates.segment_base_rate(group)
+            if base is None:
+                return None
+            hit = sum(r.get("result") == "hit" for r in group) / len(group)
+            return hit - base
+
+        coverage.append({
+            "label": LABELS.get(key, key),
+            "recorded_n": len(subset), "recorded_lift": _lift(subset),
+            "served_n": len(served), "served_lift": _lift(served),
+        })
+    coverage.sort(key=lambda c: (c["recorded_lift"] is None, -(c["recorded_lift"] or 0)))
 
     grouping = params.get("group", "market")
     groupings = {
@@ -510,9 +554,16 @@ def performance_context(params, today: date) -> dict:
         "cohort_comparison_html": cohort_comparison_html(
             grading.tally(qualifying_rows), grading.tally(featured_rows),
             grading.tally(other_rows)),
-        "market_trend_html": market_trend_matrix_html(rows),
+        "market_trend_html": market_trend_matrix_html(rows, base_of=base_rates.row_base_rate),
+        "market_coverage_html": market_coverage_html(coverage, grading.CURATION_FLOOR),
         "comparison_html": period_comparison_html(overall, prior, f"previous {label.lower()}", min_sample),
         "calibration_read": calibration_interpretation(bands, band_base),
+        "calibration_scope": (
+            f"Current scoring engine only — {superseded:,} prediction"
+            f"{'' if superseded == 1 else 's'} from superseded versions excluded. "
+            f"Pooling engines once made the top band look anti-predictive when it "
+            f"was not; per-version records are in the model table below."
+        ) if superseded else "",
         "calibration_html": calibration_table_html(bands, overall["hit_rate"], band_base),
         "over_under_html": over_under_html(
             directions.get("over", empty), directions.get("under", empty), market_ou
