@@ -23,7 +23,17 @@ continuation lines as page text, which is exactly what happened here first time.
   </div>
   {% if game_count %}
     <div class="schedule-actions">
-      {% if not collapsed %}<button class="games-toggle" type="button" data-toggle-completed aria-pressed="false">Hide completed</button>{% endif %}
+      {% comment %}One segmented control for game state, replacing two independent
+      booleans on the same axis ("Hide completed" plus a would-be "Show upcoming") —
+      which are ambiguous when several are off and grow the row with every state added.
+      Client-side on purpose: the site is statically exported, so a URL-param filter
+      would multiply the published pages by every state.{% endcomment %}
+      {% if not collapsed %}<div class="state-filter" role="group" aria-label="Filter games by state" data-state-filter>
+        <button type="button" data-state="all" class="active" aria-pressed="true">All</button>
+        <button type="button" data-state="live" aria-pressed="false">Live</button>
+        <button type="button" data-state="pre" aria-pressed="false">Upcoming</button>
+        <button type="button" data-state="final" aria-pressed="false">Final</button>
+      </div>{% endif %}
       {% comment %}The caret is decorative — aria-hidden keeps it from being announced as
       "up-pointing small triangle", and the label says what the control actually does.{% endcomment %}
       {% if collapsed %}<a class="games-toggle" href="?day={{ day }}" aria-label="Show the {{ game_count }} games on this slate">Show {{ game_count }} games <span aria-hidden="true">▾</span></a>

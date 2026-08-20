@@ -79,8 +79,10 @@ class EndpointTests(SimpleTestCase):
         assert response.status_code == 200
         assert b"Sports" in response.content
         assert b"favicons/sports-today.svg" in response.content
-        assert b'data-toggle-completed' in response.content
-        assert b"Hide completed" in response.content
+        # One segmented state control, not two independent booleans on the same axis.
+        assert b"data-state-filter" in response.content
+        for state in (b"All", b"Live", b"Upcoming", b"Final"):
+            assert state in response.content
         assert b"The games and player performances worth your attention" not in response.content
         assert "app;dur=3" in response["Server-Timing"]
         build_context.assert_called_once()

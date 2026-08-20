@@ -51,6 +51,21 @@ a { color: inherit; }
 .filter-pill:focus-visible, .thr-pill:focus-visible, .games-toggle:focus-visible,
 .site-header a:focus-visible, .text-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .filter-pill.active, .thr-pill.active { color: var(--on-brand); border-color: transparent; background: var(--brand-grad); }
+
+/* Game-state filter — one segmented control in place of two independent booleans on the
+   same axis. Housed like the day toggle so the two read as the same kind of control. */
+.state-filter {
+  display: inline-flex; padding: .2rem; gap: .15rem;
+  border: 1px solid var(--divider); border-radius: var(--r-pill); background: var(--surface-2);
+}
+.state-filter button {
+  font-family: inherit; cursor: pointer; border: 0; background: none; color: var(--text-3);
+  padding: .38rem .7rem; border-radius: var(--r-pill); font-size: .8rem; font-weight: 700;
+  transition: .16s ease;
+}
+.state-filter button:hover { color: var(--text-1); }
+.state-filter button.active { color: var(--on-brand); background: var(--brand-grad); }
+.state-filter button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .opportunity-section { margin-top: 2rem; }
 .thresholds { display: flex; align-items: center; gap: .35rem; color: var(--text-3); font-size: .75rem; }
 .thr-pill { padding: .32rem .58rem; }
@@ -70,8 +85,21 @@ a { color: inherit; }
   .nav-day-toggle a { padding: .36rem .48rem; }
   .performance-link { font-size: .74rem; }
   .hero-row { align-items: flex-start; flex-direction: column; gap: 1rem; }
-  .filter-row { align-items: flex-start; flex-direction: column; }
-  .schedule-actions { align-self: stretch; justify-content: flex-end; flex-wrap: wrap; }
+  .filter-row { align-items: flex-start; flex-direction: column; gap: .55rem; margin-bottom: .7rem; }
+  /* Eight leagues are registered; in October MLB playoffs, NFL, NCAAF, NBA and NHL can
+     all be live at once. Wrapping would push the first card off the screen, so the row
+     scrolls sideways and stays one row deep however many leagues are playing. */
+  .filter-row .filter-pills {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    align-self: stretch; padding-bottom: .1rem;
+  }
+  .filter-row .filter-pills::-webkit-scrollbar { display: none; }
+  .filter-row .filter-pill { flex: 0 0 auto; }
+  .schedule-actions { align-self: stretch; justify-content: space-between; flex-wrap: wrap; gap: .4rem; }
+  /* Chrome occupied ~42% of the viewport before the first card. Tightening the pill
+     rhythm buys that back — still above the 44px touch target. */
+  .filter-pill, .thr-pill, .games-toggle { padding: .42rem .72rem; font-size: .8rem; }
+  .state-filter button { padding: .34rem .55rem; font-size: .76rem; }
   .thresholds > span { display: none; }
   .site-shell { padding: 1.35rem .9rem 3rem; }
 }
@@ -163,10 +191,22 @@ a { color: inherit; }
   .performance-controls > div { align-items: flex-start; flex-direction: column; gap: .35rem; }
   .cohort-comparison { grid-template-columns: 1fr; }
 }
+/* Phones: the nav stacks to mirror the brand — day toggle over Performance, against
+   "Sports Today" over the date. The brand already sets the header's height with two
+   lines, so the second nav line costs nothing, and moving Performance out of row one
+   gives the date the whole left column. That replaces a `max-width: 7.5rem` ellipsis
+   that had been truncating it to "WEDNESDAY, AUG…". */
+@media (max-width: 560px) {
+  .site-header { align-items: flex-start; }
+  .site-header nav.compact-nav {
+    flex-direction: column; align-items: flex-end; gap: .3rem; flex: 0 0 auto;
+  }
+  .site-brand { min-width: 0; flex: 1 1 auto; }
+  .site-date { white-space: nowrap; }
+}
 @media (max-width: 430px) {
   .site-brand-name { font-size: 1rem; }
-  .site-date { max-width: 7.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .site-header nav { gap: .4rem; }
+  .site-date { font-size: .58rem; letter-spacing: .05em; }
   .nav-day-toggle { min-width: 7.9rem; }
   .nav-day-toggle a { padding-inline: .34rem; font-size: .7rem; }
   .performance-link { font-size: .68rem; }

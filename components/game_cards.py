@@ -121,7 +121,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         home_cls = " win" if game.winner == "home" else " loss"
 
     # State modifier drives the card's color treatment (same layout/size).
-    state_cls = ""
+    state_cls = " game-card--pre"
     if game.state == "live":
         state_cls = " game-card--live"
     elif game.state == "final":
