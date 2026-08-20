@@ -13,13 +13,14 @@ graded prop using only pre-slate data. Ship only if it widens the band spread **
 lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (654 tests passing)
+## Test suites (663 tests passing)
 
 | File | Covers |
 | --- | --- |
 | `test_markets.py` | Market registry: canonical labels (byte-identical to scorer output), round-trip `resolve`, "hits allowed" vs bare "hit" ordering, total-bases display/grade, league-optional resolution, grade rules per direction, `actual_display` units, and prop-type taxonomy back-compat |
 | `test_data_store.py` | Durable DB store: unconfigured = no-op, `is_configured` needs all keys, download writes the file, `ensure_db_available` skips when present / fetches when missing, publish uploads (fake S3 client, no network) |
 | `test_update_pipeline.py` | Shared rebuild pipeline: MLB-only vs. with collectors, collector failures captured non-fatally, publish reflects config (all faked) |
+| `test_update_process.py` | Operator rails on the daily update: the stale-feed warning and the per-run JSONL record (append-only, failure reported not raised) |
 | `test_team_matching.py` | MLB canonicalization: names/abbrs/relocations, unknowns/blanks |
 | `test_data_access.py` | `as_of` excludes the slate date and later (leakage bound); missing DB → empty |
 | `test_schedules.py` | Degraded ordering: live→LIVE(+cache), empty→EMPTY (no fallback), fail→CACHED, fail+no-cache→ERROR |

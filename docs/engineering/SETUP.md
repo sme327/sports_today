@@ -19,8 +19,10 @@ Normal operator steps:
 4. Open `sports.sme327.com` on any device. The published snapshot remains available
    after the Mac is turned off; supported live scores refresh in the browser.
 
-Use `update.command` when you want to refresh local data **without** publishing —
-`update_and_publish.command` does both and is what you normally want.
+`update.command` and `update_and_publish.command` now do the same thing — update
+**and** publish. (The data-only variant once let the shortest-named command leave
+the published site a day behind.) To refresh local data without publishing, run
+`python -m scripts.morning_update` from a terminal.
 
 ## Part A — One-time installation
 
@@ -97,8 +99,15 @@ The program will:
 6. Print plate appearance, game, batter, and pitcher counts.
 7. Collect the latest **WNBA** game logs and **MLS** team stats + standings
    (internet required; each is non-fatal — a failure prints a notice and the
-   update continues).
-8. Launch Sports Today in your default browser.
+   update continues), re-grade recent slates, and precompute today's and
+   tomorrow's feeds.
+8. Build the static site, audit its links, publish to Cloudflare Pages, and
+   verify the live page serves the fresh build.
+
+Every run also appends its full summary to `logs/update_runs.jsonl`, so a past
+morning's outcome is checkable after the terminal window has closed. If the
+newest feed in Downloads is older than yesterday, the run warns loudly before
+proceeding — that usually means the day's download didn't happen or didn't finish.
 
 ### 6. Verify the files
 
@@ -137,7 +146,7 @@ Each day:
 1. Download the newest MLB season PBP feed.
 2. Leave it in Downloads with its vendor filename.
 3. Double-click `update.command`.
-4. Use the app when the browser opens.
+4. Open `sports.sme327.com` on any device when it finishes.
 
 You do not need to rename, copy, or delete anything manually.
 
