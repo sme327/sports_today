@@ -147,7 +147,9 @@ a { color: inherit; }
 .market-pulse-section { margin-top: 1.35rem; }
 .market-trend-scroll { overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
 .market-trend { min-width: calc(12rem + var(--trend-cols) * 4rem); border: 1px solid var(--divider); border-radius: var(--r-md); overflow: hidden; background: var(--surface-1); }
-.mtp-row { display: grid; grid-template-columns: minmax(8.5rem, 1.35fr) repeat(var(--trend-cols), minmax(3.35rem, .7fr)) minmax(5.4rem, .9fr); align-items: stretch; border-bottom: 1px solid var(--divider); }
+/* Market, then the period summary, then slates newest-first. The summary sits second
+   so the number a reader wants is on screen before any scrolling. */
+.mtp-row { display: grid; grid-template-columns: minmax(8.5rem, 1.35fr) minmax(5.4rem, .9fr) repeat(var(--trend-cols), minmax(3.35rem, .7fr)); align-items: stretch; border-bottom: 1px solid var(--divider); }
 .mtp-row:last-child { border-bottom: 0; }
 .mtp-row > span { min-height: 3.25rem; padding: .42rem .35rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .08rem; border-right: 1px solid var(--divider); text-align: center; }
 .mtp-row > span:last-child { border-right: 0; }
@@ -162,6 +164,8 @@ a { color: inherit; }
 .mtp-cell.below { background: rgba(255,92,92,.10); }
 .mtp-cell.empty { color: var(--text-4); background: rgba(255,255,255,.012); }
 .mtp-cell.small { opacity: .55; }
+.mtp-market { position: sticky; left: 0; z-index: 1; background: var(--surface-1); }
+.mtp-head .mtp-market, .mtp-head > span:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-1); }
 .mtp-total { background: rgba(255,255,255,.025); }
 .mtp-total small.up { color: var(--brand-2); }
 .mtp-total small.down { color: #ff8b82; }
@@ -211,6 +215,14 @@ a { color: inherit; }
   .nav-day-toggle a { padding-inline: .34rem; font-size: .7rem; }
   .performance-link { font-size: .68rem; }
 }
+
+/* The `hidden` property is only as strong as the UA rule behind it, and an author
+   `display` declaration beats the UA stylesheet at equal specificity. `.game-card` sets
+   `display: flex` and `.schedule-grid` sets `display: grid`, so `element.hidden = true`
+   set a property that never applied — the game-state filter (and the "Hide completed"
+   toggle before it) changed its own label and hid nothing. `!important` is right here:
+   `hidden` is a semantic state, not a style suggestion. */
+[hidden] { display: none !important; }
 
 /* --- accessibility utilities ------------------------------------------------------ */
 

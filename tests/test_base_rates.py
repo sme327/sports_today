@@ -136,3 +136,32 @@ def test_a_month_is_compared_to_its_own_seasonal_mix():
     html = monthly_table_html([("2026-07", _tally(64, 36, 0.64))], 0.60,
                               {"2026-07": 0.60})
     assert "+4.0 pp" in html and "base 60%" in html
+
+
+# --- market pulse column order (2026-08-20) ------------------------------------------
+
+def test_the_pulse_table_reads_summary_first_then_newest_slate():
+    """On a phone the columns that matter should be on screen before any scrolling: the
+    period aggregate, then the most recent slate, counting back."""
+    from components.results_feed import market_trend_matrix_html
+
+    rows = [{"result": "hit", "snapshot_date": d, "league": "MLB",
+             "market": "Batter Hits", "market_key": "batter_hit"}
+            for d in ("2026-08-16", "2026-08-17", "2026-08-18")]
+    rows += [{"result": "miss", "snapshot_date": "2026-08-16", "league": "MLB",
+              "market": "Batter Hits", "market_key": "batter_hit"}]
+    html = market_trend_matrix_html(rows)
+    assert html.index("Period") < html.index("Aug"), "the period summary comes first"
+    assert html.index("<b>18</b>") < html.index("<b>16</b>"), "newest slate before oldest"
+
+
+def test_the_pulse_trend_still_compares_recent_against_prior():
+    """Only the display order reverses — the recent-vs-prior arrow depends on the dates
+    staying chronological underneath."""
+    import inspect
+
+    from components import results_feed
+
+    src = inspect.getsource(results_feed.market_trend_matrix_html)
+    assert "shown_dates = list(reversed(dates))" in src
+    assert "dates[-3:]" in src and "dates[-6:-3]" in src

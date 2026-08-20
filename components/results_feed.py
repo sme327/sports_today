@@ -280,11 +280,16 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
         except ValueError:
             return escape(token)
 
+    # Reading order is summary-first, then most recent, counting back. `dates` stays
+    # chronological because the recent-vs-prior trend below depends on it; only the
+    # display order reverses. On a phone the columns that matter are then the ones on
+    # screen, and older slates scroll off to the right instead of pushing them there.
+    shown_dates = list(reversed(dates))
     header_dates = "".join(
         f'<span class="mtp-date" role="columnheader">{date_label(token)}</span>'
-        for token in dates)
+        for token in shown_dates)
     head = (f'<div class="mtp-row mtp-head" role="row"><span role="columnheader">Market</span>'
-            f'{header_dates}<span role="columnheader">Period</span></div>')
+            f'<span role="columnheader">Period</span>{header_dates}</div>')
     body = []
     for key in ORDER:
         market_rows = by_market.get(key, [])
@@ -294,7 +299,7 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
         league = next((r.get("league") for r in market_rows if r.get("league")), "")
         emoji = "⚾" if league == "MLB" else "🏀" if league in {"WNBA", "NBA"} else ""
         cells = []
-        for token in dates:
+        for token in shown_dates:
             cell_rate, cell_n = rate([
                 r for r in market_rows if str(r.get("snapshot_date")) == token
             ])
@@ -327,7 +332,7 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
                    f'<small>n={overall_n}</small>{trend}</span>')
         label = (f'<span class="mtp-market" role="rowheader"><i aria-hidden="true">{emoji}</i>'
                  f'{escape(LABELS.get(key, key))}</span>')
-        body.append(f'<div class="mtp-row" role="row">{label}{"".join(cells)}{summary}</div>')
+        body.append(f'<div class="mtp-row" role="row">{label}{summary}{"".join(cells)}</div>')
 
     if not body:
         return '<div class="mlb-empty">No market trend data matches these filters.</div>'

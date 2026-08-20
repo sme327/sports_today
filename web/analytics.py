@@ -160,18 +160,27 @@ def performance_filter_groups(params, active: dict[str, str], market_keys: list[
             "href": performance_url(params, market="all"),
         }],
     }]
-    for league in ("MLB", "WNBA"):
-        category_label = "⚾" if league == "MLB" else "🏀"
-        groups.append({
-            "key": f"market-{league.lower()}", "label": category_label,
-            "accessible_label": "Baseball markets" if league == "MLB" else "Basketball markets",
-            "options": [
-                {"value": key, "label": LABELS[key],
+    # Baseball splits by *who the prop is about*, not just by league. Four MLB markets in
+    # one row crowd a phone, and "Batter Hits, Batter Ks" and "SP Strikeouts, SP Hits
+    # Allowed" are the two groups a reader already thinks in — they answer different
+    # questions and are never compared to each other.
+    def _pills(keys):
+        return [{"value": key, "label": LABELS[key],
                  "active": active.get("market") == key,
                  "href": performance_url(params, market=key)}
-                for key in by_league[league]
-            ],
-        })
+                for key in keys]
+
+    mlb = by_league["MLB"]
+    batters = [k for k in mlb if not k.startswith("sp_")]
+    pitchers = [k for k in mlb if k.startswith("sp_")]
+    for key, label, accessible, keys in (
+        ("market-mlb-batter", "⚾ Batter", "Baseball batter markets", batters),
+        ("market-mlb-sp", "⚾ Pitcher", "Baseball starting-pitcher markets", pitchers),
+        ("market-wnba", "🏀", "Basketball markets", by_league["WNBA"]),
+    ):
+        if keys:
+            groups.append({"key": key, "label": label, "accessible_label": accessible,
+                           "options": _pills(keys)})
     groups.append({
         "key": "direction", "label": "Direction",
         "options": [
