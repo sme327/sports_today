@@ -29,7 +29,7 @@
     </div>
   </section>
 
-  <section class="analytics-section">
+  <section class="analytics-section" data-results-props data-results-date="{{ selected_date|date:'Y-m-d' }}">
     <div class="section-row"><h2>Props</h2><span class="section-count">Showing {{ visible_start }}–{{ visible_end }} of {{ prop_count }}</span></div>
     {{ prop_html|safe }}
   </section>

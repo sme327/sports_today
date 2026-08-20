@@ -132,8 +132,15 @@ def _prop_item(r: dict) -> str:
               f'{team}{f" vs {opp}" if opp else ""}, {r.get("league") or ""}. '
               f'{market_label}, {rec}. Score {int(r.get("opportunity_score") or 0)}. '
               f'Actual: {actual}')
+    # Join keys for the device-local shortlist ("Your picks: N/M"): raw stored
+    # values, with the same market-key fallback the feed side uses when a legacy
+    # scorer never set one, so both sides derive identical keys.
+    join = (f'data-league="{escape(str(r.get("league") or ""), quote=True)}" '
+            f'data-player-id="{escape(str(r.get("player_id") or ""), quote=True)}" '
+            f'data-market-key="{escape(str(r.get("market_key") or r.get("market") or ""), quote=True)}" '
+            f'data-result="{escape(result, quote=True)}"')
     return (
-        f'<details class="prop-item r-{result}">'
+        f'<details class="prop-item r-{result}" {join}>'
         f'<summary class="prop-summary" aria-label="{escape(spoken, quote=True)}">'
         f'<span class="prop-grade r-{result}">'
         f'<span class="pg-icon" aria-hidden="true">{glyph}</span>{label}</span>'

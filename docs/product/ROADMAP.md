@@ -146,7 +146,10 @@ stay explainable — evidence is part of the model, not decoration.
 ### Personalization
 
 Favorite teams / leagues / players, watchlists, and notification preferences —
-always optional, always editorially driven, never intrusive.
+always optional, always editorially driven, never intrusive. Shipped: the
+**picks shortlist** (2026-08-20) — device-local prop selection with a share-as-text
+tray and a next-day "Your picks: N/M" line on Results; no accounts, no odds, no
+backend (see [Picks Shortlist](PICKS_SHORTLIST.md)).
 
 ### Platform & premium experience
 

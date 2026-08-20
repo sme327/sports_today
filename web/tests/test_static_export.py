@@ -58,6 +58,27 @@ def test_live_score_script_normalizes_espn_states_and_filters_by_game_state():
     assert source.count("applyStateVisibility()") >= 2
 
 
+def test_picks_shortlist_is_client_side_and_fully_wired():
+    """The shortlist is device-local by design (no accounts, no backend): the script
+    keys picks by the slate date the page declares, and the Results page joins them
+    against rows it already renders. Each mount the script expects must exist."""
+    source = Path("web/static/static-site.js").read_text()
+    assert "sports-today-picks" in source and "localStorage" in source
+    assert "slateDate" in source and "data-results-props" in source
+    assert "data-slate-date" in Path("web/templates/web/base.html").read_text()
+    assert "data-results-date" in Path("web/templates/web/results.html").read_text()
+
+
+def test_phone_grid_redefinitions_keep_the_line_area():
+    """`grid-area: line` with no `line` area in the active template puts the Last-10
+    strip in an *implicit* column bolted onto the right of the grid — which squeezed
+    every card's content into half its width on phones. Any narrow-viewport
+    redefinition of .op-row's areas must therefore keep declaring the area."""
+    css = Path("styles/app.css").read_text()
+    narrow = css.split("@media (max-width: 650px)")[1]
+    assert '"line  line"' in narrow
+
+
 def test_every_card_carries_an_explicit_state_class():
     """The filter selects `game-card--<state>` directly. Scheduled games once carried no
     modifier at all, which would have made "Upcoming" mean "not the other two"."""

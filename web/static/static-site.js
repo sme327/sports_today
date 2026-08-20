@@ -145,3 +145,199 @@
   refresh();
   window.setInterval(refresh, 60_000);
 })();
+
+/* Picks shortlist — device-local (localStorage, keyed by slate date). A shortlist,
+   not a bet slip: no stakes, no odds, no payout math. Storage failures (private
+   mode) degrade to no shortlist UI at all rather than a broken one. */
+(() => {
+  "use strict";
+  const STORE_KEY = "sports-today-picks";
+  const KEEP_DAYS = 14;
+
+  function loadAll() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+      // Auto-expire old slates so the store never grows unbounded.
+      const cutoff = new Date(Date.now() - KEEP_DAYS * 86_400_000).toISOString().slice(0, 10);
+      for (const date of Object.keys(parsed)) {
+        if (!Array.isArray(parsed[date]) || date < cutoff) delete parsed[date];
+      }
+      return parsed;
+    } catch (_) {
+      return null; // storage unavailable — callers hide the feature entirely
+    }
+  }
+
+  function saveAll(all) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(all));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  const pickId = (p) => `${p.league}|${p.playerId}|${p.marketKey}`;
+
+  // ---- Save affordance + tray (any page with pickable rows and a slate date) ----
+  const slateDate = document.body.dataset.slateDate;
+  const rows = [...document.querySelectorAll(".op-row[data-pick-player-id]")];
+  let all = loadAll();
+
+  function rowPick(row) {
+    const d = row.dataset;
+    return {
+      league: d.pickLeague, playerId: d.pickPlayerId, playerName: d.pickPlayer,
+      marketKey: d.pickMarketKey, market: d.pickMarket,
+      threshold: d.pickThreshold || null, score: Number(d.pickScore) || 0,
+      team: d.pickTeam || "",
+    };
+  }
+
+  function picksFor(date) {
+    return (all && all[date]) || [];
+  }
+
+  function setPicks(date, picks) {
+    if (!all) return;
+    if (picks.length) all[date] = picks; else delete all[date];
+    saveAll(all);
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  if (slateDate && rows.length && all !== null) {
+    document.body.classList.add("picks-ready");
+
+    // Tray: count chip that opens a panel listing the day's picks, with one
+    // primary action — share/copy as text — plus remove and clear.
+    const tray = el("div", "pick-tray");
+    tray.hidden = true;
+    const chip = el("button", "pick-chip");
+    chip.type = "button";
+    chip.setAttribute("aria-expanded", "false");
+    chip.setAttribute("aria-label", "Open your picks shortlist");
+    const panel = el("div", "pick-panel");
+    panel.hidden = true;
+    tray.append(chip, panel);
+    document.body.append(tray);
+
+    function shareText(picks) {
+      const lines = picks.map((p) =>
+        `• ${p.playerName} — ${p.market}${p.team ? ` (${p.team})` : ""} · score ${p.score}`);
+      return `Sports Today picks · ${slateDate}\n${lines.join("\n")}`;
+    }
+
+    function syncButtons() {
+      const chosen = new Set(picksFor(slateDate).map(pickId));
+      for (const row of rows) {
+        const button = row.querySelector(".op-pick");
+        if (!button) continue;
+        const on = chosen.has(pickId(rowPick(row)));
+        button.setAttribute("aria-pressed", String(on));
+        button.setAttribute("aria-label", on ? "Remove from shortlist" : "Save to shortlist");
+        row.classList.toggle("is-picked", on);
+      }
+    }
+
+    function renderPanel() {
+      const picks = picksFor(slateDate);
+      panel.textContent = "";
+      for (const pick of picks) {
+        const line = el("div", "pick-line");
+        const who = el("span", "pick-who", pick.playerName);
+        who.append(el("small", "pick-mkt", ` ${pick.market}`));
+        const remove = el("button", "pick-remove", "×");
+        remove.type = "button";
+        remove.setAttribute("aria-label", `Remove ${pick.playerName} — ${pick.market}`);
+        remove.addEventListener("click", () => {
+          setPicks(slateDate, picksFor(slateDate).filter((p) => pickId(p) !== pickId(pick)));
+          refreshTray();
+        });
+        line.append(who, remove);
+        panel.append(line);
+      }
+      const actions = el("div", "pick-actions");
+      const share = el("button", "pick-share", navigator.share ? "Share picks" : "Copy picks");
+      share.type = "button";
+      share.addEventListener("click", async () => {
+        const text = shareText(picksFor(slateDate));
+        try {
+          if (navigator.share) await navigator.share({ text });
+          else {
+            await navigator.clipboard.writeText(text);
+            share.textContent = "Copied";
+            setTimeout(() => { share.textContent = "Copy picks"; }, 1500);
+          }
+        } catch (_) { /* share sheet dismissed */ }
+      });
+      const clear = el("button", "pick-clear", "Clear");
+      clear.type = "button";
+      clear.addEventListener("click", () => { setPicks(slateDate, []); refreshTray(); });
+      actions.append(share, clear);
+      panel.append(actions);
+    }
+
+    function refreshTray() {
+      const n = picksFor(slateDate).length;
+      chip.textContent = `${n} pick${n === 1 ? "" : "s"}`;
+      tray.hidden = n === 0;
+      if (n === 0) { panel.hidden = true; chip.setAttribute("aria-expanded", "false"); }
+      if (!panel.hidden) renderPanel();
+      syncButtons();
+    }
+
+    chip.addEventListener("click", () => {
+      panel.hidden = !panel.hidden;
+      chip.setAttribute("aria-expanded", String(!panel.hidden));
+      if (!panel.hidden) renderPanel();
+    });
+
+    for (const row of rows) {
+      const button = row.querySelector(".op-pick");
+      if (!button) continue;
+      button.addEventListener("click", () => {
+        const pick = rowPick(row);
+        const picks = picksFor(slateDate);
+        const kept = picks.filter((p) => pickId(p) !== pickId(pick));
+        setPicks(slateDate, kept.length === picks.length ? [...picks, pick] : kept);
+        refreshTray();
+      });
+    }
+    refreshTray();
+  }
+
+  // ---- Results join: "Your picks: N/M" against the graded rows already rendered ----
+  const resultsSection = document.querySelector("[data-results-props]");
+  if (resultsSection && all !== null) {
+    const picks = picksFor(resultsSection.dataset.resultsDate);
+    if (picks.length) {
+      const chosen = new Set(picks.map(pickId));
+      let hit = 0, decided = 0, matched = 0;
+      for (const item of resultsSection.querySelectorAll(".prop-item[data-player-id]")) {
+        const d = item.dataset;
+        if (!chosen.has(`${d.league}|${d.playerId}|${d.marketKey}`)) continue;
+        matched += 1;
+        item.classList.add("is-pick");
+        if (d.result === "hit" || d.result === "miss") {
+          decided += 1;
+          if (d.result === "hit") hit += 1;
+        }
+      }
+      const untracked = picks.length - matched;
+      const pending = matched - decided;
+      let text = `Your picks: ${hit}/${decided}`;
+      if (pending) text += ` · ${pending} pending`;
+      if (untracked) text += ` · ${untracked} not tracked`;
+      const line = el("div", "pick-verdict", text);
+      const head = resultsSection.querySelector(".section-row");
+      if (head) head.after(line); else resultsSection.prepend(line);
+    }
+  }
+})();

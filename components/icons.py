@@ -31,6 +31,8 @@ _ICONS = {
     "positive": _P + '<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6L16 9"/></svg>',
     "risk": _P + '<path d="M12 3.5l8.5 15h-17z"/><path d="M12 10v4.2M12 17.2h.01"/></svg>',
     "neutral": _P + '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>',
+    # Shortlist bookmark — outline at rest; the saved state fills it via CSS.
+    "shortlist": _P + '<path d="M7 4.5h10v15l-5-3.4-5 3.4z"/></svg>',
     # Soccer marks (same 24x24 outline style).
     "pitch": _P + '<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M12 5v14"/><circle cx="12" cy="12" r="2.4"/><path d="M3.5 9.2h2.4v5.6H3.5M20.5 9.2h-2.4v5.6h2.4"/></svg>',
     "timeline": _P + '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3 2"/></svg>',
