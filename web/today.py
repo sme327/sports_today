@@ -1,37 +1,28 @@
-"""Framework-light Today-page assembly for the Django migration.
+"""Framework-light Today-page assembly.
 
-The existing adapters and scoring services remain the source of truth. This module
-only translates an HTTP query into the same slate and opportunity presentation used
-by the Streamlit page.
+The adapters and scoring services remain the source of truth. This module only
+translates an HTTP query into the precomputed slate and opportunity presentation
+(services/daily_feed.py builds both; nothing here scores or fetches).
 """
 
 from __future__ import annotations
 
-import dataclasses
 import re
 from collections import defaultdict
 from datetime import date, timedelta
-from html import escape
 from time import perf_counter
 from urllib.parse import quote, unquote_plus, urlencode
-
-from django.core.cache import cache
 
 import leagues  # noqa: F401 - populate adapter registry
 from components.game_cards import group_games_by_state, schedule_grid_html
 from components.opportunity_feed import opportunity_feed_html
 from domain.markets import LABELS, ORDER, prop_type_for
-from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
-from leagues.base import LeagueAdapter, get_adapter, iter_adapters
-from services import grading
-from services.calibration import annotate
+from domain.models import Opportunity, SourceStatus
+from leagues.base import get_adapter
+from services import daily_feed, grading
 from services.editorial import best_per_league, league_norms
 from services.freshness import get_freshness
-from services.schedules import get_slate
-from services import daily_feed
 
-ANALYSIS_LEAGUES = {"MLB", "WNBA"}
-LEDGER_LIMIT = 100_000
 CURATION_MAX = 8
 
 
@@ -77,124 +68,6 @@ def prop_type_of(opp: Opportunity) -> str:
 def present_prop_types(opps: list[Opportunity]) -> list[str]:
     present = {prop_type_of(opp) for opp in opps}
     return [key for key in ORDER if key in present]
-
-
-def _cached_slate(adapter: LeagueAdapter, slate_date: date) -> tuple[list[SlateGame], DataStatus]:
-    league_key = adapter.league.lower().replace(" ", "-")
-    key = f"django:slate:{league_key}:{slate_date.isoformat()}"
-    cached = cache.get(key)
-    if cached is not None:
-        return cached
-    result = get_slate(adapter, slate_date)
-    cache.set(key, result, timeout=120)
-    return result
-
-
-def load_slates(slate_date: date) -> dict[str, tuple[list[SlateGame], DataStatus]]:
-    slates: dict[str, tuple[list[SlateGame], DataStatus]] = {}
-    for adapter in iter_adapters():
-        try:
-            slates[adapter.league] = _cached_slate(adapter, slate_date)
-        except Exception as exc:  # one league must never take down the page
-            slates[adapter.league] = (
-                [],
-                DataStatus(adapter.source_name, SourceStatus.ERROR, None, str(exc)),
-            )
-    return slates
-
-
-def _logo_map(games: list[SlateGame]) -> dict[str, str]:
-    out: dict[str, str] = {}
-    for game in games:
-        for name, logo in (
-            (game.away_name, game.away_logo),
-            (game.away_short, game.away_logo),
-            (game.away_abbr, game.away_logo),
-            (game.home_name, game.home_logo),
-            (game.home_short, game.home_logo),
-            (game.home_abbr, game.home_logo),
-        ):
-            if name and logo:
-                out[str(name)] = logo
-    return out
-
-
-def _stamp(opps: list[Opportunity], games: list[SlateGame], adapter: LeagueAdapter) -> list[Opportunity]:
-    logos = _logo_map(games)
-    game_ids: dict[str, str] = {}
-    for game in games:
-        for identity in (game.away_name, game.away_abbr, game.home_name, game.home_abbr):
-            key = adapter.match_team(identity)
-            if key:
-                game_ids[key] = game.game_id
-    stamped = []
-    for opp in opps:
-        key = adapter.match_team(opp.team_name)
-        stamped.append(
-            dataclasses.replace(
-                opp,
-                image_url=opp.image_url or logos.get(str(opp.team_name)),
-                game_id=opp.game_id or (game_ids.get(key) if key else None),
-            )
-        )
-    return stamped
-
-
-def build_opportunities(slate_date: date, visible: dict[str, list[SlateGame]]) -> tuple[list[Opportunity], list[str]]:
-    slate_opps: list[Opportunity] = []
-    analysis_leagues: list[str] = []
-    for league in ANALYSIS_LEAGUES:
-        games = visible.get(league) or []
-        adapter = get_adapter(league)
-        if not games or adapter is None:
-            continue
-        analysis_leagues.append(league)
-        team_ids = sorted({team for game in games for team in game.team_identifiers})
-        opps = adapter.opportunities(
-            as_of=slate_date,
-            scheduled_team_ids=team_ids,
-            mode=OpportunityMode.SLATE,
-            limit=LEDGER_LIMIT,
-        )
-        slate_opps.extend(_stamp(opps, games, adapter))
-
-    mlb_games = visible.get("MLB") or []
-    mlb = get_adapter("MLB")
-    if mlb_games and mlb is not None:
-        team_ids = sorted({team for game in mlb_games for team in game.team_identifiers})
-        slate_opps.extend(
-            _stamp(
-                mlb.k_opportunities(
-                    as_of=slate_date,
-                    scheduled_team_ids=team_ids,
-                    limit=LEDGER_LIMIT,
-                ),
-                mlb_games,
-                mlb,
-            )
-        )
-        probables = sorted(
-            {
-                (str(game.meta.get(key)), display)
-                for game in mlb_games
-                for key, display in (
-                    ("away_pitcher", game.away_display),
-                    ("home_pitcher", game.home_display),
-                )
-                if game.meta.get(key) and str(game.meta.get(key)).upper() != "TBD"
-            }
-        )
-        if probables:
-            from services.data_access import load_plate_appearances
-            from services.mlb_pitcher_props import build_pitcher_opportunities
-
-            pa = load_plate_appearances(as_of=slate_date)
-            pitcher_opps = build_pitcher_opportunities(pa, probables, slate_date)
-            slate_opps.extend(_stamp(pitcher_opps, mlb_games, mlb))
-
-    annotate(slate_opps)
-    slate_opps.sort(key=lambda opportunity: opportunity.sort_key, reverse=True)
-    return slate_opps, analysis_leagues
 
 
 def _game_counts(opps: list[Opportunity], threshold: int) -> dict[str, int]:
