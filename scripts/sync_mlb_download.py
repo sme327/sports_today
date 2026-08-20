@@ -7,7 +7,7 @@ import re
 import shutil
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from src.config import (
@@ -120,6 +120,29 @@ def append_log(
         )
 
 
+def staleness_warning(feed_date: datetime, today: date | None = None) -> str | None:
+    """A loud operator-facing warning when the newest feed predates yesterday.
+
+    The vendor's file is season-to-date *through the previous day*, so a healthy
+    morning finds a feed dated yesterday (or today). Anything older means the
+    download didn't happen or didn't finish — and without this line the pipeline
+    would print NO_CHANGE, rebuild anyway, and publish stale picks with only the
+    reader-facing freshness banner knowing. The reader is told; the operator,
+    who can actually fix it, should be told first.
+    """
+    today = today or datetime.now().date()
+    expected = today - timedelta(days=1)
+    behind = (expected - feed_date.date()).days
+    if behind <= 0:
+        return None
+    return (
+        f"WARNING: the newest feed in Downloads is dated {feed_date:%Y-%m-%d} — "
+        f"{behind} day{'s' if behind != 1 else ''} older than expected "
+        f"({expected:%Y-%m-%d}). Did today's download finish? "
+        f"Proceeding with this older feed."
+    )
+
+
 def sync_latest(downloads_dir: Path, force: bool = False) -> tuple[Path, bool]:
     downloads_dir = downloads_dir.expanduser().resolve()
     if not downloads_dir.exists():
@@ -135,6 +158,9 @@ def sync_latest(downloads_dir: Path, force: bool = False) -> tuple[Path, bool]:
         )
 
     latest = candidates[0]
+    warning = staleness_warning(latest.feed_date)
+    if warning:
+        print(warning, file=sys.stderr)
     source = latest.path
     source_hash = file_sha256(source)
 

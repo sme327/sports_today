@@ -25,6 +25,7 @@ data/incoming/*.xlsx
 data/archive/
 data/wnba/*.csv
 logs/*.csv
+logs/*.jsonl
 
 # Icon zips (SVG sources are kept)
 icons/*.zip
