@@ -1,6 +1,0 @@
-{% extends "web/base.html" %}
-{% block title %}{{ game.away_display }} at {{ game.home_display }} · Sports Today{% endblock %}
-{% block content %}
-<a class="text-link" href="/?day={{ day }}">← Back to {{ day }}’s slate</a>
-<section class="empty-card"><h1>{{ game.away_display }} at {{ game.home_display }}</h1><p>The {{ league }} matchup page has not moved to Django yet. The game remains visible on the daily slate while migration continues.</p></section>
-{% endblock %}

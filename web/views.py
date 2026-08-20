@@ -48,6 +48,7 @@ def nfl_matchup(request, game_id: str):
 
 def game(request, league: str, game_id: str):
     from web.today import parse_day
+    from web.simple_game import simple_game_context
 
     day, slate_date = parse_day(request.GET.get("day"), timezone.localdate())
     league = league.upper()
@@ -61,12 +62,8 @@ def game(request, league: str, game_id: str):
         if archive_id:
             return redirect("nfl-matchup", game_id=archive_id)
     if league not in {"MLB", "WNBA", "MLS"}:
-        return render(
-            request,
-            "web/game_pending.html",
-            {"section": "today", "game": slate_game, "league": league, "day": day},
-            status=501,
-        )
+        return render(request, "web/game_simple.html",
+                      simple_game_context(slate_game, slate_date, day))
     builders = {"MLB": mlb_context, "WNBA": wnba_context, "MLS": mls_context}
     context = builders[league](slate_game, slate_date)
     context["day"] = day

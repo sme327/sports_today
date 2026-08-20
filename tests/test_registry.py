@@ -19,8 +19,11 @@ def test_deep_dive_support_flags():
     assert get_adapter("MLS").supports_deep_dive is True     # MLS matchup page shipped
     assert get_adapter("NFL").supports_deep_dive is True     # conditional — see below
     assert get_adapter("World Cup").supports_deep_dive is False
-    for lg in ("NHL", "NBA", "NCAAF"):                       # schedule-only (ESPN)
-        assert get_adapter(lg).supports_deep_dive is False
+    # Schedule-only leagues gained a simplified matchup page (records, rank, stakes, the
+    # team-level read, and a plain statement of what is missing), offered **per game**
+    # like NFL — a card stays compact where the page would have nothing to say.
+    for lg in ("NHL", "NBA", "NCAAF"):
+        assert get_adapter(lg).supports_deep_dive is True
 
 
 def test_nfl_deep_dive_is_decided_per_game_not_per_league():
