@@ -78,9 +78,18 @@ second-highest lift measured here (+16.9 over base across everything it predicte
 had been served four times, because its scale tops out at 75 against a floor of 70.
 
 **Always compute lift across all recorded predictions alongside how many cleared the
-floor.** A high lift with a tiny served share is a scoring-calibration problem wearing
-a market's clothes. `batter_tb` failed the same served-side test and its recorded lift
-is −1.3, so retiring it lost nothing — same symptom, opposite diagnosis.
+floor.** A high lift with a tiny served share is a scoring problem wearing a market's
+clothes. `batter_tb` failed the same served-side test and its recorded lift is −1.3, so
+retiring it lost nothing — same symptom, opposite diagnosis.
+
+**Then ask which part of the scorer is broken, because "raise the scale" is usually the
+wrong answer.** For `batter_k` the ceiling was real: the 3+ bar is never reachable, so
+`impressiveness = thr/max` was a constant that ranked nothing and capped the scale at 75.
+Rescaling *that* was tested and rejected — it served 56 props at +8.5 ±12.0 with an **AUC
+of 0.380, worse than chance**. The reachable-bar filter was doing all the work (+14.0 pp)
+and the score added nothing after it. What fixed the market was a **missing feature** —
+the opposing starter, AUC 0.566 where the batter's own form was 0.515 — not a bigger
+number. A starved market is a prompt to find the absent term, not to relabel the axis.
 
 ## 2. Split-half persistence: is it a trait, or a run of luck?
 
