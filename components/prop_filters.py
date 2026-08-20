@@ -11,7 +11,7 @@ framework — which is why it survived the migration untouched.
 
 from __future__ import annotations
 
-from domain.markets import LABELS, ORDER, prop_type_for
+from domain.markets import ORDER, prop_type_for
 from domain.models import Opportunity
 
 

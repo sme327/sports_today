@@ -142,7 +142,6 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         short_hit_rate = short["is_hit"].mean()
         reach_rate = recent["reached_base"].mean()
         k_rate = recent["is_strikeout"].mean()
-        pitches = recent["pitch_count_pa"].mean()
         pa_per_game = len(recent) / max(games, 1)
 
         # The estimated chance of a 1+ hit — 1-(1-p)^PA, where p is the shrunk recent

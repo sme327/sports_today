@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date
 import requests
 
 BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard"

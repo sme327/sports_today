@@ -196,7 +196,6 @@ def test_the_nfl_page_engine_version_moves_with_the_page_contents():
 
 def _controls(page: str):
     """(accessible name, had an explicit aria-label) for every interactive element."""
-    import collections
     import re
     from html import unescape
 

@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from datetime import date, timedelta
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 

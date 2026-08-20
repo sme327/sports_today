@@ -74,7 +74,8 @@ def test_annotate_does_not_duplicate_on_a_second_pass():
 
 def test_reads_the_real_ledger_shape():
     """Smoke test against the actual table definition, not a fixture."""
-    import tempfile, os
+    import tempfile
+    import os
     fd, path = tempfile.mkstemp(suffix=".db"); os.close(fd)
     with sqlite3.connect(path) as conn:
         conn.execute("CREATE TABLE opportunity_snapshots (market_key TEXT, result TEXT)")

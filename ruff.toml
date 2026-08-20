@@ -1,0 +1,22 @@
+# Deliberately minimal: correctness rules only (syntax errors, undefined names,
+# unused imports/variables, import shape, suspicious comparisons). Newer ruff
+# releases keep widening their defaults into style opinions this project doesn't
+# hold — pin the set here so `ruff check .` stays a bug hunt, not a churn generator.
+#
+# When it found its first real bug (2026-08-19): F821 exposed a function whose
+# second half had been stranded, unreachable, inside a *different* function during
+# a mid-body insert — four undefined names the test suite couldn't see because the
+# dead function had no callers.
+target-version = "py311"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+# Style-only members of E7 the codebase uses deliberately (compact one-line
+# conditionals in scorers and tests, single-letter loop names like `l`):
+ignore = ["E701", "E702", "E731", "E741"]
+
+[lint.per-file-ignores]
+# Test modules that must configure Django (django.setup()) or build fixtures
+# before their imports can succeed.
+"tests/test_navigation.py" = ["E402"]
+"web/tests/*" = ["E402"]

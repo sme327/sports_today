@@ -48,7 +48,6 @@ def test_the_two_populations_are_disjoint_and_complete():
 
 def test_headline_names_the_evaluated_cohort_and_independent_slates():
     rows = [_row(90, "hit")] * 6 + [_row(90, "miss")] * 4 + [_row(20, "miss")] * 50
-    overall = grading.tally(rows)
     qualifying = grading.tally(grading.split_served(rows)[0])
     html = period_summary_html(qualifying, 90.0, "Last 30 days",
                                cohort="All qualifying", slates=4)

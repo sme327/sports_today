@@ -7,9 +7,8 @@ happen to be ingested on this machine.
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
-import pytest
 
 from domain.models import SlateGame
 from services.nfl_bridge import (canonical_team, coverage, feed_game_id, has_deep_dive,

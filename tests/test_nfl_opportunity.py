@@ -69,7 +69,6 @@ def test_a_player_is_scored_in_every_market_they_reach_not_just_their_position()
     """`best_prop` picks one prop for a spotlight; the slate wants the population. A
     receiving back is a genuine receptions prop and a running QB is a rush-attempts
     prop, so scoring only the position's primary stat would drop real props."""
-    import pandas as pd
 
     from src.nfl_opportunity import score_nfl_opportunities
     frame = _slate_games("receiving_yds", [55, 62, 71, 48, 90], position="RB")

@@ -19,7 +19,7 @@ SLATE = "2026-06-01"
 
 def _snap(conn, pid, league, market, threshold, score, game_id=None):
     conn.execute(
-        f"""INSERT INTO opportunity_snapshots
+        """INSERT INTO opportunity_snapshots
         (snapshot_date, captured_on, calculated_at, league, game_id, player_id, player_name,
          team_name, market, threshold, opportunity_score, stability_score)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",

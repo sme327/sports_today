@@ -173,9 +173,8 @@ def test_dominant_teams_in_different_sports_score_alike():
 
 def test_normalising_does_not_reorder_within_a_league():
     """It fixes cross-sport comparison; it must not disturb rankings inside a sport."""
-    from services.editorial import league_norms, rank_games
+    from services.editorial import rank_games
     raw = [g.game_id for g, _ in rank_games(_TIGHT)]
-    norms = league_norms(_TIGHT + _WIDE)
     mixed = [g.game_id for g, _ in rank_games(_TIGHT + _WIDE) if g.league == "MLB"]
     assert raw == mixed
 

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import sqlite3
 
-import pytest
 
 from scripts.build_deploy_db import KEEP, _keep_set, build, report
 

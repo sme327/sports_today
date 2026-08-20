@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import date
-from pathlib import Path
 
 from src.wnba_collector import collect_wnba_season
 
