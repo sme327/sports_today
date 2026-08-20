@@ -222,6 +222,21 @@ a { color: inherit; }
    set a property that never applied — the game-state filter (and the "Hide completed"
    toggle before it) changed its own label and hid nothing. `!important` is right here:
    `hidden` is a semantic state, not a style suggestion. */
+/* Market coverage — measured edge against how much of it clears the floor. */
+.mc-table { display: flex; flex-direction: column; gap: 2px; margin-top: .4rem; }
+.mc-row { display: grid; grid-template-columns: minmax(7rem, 1.3fr) 1fr 1fr minmax(4rem, .55fr);
+  gap: .6rem; align-items: center; padding: .5rem .7rem; border-radius: var(--r-sm);
+  background: var(--surface-1); font-size: .82rem; }
+.mc-head { background: transparent; color: var(--text-4); font-size: .68rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .04em; }
+.mc-flag { margin-left: .4rem; padding: .05rem .35rem; border-radius: var(--r-pill);
+  background: rgba(255,122,26,.16); color: var(--brand-2); font-size: .62rem;
+  font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+@media (max-width: 560px) {
+  .mc-row { grid-template-columns: minmax(6rem, 1.2fr) 1fr 1fr; }
+  .mc-row > span:nth-child(4), .mc-head > span:nth-child(4) { display: none; }
+}
+
 [hidden] { display: none !important; }
 
 /* --- accessibility utilities ------------------------------------------------------ */

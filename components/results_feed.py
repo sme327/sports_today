@@ -245,11 +245,19 @@ def cohort_comparison_html(qualifying: dict, featured: dict, other: dict) -> str
             + cell("Other qualifying", other) + '</div>')
 
 
-def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
+def market_trend_matrix_html(rows: list[dict], max_slates: int = 8,
+                             base_of=None) -> str:
     """One-view market pulse across recent graded slates.
 
-    Cell color is relative to that market's own period average, so unlike raw score
-    comparison it does not imply that different prop families share a baseline.
+    Cell colour is relative to that market's own period figure, so it never implies that
+    different prop families share a baseline.
+
+    ``base_of(row) -> float | None`` supplies each prop's base rate, and when given, the
+    comparison is **lift against lift** rather than rate against rate. That matters where
+    a market's bar mix moves between days: `batter_hit` has a single bar so its base never
+    moves (sd 0.000), but WNBA assists ranged from a .07 base to a .55 base across days
+    (sd 0.104). A 40% day was being coloured identically in both cases, when one is
+    outstanding and the other poor — and those are the app's three best markets.
     """
     from datetime import date
     from domain.markets import ORDER, prop_type
@@ -266,6 +274,12 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
         # market_key is more specific than the UI prop type for legacy rows.
         ui_key = prop_type(row.get("league"), row.get("market"))
         by_market.setdefault(ui_key or key, []).append(row)
+
+    def _mean_base(subset: list[dict]) -> float | None:
+        if base_of is None:
+            return None
+        values = [b for b in (base_of(r) for r in subset) if b is not None]
+        return sum(values) / len(values) if values else None
 
     def rate(subset: list[dict]) -> tuple[float | None, int]:
         hit = sum(r.get("result") == "hit" for r in subset)
@@ -296,6 +310,9 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
         if not market_rows:
             continue
         overall, overall_n = rate(market_rows)
+        overall_base = _mean_base(market_rows)
+        base_lift = (None if overall is None or overall_base is None
+                     else overall - overall_base)
         league = next((r.get("league") for r in market_rows if r.get("league")), "")
         emoji = "⚾" if league == "MLB" else "🏀" if league in {"WNBA", "NBA"} else ""
         cells = []
@@ -307,6 +324,11 @@ def market_trend_matrix_html(rows: list[dict], max_slates: int = 8) -> str:
                 cells.append('<span class="mtp-cell empty" role="cell" aria-label="No decided predictions">—</span>')
                 continue
             diff = cell_rate - (overall or 0)
+            if base_lift is not None:
+                cell_base = _mean_base([r for r in market_rows
+                                        if str(r.get("snapshot_date")) == token])
+                if cell_base is not None:
+                    diff = (cell_rate - cell_base) - base_lift
             tone = "above" if diff >= .05 else "below" if diff <= -.05 else "near"
             small = " small" if cell_n < 5 else ""
             cells.append(
@@ -597,3 +619,46 @@ def results_feed_html(rows: list[dict]) -> str:
             f'<div class="result-score">Score {int(r.get("opportunity_score") or 0)}</div>'
             f'</div></div>')
     return f'<div class="result-feed">{"".join(items)}</div>'
+
+
+def market_coverage_html(coverage: list[dict], floor: int) -> str:
+    """Every market's measured edge against how much of it we actually serve.
+
+    **The blind spot this closes.** Every other table on this page reads *served* props,
+    so a market that is genuinely good but never clears the curation floor is invisible by
+    construction — it looks identical to a market that is bad. `batter_k` carries the
+    second-highest lift of any market (+18.2 over base) and had been served six times,
+    because its scorer tops out at 75 against a floor of 70. It was found by accident.
+
+    ``coverage`` rows: market, recorded (n, lift), served (n, lift).
+    """
+    if not coverage:
+        return '<div class="mlb-empty">No graded predictions to summarise.</div>'
+
+    def cell(lift, n):
+        if lift is None or not n:
+            return '<span class="et-prev">—</span>'
+        cls = "pos" if lift >= 0 else "neg"
+        return (f'<span class="cal-diff {cls}">{"+" if lift >= 0 else ""}{lift * 100:.1f} pp</span>'
+                f'<span class="et-prev"> n={n:,}</span>')
+
+    head = ('<div class="mc-row mc-head"><span>Market</span><span>All predictions</span>'
+            f'<span>Served ({floor}+)</span><span>Share served</span></div>')
+    body = []
+    for item in coverage:
+        share = item["served_n"] / item["recorded_n"] if item["recorded_n"] else 0.0
+        # Good and starved: the market earns its place but the scale cannot reach the
+        # floor, so almost none of it is ever offered. That is a scoring problem wearing
+        # a market's clothes, and it reads as "this market is bad" everywhere else.
+        starved = (item["recorded_lift"] is not None and item["recorded_lift"] >= 0.05
+                   and share < 0.10)
+        flag = '<span class="mc-flag">Starved</span>' if starved else ""
+        body.append(
+            f'<div class="mc-row"><span class="et-seg">{escape(item["label"])}{flag}</span>'
+            f'<span>{cell(item["recorded_lift"], item["recorded_n"])}</span>'
+            f'<span>{cell(item["served_lift"], item["served_n"])}</span>'
+            f'<span class="cal-rate">{share:.0%}</span></div>')
+    note = ('<div class="mtp-legend"><span>“Starved” means the market beats its base rate '
+            'by 5+ points across everything it predicted, yet under a tenth of those ever '
+            'clear the floor — the scale cannot reach, so the edge is never offered.</span></div>')
+    return f'<div class="mc-table">{head}{"".join(body)}</div>{note}'

@@ -165,3 +165,81 @@ def test_the_pulse_trend_still_compares_recent_against_prior():
     src = inspect.getsource(results_feed.market_trend_matrix_html)
     assert "shown_dates = list(reversed(dates))" in src
     assert "dates[-3:]" in src and "dates[-6:-3]" in src
+
+
+# --- performance page, three fixes (2026-08-20) --------------------------------------
+
+def test_the_pulse_compares_lift_when_a_market_s_bar_mix_moves():
+    """`batter_hit` has one bar so its base never moves (sd 0.000), but WNBA assists
+    ranged from a .07 base to a .55 base across days (sd 0.104). A 40% day was coloured
+    identically in both, when one is outstanding and the other poor."""
+    from components.results_feed import market_trend_matrix_html
+
+    def rows_for(day, thr, results):
+        return [{"result": r, "snapshot_date": day, "league": "WNBA",
+                 "market": "Assists", "market_key": "wnba_assists",
+                 "threshold": thr, "direction": "over"} for r in results]
+
+    # Same 50% rate both days, but against very different bars.
+    rows = rows_for("2026-08-17", 3, ["hit", "miss"]) + rows_for("2026-08-18", 9, ["hit", "miss"])
+    bases = {3: 0.60, 9: 0.10}
+    plain = market_trend_matrix_html(rows)
+    adjusted = market_trend_matrix_html(rows, base_of=lambda r: bases[r["threshold"]])
+    assert plain != adjusted, "identical rates against different bars must not look alike"
+
+
+def test_a_market_with_no_base_falls_back_rather_than_breaking():
+    from components.results_feed import market_trend_matrix_html
+
+    rows = [{"result": "hit", "snapshot_date": "2026-08-18", "league": "MLB",
+             "market": "Batter Hits", "market_key": "batter_hit"}]
+    assert market_trend_matrix_html(rows, base_of=lambda _r: None)
+
+
+def test_coverage_flags_a_market_that_is_good_but_never_served():
+    """`batter_k` carries the second-highest lift of any market and had been served six
+    times, because its scorer tops out at 75 against a floor of 70. Every other table on
+    the page reads served props, so it looked identical to a market that does not work."""
+    from components.results_feed import market_coverage_html
+
+    html = market_coverage_html([
+        {"label": "Batter Ks", "recorded_n": 80, "recorded_lift": 0.169,
+         "served_n": 4, "served_lift": 0.282},
+    ], floor=70)
+    # The legend explains the word, so assert the flag itself, not the string.
+    assert 'class="mc-flag"' in html
+    assert "+16.9 pp" in html
+
+
+def test_coverage_does_not_flag_a_well_served_market():
+    from components.results_feed import market_coverage_html
+
+    html = market_coverage_html([
+        {"label": "SP Strikeouts", "recorded_n": 300, "recorded_lift": 0.072,
+         "served_n": 225, "served_lift": 0.102},
+    ], floor=70)
+    assert 'class="mc-flag"' not in html
+
+
+def test_coverage_does_not_flag_a_market_that_is_simply_bad():
+    """Starved and bad look the same on every other table; the flag must separate them."""
+    from components.results_feed import market_coverage_html
+
+    html = market_coverage_html([
+        {"label": "SP Hits Allowed", "recorded_n": 300, "recorded_lift": -0.04,
+         "served_n": 6, "served_lift": -0.036},
+    ], floor=70)
+    assert 'class="mc-flag"' not in html
+
+
+def test_calibration_reads_only_the_current_engine():
+    """Pooled across versions the 99-100 band showed −6.6 and looked anti-predictive;
+    split by engine it is +13.4 for batter-hit-v5 alone. A superseded scorer's
+    calibration is not a fact about the one running today."""
+    import inspect
+
+    from web import analytics
+
+    src = inspect.getsource(analytics.performance_context)
+    assert "MODEL_VERSIONS" in src and "current_rows" in src
+    assert "calibration_scope" in src
