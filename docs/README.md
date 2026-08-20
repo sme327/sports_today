@@ -18,6 +18,7 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [Roadmap](product/ROADMAP.md) | Where we're going, organized around the user's day. |
 | [Sport Plans](product/SPORT_PLANS.md) | The by-sport view: each sport's status + tiered path, incl. the NFL deep-dive spec. |
 | [Future Endeavors](product/FUTURE_ENDEAVORS.md) | The next major product tracks (Preview / Live / Postgame) and how they connect. |
+| [Picks Shortlist](product/PICKS_SHORTLIST.md) | The approved, not-yet-built plan for selecting props into a shareable device-local shortlist. |
 | [WNBA Matchup Spec (v2)](engineering/WNBA_Matchup_Page_Specification_v2.md) | Source product spec for the WNBA matchup page. |
 | [MLS Matchup Philosophy](engineering/MLS_MATCHUP_PHILOSOPHY.md) | Product/UX philosophy for the MLS matchup page. |
 | [MLS Matchup Blueprint (v2)](engineering/MLS_MATCHUP_PAGE_V2_BLUEPRINT.md) | The v2 section-by-section blueprint the philosophy feeds into. |

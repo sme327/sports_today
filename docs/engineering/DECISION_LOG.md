@@ -9,6 +9,29 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-20 — Picks shortlist approved; Results-page redesign parked
+
+**Decision.** Build a device-local **picks shortlist** (select props → share as text →
+next-day "Your picks: N/M" on Results). Full plan and boundaries:
+[Picks Shortlist](../product/PICKS_SHORTLIST.md). At the same review, a proposed
+Results-page redesign (client-side pill filters, compressed rows, a verdict header)
+was **parked** — the owner didn't love it as framed — and the scheduled morning run
+(launchd) stays on hold.
+
+**Reason.** The shortlist is the natural last step of the morning question — capture
+the answer — and costs no backend: every prop is already snapshotted and graded, so
+the personal record is a client-side join.
+
+**Tradeoffs.** Device-local means no cross-device sync in v1; a lost phone loses the
+shortlist history (the graded ledger itself is unaffected). Accepted for zero
+infrastructure.
+
+**Future considerations.** No odds, no stakes — a shortlist, not a bet slip; that
+boundary is part of the approval. Revisit the Results redesign only with a fresh
+framing, not by reproposing the same four items.
+
+---
+
 ## 2026-08-20 — `batter-k-v2`: the opposing starter carries this market
 
 **Decision.** Fold the opposing starter's strikeout rate into `batter_k` scoring, and make

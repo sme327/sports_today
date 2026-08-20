@@ -52,6 +52,9 @@ The user is planning their day. This is where the opportunity engine lives.
 - **Evidence & risk** — every opportunity shows why it stands out and what could
   go wrong. *(shipped; a two-up card grid keeps both blocks visible while doubling
   density)*
+- **Picks shortlist** — select the props you like into a device-local, shareable
+  list; the next day, Results shows your own record. *(approved 2026-08-20, next
+  up — plan: [Picks Shortlist](PICKS_SHORTLIST.md))*
 - **Game previews / deep dives** — editorial matchup pages. *(shipped: MLB, WNBA, and
   MLS — the latter with real collected team-stat analysis; see
   [MLS Game Page](../engineering/MLS_GAME_PAGE.md)). The MLB page also carries
