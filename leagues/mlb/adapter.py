@@ -240,9 +240,12 @@ class MLBAdapter:
         except Exception:
             lineups = None
 
+        # The opposing starter carries this market's signal — see batter-k-v2. Resolved
+        # here because `src/` is a leaf and cannot reach the schedule.
+        opposing = self._opposing_starters(pa, as_of, teams)
         out: list[Opportunity] = []
         for scorer in (score_k_opportunities,):
-            scored = scorer(pa, teams, lineups=lineups)
+            scored = scorer(pa, teams, lineups=lineups, opposing_starters=opposing)
             for _, row in scored.head(limit).iterrows():
                 thr, key, direction = int(row.threshold), str(row.market_key), str(row.direction)
                 out.append(Opportunity(
