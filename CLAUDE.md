@@ -20,7 +20,10 @@ SP strikeouts and SP hits allowed, both over/under) and WNBA
 remaining leagues (World Cup, NHL, NBA, NCAA Football — via the shared
 `src/espn_scoreboard.py` client) are **schedule-only**: no player props, but not
 uncurated — `services/editorial.py` gives every game a team-level read (records,
-ranks, stakes) shown as a card chip and a "The read" section on the game page.
+ranks, stakes) shown as a card chip, and they have a **simplified matchup page**
+(`web/simple_game.py`) carrying that read plus a plain statement of what a schedule
+cannot show. It is offered **per game**: no link where the records are too young to
+read, so a card stays compact when there is nothing to say.
 Picks are recorded and graded daily (hit/miss/void) split
 across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the
@@ -161,16 +164,23 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   is strictly nested inside 1+ Hit, converted 20.6%, and never once scored 75+ so it
   could never be recommended. **Batter walks looks like the same shape** — 1 prop ever
   above 75, and the outcome depends more on how the pitcher attacks than on the batter.
-- **`sp_hits` is flat, not failing — and `batter_k` is starved, not poor.** Measured
-  2026-08-19 with intervals: `sp_hits` runs −4.1 ±6.2 (not significant), so it is not a
-  retirement candidate; the over side carries real signal (+14 to +19 at the top decile,
-  out of sample) but 22 scorer variants all landed inside noise of the incumbent, so
-  nothing shipped. `batter_k` has the **second-highest lift of any market (+18.2 ±9.2) and
-  has been served six times** — its scorer tops out at 75 against a floor of 70. Judge a
-  market on *all recorded props*, not the ones that cleared the floor: good-and-starved
-  looks identical to bad until you separate them. The Performance page now shows this
-  directly (**Market coverage**), flagging a market as *Starved* when it beats its base
-  by 5+ points yet under a tenth of its predictions ever clear the floor.
+- **`sp_hits` is flat, not failing.** Measured 2026-08-19 with intervals: −4.1 ±6.2, not
+  significant, so it is **not** a retirement candidate. The over side carries real signal
+  (+14 to +19 at the top decile, out of sample) but 22 scorer variants all landed inside
+  noise of the incumbent, so nothing shipped.
+- **Judge a market on *all recorded props*, not the ones that cleared the floor.**
+  Good-and-starved looks identical to bad until you separate them. The Performance page
+  shows this directly (**Market coverage**), flagging a market as *Starved* when it beats
+  its base by 5+ points yet under a tenth of its predictions ever clear the floor.
+- **`batter_k` was the first thing that flag caught, and it is fixed** (`batter-k-v2`,
+  2026-08-20). The reachable-bar filter did all the work (+14.0 pp on its own); after it
+  the batter's own clear rate was noise (AUC 0.515), and because the 3+ bar is never
+  reachable, `impressiveness = thr/max` was a **constant** that ranked nothing while
+  capping the scale at 75 against a floor of 70. Rescaling that alone was tested and
+  rejected (AUC 0.380 — worse than chance). **The opposing starter is what carries this
+  market** (AUC 0.566): folding it in moved AUC 0.519→0.583, served props 4→85, and
+  served lift to +25.3 over base. Not a reversal of `batter-hit-v4` — strikeouts are
+  pitcher-driven in a way hits are not, and both were measured.
 - **Editorial signals are records, not forecasts.** They use no odds (a deliberate
   product decision, enforced by a test), no injuries and no weather. A "Game Interest"
   score ranks a slate for attention — it is **not** a win probability and not

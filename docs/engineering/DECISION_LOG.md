@@ -9,6 +9,78 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-20 — `batter-k-v2`: the opposing starter carries this market
+
+**Decision.** Fold the opposing starter's strikeout rate into `batter_k` scoring, and make
+impressiveness the bar's measured rarity. Version `batter-k-v1` → `batter-k-v2`.
+
+**Reason.** Coverage flagged `batter_k` as *Starved* — second-highest lift of any market,
+served four times. The diagnosis was **a missing feature, not a broken scale**:
+
+- The reachable-bar filter does all the work. Requiring 2+ K in ≥50% of recent games lifts
+  P(2+ K) from **.222 to .362 — +14.0 pp on its own**.
+- After that filter the batter's own clear rate is **noise**: AUC 0.515 within the served
+  population.
+- The 3+ bar is never reachable (nobody clears it in half their games), so **100% of picks
+  are the 2+ bar** and `impressiveness = threshold / max(thresholds)` was a *constant*. It
+  ranked nothing while capping the scale at 75 against a floor of 70.
+
+**Rescaling alone was tested and rejected.** Measured impressiveness lifts the ceiling but
+serves 56 props at **+8.5 ±12.0** with an **AUC of 0.380 — worse than chance**. That would
+have sold an ordering that is actively inverted.
+
+**What works is the pitcher.** The scorer's own risk line always said strikeouts swing with
+the opposing starter. Within the served population the starter's prior strikeout rate
+carries **AUC 0.566** against the batter's 0.515. Out of sample:
+
+| engine | AUC | props ≥70 | served lift | top-20% lift |
+|---|---|---|---|---|
+| v1 | 0.519 | **4** | — | +19.3 |
+| **v2** | **0.583** | **85** | **+25.3** | **+22.6** |
+
+Both ship-rule terms met — the spread widens and the top lifts.
+
+**Not a reversal of `batter-hit-v4`**, which rejected the opposing starter for *hits*.
+Strikeouts are pitcher-driven in a way hits are not, and both directions were measured
+rather than assumed.
+
+**An unposted probable is scored neutrally**, because we cannot rank a prop down on merit
+we never measured — so the doubt lands on **stability** (capped at 58) plus a risk line
+naming it. Without that, the highest-scoring prop on a slate was the one whose driving
+factor was unknown, which is precisely backwards.
+
+**Future.** n=461 test / 85 served, and the weights are hand-set. The AUC gain comes from
+adding an independent feature rather than tuning, but re-measure as the sample grows.
+
+---
+
+## 2026-08-20 — Schedule-only leagues get a simplified matchup page
+
+**Decision.** NCAAF, NHL, NBA and the World Cup get a matchup page built from what a
+schedule honestly supports, offered **per game** rather than per league.
+
+**Reason.** Their game link rendered a stub reading *"has not moved to Django yet"* —
+migration scaffolding that outlived the migration and would have greeted every
+college-football reader in September. The page now shows teams, records, poll rank, stakes
+and the team-level editorial read, and **states what it cannot show**: no feed, so no
+props, no per-player form, no efficiency splits.
+
+**Per game, like NFL.** Enabling the link league-wide broke the 2026-08-07 decision that
+keeps these cards compact when there is nothing to say — and a link to a page that can only
+shrug is exactly that nothing. `deep_dive_available` gates on whether the records are old
+enough to read: no link at 2-0 in week 2, a link by week 6, none without records.
+
+**The early-season worry was unfounded, and checking beat fixing.** College football starts
+before its records mean anything, so a 2-0 team that has played nobody could have read as
+elite. `Standing.win_pct` already returns `None` below four games — no strength, no signal,
+and a read that says *"a team is 2-0 on noise until it has four games"* in as many words.
+No change was needed.
+
+**Tradeoff.** Every schedule-only game with readable records now exports a page. A November
+Saturday of college football is ~45 games; that is the cost of the link being real.
+
+---
+
 ## 2026-08-20 — Judge a market on everything it predicted, not on what we served
 
 **Decision.** Three changes to the Performance page, plus two infrastructure fixes that
