@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
@@ -73,6 +72,8 @@ def main() -> int:
                 f"{feed['opportunities']} opportunities, {feed.get('matchup_pages', 0)} "
                 f"matchup pages in {feed['total_seconds']:.1f}s."
             )
+            for detail in feed.get("matchup_error_details", []):
+                print(f"  Matchup page failed: {detail}", file=sys.stderr)
         if "daily_feed_error" in result:
             print(f"Daily feed precompute skipped: {result['daily_feed_error']}", file=sys.stderr)
         for iso, g in (result.get("regraded") or {}).items():
