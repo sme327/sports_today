@@ -19,8 +19,11 @@
   <meta name="apple-mobile-web-app-title" content="Sports Today">
   <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
   <link rel="manifest" href="{% static 'site.webmanifest' %}">
-  <link rel="stylesheet" href="{% static 'app.css' %}?v=20260819-1">
-  <link rel="stylesheet" href="{% static 'web.css' %}?v=20260817-2">
+  {% comment %}Versions are the stylesheets' own content hashes (web/assets.py), not
+  hand-typed. A header rewrite once shipped entirely in web.css while only app.css's
+  string was bumped, so the deployed page kept serving a two-day-old stylesheet.{% endcomment %}
+  <link rel="stylesheet" href="{% static 'app.css' %}?v={{ v_app }}">
+  <link rel="stylesheet" href="{% static 'web.css' %}?v={{ v_web }}">
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
   <script src="{% static 'static-site.js' %}?v=20260817-1" defer></script>
 </head>

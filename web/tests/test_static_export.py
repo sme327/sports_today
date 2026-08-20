@@ -243,3 +243,33 @@ def test_the_slate_labels_most_of_its_controls():
     controls = _controls("index.html")
     labelled = sum(1 for _, has in controls if has)
     assert labelled / len(controls) >= 0.7, f"only {labelled}/{len(controls)} labelled"
+
+
+def test_stylesheet_versions_track_their_own_contents():
+    """A header rewrite once landed entirely in web.css while only app.css's hand-typed
+    `?v=` string was bumped. The change was committed, pushed and deployed — and invisible,
+    because browsers kept the stylesheet they had cached two days earlier."""
+    import re
+
+    from web.assets import asset_versions, stylesheet_version
+
+    html = (_DIST / "index.html").read_text()
+    versions = re.findall(r'\.css\?v=([0-9a-f]{10})\b', html)
+    assert len(versions) >= 2, f"stylesheets must be content-versioned, got {versions!r}"
+    assert len(set(versions)) == len(versions), "two stylesheets sharing a version"
+    live = asset_versions()
+    assert stylesheet_version("web.css") == live["v_web"]
+    assert live["v_app"] != live["v_web"]
+
+
+def test_a_changed_stylesheet_changes_its_version(tmp_path, monkeypatch):
+    from django.conf import settings
+
+    from web import assets
+
+    monkeypatch.setattr(settings, "STATICFILES_DIRS", [tmp_path])
+    monkeypatch.setattr(settings, "DEBUG", True)      # recompute, don't serve the cache
+    (tmp_path / "web.css").write_text("a{}")
+    before = assets.stylesheet_version("web.css")
+    (tmp_path / "web.css").write_text("a{color:red}")
+    assert assets.stylesheet_version("web.css") != before
