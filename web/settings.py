@@ -6,6 +6,11 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 SECRET_KEY = os.environ.get("SPORTS_TODAY_SECRET_KEY", "local-development-only")
+# DEBUG defaults ON deliberately: the product ships as a static export (Cloudflare
+# Pages), so Django itself never faces the public internet — and with DEBUG off,
+# whitenoise's manifest storage would 500 a fresh clone's `runserver` until a
+# collectstatic has run. Any live deployment must set SPORTS_TODAY_DEBUG=0 and a
+# real SPORTS_TODAY_SECRET_KEY.
 DEBUG = os.environ.get("SPORTS_TODAY_DEBUG", "1") == "1"
 ALLOWED_HOSTS = [
     host.strip()

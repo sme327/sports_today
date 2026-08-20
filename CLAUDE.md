@@ -110,7 +110,8 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
 - The app reads `data/current/mlb_pbp_current.xlsx` and `database/sportshub.db`.
 - Daily: drop the dated vendor feed in `~/Downloads`, run `update.command` — it
   archives, atomically replaces the current workbook, rebuilds SQLite, collects
-  WNBA **and MLS** (both non-fatal on failure), and launches. `NO_CHANGE` is handled
+  WNBA **and MLS** (both non-fatal on failure), and precomputes the daily feed
+  (nothing is launched — the site is a static export). `NO_CHANGE` is handled
   safely. Full steps: [Setup](docs/engineering/SETUP.md).
 - **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
   + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there

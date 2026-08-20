@@ -172,9 +172,9 @@ class Command(BaseCommand):
             destination.write_text(rendered, encoding="utf-8")
 
         static_root = settings.BASE_DIR / "staticfiles"
-        # `styles/` is both a Python package (app.py imports `load_css` from it) and a
-        # STATICFILES_DIRS entry, so collectstatic was copying `styles/__init__.py` into
-        # the published site. Harmless today — a 671-byte Streamlit helper — but it means
+        # `styles/` is both a Python package and a STATICFILES_DIRS entry, so
+        # collectstatic was copying `styles/__init__.py` into the published site.
+        # Harmless today — a small retired helper — but it means
         # *any* .py placed there ships publicly. Exclude source rather than trusting that
         # nobody ever puts a secret-bearing module next to the stylesheet.
         # `clear` wipes the target first. Without it the hashed filenames that

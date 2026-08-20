@@ -79,7 +79,7 @@ python manage.py runserver
 The existing daily workflow is unchanged:
 
 ```bash
-python -m scripts.morning_update --no-launch
+python -m scripts.morning_update
 ```
 
 That command now builds both today's and tomorrow's public read models. To refresh only
