@@ -25,7 +25,16 @@ APP_LAYERS = {"services", "views", "components", "leagues", "router", "app"}
 
 
 def _modules(package: str) -> list[Path]:
-    return sorted(p for p in (ROOT / package).glob("*.py") if p.name != "__init__.py")
+    """Every module in the package, **including subpackages**.
+
+    This was a flat glob until 2026-08-19, which silently exempted every nested module —
+    `leagues/mlb/adapter.py`, `web/management/commands/`, `web/tests/` — from all of
+    these guards. A boundary that skips the adapters is barely a boundary.
+    """
+    return sorted(
+        p for p in (ROOT / package).rglob("*.py")
+        if p.name != "__init__.py" and "__pycache__" not in p.parts
+    )
 
 
 def _imported_roots(path: Path) -> set[str]:
@@ -43,7 +52,7 @@ def _imported_roots(path: Path) -> set[str]:
     return roots
 
 
-@pytest.mark.parametrize("path", _modules(SRC), ids=lambda p: p.name)
+@pytest.mark.parametrize("path", _modules(SRC), ids=lambda p: p.relative_to(ROOT).as_posix())
 def test_src_never_imports_the_app(path: Path):
     """`src/` is a leaf library: external clients, ingestion, and pure scorers.
 
@@ -59,7 +68,7 @@ def test_src_never_imports_the_app(path: Path):
     )
 
 
-@pytest.mark.parametrize("path", _modules(DOMAIN), ids=lambda p: p.name)
+@pytest.mark.parametrize("path", _modules(DOMAIN), ids=lambda p: p.relative_to(ROOT).as_posix())
 def test_domain_is_a_pure_leaf(path: Path):
     """`domain/` is the bottom layer — normalized models and the market registry.
 
