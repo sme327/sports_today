@@ -14,6 +14,10 @@
   {% elif section == "results" %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/results.svg' %}?v=1">
   {% else %}<link rel="icon" type="image/svg+xml" href="{% static 'favicons/sports-today.svg' %}?v=1">{% endif %}
   <meta name="theme-color" content="#090d11">
+  {% comment %}The publish script compares this stamp between the built bundle and the
+  live origin, so a half-failed HTML upload after a data update is caught — the
+  stylesheet-hash check alone passes whenever the CSS didn't change.{% endcomment %}
+  {% if build_stamp %}<meta name="sports-today-build" content="{{ build_stamp }}">{% endif %}
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Sports Today">

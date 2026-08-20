@@ -44,9 +44,34 @@ def stylesheet_version(name: str) -> str:
     return _digest(name) if settings.DEBUG else _cached_digest(name)
 
 
+def build_stamp() -> str:
+    """Today's feed's calculated_at, for the page's build-stamp meta tag.
+
+    The publish check compares this between the built page and the live origin. The
+    stylesheet-hash check only proves the CSS deployed — after a pure *data* update
+    the CSS is unchanged, so a half-failed HTML upload would pass it while the site
+    served yesterday's slate. Empty when no feed exists (fresh install); the check
+    skips rather than guesses.
+    """
+    from django.core.cache import cache
+
+    cached = cache.get("build-stamp")
+    if cached is not None:
+        return cached
+    from django.utils import timezone
+
+    from services.daily_feed import last_calculated_at
+
+    stamp = last_calculated_at(timezone.localdate()) or ""
+    cache.set("build-stamp", stamp, timeout=60)
+    return stamp
+
+
 def asset_versions(request=None) -> dict:
-    """Context processor: ``{{ v_app }}`` / ``{{ v_web }}`` for the stylesheet links."""
+    """Context processor: ``{{ v_app }}`` / ``{{ v_web }}`` for the stylesheet links,
+    plus ``{{ build_stamp }}`` for the publish check's data freshness meta tag."""
     return {
         "v_app": stylesheet_version("app.css"),
         "v_web": stylesheet_version("web.css"),
+        "build_stamp": build_stamp(),
     }

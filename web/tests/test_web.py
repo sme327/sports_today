@@ -149,3 +149,32 @@ class SimpleGamePageTests(SimpleTestCase):
         from leagues.ncaaf.adapter import NCAAFAdapter
 
         assert NCAAFAdapter().supports_deep_dive is True
+
+
+class BuildStampTests(SimpleTestCase):
+    """The publish check compares the page's data build stamp between the built
+    bundle and the live origin; these pin both halves of that contract."""
+
+    def test_context_processor_serves_todays_feed_stamp(self):
+        from django.core.cache import cache
+
+        from web import assets
+
+        cache.delete("build-stamp")
+        with patch("services.daily_feed.last_calculated_at",
+                   lambda d: "2026-08-20T09:15:00"):
+            context = assets.asset_versions()
+        cache.delete("build-stamp")
+        assert context["build_stamp"] == "2026-08-20T09:15:00"
+
+    def test_base_template_renders_the_meta_tag(self):
+        from django.template.loader import render_to_string
+
+        html = render_to_string("web/base.html", {"build_stamp": "STAMP-X"})
+        assert '<meta name="sports-today-build" content="STAMP-X">' in html
+
+    def test_no_feed_means_no_tag_rather_than_a_guess(self):
+        from django.template.loader import render_to_string
+
+        html = render_to_string("web/base.html", {"build_stamp": ""})
+        assert "sports-today-build" not in html

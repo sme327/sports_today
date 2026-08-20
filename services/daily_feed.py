@@ -119,6 +119,20 @@ def load(slate_date: date, *, db_path: Path = DB_PATH) -> tuple[list[Opportunity
     return opportunities, calculated_at
 
 
+def last_calculated_at(slate_date: date, *, db_path: Path = DB_PATH) -> str | None:
+    """When this slate's feed was last precomputed, as the stored ISO string —
+    without parsing the payload. Used as the published site's build stamp."""
+    if not Path(db_path).exists():
+        return None
+    with sqlite3.connect(db_path) as conn:
+        ensure_table(conn)
+        row = conn.execute(
+            f"SELECT calculated_at FROM {_TABLE} WHERE slate_date=?",
+            (slate_date.isoformat(),),
+        ).fetchone()
+    return str(row[0]) if row and row[0] else None
+
+
 def _fetch(adapter: LeagueAdapter, slate_date: date):
     return adapter.fetch_schedule(slate_date)
 
