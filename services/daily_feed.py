@@ -23,7 +23,12 @@ from services.calibration import annotate
 from src.config import DB_PATH
 
 _TABLE = "daily_opportunity_feed"
-_ANALYSIS_LEAGUES = {"MLB", "WNBA"}
+# Leagues whose adapter.opportunities() feeds the slate. Registering a market in
+# domain/markets.py + MODEL_VERSIONS is not enough on its own — the league must also
+# be listed here or its props are never scored, snapshotted, or graded. NFL was wired
+# everywhere except this set for a day (2026-08-19), invisibly, because its staleness
+# gate returns [] all preseason anyway. tests/test_daily_feed.py now guards the pair.
+_ANALYSIS_LEAGUES = {"MLB", "WNBA", "NFL"}
 _LEDGER_LIMIT = 100_000
 
 
