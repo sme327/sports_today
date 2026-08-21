@@ -22,7 +22,7 @@ Django yet", which was migration scaffolding left standing after the migration.{
     </div>
   </div>
   {% if score_line %}<div class="sh-score">{{ score_line }}</div>
-  {% elif start_time %}<div class="sh-time">{{ start_time }}</div>{% endif %}
+  {% elif start_time %}<div class="sh-time"{% if start_utc %} data-start-utc="{{ start_utc }}"{% endif %}>{{ start_time }}</div>{% endif %}
 </section>
 
 {{ editorial_html|safe }}

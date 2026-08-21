@@ -79,6 +79,30 @@ def test_phone_grid_redefinitions_keep_the_line_area():
     assert '"line  line"' in narrow
 
 
+def test_pregame_times_carry_a_utc_stamp_for_device_local_rendering():
+    """The exported HTML bakes in PT at publish time; the stamp lets the site script
+    re-render each time in the reader's own timezone (travel just works). "Time TBD"
+    has no instant, so it carries no stamp — the script must leave it alone."""
+    from datetime import datetime, timezone
+
+    from components.game_cards import game_card_html
+    from domain.models import SlateGame
+
+    game = SlateGame(league="MLB", game_id="1", status="scheduled",
+                     start_time=datetime(2026, 8, 21, 23, 5, tzinfo=timezone.utc),
+                     away_name="A", home_name="B")
+    html = game_card_html(game, day="2026-08-21")
+    assert 'data-start-utc="2026-08-21T23:05:00+00:00"' in html
+    tbd = game_card_html(SlateGame(league="MLB", game_id="2", status="scheduled",
+                                   away_name="A", home_name="B"), day="2026-08-21")
+    assert "Time TBD" in tbd and "data-start-utc" not in tbd
+
+    source = Path("web/static/static-site.js").read_text()
+    assert "data-start-utc" in source and "Intl.DateTimeFormat" in source
+    # htmx replaces the schedule fragment after load, discarding localized spans.
+    assert "htmx:afterSwap" in source
+
+
 def test_every_card_carries_an_explicit_state_class():
     """The filter selects `game-card--<state>` directly. Scheduled games once carried no
     modifier at all, which would have made "Upcoming" mean "not the other two"."""
