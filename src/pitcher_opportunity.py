@@ -32,8 +32,8 @@ RECENT_STARTS = 6
 MIN_START_BF = 10                      # batters faced to count as a start (excludes openers)
 
 _RESULT_COLUMNS = ["recent_line", "pitcher_id", "player", "team", "market", "threshold", "kind",
-                   "direction", "opportunity_score", "stability_score", "starts",
-                   "recent_avg", "recent_hit_rate", "support", "risks"]
+                   "direction", "opportunity_score", "score_points", "stability_score",
+                   "starts", "recent_avg", "recent_hit_rate", "support", "risks"]
 
 
 def _per_start_lines(pa_pitcher: pd.DataFrame) -> pd.DataFrame:
@@ -68,6 +68,14 @@ def _score(hit_rate: float, impressiveness: float, starts: int) -> int:
     base = min(max(1.0 - impressiveness, 0.0), 1.0)
     est = score_scale.shrink_toward(base, hit_rate, starts)
     return score_scale.unified_score(est, base)
+
+
+def _score_points(hit_rate: float, impressiveness: float, starts: int) -> float:
+    """The unclamped points behind ``_score`` — ranking uses raw lift, because clipping
+    at 100 before ranking let stability decide every tie at the cap."""
+    base = min(max(1.0 - impressiveness, 0.0), 1.0)
+    est = score_scale.shrink_toward(base, hit_rate, starts)
+    return score_scale.lift_points(est, base)
 
 
 def _stability(hit_rate: float, starts: int) -> int:
@@ -152,9 +160,11 @@ def _best_direction(values: pd.Series, thresholds, over_penalty: float = 1.0,
 
     if o_rate * o_imp * over_penalty >= u_rate * u_imp:
         return {"direction": "over", "threshold": o_thr, "hit_rate": o_rate,
-                "score": _score(o_rate, o_imp, n), "avg": avg, "n": n}
+                "score": _score(o_rate, o_imp, n),
+                "score_points": _score_points(o_rate, o_imp, n), "avg": avg, "n": n}
     return {"direction": "under", "threshold": u_thr, "hit_rate": u_rate,
-            "score": _score(u_rate, u_imp, n), "avg": avg, "n": n}
+            "score": _score(u_rate, u_imp, n),
+            "score_points": _score_points(u_rate, u_imp, n), "avg": avg, "n": n}
 
 
 def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
@@ -184,7 +194,7 @@ def score_pitcher_opportunities(pa: pd.DataFrame, pitcher_ids,
     result = pd.DataFrame(rows, columns=_RESULT_COLUMNS)
     if result.empty:
         return result
-    return result.sort_values(["opportunity_score", "stability_score"],
+    return result.sort_values(["score_points", "stability_score"],
                               ascending=False).reset_index(drop=True)
 
 
@@ -238,14 +248,16 @@ def _stat_prop(pid, name, team, kind, stat_label, unit, values, thresholds,
         stability = max(0, stability - _STALE_STABILITY_PENALTY)
     return _row(pid, name, team, market, thr, kind, d["direction"], d["score"],
                 stability, n, avg, hit, support=support, risks=risks,
-                recent_line=[float(v) for v in values][::-1])
+                recent_line=[float(v) for v in values][::-1],
+                score_points=d["score_points"])
 
 
 def _row(pid, name, team, market, threshold, kind, direction, score, stability, starts,
-         avg, hit_rate, *, support, risks, recent_line=None) -> dict:
+         avg, hit_rate, *, support, risks, recent_line=None, score_points=None) -> dict:
     return {"pitcher_id": str(pid), "player": name, "team": team, "market": market,
             "recent_line": list(recent_line or []),
             "threshold": threshold, "kind": kind, "direction": direction,
             "opportunity_score": score, "stability_score": stability, "starts": starts,
+            "score_points": float(score if score_points is None else score_points),
             "recent_avg": round(avg, 2), "recent_hit_rate": round(hit_rate, 3),
             "support": support[:3], "risks": risks[:2]}

@@ -13,7 +13,7 @@ _REQUIRED_COLUMNS = {
 }
 
 _RESULT_COLUMNS = [
-    "batter_id", "player", "team", "market", "opportunity_score",
+    "batter_id", "player", "team", "market", "opportunity_score", "score_points",
     "stability_score", "last_25_hit_rate", "last_50_hit_rate",
     "pa_per_game", "k_rate", "lineup_slot", "support", "risks", "recent_line",
 ]
@@ -183,7 +183,7 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
 
         # --- Lineup overlay (today's posted lineup for today's game) -----------
         team_name = recent["batting_team"].iloc[-1]
-        score, stability, slot, team_posted = lineup_overlay.apply(
+        score, stability, slot, team_posted, score_points = lineup_overlay.apply(
             batter_id, team_name, score, stability, support, risks, lineups)
 
         # Inserted at the front, not appended: evidence is capped (support[:3],
@@ -205,6 +205,7 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
             "team": team_name,
             "market": "1+ Hit",
             "opportunity_score": score,
+            "score_points": score_points,
             "stability_score": stability,
             "last_25_hit_rate": short_hit_rate,
             "last_50_hit_rate": hit_rate,
@@ -222,6 +223,6 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
     if result.empty:
         return result
     return result.sort_values(
-        ["opportunity_score", "stability_score"],
+        ["score_points", "stability_score"],
         ascending=False,
     ).reset_index(drop=True)

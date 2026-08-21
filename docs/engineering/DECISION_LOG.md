@@ -9,6 +9,35 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-21 — Ranking uses raw lift points; the displayed score clips at 100
+
+**Decision.** Every surface that *orders* opportunities — the slate feed, per-player
+selection, the featured eight, the ledger's featured stamp — ranks on unclamped lift
+points (`Opportunity.score_points`); the displayed Opportunity Score still clips at
+100. Engines not on the lift scale rank by their displayed score, comparably.
+
+**Reason — caught on the first live slate, within the hour.** The lift scale's cap is
+a display convention, but it had leaked into ranking: many strong props pin at 100, a
+tie at the cap fell to the stability score, and SP stability (a formula never
+validated for cross-market comparison) runs ~96 against everyone else's ~88. Result:
+the first published v6/v4 curated eight was **eight SP props, three of them from
+`sp_hits`** — a market measured flat — while the WNBA props whose realized lifts
+justify the whole migration sat below the fold. The ledger evaluation that shipped the
+scale had ranked by *raw* lift (est − base, unclipped); the shipped code didn't match
+the thing that was evaluated. Restoring fidelity re-ordered the eight to the measured
+best (WNBA rare-bar props at raw 141–185, then top `sp_k`), with no model change.
+
+**Also fixed in the same pass:** the snapshot writer broke featured ties by
+league+name (alphabetically), so under saturation the ledger's featured eight and the
+page's featured eight silently disagreed. Both now use the same raw-lift key.
+
+**Tradeoffs.** `score_points` is one more field threaded through scorer frames and
+constructors; engines without it fall back to the displayed score, which keeps
+`batter_k`/NFL comparable but means their ties (rare — their scales don't saturate)
+still break on stability. Today's ledger snapshot (captured this morning, pre-fix)
+keeps the clip-order featured stamp — the write is idempotent per day by design — so
+page and ledger disagree for 2026-08-21 only; they align from tomorrow's capture.
+
 ## 2026-08-21 — Owner position: the app's current phase is learning, not market-beating
 
 **Decision (owner, restating why the 2026-08-09 threshold question stays open).** The

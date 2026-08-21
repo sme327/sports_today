@@ -114,7 +114,7 @@ def score_wnba_opportunities(
     columns = [
         "player_id", "player", "team_id", "team", "team_abbr", "headshot",
         "market", "market_label", "threshold", "display_market",
-        "opportunity_score", "stability_score", "minutes_l5", "minutes_l10",
+        "opportunity_score", "score_points", "stability_score", "minutes_l5", "minutes_l10",
         "average_l5", "average_l10", "hit_rate_l5", "hit_rate_l10",
         "support", "risks", "recent_line",
     ]
@@ -273,6 +273,7 @@ def score_wnba_opportunities(
                 "threshold": threshold,
                 "display_market": f"{threshold}+ {spec['label']}",
                 "opportunity_score": opportunity,
+                "score_points": score_scale.lift_points(est, base),
                 "stability_score": stability,
                 "minutes_l5": minutes_l5,
                 "minutes_l10": minutes_l10,
@@ -288,7 +289,7 @@ def score_wnba_opportunities(
             })
 
         player_rows.sort(
-            key=lambda row: (row["opportunity_score"], row["stability_score"]),
+            key=lambda row: (row["score_points"], row["stability_score"]),
             reverse=True,
         )
         rows.extend(player_rows[:max_per_player])
@@ -297,6 +298,6 @@ def score_wnba_opportunities(
     if result.empty:
         return result
     return result.sort_values(
-        ["opportunity_score", "stability_score"],
+        ["score_points", "stability_score"],
         ascending=False,
     ).reset_index(drop=True)
