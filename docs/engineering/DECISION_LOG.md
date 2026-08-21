@@ -9,7 +9,31 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-21 — One scale for every score: estimated lift over the market's own base rate
+## 2026-08-21 — Owner position: the app's current phase is learning, not market-beating
+
+**Decision (owner, restating why the 2026-08-09 threshold question stays open).** The
+question "should our bars sit where the books ask?" presupposes knowing what we can
+predict well — and we don't yet. The current phase is an exercise in understanding
+**what we can do, and what we can do well**: record, grade, measure lift over our own
+base rates, and let the map fill in. Maybe that eventually leads to odds; maybe the
+product stays a self-measured learning loop and improves; maybe an option not yet
+visible. Do not re-propose odds ingestion or market-anchored grading as if the
+destination were settled — it is not.
+
+**What this does and does not change.**
+- The existing rule stands: odds are **offline-only**, as an occasional validation
+  yardstick (the back-to-back lesson — a real effect can be fully priced, and only the
+  line reveals it). That use serves learning; grading against odds would replace the
+  question we're asking.
+- The lift-over-base infrastructure (base rates, market coverage, calibration by band,
+  version comparison) **is** the "what are we good at" map. Its bottleneck is graded
+  volume, not design — which is why *operate & accumulate* stays the top priority.
+- One tension recorded honestly: bars chosen for reachability are also weak **for
+  learning** — a prop cleared 90% of the time carries little information per graded
+  row, and the score bands compress. Median-centred bars (Option B) maximise what each
+  graded slate teaches, entirely without odds. So the learning lens ultimately argues
+  *for* B, on its own terms — parked until the owner takes it up, and easier now that
+  the shared lift scale exists.
 
 **Decision.** `batter-hit-v6`, `sp-v4` and `wnba-pra-v4` all map onto one shared scale
 (`src/score_scale.py`): **score = 50 + 200 × (estimated P(clear) − the bar's own base
