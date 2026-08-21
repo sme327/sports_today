@@ -117,10 +117,15 @@ def _pick_attrs(opp: Opportunity) -> str:
     return " ".join(f'{k}="{escape(str(v), quote=True)}"' for k, v in fields.items())
 
 
-# The affordance is a plain button the static-site script wires up; without JS it
-# stays inert and invisible (CSS hides it until the script marks the list ready).
-_PICK_BUTTON = ('<button type="button" class="op-pick" aria-pressed="false" '
-                f'aria-label="Save to shortlist">{icon("shortlist")}</button>')
+def _pick_button(opp: Opportunity) -> str:
+    """The affordance is a plain button the static-site script wires up; without JS it
+    stays inert and invisible (CSS hides it until the script marks the list ready).
+    The label names the player and market: a slate renders eight of these, and eight
+    controls reading identically as "Save to shortlist" are indistinguishable in a
+    screen reader's element list (the 2026-08-19 accessible-name rule)."""
+    label = f"Save to shortlist: {opp.player_name} — {opp.market}"
+    return ('<button type="button" class="op-pick" aria-pressed="false" '
+            f'aria-label="{escape(label, quote=True)}">{icon("shortlist")}</button>')
 
 
 def _row_html(opp: Opportunity) -> str:
@@ -133,7 +138,7 @@ def _row_html(opp: Opportunity) -> str:
         risk_html = _evidence("risk", "Main risk", risk)
     return (
         f'<div class="op-row" {_pick_attrs(opp)}>'
-        f'{_PICK_BUTTON}'
+        f'{_pick_button(opp)}'
         f'<div class="op-score">{opp.opportunity_score}</div>'
         '<div class="op-identity">'
         f'{_avatar(opp.headshot_url, opp.image_url, opp.player_name, opp.league)}'

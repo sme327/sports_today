@@ -239,9 +239,11 @@
       for (const row of rows) {
         const button = row.querySelector(".op-pick");
         if (!button) continue;
-        const on = chosen.has(pickId(rowPick(row)));
+        const pick = rowPick(row);
+        const on = chosen.has(pickId(pick));
+        const who = `${pick.playerName} — ${pick.market}`;
         button.setAttribute("aria-pressed", String(on));
-        button.setAttribute("aria-label", on ? "Remove from shortlist" : "Save to shortlist");
+        button.setAttribute("aria-label", `${on ? "Remove from shortlist" : "Save to shortlist"}: ${who}`);
         row.classList.toggle("is-picked", on);
       }
     }
