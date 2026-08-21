@@ -80,7 +80,11 @@ claim in football previews and this data does not support it.
 - **Explainable, always.** Every opportunity carries human-readable evidence.
 - **Negative evidence is at least as prominent as supporting evidence.**
 - **"Opportunity Score", never "probability"** (unless a calibrated model is
-  explicitly built). Pair it with a **Stability Score**.
+  explicitly built). Pair it with a **Stability Score**. Since 2026-08-21 the migrated
+  markets (`batter-hit-v6`, `sp-v4`, `wnba-pra-v4`) share one scale
+  (`src/score_scale.py`): 50 = no estimated edge over the market's own base rate,
+  70 (the curation floor) = +10 points over it, 100 = +25. `batter_k`, `batter_bb`
+  and NFL are deliberately not on it yet — see the module docstring before migrating.
 - **Be honest about data.** Missing/stale/cached data is shown as such (degraded
   mode); never present it as fresh. The app may say there are no strong
   opportunities.
@@ -148,6 +152,12 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   `batter-hit-v5` shrinks the recent per-PA hit rate hard toward the league mean
   (`_HIT_SHRINK = 0.25`) because **plate appearances per game predict a hit more than
   twice as well as recent hitting does** (+0.130 vs +0.054 over 28k batter-games).
+  (`batter-hit-v6`, 2026-08-21, keeps this estimate unchanged and remaps it onto the
+  shared lift scale — same ordering, same served floor; the v5 findings below carry
+  over. Two follow-ups were tested and rejected the same day: slot-implied expected PA
+  loses the top — trailing volume partly *encodes* on-base talent — and the opposing
+  starter re-tested on the v5 base closed most of its gap but still failed the ship
+  gate. Both are in the decision log.)
   Overall discrimination is still modest by design — don't read a 100 as near-certainty.
   **Measured against its own base rate (2026-08-19), the market runs +1.5 on 1,337 served
   props** — close to no edge, and it is 61% of everything we serve. `batter-hit-v5` is

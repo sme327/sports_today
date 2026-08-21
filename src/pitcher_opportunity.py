@@ -14,6 +14,7 @@ from __future__ import annotations
 import pandas as pd
 
 from domain.markets import format_market
+from src import score_scale
 
 _REQUIRED = {"pitcher_id", "pitcher_name", "pitching_team", "game_id", "game_date",
              "inning", "is_strikeout", "is_hit"}
@@ -56,12 +57,17 @@ def _per_start_lines(pa_pitcher: pd.DataFrame) -> pd.DataFrame:
 
 
 def _score(hit_rate: float, impressiveness: float, starts: int) -> int:
-    """0–100, comparable to the batter/WNBA scorers: mostly the recent clear-rate,
-    weighted by how *meaningful* the threshold is (a high bar reliably exceeded, or
-    a low bar reliably stayed under — not a trivial extreme), plus a sample bonus."""
-    s = 100 * (0.60 * hit_rate + 0.25 * impressiveness
-               + 0.15 * min(starts / RECENT_STARTS, 1.0))
-    return max(0, min(round(s), 100))
+    """sp-v4: the shared lift scale (src/score_scale) — the recent clear rate, shrunk
+    toward the bar's own base rate by sample size, scored as estimated lift over that
+    base. ``1 − impressiveness`` *is* the measured base rate for every bar in
+    ``_CLEAR_RATES`` (and the clamped linear proxy for an unmeasured one, so a new bar
+    still cannot score as maximally impressive). The old 0.60/0.25/0.15 weight mix put
+    clear-rate, rarity and sample size in one hand-scaled number; the lift scale makes
+    the same three inputs mean the same thing every other market's score means. The
+    v3 impressiveness table itself is unchanged and still drives direction choice."""
+    base = min(max(1.0 - impressiveness, 0.0), 1.0)
+    est = score_scale.shrink_toward(base, hit_rate, starts)
+    return score_scale.unified_score(est, base)
 
 
 def _stability(hit_rate: float, starts: int) -> int:
