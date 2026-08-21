@@ -171,7 +171,7 @@ def build_context(params, local_today: date) -> dict:
             for key in prop_types
         ],
         "opportunity_summary": opportunity_summary,
-        "opportunity_html": opportunity_feed_html(displayed) if displayed else "",
+        "opportunity_html": opportunity_feed_html(displayed, game_labels) if displayed else "",
         "has_scored_opportunities": bool(filtered),
         "freshness": fresh,
         "feed_calculated_at": feed_calculated_at,

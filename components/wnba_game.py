@@ -269,9 +269,9 @@ def team_trends_html(away: WNBATeamTrends | None, home: WNBATeamTrends | None) -
     return _section("Team Trends", f'<div class="wnba-trend-grid">{blocks}</div>', "recent_form")
 
 
-def opportunities_html(opps) -> str:
+def opportunities_html(opps, game_labels: dict[str, str] | None = None) -> str:
     if opps:
-        body = opportunity_feed_html(list(opps))
+        body = opportunity_feed_html(list(opps), game_labels)
     else:
         body = ('<div class="mlb-empty">No qualifying player opportunities meet the '
                 'display threshold for this matchup.</div>')

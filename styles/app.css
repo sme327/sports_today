@@ -557,6 +557,20 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
   border-radius: var(--r-md);
   box-shadow: inset 0 0 0 1px var(--hairline-2), var(--shadow-lg);
 }
+/* Group headers inside the panel — slim on purpose: one small-caps league line,
+   one quiet game line, so grouping costs almost no height. */
+.pick-league {
+  font-size: .62rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-4);
+  padding: .5rem .45rem .1rem;
+}
+.pick-league:first-child { padding-top: .15rem; }
+.pick-game {
+  font-size: .72rem; font-weight: 640;
+  color: var(--text-2);
+  padding: .22rem .45rem 0;
+}
 .pick-line {
   display: flex; align-items: center; justify-content: space-between; gap: .6rem;
   padding: .42rem .45rem;

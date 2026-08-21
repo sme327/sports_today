@@ -70,3 +70,15 @@ def test_a_missing_market_key_falls_back_to_the_market_label():
     from components.opportunity_feed import opportunity_feed_html
     html = opportunity_feed_html([_op(market_key=None)])
     assert 'data-pick-market-key="1+ Hit"' in html
+
+
+def test_rows_carry_their_game_for_tray_grouping():
+    """The tray groups picks by sport and game; the label comes from the caller's
+    game_labels map. An unknown game or an older caller degrades to an empty label
+    (the tray then groups by team name) — never an error."""
+    from components.opportunity_feed import opportunity_feed_html
+    labeled = opportunity_feed_html([_op(game_id="401")], {"401": "Guardians @ Yankees"})
+    assert 'data-pick-game-id="401"' in labeled
+    assert 'data-pick-game="Guardians @ Yankees"' in labeled
+    unlabeled = opportunity_feed_html([_op(game_id="401")])
+    assert 'data-pick-game=""' in unlabeled

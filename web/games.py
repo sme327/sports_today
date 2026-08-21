@@ -60,7 +60,8 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
         or mlb_components.player_trends_html(page.heating_up, page.cooling_off)
     )
     if page.opportunities:
-        opportunities = opportunity_feed_html(list(page.opportunities))
+        labels = {str(game.game_id): f"{game.away_display} @ {game.home_display}"}
+        opportunities = opportunity_feed_html(list(page.opportunities), labels)
     else:
         opportunities = (
             '<div class="mlb-empty">No game-specific opportunities currently meet '
@@ -126,7 +127,10 @@ def wnba_context(game: SlateGame, slate_date: date) -> dict:
         wnba_components.shape_players_html(page.shape_players),
         wnba_components.trends_html(page.trending_up, page.trending_down),
         wnba_components.team_trends_html(page.away_trends, page.home_trends),
-        wnba_components.opportunities_html(page.opportunities),
+        wnba_components.opportunities_html(
+            page.opportunities,
+            {str(game.game_id): f"{game.away_display} @ {game.home_display}"},
+        ),
         wnba_components.data_context_html(page.data_status.detail)
         if page.data_status and page.data_status.detail
         else "",
