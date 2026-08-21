@@ -5,7 +5,7 @@ from __future__ import annotations
 from html import escape
 from urllib.parse import quote_plus
 
-from components.format import format_game_time, logo_img
+from components.format import format_game_time, logo_img, utc_start_iso
 from components.navigation import game_href
 from domain.models import SlateGame
 from leagues.base import get_adapter
@@ -129,7 +129,11 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
 
     # Time sits in the upper-right corner (pregame); live/final show a state badge
     # there instead. Only one of the two is ever present, so the corner is consistent.
-    time_html = (f'<span class="game-time">{escape(time)}</span>'
+    # data-start-utc lets the site script re-render the PT fallback in the reader's
+    # own timezone (absent for "Time TBD", which has no instant to localise).
+    start_iso = utc_start_iso(game.start_time)
+    start_attr = f' data-start-utc="{escape(start_iso, quote=True)}"' if start_iso else ""
+    time_html = (f'<span class="game-time"{start_attr}>{escape(time)}</span>'
                  if game.state not in ("live", "final") else "")
     # Competition context rides on the existing league line — no extra card height.
     # Only shown when it is notable (playoffs, a football week, a neutral site);

@@ -146,6 +146,28 @@
   window.setInterval(refresh, 60_000);
 })();
 
+/* Local start times — the exported HTML bakes in Pacific ("7:05 PM PT") as the
+   no-JS fallback; here each stamped time is re-rendered in the device's own
+   timezone ("7:05 PM CDT" in Chicago), so travel just works with no setting.
+   Re-runs after htmx swaps the schedule fragment, which replaces the spans. */
+(() => {
+  "use strict";
+  function localizeTimes(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    const nodes = scope.querySelectorAll("[data-start-utc]");
+    if (!nodes.length) return;
+    const fmt = new Intl.DateTimeFormat(undefined, {
+      hour: "numeric", minute: "2-digit", timeZoneName: "short",
+    });
+    for (const node of nodes) {
+      const when = new Date(node.dataset.startUtc);
+      if (!Number.isNaN(when.getTime())) node.textContent = fmt.format(when);
+    }
+  }
+  localizeTimes(document);
+  document.addEventListener("htmx:afterSwap", (event) => localizeTimes(event.target));
+})();
+
 /* Picks shortlist — device-local (localStorage, keyed by slate date). A shortlist,
    not a bet slip: no stakes, no odds, no payout math. Storage failures (private
    mode) degrade to no shortlist UI at all rather than a broken one. */

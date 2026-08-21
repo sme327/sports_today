@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import date
 
 from components.editorial import editorial_empty_html, editorial_html
-from components.format import format_game_time
+from components.format import format_game_time, utc_start_iso
 from domain.models import SlateGame
 from leagues.base import get_adapter
 from services import editorial
@@ -64,5 +64,6 @@ def simple_game_context(game: SlateGame, slate_date: date, day: str) -> dict:
         "section": "today", "game": game, "league": game.league, "day": day,
         "league_label": label, "context": game.notable_context or "",
         "start_time": format_game_time(game.start_time),
+        "start_utc": utc_start_iso(game.start_time),
         "score_line": score_line, "editorial_html": read, "gaps": _GAPS,
     }
