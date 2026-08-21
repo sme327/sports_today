@@ -98,12 +98,15 @@ def _line_html(opp: Opportunity) -> str:
             '</div>')
 
 
-def _pick_attrs(opp: Opportunity) -> str:
+def _pick_attrs(opp: Opportunity, game_labels: dict[str, str] | None = None) -> str:
     """``data-pick-*`` attributes carrying everything the shortlist script stores,
     so the client needs no parsing of rendered text. The market key falls back to
     the display label for legacy scorers that never set one — the Results join
-    uses the same fallback, so the two sides still agree."""
+    uses the same fallback, so the two sides still agree. The game label lets the
+    tray group picks by sport and game; absent (an older caller, an unknown game)
+    the tray falls back to the team name."""
     threshold = "" if opp.threshold is None else f"{opp.threshold:g}"
+    game_id = str(opp.game_id or "")
     fields = {
         "data-pick-league": opp.league,
         "data-pick-player-id": opp.player_id,
@@ -113,6 +116,8 @@ def _pick_attrs(opp: Opportunity) -> str:
         "data-pick-threshold": threshold,
         "data-pick-score": str(opp.opportunity_score),
         "data-pick-team": opp.team_name or "",
+        "data-pick-game-id": game_id,
+        "data-pick-game": (game_labels or {}).get(game_id, ""),
     }
     return " ".join(f'{k}="{escape(str(v), quote=True)}"' for k, v in fields.items())
 
@@ -128,7 +133,7 @@ def _pick_button(opp: Opportunity) -> str:
             f'aria-label="{escape(label, quote=True)}">{icon("shortlist")}</button>')
 
 
-def _row_html(opp: Opportunity) -> str:
+def _row_html(opp: Opportunity, game_labels: dict[str, str] | None = None) -> str:
     support_fb, risk_fb = _FALLBACKS.get(opp.league, _DEFAULT_FALLBACK)
     support = opp.primary_support or support_fb
     risk = opp.primary_risk or risk_fb
@@ -137,7 +142,7 @@ def _row_html(opp: Opportunity) -> str:
     else:
         risk_html = _evidence("risk", "Main risk", risk)
     return (
-        f'<div class="op-row" {_pick_attrs(opp)}>'
+        f'<div class="op-row" {_pick_attrs(opp, game_labels)}>'
         f'{_pick_button(opp)}'
         f'<div class="op-score">{opp.opportunity_score}</div>'
         '<div class="op-identity">'
@@ -154,6 +159,9 @@ def _row_html(opp: Opportunity) -> str:
     )
 
 
-def opportunity_feed_html(opportunities: list[Opportunity]) -> str:
-    rows = "".join(_row_html(o) for o in opportunities)
+def opportunity_feed_html(opportunities: list[Opportunity],
+                          game_labels: dict[str, str] | None = None) -> str:
+    """``game_labels`` maps game_id → "Away @ Home" so saved picks can name their
+    game in the tray; omitting it degrades to team-name grouping, never an error."""
+    rows = "".join(_row_html(o, game_labels) for o in opportunities)
     return f'<div class="op-list">{rows}</div>'

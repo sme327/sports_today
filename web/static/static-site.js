@@ -213,8 +213,23 @@
       league: d.pickLeague, playerId: d.pickPlayerId, playerName: d.pickPlayer,
       marketKey: d.pickMarketKey, market: d.pickMarket,
       threshold: d.pickThreshold || null, score: Number(d.pickScore) || 0,
-      team: d.pickTeam || "",
+      team: d.pickTeam || "", gameId: d.pickGameId || "", game: d.pickGame || "",
     };
+  }
+
+  // League → game → picks, preserving the order picks were saved in. Older stored
+  // picks predate the game label; they group under their team name instead.
+  function grouped(picks) {
+    const leagues = new Map();
+    for (const pick of picks) {
+      const league = pick.league || "Picks";
+      const game = pick.game || pick.team || "";
+      if (!leagues.has(league)) leagues.set(league, new Map());
+      const games = leagues.get(league);
+      if (!games.has(game)) games.set(game, []);
+      games.get(game).push(pick);
+    }
+    return leagues;
   }
 
   function picksFor(date) {
@@ -251,9 +266,14 @@
     document.body.append(tray);
 
     function shareText(picks) {
-      const lines = picks.map((p) =>
-        `• ${p.playerName} — ${p.market}${p.team ? ` (${p.team})` : ""} · score ${p.score}`);
-      return `Sports Today picks · ${slateDate}\n${lines.join("\n")}`;
+      const lines = [`Sports Today picks · ${slateDate}`];
+      for (const [league, games] of grouped(picks)) {
+        for (const [game, gamePicks] of games) {
+          lines.push(game ? `${league} · ${game}` : league);
+          for (const p of gamePicks) lines.push(`• ${p.playerName} — ${p.market} · score ${p.score}`);
+        }
+      }
+      return lines.join("\n");
     }
 
     function syncButtons() {
@@ -273,19 +293,26 @@
     function renderPanel() {
       const picks = picksFor(slateDate);
       panel.textContent = "";
-      for (const pick of picks) {
-        const line = el("div", "pick-line");
-        const who = el("span", "pick-who", pick.playerName);
-        who.append(el("small", "pick-mkt", ` ${pick.market}`));
-        const remove = el("button", "pick-remove", "×");
-        remove.type = "button";
-        remove.setAttribute("aria-label", `Remove ${pick.playerName} — ${pick.market}`);
-        remove.addEventListener("click", () => {
-          setPicks(slateDate, picksFor(slateDate).filter((p) => pickId(p) !== pickId(pick)));
-          refreshTray();
-        });
-        line.append(who, remove);
-        panel.append(line);
+      // Grouped by sport, then game — slim headers, so the panel stays small.
+      for (const [league, games] of grouped(picks)) {
+        panel.append(el("div", "pick-league", league));
+        for (const [game, gamePicks] of games) {
+          if (game) panel.append(el("div", "pick-game", game));
+          for (const pick of gamePicks) {
+            const line = el("div", "pick-line");
+            const who = el("span", "pick-who", pick.playerName);
+            who.append(el("small", "pick-mkt", ` ${pick.market}`));
+            const remove = el("button", "pick-remove", "×");
+            remove.type = "button";
+            remove.setAttribute("aria-label", `Remove ${pick.playerName} — ${pick.market}`);
+            remove.addEventListener("click", () => {
+              setPicks(slateDate, picksFor(slateDate).filter((p) => pickId(p) !== pickId(pick)));
+              refreshTray();
+            });
+            line.append(who, remove);
+            panel.append(line);
+          }
+        }
       }
       const actions = el("div", "pick-actions");
       const share = el("button", "pick-share", navigator.share ? "Share picks" : "Copy picks");
