@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src import lineup_overlay
+from src import lineup_overlay, score_scale
 from src.availability import InjuryReport
 from src.mlb_lineups import Lineups
 
@@ -37,19 +37,21 @@ _RESULT_COLUMNS = [
 #
 # _LEAGUE_HIT_RATE is **not** the true league per-PA hit rate — that is 0.2092 in our own
 # data (0.25 is nearer a batting average, hits per official at-bat, which is 0.2347).
-# It is left as-is deliberately: shrinkage is linear, so the constant sets the score's
-# zero point rather than its ordering, and it is entangled with the scale below. Corrected
-# in isolation it changes nothing measurable (re-scaled test correlation +0.1137 vs
-# +0.1119). Do not "fix" it without re-tuning _SCORE_OFFSET/_SCORE_SPAN together.
+# It is left as-is deliberately: shrinkage is linear, so the constant sets the estimate's
+# zero point rather than its ordering, and the ordering is what the score carries.
+# Corrected in isolation it changes nothing measurable (re-scaled test correlation
+# +0.1137 vs +0.1119).
 _LEAGUE_HIT_RATE = 0.25
 _HIT_SHRINK = 0.25
 
-# Maps the estimated 1+ hit chance onto 0-100. Re-tuned with the v5 shrinkage to preserve
-# how much of the slate clears the curation floor (served 70+: 18.7% before, 19.3% after) —
-# heavier shrinkage compresses the estimate, so the old (0.45, 0.37) pair would have
-# quietly halved the served population.
-_SCORE_OFFSET = 0.550
-_SCORE_SPAN = 0.225
+# v6: the estimate maps onto the shared lift scale (src/score_scale) against the market's
+# measured base rate — how often a *starting batter* records 1+ hit (the pre-game
+# population services/base_rates measures; a PA-count filter would condition on the
+# outcome). At the curation floor the two scales nearly coincide (old floor: est ≥ .7075,
+# new: est ≥ .707), so v6 does not change what this market serves — it changes what the
+# number *means*, to match every other migrated market. A test guards this constant
+# against services.base_rates so it cannot drift from the measured population.
+_BASE_RATE_1PLUS_HIT = 0.607
 
 # Per-PA hit rate over the short window at or below which "cooled" understates it.
 # A league-average hitter sits near .250 per PA; half of that over 25 PA is a real
@@ -157,7 +159,7 @@ def score_hit_opportunities(pa: pd.DataFrame, teams: list[str], minimum_pa: int 
         exp_pa = max(pa_per_game, 0.5)
         est = 1.0 - (1.0 - p) ** exp_pa
         est -= 0.12 * max(0.0, k_rate - 0.25)      # small penalty for high recent K rate
-        score = (est - _SCORE_OFFSET) / _SCORE_SPAN * 100   # ~[0,100]; clamped by the overlay
+        score = score_scale.lift_points(est, _BASE_RATE_1PLUS_HIT)  # clamped by the overlay
         stability = max(0, min(round(55 + min(len(recent), 50) * 0.7 - abs(short_hit_rate - hit_rate) * 40), 100))
 
         support = []

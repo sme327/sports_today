@@ -7,6 +7,7 @@ from typing import Iterable
 
 import pandas as pd
 
+from src import score_scale
 from src.config import DB_PATH
 from src.espn_injuries import InjuryReport
 from src.reliability import highest_reachable_over
@@ -48,23 +49,27 @@ def _normalize(value: object) -> str:
 # points 37%→64%, rebounds 33%→68%, assists 32%→58%.
 MIN_CLEAR = 0.60
 
-# v3 weights (2026-08-12). Backtested on 3,118 leakage-safe player-games, fit on the first
-# half of the season by date and tested on the second. Against the live v2 formula:
-#
-#     test correlation   +0.1339 -> +0.1416
-#     top-20% clear      0.6923  -> 0.7212
-#     spread over bottom +0.1620 -> +0.2115
-#
-# Both halves of the ship rule, out of sample. Per-market differences are within noise at
-# these sizes (the points top-20% moves 0.6 SE), so the aggregate is the signal.
-#
-# `_SCORE_BASE` is a **matched pair** with dropping the trend term: removing up to 8 points
-# of headroom would otherwise have cut the served share from 42.9% to 38%. At 19 the share
-# holds (41.1%) and the served clear-rate still improves (0.6998 -> 0.7067). Do not change
-# one without re-tuning the other.
-_RECENT_WEIGHT = 18      # last-5 clear rate  (was 22)
-_BASELINE_WEIGHT = 22    # last-10 clear rate (was 18)
-_SCORE_BASE = 19         # was 18
+# v3 (2026-08-12) established the window weighting, backtested on 3,118 leakage-safe
+# player-games: the **10-game** clear rate outweighs the 5-game one in every market
+# (+0.159 vs +0.121 points, +0.087 vs +0.053 rebounds, +0.183 vs +0.092 assists), and
+# the trend term was dropped as noise (+0.031). v4 keeps that validated 18:22 blend as
+# 0.45/0.55 and maps it onto the shared lift scale (src/score_scale) against the bar's
+# own base rate, replacing the hand-scaled role/cushion/base-constant mix — the 2026-08-20
+# ledger evaluation showed the pure blend serves better props at the top (points +37.4 →
+# +50.5 realized top-20% lift, rebounds +55.2 → +63.1) while the role and cushion terms
+# carried none of it. Minutes still gate eligibility and feed stability.
+_RECENT_BLEND = 0.45     # last-5 clear rate
+_BASELINE_BLEND = 0.55   # last-10 clear rate
+
+# How often a WNBA **starter** clears each bar on her own — measured 2026-08-20 from
+# `wnba_player_game_logs` (started == 1, known pre-tip; a minutes filter would condition
+# on the game). The same populations services/base_rates measures; a test guards these
+# constants against that module so they cannot drift.
+_BASE_CLEAR = {
+    "points": {10: 0.628, 15: 0.385, 20: 0.189, 25: 0.079},
+    "rebounds": {4: 0.551, 6: 0.336, 8: 0.186, 10: 0.104},
+    "assists": {3: 0.499, 5: 0.238, 7: 0.106, 9: 0.043},
+}
 # Appearances (not roster rows) needed before a player's form is described at all.
 MIN_PLAYED_GAMES = 5
 
@@ -188,24 +193,16 @@ def score_wnba_opportunities(
             hit_l5 = _hit_rate(group[market], threshold, 5)
             hit_l10 = _hit_rate(group[market], threshold, 10)
 
-            role_score = min(25, max(0, (minutes_l5 - 14) * 1.25))
-            # v3: the **10-game** clear rate outweighs the 5-game one in every market —
-            # +0.159 vs +0.121 (points), +0.087 vs +0.053 (rebounds), +0.183 vs +0.092
-            # (assists) over 3,118 leakage-safe player-games. The weights used to be the
-            # other way round, backing the noisier window.
-            recent_score = _RECENT_WEIGHT * hit_l5
-            baseline_score = _BASELINE_WEIGHT * hit_l10
-            cushion = max(0, avg_l10 - threshold)
-            cushion_score = min(15, cushion * (1.1 if market == "points" else 2.5))
-            # v3 dropped a `trend_score` — clip((avg_l5 - avg_l10) * 2, -5, 8). It
-            # correlated **+0.031** with actually clearing the bar: a short-window delta
-            # on noisy counting stats is close to pure noise, and it was occupying up to
-            # 8 points of a 99-point scale.
-
-            opportunity = round(
-                min(99, max(0, _SCORE_BASE + role_score + recent_score
-                            + baseline_score + cushion_score))
-            )
+            # v4: the validated 5/10-game blend, shrunk toward the bar's own base rate
+            # by appearances, scored as estimated lift over that base — the same claim
+            # the score makes in every migrated market. A bar with no measured base
+            # (a threshold outside the grid) cannot be scored; skip rather than guess.
+            base = _BASE_CLEAR.get(market, {}).get(threshold)
+            if base is None:
+                continue
+            blend = _RECENT_BLEND * hit_l5 + _BASELINE_BLEND * hit_l10
+            est = score_scale.shrink_toward(base, blend, len(played))
+            opportunity = score_scale.unified_score(est, base)
             stability = round(
                 min(
                     99,

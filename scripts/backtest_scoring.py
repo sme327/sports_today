@@ -25,8 +25,12 @@ import pandas as pd
 
 from src.config import DB_PATH
 
-LEAGUE_HIT_RATE = 0.25      # matches src/opportunity
-HIT_SHRINK = 0.70
+# Imported, not restated: this file once said `HIT_SHRINK = 0.70  # matches
+# src/opportunity` while the live scorer had moved to 0.25 — a drifted constant in
+# the harness silently backtests a formula nobody ships.
+from src.opportunity import _HIT_SHRINK as HIT_SHRINK          # noqa: E402
+from src.opportunity import _LEAGUE_HIT_RATE as LEAGUE_HIT_RATE  # noqa: E402
+
 PITCHER_SHRINK_BF = 200
 MIN_PA = 30
 
@@ -45,6 +49,25 @@ def load(db_path=DB_PATH):
     pa["p"] = pa["pitcher_id"].astype(str)
     graded["player_id"] = graded["player_id"].astype(str)
     return pa, graded
+
+
+def lineup_slots(pa: pd.DataFrame) -> pd.DataFrame:
+    """Each starter's batting-order slot and PA count per game.
+
+    **`pa_number` is the batter's n-th plate appearance of the game, not a global
+    sequence** — every leadoff PA is 1, so sorting by it scrambles the batting order
+    (and did, in the 2026-08-20 slot-PA experiment: it produced a slot table with the
+    3-hole out-earning leadoff). The true order is the feed's own row order; the first
+    nine distinct batters per game+team are slots 1–9. Measured this way the table is
+    textbook: 4.64 PA at leadoff declining to 3.57 at ninth, away +0.17 over home.
+    """
+    pa = pa.reset_index(drop=True)
+    firsts = pa.drop_duplicates(["game_id", "batting_team", "b"])[
+        ["game_id", "batting_team", "b", "d"]].copy()
+    firsts["slot"] = firsts.groupby(["game_id", "batting_team"]).cumcount() + 1
+    starters = firsts[firsts["slot"] <= 9]
+    n_pa = pa.groupby(["game_id", "batting_team", "b"]).size().rename("n_pa").reset_index()
+    return starters.merge(n_pa, on=["game_id", "batting_team", "b"])
 
 
 def with_opposing_starter(pa: pd.DataFrame, graded: pd.DataFrame) -> pd.DataFrame:

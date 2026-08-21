@@ -136,12 +136,12 @@ def test_versions_group_by_market_with_the_live_one_expanded():
     *this* market", so each family shows its live version and collapses the rest."""
     from web.analytics import _version_groups
 
-    rows = ([_row("batter_hit", "batter-hit-v5", "2026-08-12")] * 3
+    rows = ([_row("batter_hit", "batter-hit-v6", "2026-08-21")] * 3
             + [_row("batter_hit", "batter-hit-v3", "2026-08-09", "miss")] * 2
             + [_row("batter_hit", "mlb-1hit-v0.1", "2026-07-20", "miss")])
     groups = {g["key"]: g for g in _version_groups(rows)}
     hit = groups["batter_hit"]
-    assert hit["current"]["version"] == "batter-hit-v5"
+    assert hit["current"]["version"] == "batter-hit-v6"
     assert len(hit["earlier"]) == 2, "older versions collapse into one line"
     assert hit["earlier_tally"]["hit"] + hit["earlier_tally"]["miss"] == 3
 

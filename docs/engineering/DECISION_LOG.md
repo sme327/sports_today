@@ -9,6 +9,120 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-21 — One scale for every score: estimated lift over the market's own base rate
+
+**Decision.** `batter-hit-v6`, `sp-v4` and `wnba-pra-v4` all map onto one shared scale
+(`src/score_scale.py`): **score = 50 + 200 × (estimated P(clear) − the bar's own base
+rate)**, so 50 means no estimated edge, 70 — the curation floor — means +10 points over
+base, and 100 means +25. Deliberately **not** migrated: `batter-k-v2` (shipped
+2026-08-20 with its own validated weights; migrate once it has graded volume),
+`batter_bb` (its clear-rate estimate is measurably miscalibrated — implied ≥ +20 lift
+against realized −1.3 ±10.6 — and the market is watch-listed; scoring it on a number
+known to be wrong would serve a flat market prominently), and the NFL markets (shipped
+with their own measured base-rate ladders).
+
+**Reason.** Every scorer hand-mapped its estimate onto 0–100 independently, yet one
+floor and one cross-market ranking were applied to all of them, so the floor meant
+nothing consistent — `batter_k` topping out at 75 against a floor of 70 (a +18 market
+served six times) was not a scorer bug but the inevitable consequence. The v5 retune
+even re-tuned its scale constants "to preserve the served share": serving was an
+artifact of tuning, not a property of the market.
+
+**Evidence — evaluated on the ledger before building.** Every market snapshots its
+components, so each recorded prop's estimate is reconstructable: 3,676 graded
+current-engine props. Re-served at **matched volume** (n=910), the unified rule's picks
+realized **+15.0** lift over their own base rates against **+11.7** for the incumbent
+scales. The 401 props it newly serves realized **+13.0** (the entire starved `batter_k`
+set among them); the 58 it drops realized **+1.9** — the high-base easy bars. Realized
+top-20% lift by market, old → unified: batter_hit +5.7 → +6.2, batter_k +7.2 → +8.0,
+sp_k +26.5 → +27.6, wnba_points +37.4 → +50.5, wnba_rebounds +55.2 → +63.1;
+wnba_assists −8.9 worse on n≈15 (noise); sp_hits flat-negative either way. Estimates
+are shrunk toward the bar's base by sample (`n/(n+3)` — the pre-registered value, not a
+sweep). Floor parity for `batter_hit` is exact by construction (est ≥ .7075 → ≥ .707)
+and pinned by a test: v6 changes what its number *means*, not what it serves.
+
+**Tradeoffs, stated honestly.**
+- **Full-range correlation within several markets is lower** (sp_k +0.210 → +0.117,
+  wnba_points +0.134 → −0.063): the old impressiveness/sample terms carried some
+  mid-scale ordering. No surface serves the mid-scale — the floor, the featured ranking
+  and the game-page lists all read the top, where the unified scale wins — but a future
+  surface that ranks the whole range should know this.
+- **The top saturates for WNBA and some SP props.** A reachable bar on a rare event
+  (7+ assists, base .106) cleared 8 of 10 carries an estimated lift far beyond the
+  +25pp cap, so 100s are common on WNBA slates. The measured serves justify the
+  ranking (+31 to +55 realized); ties fall to the stability score as before. A
+  variance-aware shrink or a log-odds scale could spread the top — future work that
+  needs its own evaluation, not a hand-tuned cap.
+- **The served mix shifts toward the measured-best markets** — at matched volume,
+  batter_hit falls from 512 to ~213 of 910 and WNBA/SP/K rise. That is the point, and
+  it will be *visible* on the product.
+- **Served volume at the floor grows ~34%** (910 → 1,223 on the evaluation window), so
+  the graded cohort grows with it.
+- The evaluation's base rates are season-wide constants (mild hindsight); both rules
+  faced identical data, so the comparison stands, but the absolute lifts carry the
+  usual noise.
+
+**Future.** Migrate `batter_k` once v2 has graded volume; settle `batter_bb`'s
+retirement question on its own evidence; revisit the +25pp cap with a measured
+alternative; the open 2026-08-09 threshold question (bars vs book lines) remains
+parked by owner decision — note that this scale makes Option B's "score = how unusual
+around the bar" redefinition nearly free when it is taken up.
+
+## 2026-08-21 — Slot-implied expected PA: tested and rejected
+
+**Decision.** Keep the trailing PA-per-game inside the batter-hit estimate and the
+small `slot_bonus` overlay. Do **not** replace expected PA with the confirmed lineup
+slot's league PA, despite v5's own finding that volume out-predicts form.
+
+**The test.** 1,932 graded `batter_hit` props whose snapshot evidence recorded a
+confirmed slot (leakage-safe: known pre-game), 10 slates, harness rules. The slot→PA
+table itself is textbook — 4.64 PA at leadoff declining monotonically to 3.57 at
+ninth, away +0.17 over home. Four candidates (k=4; `√(2 ln k)` ≈ 2.35 SE):
+
+| candidate | corr | Q4−Q1 spread | top-20% lift |
+|---|---|---|---|
+| current (trailing ppg + slot bonus) | +0.078 | **+10.6** | **+5.1** |
+| slot-implied PA | +0.085 | +9.3 | +1.6 |
+| blend (slot + trailing, ½ each) | +0.087 | +11.2 | +4.1 |
+| slot + team recent volume | +0.088 | +10.4 | +2.5 |
+
+Every candidate improves the full-range correlation and **loses the top**, where
+serving happens. No ship under the §7 gate.
+
+**Why — the finding worth keeping.** Trailing PA/game is not merely a proxy for
+tonight's chances: a batter *earns* plate appearances by reaching base, so the
+trailing volume partly encodes on-base talent. Replace it with the slot's clean
+league-average PA and that talent signal is stripped out. **v5's "volume beats form"
+is partly form wearing volume's clothes** — which does not weaken v5 (the measurement
+stands) but does close the "model the volume better" line of work: a *cleaner* volume
+estimate is a *worse* predictor.
+
+**Trap for the next person.** `plate_appearances.pa_number` is the batter's n-th PA
+of the game, not a global sequence — sorting by it scrambles the batting order and
+produced a garbage slot table on the first run. The corrected derivation is kept as
+`scripts/backtest_scoring.lineup_slots`.
+
+## 2026-08-21 — Opposing starter on the v5 base: margin closed, still no ship
+
+**Decision.** The batter-hit score still excludes the opposing starter. Re-tested
+because the 2026-08-09 `batter-hit-v4` rejection was measured against v3 (shrink
+0.70), a baseline that no longer exists — v5 crushed the form term to 0.25, and
+`batter-k-v2` has since shown a starter term can carry a market outright.
+
+**The numbers** (same v4 spec — log5, BF-shrunk pitcher, bullpen split — on the v5
+estimate; 5,632 graded props, 17 slates): spread +16.7 → **+17.6**, correlation
++0.1228 → **+0.1284**, top-20% +8.9 → +8.6 (±1.4). Under v3 the candidate lost on
+every measure; under v5 it wins the spread and the correlation and is a dead heat at
+the top. The §7 gate requires the top to lift, so no ship — but this is now a
+margin-of-noise call, not a rejection. Revisit when the graded ledger roughly doubles;
+if the spread gain holds and the top stops resisting, v4's mechanism belongs in.
+
+**Also fixed.** The harness's `HIT_SHRINK` still said `0.70  # matches src/opportunity`
+while the live scorer had moved to 0.25 — it now imports the live constants, so the
+harness can no longer backtest a formula nobody ships.
+
+---
+
 ## 2026-08-20 — Picks shortlist approved; Results-page redesign parked
 
 **Decision.** Build a device-local **picks shortlist** (select props → share as text →

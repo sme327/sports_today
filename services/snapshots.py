@@ -68,22 +68,25 @@ ENGINE_VERSIONS = {
 # Performance version-comparison can measure whether a change actually helped.
 # (Cannot be reconstructed retroactively; history keeps whatever it was stamped with.)
 MODEL_VERSIONS = {
-    # v5: shrink recent form hard (0.70 -> 0.25) because plate appearances predict a
-    # 1+ hit more than twice as well as recent hitting (+0.130 vs +0.054), with the score
-    # scale re-tuned to hold the served share.
-    "batter_hit": "batter-hit-v5",
+    # v6: same v5 estimate (shrink 0.25 — plate appearances predict a 1+ hit more than
+    # twice as well as recent hitting), mapped onto the shared lift scale
+    # (src/score_scale) against the starting-batter base rate. Ordering unchanged;
+    # the number's meaning changed, to match every other migrated market.
+    "batter_hit": "batter-hit-v6",
     "batter_tb": "batter-tb-v2",   # ledger-refit: reachable-bar selection (clear ≥ .50)
-    "batter_k": "batter-k-v2",     # reachable bar + opposing starter
-    "batter_bb": "batter-bb-v1",   # over-only, reachable-bar
-    # v3: threshold impressiveness from measured league rarity rather than the bar's
-    # position in the list. The sp-v2 over-penalties are unchanged underneath.
-    "sp_k": "sp-v3",
-    "sp_hits": "sp-v3",
-    # v3: 10-game clear rate weighted above the 5-game, trend term dropped (it correlated
-    # +0.031 with clearing). Threshold selection unchanged from v2's reliability floor.
-    "wnba_points": "wnba-pra-v3",
-    "wnba_rebounds": "wnba-pra-v3",
-    "wnba_assists": "wnba-pra-v3",
+    "batter_k": "batter-k-v2",     # reachable bar + opposing starter (not yet on the lift scale)
+    "batter_bb": "batter-bb-v1",   # over-only, reachable-bar (kept off the lift scale — see score_scale)
+    # v4: score = shrunk clear rate as lift over the bar's measured base rate (the v3
+    # _CLEAR_RATES table). Direction choice, impressiveness and the sp-v2 over-penalties
+    # are unchanged underneath.
+    "sp_k": "sp-v4",
+    "sp_hits": "sp-v4",
+    # v4: the v3-validated 5/10-game blend (18:22 → 0.45/0.55), shrunk by appearances,
+    # as lift over the bar's measured starter base rate; role/cushion terms dropped
+    # (the 2026-08-20 ledger evaluation showed they carried none of the top-end lift).
+    "wnba_points": "wnba-pra-v4",
+    "wnba_rebounds": "wnba-pra-v4",
+    "wnba_assists": "wnba-pra-v4",
     # v1: reachable-bar, over-only, scored mostly on the clear rate. Registered
     # 2026-08-18 after measuring +32 to +51 points of lift over base rate across
     # 78,744 ingested player-games.

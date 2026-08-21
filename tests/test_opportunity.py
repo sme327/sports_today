@@ -16,12 +16,34 @@ def test_recent_form_is_shrunk_hard_toward_the_league_mean():
     assert shrunk > league, "but it must still count for something"
 
 
-def test_the_score_scale_keeps_the_served_population_stable():
-    """Heavier shrinkage compresses the estimate, so the scale has to move with it or the
-    curation floor quietly serves half as many props. These two are a matched pair."""
-    from src.opportunity import _SCORE_OFFSET, _SCORE_SPAN, _HIT_SHRINK, _LEAGUE_HIT_RATE
-    # A league-average batter with typical volume should land mid-range, not near 0 or 100.
+def test_the_lift_scale_holds_the_v5_served_floor():
+    """v6 changed what the number *means* (lift over the starting-batter base rate on
+    the shared scale), not what this market serves: the estimate needed to reach the
+    curation floor must stay where v5 put it (est ≥ .7075), or the served population
+    quietly moves under a relabel that claimed to be ordering-neutral."""
+    from src import score_scale
+    from src.opportunity import _BASE_RATE_1PLUS_HIT, _HIT_SHRINK, _LEAGUE_HIT_RATE
+
+    floor_est = _BASE_RATE_1PLUS_HIT + (70 - 50) / 200.0
+    assert abs(floor_est - 0.7075) < 0.005, f"floor now at est {floor_est:.4f}"
+    # A league-average batter with typical volume still lands mid-range, not near 0 or 100.
     p = _LEAGUE_HIT_RATE + (0.21 - _LEAGUE_HIT_RATE) * _HIT_SHRINK
     est = 1.0 - (1.0 - p) ** 4.1
-    score = (est - _SCORE_OFFSET) / _SCORE_SPAN * 100
-    assert 20 <= score <= 70, f"average batter scores {score:.0f}"
+    score = score_scale.unified_score(est, _BASE_RATE_1PLUS_HIT)
+    assert 20 <= score <= 70, f"average batter scores {score}"
+
+
+def test_the_batter_base_rate_matches_the_measured_population():
+    """The scorer's base-rate constant lives in src (the leaf layer) while the measured
+    population lives in services/base_rates. This pins them together so the constant
+    cannot drift from the population it claims to describe. Skips when the workbook
+    data is absent (base_rates then honestly reports nothing)."""
+    import pytest
+    from services.base_rates import base_rate
+    from src.opportunity import _BASE_RATE_1PLUS_HIT
+
+    measured = base_rate("batter_hit", 1, "over")
+    if measured is None:
+        pytest.skip("no MLB population loaded")
+    assert abs(measured - _BASE_RATE_1PLUS_HIT) < 0.02, (
+        f"measured {measured:.3f} vs constant {_BASE_RATE_1PLUS_HIT}")
