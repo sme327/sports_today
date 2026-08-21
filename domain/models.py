@@ -364,9 +364,17 @@ class Opportunity:
     mode: OpportunityMode = OpportunityMode.SLATE
     components: dict[str, float] = field(default_factory=dict)
 
+    # Raw, unclamped points on the shared lift scale (src/score_scale). The displayed
+    # score clips at 100, but the 2026-08-21 ledger evaluation ranked by *raw* lift —
+    # clipping before ranking let stability decide every tie at the cap, and on the
+    # first v6/v4 slate that handed the entire featured eight to one market family.
+    # None for engines not on the lift scale; they rank by their displayed score.
+    score_points: float | None = None
+
     @property
-    def sort_key(self) -> tuple[int, int]:
-        return (self.opportunity_score, self.stability_score)
+    def sort_key(self) -> tuple[float, int]:
+        points = self.score_points if self.score_points is not None else float(self.opportunity_score)
+        return (points, self.stability_score)
 
     @property
     def primary_support(self) -> str:

@@ -49,6 +49,7 @@ def build_pitcher_opportunities(pa: pd.DataFrame, probable_names: list[tuple[str
             direction=str(r.direction),
             threshold=int(r.threshold),
             opportunity_score=int(r.opportunity_score),
+            score_points=float(r.score_points),
             stability_score=int(r.stability_score),
             supporting_evidence=support,
             negative_evidence=risks,

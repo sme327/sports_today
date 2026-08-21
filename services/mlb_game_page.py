@@ -380,6 +380,7 @@ def _build_opportunities(pa, game: SlateGame, teams: list[str], lineups=None) ->
             team_id=None, team_name=str(row.team), market="1+ Hit",
             market_key="batter_hit", direction="over", threshold=1,
             opportunity_score=int(row.opportunity_score), stability_score=int(row.stability_score),
+            score_points=float(row.score_points),
             supporting_evidence=list(row.support) if isinstance(row.support, list) else [],
             negative_evidence=list(row.risks) if isinstance(row.risks, list) else [],
             image_url=logos.get(str(row.team)),          # team logo (recognition)

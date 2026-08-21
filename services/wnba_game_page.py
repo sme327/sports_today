@@ -370,6 +370,7 @@ def _opportunities(logs, game: SlateGame, tt, a_id, h_id) -> tuple[Opportunity, 
             market_key=market_key_from_scorer("WNBA", str(row.market)),
             direction="over", threshold=row.threshold,
             opportunity_score=int(row.opportunity_score), stability_score=int(row.stability_score),
+            score_points=float(row.score_points),
             supporting_evidence=support, negative_evidence=risks,
             image_url=logos.get(str(row.team_id)),
             headshot_url=_headshot_ok(row.headshot), mode=OpportunityMode.SLATE))

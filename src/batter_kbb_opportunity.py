@@ -195,7 +195,7 @@ def score_k_opportunities(pa: pd.DataFrame, teams: list[str], minimum_games: int
 
 def _row(batter_id, name, team, key, direction, thr, score, stability, avg, clear,
          support, risks, lineups) -> dict:
-    score, stability, slot, _posted = lineup_overlay.apply(
+    score, stability, slot, _posted, _raw = lineup_overlay.apply(
         batter_id, team, score, stability, support, risks, lineups)
     return {"batter_id": int(batter_id), "player": name, "team": team,
             "market_key": key, "direction": direction, "threshold": thr,

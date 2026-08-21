@@ -152,6 +152,7 @@ class WNBAAdapter:
                     direction="over",
                     threshold=row.threshold,
                     opportunity_score=int(row.opportunity_score),
+                    score_points=float(row.score_points),
                     stability_score=int(row.stability_score),
                     supporting_evidence=support,
                     negative_evidence=risks,

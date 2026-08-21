@@ -220,10 +220,13 @@ def write_daily_snapshot(
             return 0
         written = 0
         from services.grading import CURATION_FLOOR, FEATURED_MAX
+        # Raw lift points first (the ranking the ledger evaluation validated) — clipped
+        # scores tie at 100, and a tie broken here by league/name would stamp a
+        # different featured eight than the page shows.
         qualifying = sorted(
             (opp for opp in opportunities
              if (opp.opportunity_score or 0) >= CURATION_FLOOR),
-            key=lambda opp: (-(opp.opportunity_score or 0), opp.league,
+            key=lambda opp: (-opp.sort_key[0], -opp.sort_key[1], opp.league,
                              opp.player_name or "", opp.market or ""),
         )
         featured_rank = {

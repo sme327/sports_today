@@ -36,10 +36,12 @@ def slot_bonus(slot: int) -> int:
 
 def apply(batter_id, team_name: str, score: float, stability: int,
           support: list[str], risks: list[str],
-          lineups: Lineups | None) -> tuple[int, int, int | None, bool]:
+          lineups: Lineups | None) -> tuple[int, int, int | None, bool, float]:
     """Apply the overlay in place on ``support``/``risks`` and return
-    ``(score, stability, slot, team_posted)``. ``score`` comes in as the raw float
-    and is rounded/clamped here (after the slot nudge)."""
+    ``(score, stability, slot, team_posted, raw_points)``. ``score`` comes in as the
+    raw float and is rounded/clamped here (after the slot nudge); ``raw_points`` is the
+    same post-nudge value *unclamped*, because ranking uses raw lift — clipping before
+    ranking made stability decide every tie at the cap."""
     slot = lineups.slot.get(int(batter_id)) if lineups is not None else None
     team_posted = lineups.is_posted(team_name) if lineups is not None else False
     if slot is not None:
@@ -48,8 +50,10 @@ def apply(batter_id, team_name: str, score: float, stability: int,
     elif team_posted:                       # lineup is out and this bat isn't in it
         risks.insert(0, "Not in today's posted lineup")
 
+    raw_points = float(score)
     score = max(0, min(round(score), 100))
     if slot is None and team_posted:
         score = min(score, BENCH_SCORE_CAP)
         stability = min(stability, BENCH_STABILITY_CAP)
-    return score, stability, slot, team_posted
+        raw_points = min(raw_points, float(BENCH_SCORE_CAP))
+    return score, stability, slot, team_posted, raw_points
