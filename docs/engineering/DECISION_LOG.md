@@ -9,27 +9,31 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-21 — Preseason NFL cards open the pairing's last real meeting
+## 2026-08-21 — Product rule: a matchup link for today's game never serves a historical game
 
-**Decision (owner).** During preseason — and for any feed-uncovered NFL game — the
-matchup link resolves to the two teams' **most recent ingested meeting**, rendered as
-the full NFL matchup page at the slate game's own URL under a banner that says exactly
-what is being shown. A pairing with no archived meeting keeps the simplified-page
-fallback. `nfl_bridge.last_meeting_game_id` does the lookup (unordered team pair,
-newest first — unlike `feed_game_id`, where orientation is a different game).
+**Decision (owner, verbatim intent).** "At no point when looking for a matchup of
+today's game should we serve up historical game data. Not any part of it." A feature
+built and shipped earlier the same day — preseason NFL cards opening the pairing's
+most recent archived meeting under a "Preseason preview" banner — was killed on first
+sight and reverted in full (commit 288b917 reverted; `last_meeting_game_id`, the
+adapter link, the view path, the banner and its styles are all gone).
 
-**Reason.** The owner wants the NFL matchup page browsable and iterable for the rest
-of preseason. The feed never covers preseason, so the honest options were the NCAA-style
-simple layout (already the fallback, and card links weren't even offered) or the real
-page powered by real data. The last real meeting *is* real data — the page renders as
-it was analysable before that kickoff — and the banner keeps it from being passed off
-as tonight's game. A synthetic "preview" page built from season-final data was
-considered and deferred: more machinery, and the archive already holds genuine pages.
+**Why the banner didn't save it.** The implementation was honest about what it showed;
+that was not the problem. The problem is the content itself: a reader tapping tonight's
+game wants tonight's matchup, and an old game's page — its score, its week, its
+pregame read — answers a question nobody asked. Labeling irrelevance clearly does not
+make it relevant.
 
-**Tradeoffs.** The shown game can be up to three seasons old (the rotation means some
-pairings last met in 2023); the banner names the situation rather than hiding it. When
-the 2026 season feed starts arriving, `feed_game_id` matches take precedence
-automatically and this path goes quiet until next preseason.
+**What this rules out, so it is not re-proposed.** Any "last meeting" page, any
+head-to-head history section presented *as* the matchup, any redirect from a slate
+game to an archive game. It does **not** rule out what matchup pages already do
+everywhere: *aggregated* historical data (season form, team analytics, player trends)
+used to describe **tonight's** teams — that is the entire product. The line is:
+historical data may inform today's page; a historical *game* may not stand in for it.
+
+**Standing behavior restored.** Preseason and feed-uncovered NFL games have no matchup
+link; the archive remains reachable only through `?view=nfl`, where reading old games
+is the stated purpose.
 
 **Decision.** Every surface that *orders* opportunities — the slate feed, per-player
 selection, the featured eight, the ledger's featured stamp — ranks on unclamped lift

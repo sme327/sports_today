@@ -30,14 +30,9 @@ Sunday-night kickoff lands on Monday.
 
 **No match is the ordinary case, not an error.** The feed carries regular season and
 playoffs only, so **preseason never matches**, and a season nobody has ingested never
-matches. Since 2026-08-21 an unmatched game does not go straight to the team-level read:
-`last_meeting_game_id()` looks up the pairing's **most recent ingested meeting**
-(unordered team pair, newest first) and `web.views.game` renders that archive page at the
-slate game's own URL under a "Preseason preview" banner naming exactly what is shown —
-the owner wants the real page browsable and iterable through preseason. Only a pairing
-with no archived meeting falls through to the team-level read, where
-`unavailable_reason()` says which case it is — "not preseason", or "the 2026 season is
-not loaded yet; the feed holds 2023, 2024, 2025".
+matches. `web.views.game` falls through to the team-level read and `unavailable_reason()`
+says which case it is — "not preseason", or "the 2026 season is not loaded yet; the feed
+holds 2023, 2024, 2025".
 
 `supports_deep_dive` is now **True** for NFL, but that is a *league capability*; whether a
 given game has a page is decided per game by `NFLAdapter.deep_dive_available()`, which

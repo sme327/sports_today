@@ -28,12 +28,8 @@ class NFLAdapter(ScheduleOnlyESPN):
     supports_deep_dive = True
 
     def deep_dive_available(self, game) -> bool:
-        # A feed-covered game gets its own page; an uncovered one (preseason always)
-        # still gets a link when the pairing's last real meeting is in the archive —
-        # the page then says exactly which game it is showing (owner decision,
-        # 2026-08-21: the matchup page should be browsable during preseason).
-        from services.nfl_bridge import has_deep_dive, last_meeting_game_id
-        return has_deep_dive(game) or last_meeting_game_id(game) is not None
+        from services.nfl_bridge import has_deep_dive
+        return has_deep_dive(game)
 
     def opportunities(
         self,

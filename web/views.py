@@ -56,23 +56,11 @@ def game(request, league: str, game_id: str):
     if slate_game is None:
         raise Http404("Game not found in the cached slate")
     if league == "NFL":
-        from services.nfl_bridge import feed_game_id, last_meeting_game_id
+        from services.nfl_bridge import feed_game_id
 
         archive_id = feed_game_id(slate_game)
         if archive_id:
             return redirect("nfl-matchup", game_id=archive_id)
-        # Uncovered game (preseason always): show the pairing's most recent real
-        # meeting from the archive, at this game's own URL, with a banner saying
-        # exactly that — the owner wants the real page browsable in preseason.
-        meeting_id = last_meeting_game_id(slate_game)
-        if meeting_id:
-            context = matchup_context(meeting_id)
-            if context is not None:
-                context["preview_for"] = slate_game
-                response = render(request, "web/nfl_matchup.html", context)
-                response["Server-Timing"] = f"matchup;dur={context['build_ms']}"
-                response["X-Sports-Today-Cache"] = context["cache_source"]
-                return response
     if league not in {"MLB", "WNBA", "MLS"}:
         return render(request, "web/game_simple.html",
                       simple_game_context(slate_game, slate_date, day))
