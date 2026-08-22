@@ -21,8 +21,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Sports Today">
-  <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
-  <link rel="manifest" href="{% static 'site.webmanifest' %}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/apple-touch-icon-v3.png' %}">
+  <link rel="manifest" href="{% static 'site.webmanifest' %}?v=2">
   {% comment %}Versions are the stylesheets' own content hashes (web/assets.py), not
   hand-typed. A header rewrite once shipped entirely in web.css while only app.css's
   string was bumped, so the deployed page kept serving a two-day-old stylesheet.{% endcomment %}
