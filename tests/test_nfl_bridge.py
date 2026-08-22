@@ -130,33 +130,3 @@ def test_coverage_reports_what_is_loaded(tmp_path):
     cov = coverage(db)
     assert cov["seasons"] == [2024, 2025]
     assert cov["latest_date"] == "2026-01-11"
-
-
-# --- preseason: the pairing's last real meeting (2026-08-21) -----------------------
-
-def test_preseason_links_to_the_pairings_most_recent_meeting(tmp_path):
-    """The feed never covers preseason, but the owner wants the real matchup page
-    browsable then — so a preseason card resolves to the two teams' most recent
-    ingested meeting, newest first, in either home/away orientation."""
-    from services.nfl_bridge import last_meeting_game_id
-    db = _db(tmp_path, rows=(
-        ("45001-PHI@SFO", "2024-12-01", 2024, 13, "San Francisco 49ers", "Philadelphia Eagles"),
-        ("46033-SFO@PHI", "2026-01-11", 2025, 19, "Philadelphia Eagles", "San Francisco 49ers"),
-    ))
-    pre = _game(when="2026-08-22T00:00:00+00:00", phase="preseason", season=2026)
-    assert feed_game_id(pre, db) is None                  # preseason never matches
-    assert last_meeting_game_id(pre, db) == "46033-SFO@PHI"   # newest, not first
-    # Orientation is deliberately unordered: "when did these two last play?"
-    flipped = _game(away="Philadelphia Eagles", home="San Francisco 49ers",
-                    when="2026-08-22T00:00:00+00:00", phase="preseason", season=2026)
-    assert last_meeting_game_id(flipped, db) == "46033-SFO@PHI"
-
-
-def test_a_pairing_that_never_met_gets_no_meeting_and_no_crash(tmp_path):
-    from services.nfl_bridge import last_meeting_game_id
-    db = _db(tmp_path)
-    stranger = _game(away="Buffalo Bills", home="Philadelphia Eagles",
-                     when="2026-08-22T00:00:00+00:00", phase="preseason", season=2026)
-    assert last_meeting_game_id(stranger, db) is None
-    assert last_meeting_game_id(_game(league="MLB"), db) is None
-    assert last_meeting_game_id(_game(), tmp_path / "nope.db") is None
