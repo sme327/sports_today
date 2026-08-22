@@ -110,6 +110,37 @@ def feed_game_id(game: SlateGame, db_path: str | Path = DB_PATH) -> str | None:
     return str(row[0]) if row else None
 
 
+def last_meeting_game_id(game: SlateGame, db_path: str | Path = DB_PATH) -> str | None:
+    """The most recent ingested game between these two teams, either venue.
+
+    Exists for **preseason** (owner decision, 2026-08-21): the feed never covers those
+    games, but the owner wants the real matchup page browsable during preseason to
+    iterate on it — so a preseason card links to the pairing's most recent real meeting,
+    and the page says exactly that. Orientation deliberately does *not* matter here,
+    unlike ``feed_game_id``: "when did these two last play" is an unordered question.
+    ``None`` when the pairing never met in the ingested seasons — the caller falls back
+    to the simplified page, never to an empty promise."""
+    if game.league != "NFL":
+        return None
+    away = canonical_team(game.away_name or game.away_display, db_path)
+    home = canonical_team(game.home_name or game.home_display, db_path)
+    if not away or not home or away == home:
+        return None
+    if not Path(str(db_path)).exists():
+        return None
+    try:
+        with sqlite3.connect(str(db_path)) as conn:
+            row = conn.execute(
+                """SELECT game_id FROM nfl_team_games
+                   WHERE venue = 'Home'
+                     AND ((team = ? AND opponent = ?) OR (team = ? AND opponent = ?))
+                   ORDER BY game_date DESC LIMIT 1""",
+                (home, away, away, home)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return str(row[0]) if row else None
+
+
 def has_deep_dive(game: SlateGame, db_path: str | Path = DB_PATH) -> bool:
     """Whether a real matchup page can be built for this game right now.
 

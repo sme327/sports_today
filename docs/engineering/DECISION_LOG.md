@@ -9,7 +9,27 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
-## 2026-08-21 — Ranking uses raw lift points; the displayed score clips at 100
+## 2026-08-21 — Preseason NFL cards open the pairing's last real meeting
+
+**Decision (owner).** During preseason — and for any feed-uncovered NFL game — the
+matchup link resolves to the two teams' **most recent ingested meeting**, rendered as
+the full NFL matchup page at the slate game's own URL under a banner that says exactly
+what is being shown. A pairing with no archived meeting keeps the simplified-page
+fallback. `nfl_bridge.last_meeting_game_id` does the lookup (unordered team pair,
+newest first — unlike `feed_game_id`, where orientation is a different game).
+
+**Reason.** The owner wants the NFL matchup page browsable and iterable for the rest
+of preseason. The feed never covers preseason, so the honest options were the NCAA-style
+simple layout (already the fallback, and card links weren't even offered) or the real
+page powered by real data. The last real meeting *is* real data — the page renders as
+it was analysable before that kickoff — and the banner keeps it from being passed off
+as tonight's game. A synthetic "preview" page built from season-final data was
+considered and deferred: more machinery, and the archive already holds genuine pages.
+
+**Tradeoffs.** The shown game can be up to three seasons old (the rotation means some
+pairings last met in 2023); the banner names the situation rather than hiding it. When
+the 2026 season feed starts arriving, `feed_game_id` matches take precedence
+automatically and this path goes quiet until next preseason.
 
 **Decision.** Every surface that *orders* opportunities — the slate feed, per-player
 selection, the featured eight, the ledger's featured stamp — ranks on unclamped lift

@@ -2,8 +2,16 @@
 {% block title %}{{ page.hero.away }} at {{ page.hero.home }} · Sports Today{% endblock %}
 {% block content %}
 <div class="matchup-toolbar">
-  <a class="text-link" href="{% url 'nfl-archive' %}">← Back to the NFL archive</a>
+  {% comment %}A preview reached from the slate goes back to the slate; the NFL archive
+  is deliberately not in the static export, so linking it from an exported page is a
+  broken promise (the link audit catches exactly this).{% endcomment %}
+  {% if preview_for %}<a class="text-link" href="/">← Back to today's games</a>
+  {% else %}<a class="text-link" href="{% url 'nfl-archive' %}">← Back to the NFL archive</a>{% endif %}
   <span>Historical pregame analysis</span>
 </div>
+{% if preview_for %}<div class="preview-banner">Preseason preview — the season feed covers
+regular season and playoffs only, so tonight's {{ preview_for.away_display }} at
+{{ preview_for.home_display }} has no page of its own. Below is their <b>most recent real
+meeting</b> from the archive, as it was analysed before kickoff.</div>{% endif %}
 {{ content|safe }}
 {% endblock %}

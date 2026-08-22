@@ -34,8 +34,11 @@ analytics, player props, matchup pages — runs off ingested Big Data Ball seaso
 browsed through the **season archive** (`?view=nfl`). `services/nfl_bridge.py` matches a
 live ESPN slate game to its feed row **by date + teams** (the two sources key games
 differently), so a slate game whose season is loaded opens the same matchup page. A game
-the feed does not cover — **preseason always, and any season not yet ingested** — shows the
-team-level read and says which it is. NFL **does** score props onto the slate now (five
+the feed does not cover — **preseason always, and any season not yet ingested** — shows
+the pairing's **most recent real meeting** from the archive at the slate game's own URL,
+under a banner saying exactly that (owner decision 2026-08-21: the real page stays
+browsable in preseason); a pairing with no archived meeting falls back to the team-level
+read and says which it is. NFL **does** score props onto the slate now (five
 over-only markets, since 2026-08-18), and goes quiet when the ingested feed is more than
 six weeks stale — which is every preseason day. See
 [NFL Game Page](docs/engineering/NFL_GAME_PAGE.md).
