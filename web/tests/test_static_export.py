@@ -175,6 +175,25 @@ def test_the_page_carries_mobile_web_app_metadata():
         assert tag in html, f"missing {tag}"
 
 
+def test_home_screen_icons_are_sharp_versioned_pngs():
+    """iOS otherwise keeps the previous touch icon or falls back to a screenshot."""
+    import struct
+
+    icon_dir = Path("web/static/icons")
+    expected = {
+        "apple-touch-icon-v3.png": (180, 180),
+        "icon-192-v3.png": (192, 192),
+        "icon-512-v2.png": (512, 512),
+        "sports-today-1024-v2.png": (1024, 1024),
+    }
+    for name, size in expected.items():
+        raw = (icon_dir / name).read_bytes()
+        assert raw.startswith(b"\x89PNG\r\n\x1a\n")
+        assert struct.unpack(">II", raw[16:24]) == size
+    template = Path("web/templates/web/base.html").read_text()
+    assert "apple-touch-icon-v3.png" in template
+
+
 def test_a_keyboard_user_can_skip_the_navigation():
     """The nav renders before the slate, so without this a keyboard or switch user tabs
     through every filter pill and league toggle before reaching the first game."""
