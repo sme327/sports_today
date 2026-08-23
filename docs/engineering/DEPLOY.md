@@ -18,6 +18,8 @@ and every supported Performance cohort/period/market/direction view. It delibera
 excludes the local NFL archive and operator tools. MLB, WNBA, MLS, NFL, and NCAAF live
 scores refresh from the browser; the published schedule remains usable if that fails.
 NCAAF includes FBS plus FCS during August Week Zero, then returns to FBS-only slates.
+Week Zero cards intentionally open the simplified schedule-only matchup page as the
+football navigation/layout rehearsal, even before records are mature.
 
 ## One-time Cloudflare setup
 

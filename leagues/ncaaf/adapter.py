@@ -26,6 +26,18 @@ class NCAAFAdapter(ScheduleOnlyESPN):
     rank_prefix = True          # "#5 Georgia"
     default_round = "College Football"
 
+    def deep_dive_available(self, game) -> bool:
+        """Week Zero is the deliberate matchup-page dress rehearsal.
+
+        The generic schedule-only gate waits for four games of record history. During
+        August we still offer the honest simplified page—schedule, ranks, venue,
+        broadcast, and explicit data gaps—so the first live football slate exercises
+        navigation and layout before the FBS season begins.
+        """
+        if game.start_time and game.start_time.month == 8:
+            return True
+        return super().deep_dive_available(game)
+
     def scoreboard_groups(self, slate_date: date) -> tuple[str | int, ...]:
         """Include FCS during August's bounded Week Zero dry run.
 

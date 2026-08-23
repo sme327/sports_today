@@ -20,8 +20,10 @@ them is a useful live dry run before the main FBS slate; carrying ~100 games eve
 Saturday would make the product less readable. Live rehearsal found 22 games August 27,
 49 August 29, 11 September 3, and 68 September 5.
 
-**Tradeoffs.** “NCAAF” temporarily means broader Division I during Week Zero. Matchup
-pages remain schedule-only and intentionally withhold thin early-season editorial reads.
+**Tradeoffs.** “NCAAF” temporarily means broader Division I during Week Zero. August
+cards offer the honest simplified matchup page as a navigation/layout dress rehearsal,
+even without four games of record history; the page states that player analysis and
+efficiency data are unavailable rather than manufacturing an early-season read.
 
 ## 2026-08-23 — NFL slate games get their own pregame page
 

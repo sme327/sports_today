@@ -188,3 +188,19 @@ def test_ncaaf_passes_week_zero_groups_to_the_scoreboard(monkeypatch):
     adapter.fetch_schedule(date(2026, 8, 27))
     adapter.fetch_schedule(date(2026, 9, 3))
     assert calls == [(80, 81), None]
+
+
+def test_ncaaf_week_zero_offers_the_simplified_matchup_dry_run():
+    from datetime import datetime, timezone
+    from domain.models import SlateGame
+
+    adapter = get_adapter("NCAAF")
+    week_zero = SlateGame(league="NCAAF", game_id="1",
+                          start_time=datetime(2026, 8, 27, 22, tzinfo=timezone.utc),
+                          away_name="Maine", home_name="Towson")
+    assert adapter.deep_dive_available(week_zero) is True
+
+    week_one = SlateGame(league="NCAAF", game_id="2",
+                         start_time=datetime(2026, 9, 3, 22, tzinfo=timezone.utc),
+                         away_name="A", home_name="B", away_record="0-0", home_record="0-0")
+    assert adapter.deep_dive_available(week_one) is False
