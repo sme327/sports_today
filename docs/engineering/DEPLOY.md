@@ -15,8 +15,9 @@ workbook never leave the Mac. The Mac can be off after a publish.
 
 The public bundle includes Today/Tomorrow, current matchup pages, seven Results dates,
 and every supported Performance cohort/period/market/direction view. It deliberately
-excludes the local NFL archive and operator tools. Supported live scores refresh from
-the browser; the published schedule remains usable if that refresh fails.
+excludes the local NFL archive and operator tools. MLB, WNBA, MLS, NFL, and NCAAF live
+scores refresh from the browser; the published schedule remains usable if that fails.
+NCAAF includes FBS plus FCS during August Week Zero, then returns to FBS-only slates.
 
 ## One-time Cloudflare setup
 

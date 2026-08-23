@@ -41,6 +41,11 @@ def test_rebuild_mlb_only(monkeypatch):
 
 def test_rebuild_with_collectors(monkeypatch):
     _fake_import(monkeypatch)
+    # The import is deliberately faked and returns no real SQLite file; fake the slim
+    # builder too so this offline test exercises which artifact the pipeline publishes,
+    # not whether SQLite can copy a nonexistent fixture.
+    monkeypatch.setattr("scripts.build_deploy_db.build",
+                        lambda src, dst: Path(dst))
     monkeypatch.setattr("src.wnba_collector.collect_wnba_season",
                         lambda **k: SimpleNamespace(games_downloaded=3, player_rows_written=60))
     monkeypatch.setattr("src.mls_collector.collect",

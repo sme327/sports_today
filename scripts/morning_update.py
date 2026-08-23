@@ -107,6 +107,15 @@ def main() -> int:
             print(f"Daily feed precompute skipped: {result['daily_feed_error']}", file=sys.stderr)
         for iso, g in (result.get("regraded") or {}).items():
             print(f"Re-graded {iso}: {g['hit']} hit, {g['miss']} miss, {g['void']} void.")
+        # A conservative segment scan is useful monthly, not daily. It is non-fatal:
+        # publishing current sports data must never depend on an analytical report.
+        try:
+            from scripts.signal_discovery import write_report
+            signal_path = write_report()
+            if signal_path:
+                print(f"Signal discovery report written: {signal_path}")
+        except Exception as exc:
+            print(f"Signal discovery report skipped: {exc}", file=sys.stderr)
         if result.get("published"):
             print("Published database to the cloud store.")
 

@@ -136,3 +136,65 @@ def test_spotlight_is_honest_when_the_player_did_not_appear(tmp_path):
     wr = _spot(page, "A WR")
     assert wr.market == "60+ Rec Yards"      # the pick is still shown
     assert wr.actual is None and wr.result is None   # …but never graded as a miss
+
+
+# --- pregame pages (2026-08-21): the feed holds only played games -------------------
+
+def _seed_seasoned(tmp_path):
+    """Two seasons: 2025 complete (weeks 1-3), 2026 with only week 1 played."""
+    db = tmp_path / "nfl.db"
+    rows = []
+    for season, dates in ((2025, ("2025-09-07", "2025-09-14", "2025-09-21")),
+                          (2026, ("2026-09-10",))):
+        for wk, d in enumerate(dates, 1):
+            for r in (_row(f"s{season}w{wk}", wk, "A", "B", "Road", 30, 300, 100),
+                      _row(f"s{season}w{wk}", wk, "B", "A", "Home", 20, 250, 90)):
+                r["game_date"], r["season"] = d, season
+                rows.append(r)
+    with sqlite3.connect(db) as conn:
+        pd.DataFrame(rows).to_sql("nfl_team_games", conn, index=False)
+    return db
+
+
+def test_week_one_pregame_page_uses_last_season_and_says_so(tmp_path):
+    """At week 1 the slate's season has no played games, so the page is built from the
+    latest full season — aggregated data describing tonight's teams, which the
+    no-historical-games rule explicitly permits — and labels the vintage: records read
+    "N-N in 2025", the note names the season, and rest days are not computed (247 days
+    since last season's finale is not a fact worth printing)."""
+    from services.nfl_game_page import build_nfl_pregame_page
+
+    db = _seed_seasoned(tmp_path)
+    page = build_nfl_pregame_page("A", "B", "2026-09-10", "Week 1",
+                                  slate_season=2026, db_path=db)
+    # kickoff is week 1 of 2026 *before* any 2026 game: use a date before the seeded one
+    page = build_nfl_pregame_page("A", "B", "2026-09-09", "Week 1",
+                                  slate_season=2026, db_path=db)
+    assert page is not None
+    assert page.hero.away_score is None and page.hero.winner is None
+    assert page.hero.away_record.endswith("in 2025")
+    assert "2025 season" in page.note
+    assert page.away_rest is None and page.rest_note == ""
+    assert page.identity and page.thesis          # full analysis, from 2025 aggregates
+    # No spotlight can carry a result badge on a game that hasn't been played.
+    assert all(s.result is None for s in page.away_spotlights + page.home_spotlights)
+
+
+def test_in_season_pregame_page_uses_this_seasons_played_games(tmp_path):
+    from services.nfl_game_page import build_nfl_pregame_page
+
+    db = _seed_seasoned(tmp_path)
+    page = build_nfl_pregame_page("A", "B", "2026-09-17", "Week 2",
+                                  slate_season=2026, db_path=db)
+    assert page is not None
+    assert page.hero.away_record == "1-0"          # 2026 week 1 only, unlabeled
+    assert "2025" not in page.note                 # current-season mode
+    assert page.hero.round_label == "Week 2"
+
+
+def test_pregame_page_refuses_unknown_teams(tmp_path):
+    from services.nfl_game_page import build_nfl_pregame_page
+
+    db = _seed_seasoned(tmp_path)
+    assert build_nfl_pregame_page("Nobody", "B", "2026-09-09", db_path=db) is None
+    assert build_nfl_pregame_page("A", "A", "2026-09-09", db_path=db) is None

@@ -2,8 +2,13 @@
 {% block title %}{{ page.hero.away }} at {{ page.hero.home }} · Sports Today{% endblock %}
 {% block content %}
 <div class="matchup-toolbar">
-  <a class="text-link" href="{% url 'nfl-archive' %}">← Back to the NFL archive</a>
-  <span>Historical pregame analysis</span>
+  {% comment %}A pregame page is reached from the slate and goes back to it — the NFL
+  archive is deliberately not in the static export, so an exported page must not link
+  it (the link audit enforces this).{% endcomment %}
+  {% if pregame %}<a class="text-link" href="/">← Back to today's games</a>
+  <span>Pregame preview</span>
+  {% else %}<a class="text-link" href="{% url 'nfl-archive' %}">← Back to the NFL archive</a>
+  <span>Historical pregame analysis</span>{% endif %}
 </div>
 {{ content|safe }}
 {% endblock %}

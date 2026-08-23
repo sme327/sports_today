@@ -130,3 +130,17 @@ def test_coverage_reports_what_is_loaded(tmp_path):
     cov = coverage(db)
     assert cov["seasons"] == [2024, 2025]
     assert cov["latest_date"] == "2026-01-11"
+
+
+def test_can_preview_gates_the_pregame_matchup_link(tmp_path):
+    """The feed holds only played games, so before kickoff `feed_game_id` is always
+    None — `can_preview` is what lets a card offer a matchup link pregame. It needs
+    only resolvable teams; unknown teams and non-NFL games get nothing."""
+    from services.nfl_bridge import can_preview
+    db = _db(tmp_path)
+    pre = _game(when="2026-09-10T00:20:00+00:00", phase="regular", season=2026)
+    assert feed_game_id(pre, db) is None          # not in the feed: not played yet
+    assert can_preview(pre, db) is True
+    assert can_preview(_game(league="MLB"), db) is False
+    stranger = _game(away="Some Expansion Team", when="2026-09-10T00:20:00+00:00")
+    assert can_preview(stranger, db) is False

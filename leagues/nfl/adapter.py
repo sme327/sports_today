@@ -28,8 +28,12 @@ class NFLAdapter(ScheduleOnlyESPN):
     supports_deep_dive = True
 
     def deep_dive_available(self, game) -> bool:
-        from services.nfl_bridge import has_deep_dive
-        return has_deep_dive(game)
+        # A played, feed-covered game opens its archive page; an upcoming game opens
+        # a pregame page built from aggregated data describing tonight's teams (the
+        # feed holds only played games, so before kickoff the feed match is always
+        # None — without the preview check, no link would ever appear pregame).
+        from services.nfl_bridge import can_preview, has_deep_dive
+        return has_deep_dive(game) or can_preview(game)
 
     def opportunities(
         self,

@@ -38,3 +38,27 @@ def test_nfl_matchup_endpoint(context):
 @patch("web.views.matchup_context", return_value=None)
 def test_unknown_nfl_matchup_is_404(_context):
     assert Client().get("/nfl/game/missing/").status_code == 404
+
+
+@patch("web.views.render")
+@patch("web.nfl.pregame_context")
+@patch("services.nfl_bridge.feed_game_id", return_value=None)
+@patch("web.views.find_game")
+def test_an_upcoming_nfl_game_renders_a_pregame_page(find, _feed, pregame, render):
+    """The feed holds only played games, so an upcoming game never matches it; the
+    pregame path is what serves a matchup page before kickoff — all season, and at
+    week 1 from last season's aggregates, labeled."""
+    from django.http import HttpResponse
+    from domain.models import SlateGame
+
+    find.return_value = SlateGame(
+        league="NFL", game_id="401999", away_name="San Francisco 49ers",
+        home_name="Philadelphia Eagles", away_short="49ers", home_short="Eagles",
+        phase="regular", season=2026, week=1)
+    pregame.return_value = {"section": "nfl", "page": object(), "content": "<div>x</div>",
+                            "pregame": True, "cache_source": "built", "build_ms": 3.0}
+    render.return_value = HttpResponse(b"ok")
+    response = Client().get("/game/NFL/401999/")
+    assert response.status_code == 200
+    assert pregame.called
+    assert render.call_args[0][2]["pregame"] is True

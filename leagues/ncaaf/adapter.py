@@ -6,6 +6,8 @@ week. No player props (deliberately — NCAA FB's value is games/matchups/upset 
 
 from __future__ import annotations
 
+from datetime import date
+
 from leagues._espn_schedule import ScheduleOnlyESPN
 from leagues.base import register
 
@@ -23,6 +25,15 @@ class NCAAFAdapter(ScheduleOnlyESPN):
     with_week = True            # "Week 1"
     rank_prefix = True          # "#5 Georgia"
     default_round = "College Football"
+
+    def scoreboard_groups(self, slate_date: date) -> tuple[str | int, ...]:
+        """Include FCS during August's bounded Week Zero dry run.
+
+        Group 80 is FBS and 81 is FCS. Cross-division games can appear in both;
+        the shared client unions them by ESPN event id. From September onward the
+        product returns to its intentionally FBS-focused slate.
+        """
+        return (80, 81) if slate_date.month == 8 else ()
 
 
 register(NCAAFAdapter())

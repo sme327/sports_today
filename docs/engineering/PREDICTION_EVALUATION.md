@@ -37,6 +37,24 @@ Opportunity Score is a ranking signal, not a probability. Raw scores from differ
 markets should not be treated as directly comparable; Featured selection should move
 toward market-specific percentiles or properly calibrated probabilities.
 
+## Recurring signal discovery
+
+The normal update attempts `scripts.signal_discovery` every day but writes a new local
+report only every 28 days (`logs/signal_discovery_latest.md` plus machine-readable JSON).
+Run `python -m scripts.signal_discovery --force` for an interim report.
+
+The scan covers every decided 70+ prediction for active market families, while keeping
+each scoring-engine version separate. Candidate slices are deliberately bounded to one
+condition within a market/version: direction, threshold, score band, Featured status,
+team, or opponent. It does not mine arbitrary multi-factor conjunctions.
+
+A candidate needs at least 30 decisions across five slates to enter the report. Its own
+slates are split chronologically 70/30 into discovery and validation; lift uses each
+row's exact natural base rate; uncertainty is clustered by slate; discovery p-values are
+Benjamini–Hochberg corrected. “Confirmed” additionally requires 60 decisions, 15 slates,
+a positive clustered 95% lower bound, q≤.10, and positive later holdout lift. Earlier
+positive results remain explicitly a **Promising watchlist**, never a production rule.
+
 ## Model-development guardrails
 
 - Preserve pregame inputs and the official daily snapshot. Never reconstruct a missing

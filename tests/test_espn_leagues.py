@@ -165,9 +165,26 @@ def test_total_failure_still_returns_empty(monkeypatch):
 
 
 def test_adapters_declare_their_group_and_limit_needs():
-    """NCAAF deliberately carries no groups (the default is FBS, which is what this
-    product means by college football). Single-league sports need neither."""
+    """Fixed adapter config stays narrow; NCAAF widens only during August Week Zero."""
     for lg in ("NFL", "NBA", "NHL", "NCAAF"):
         a = get_adapter(lg)
         assert getattr(a, "espn_groups", ()) == (), f"{lg} should not need groups"
         assert getattr(a, "espn_limit", 100) == 100
+
+    ncaaf = get_adapter("NCAAF")
+    assert ncaaf.scoreboard_groups(date(2026, 8, 27)) == (80, 81)
+    assert ncaaf.scoreboard_groups(date(2026, 9, 3)) == ()
+
+
+def test_ncaaf_passes_week_zero_groups_to_the_scoreboard(monkeypatch):
+    calls = []
+
+    def fake_fetch(path, d, **kwargs):
+        calls.append(kwargs.get("groups"))
+        return []
+
+    monkeypatch.setattr("src.espn_scoreboard.fetch", fake_fetch)
+    adapter = get_adapter("NCAAF")
+    adapter.fetch_schedule(date(2026, 8, 27))
+    adapter.fetch_schedule(date(2026, 9, 3))
+    assert calls == [(80, 81), None]

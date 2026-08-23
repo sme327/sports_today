@@ -1,14 +1,14 @@
 # NFL Matchup Page
 
-> **Purpose** — How the NFL deep-dive is built: its pipeline, sections, formulas, the leakage model, and why it lives in the season archive rather than the daily slate.
+> **Purpose** — How NFL archive and current-slate matchup pages are built: pipeline, sections, formulas, data vintage, and leakage model.
 > **Audience** — Engineers and AI assistants extending NFL (and a template for any league built on an ingested season feed).
 > **Update when** — Sections, formulas, thresholds, the feed shape, or the archive/slate split change.
 > **Related** — [Architecture](ARCHITECTURE.md) · [Sport Plans → NFL deep-dive](../product/SPORT_PLANS.md#nfl-deep-dive-matchup-page-the-flagship) · [Decision Log](DECISION_LOG.md) · [Testing](TESTING.md)
 
-The flagship deep-dive. Unlike MLB/WNBA/MLS — which preview *tonight's* games from
-live schedules — NFL is built against **completed, ingested seasons**. That makes it
-the only page in the app that can show both a genuine leakage-safe preview *and* what
-actually happened, which is what gives it a built-in backtest.
+The flagship deep-dive. NFL analysis is built from **completed, ingested games**, while
+the ESPN slate identifies tonight's actual matchup. An upcoming game therefore gets its
+own pregame page from aggregated prior data; an archived game can additionally show what
+actually happened, giving the page a built-in backtest.
 
 ## The archive/slate split (read this first)
 
@@ -16,7 +16,7 @@ actually happened, which is what gives it a built-in backtest.
 
 | Surface | Source | What you get |
 | --- | --- | --- |
-| Today's slate | ESPN scoreboard, via `ScheduleOnlyESPN` | Schedule card. If the feed covers this game, a **Matchup →** link to the full deep-dive; otherwise the team-level read plus a sentence saying why. |
+| Today's slate | ESPN scoreboard + ingested prior seasons | **Matchup →** opens tonight's own pregame page when both teams resolve. Week 1 uses the latest earlier season and labels that vintage; after games are played it uses only the current season before kickoff. |
 | Season archive (`?view=nfl`) | Ingested Big Data Ball seasons in `sportshub.db` | Week browser → full matchup deep-dive for any ingested game. |
 
 The two surfaces still use different identity spaces — ESPN event ids
@@ -28,11 +28,11 @@ through the feed's own `nfl_teams` dimension so a rebrand does not break the joi
 calls it week 19. Dates match within one day, because ESPN start times are UTC and a
 Sunday-night kickoff lands on Monday.
 
-**No match is the ordinary case, not an error.** The feed carries regular season and
-playoffs only, so **preseason never matches**, and a season nobody has ingested never
-matches. `web.views.game` falls through to the team-level read and `unavailable_reason()`
-says which case it is — "not preseason", or "the 2026 season is not loaded yet; the feed
-holds 2023, 2024, 2025".
+**A feed-game match is not required before kickoff.** The vendor feed contains played
+games, so an upcoming ESPN event cannot have a vendor `game_id`. `can_preview()` instead
+checks that both teams resolve, and `build_nfl_pregame_page()` builds tonight's page.
+It never substitutes an old game: prior seasons supply aggregated team/player context
+only. Unknown teams still fall through to the honest schedule-only page.
 
 `supports_deep_dive` is now **True** for NFL, but that is a *league capability*; whether a
 given game has a page is decided per game by `NFLAdapter.deep_dive_available()`, which
@@ -46,9 +46,9 @@ fingerprint, silent when there is none, non-fatal on failure, **Downloads only**
 automated job must not search a personal documents tree). So mid-season, dropping a feed
 is all it takes for today's NFL cards to start deep-diving.
 
-What remains is simply that **the 2026 season cannot be ingested until its games are
-played**. That is also why NFL props still cannot be graded (`nfl_props_registry`) — a
-data-availability limit, not a missing piece of code.
+The 2026 page sharpens as weekly feeds arrive. Week 1 explicitly says when it is using
+2025; later weeks use 2026 games strictly before kickoff. NFL props remain pending until
+the weekly vendor result feed arrives.
 
 Entry point: the `/nfl/` route (`web.views.nfl_archive`),
 rendered only when `nfl_team_games` actually holds data — so a fresh clone with no NFL
@@ -65,6 +65,9 @@ web/urls.py (`/nfl/`) → web.views.nfl_archive
        → src/nfl_opportunity.py         (reachable-bar player props)
        → components/nfl_game.py         (pure HTML)
 ```
+
+Daily slate path: `web.views.game` → `web.nfl.pregame_context` →
+`build_nfl_pregame_page` → the same analytics/components, with no final-score badges.
 
 Engine version: `nfl-matchup-v1` (`services/nfl_game_page.ENGINE_VERSION`).
 

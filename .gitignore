@@ -26,6 +26,8 @@ data/archive/
 data/wnba/*.csv
 logs/*.csv
 logs/*.jsonl
+logs/signal_discovery_latest.md
+logs/signal_discovery_latest.json
 
 # Icon zips (SVG sources are kept)
 icons/*.zip

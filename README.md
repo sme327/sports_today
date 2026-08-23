@@ -56,6 +56,7 @@ Exact steps and the macOS double-click workflow: [Setup](docs/engineering/SETUP.
 
 - Tests (offline): `pip install -r requirements-dev.txt && python -m pytest`
 - Build and audit the static site: `python -m scripts.publish_pages --build-only`
+- Force the local recurring strength scan: `python -m scripts.signal_discovery --force`
 - Data diagnostics: `python -m scripts.diagnostics`
 
 ## Add a new league

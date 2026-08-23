@@ -220,6 +220,33 @@ def _spotlights(pg: pd.DataFrame, game_id: str, game_date: str, team: str,
     return tuple(out)
 
 
+def _analysis(away: str, home: str, table: pd.DataFrame
+              ) -> tuple[tuple[str, ...], tuple[NFLIdentityRow, ...], tuple]:
+    """Thesis + identity rows + battlefields from a season table — shared by the
+    archive builder and the pregame builder, which differ only in where the
+    underlying games come from."""
+    if table.empty or away not in table.index or home not in table.index:
+        return (), (), ()
+    a, h = table.loc[away], table.loc[home]
+    thesis = _thesis(_short(away), _short(home), a, h)
+    identity: list[NFLIdentityRow] = []
+    for label, col, pct_col, higher in _IDENTITY_ROWS:
+        av, hv = a.get(col), h.get(col)
+        apct = int(a[pct_col]) if pct_col and pd.notna(a.get(pct_col)) else None
+        hpct = int(h[pct_col]) if pct_col and pd.notna(h.get(pct_col)) else None
+        if apct is not None and hpct is not None:
+            better = "away" if apct > hpct else "home" if hpct > apct else "even"
+        elif pd.notna(av) and pd.notna(hv):
+            better = ("away" if (av > hv) == higher else "home") if av != hv else "even"
+        else:
+            better = "even"
+        is_pct = label.endswith("%")
+        identity.append(NFLIdentityRow(label, _fmt(av, is_pct), _fmt(hv, is_pct),
+                                       apct, hpct, better))
+    battlefields = A.battlefields(table, away, home, _short(away), _short(home))
+    return thesis, tuple(identity), battlefields
+
+
 def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | None:
     tg = load_team_games(db_path=db_path)
     pg = load_player_games(db_path=db_path)
@@ -276,26 +303,7 @@ def _build_nfl_game_page(
     h_rec = _record(frame, home) if not frame.empty else "0-0"
     hero = NFLHero(away, home, game_date, round_label, a_rec, h_rec, a_score, h_score, winner)
 
-    identity: list[NFLIdentityRow] = []
-    battlefields: tuple[A.Battlefield, ...] = ()
-    thesis: tuple[str, ...] = ()
-    if not table.empty and away in table.index and home in table.index:
-        a, h = table.loc[away], table.loc[home]
-        thesis = _thesis(_short(away), _short(home), a, h)
-        for label, col, pct_col, higher in _IDENTITY_ROWS:
-            av, hv = a.get(col), h.get(col)
-            apct = int(a[pct_col]) if pct_col and pd.notna(a.get(pct_col)) else None
-            hpct = int(h[pct_col]) if pct_col and pd.notna(h.get(pct_col)) else None
-            if apct is not None and hpct is not None:
-                better = "away" if apct > hpct else "home" if hpct > apct else "even"
-            elif pd.notna(av) and pd.notna(hv):
-                better = ("away" if (av > hv) == higher else "home") if av != hv else "even"
-            else:
-                better = "even"
-            is_pct = label.endswith("%")
-            identity.append(NFLIdentityRow(label, _fmt(av, is_pct), _fmt(hv, is_pct),
-                                           apct, hpct, better))
-        battlefields = A.battlefields(table, away, home, _short(away), _short(home))
+    thesis, identity, battlefields = _analysis(away, home, table)
 
     games_in = int(len(frame[frame["team"] == away])) if not frame.empty else 0
     note = ("Season opener — no prior-form data yet." if games_in == 0 else
@@ -314,6 +322,101 @@ def _build_nfl_game_page(
 
     return NFLGamePage(hero, thesis, a_rest, h_rest, rest_note,
                        tuple(identity), battlefields,
+                       _form(frame, away), _form(frame, home),
+                       away_spot, home_spot, note)
+
+
+def build_nfl_pregame_page(away: str, home: str, kickoff: str,
+                           round_label: str = "", slate_season: int | None = None,
+                           db_path: Path = DB_PATH) -> NFLGamePage | None:
+    """A matchup page for a game the feed does not hold yet — i.e. **before kickoff**.
+
+    The feed only ever contains played games (zero rows without finals), so an upcoming
+    game can never match ``feed_game_id`` and the archive builder can never serve it.
+    This builder needs only the two teams and the kickoff date: every section is
+    *aggregated* data describing tonight's teams, which is exactly what the product
+    rule permits — no historical game ever stands in for today's (decision log,
+    2026-08-21).
+
+    **Data vintage, honestly.** In season, the sections use this season's played games
+    (leakage-safe by construction — unplayed games aren't in the feed). At week 1 —
+    and any day the slate's season has no played games yet — they fall back to the
+    latest full ingested season, and the page says so: the hero records read
+    "12-5 in 2025" and the note names the vintage. Rest days are only computed from
+    current-season data; "247 days of rest" off last season's finale is not a fact
+    worth printing.
+
+    ``away``/``home`` must be the feed's canonical long names (the bridge's
+    ``canonical_team`` provides them). Returns ``None`` when either team is unknown
+    to the feed or the feed is empty.
+    """
+    tg = load_team_games(db_path=db_path)
+    pg = load_player_games(db_path=db_path)
+    if tg.empty or not away or not home or away == home:
+        return None
+    known = set(tg["team"].astype(str))
+    if away not in known or home not in known:
+        return None
+
+    kickoff = str(kickoff)[:10]
+    has_season = "season" in tg.columns
+    current = (tg[(tg["season"] == slate_season)
+                  & (tg["game_date"].astype("string") < kickoff)]
+               if has_season and slate_season is not None else tg.iloc[0:0])
+    vintage: int | None = None
+    if not current.empty:
+        season_tg = tg[tg["season"] == slate_season]
+    else:
+        # Latest season with games *before* kickoff — not simply the max season: a
+        # feed row dated after this kickoff (a later game already ingested) must not
+        # nominate a season whose leakage-safe slice would then be empty.
+        before = tg[tg["game_date"].astype("string") < kickoff]
+        if before.empty:
+            return None
+        data_season = int(before["season"].dropna().max()) if has_season else None
+        season_tg = tg[tg["season"] == data_season] if data_season is not None else tg
+        vintage = data_season
+
+    prior = season_tg[season_tg["game_date"].astype("string") < kickoff]
+    if prior.empty:
+        return None
+    frame = A.team_game_frame(prior)
+    table = A.team_season_table(frame)
+
+    a_rec, h_rec = _record(frame, away), _record(frame, home)
+    if vintage is not None:
+        a_rec, h_rec = f"{a_rec} in {vintage}", f"{h_rec} in {vintage}"
+    hero = NFLHero(away, home, kickoff, round_label or "Upcoming",
+                   a_rec, h_rec, None, None, None)
+
+    thesis, identity, battlefields = _analysis(away, home, table)
+
+    if vintage is not None:
+        note = (f"Built from the full {vintage} season — "
+                f"{'the ' + str(slate_season) + ' feed has' if slate_season else 'this season has'} "
+                f"no played games yet.")
+        a_rest = h_rest = None
+        rest_note = ""
+    else:
+        games_in = int(len(frame[frame["team"] == away]))
+        note = ("Season opener — no prior-form data yet." if games_in == 0 else
+                "Early-season sample — form is thin." if games_in < 4 else "")
+        a_rest = A.rest_days(season_tg, away, kickoff)
+        h_rest = A.rest_days(season_tg, home, kickoff)
+        rest_note = _rest_note(_short(away), _short(home), a_rest, h_rest)
+
+    pg_all = pg
+    if not pg.empty and "season" in pg.columns:
+        season_val = vintage if vintage is not None else slate_season
+        if season_val is not None:
+            pg = pg[pg["season"] == season_val]
+    # game_id "" is deliberately unmatchable: pregame, so there is no "this game" row
+    # and every spotlight renders with no result badge.
+    away_spot = _spotlights(pg, "", kickoff, away, home, pg_all)
+    home_spot = _spotlights(pg, "", kickoff, home, away, pg_all)
+
+    return NFLGamePage(hero, thesis, a_rest, h_rest, rest_note,
+                       identity, battlefields,
                        _form(frame, away), _form(frame, home),
                        away_spot, home_spot, note)
 

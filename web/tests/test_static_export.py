@@ -56,6 +56,8 @@ def test_live_score_script_normalizes_espn_states_and_filters_by_game_state():
     # Live scores move cards between states, so the filter has to be re-applied after an
     # update — otherwise a game that just went final stays visible under "Upcoming".
     assert source.count("applyStateVisibility()") >= 2
+    assert '["NCAAF", "football", "college-football", "80"]' in source
+    assert '["NCAAF", "football", "college-football", "81"]' in source
 
 
 def test_picks_shortlist_is_client_side_and_fully_wired():

@@ -57,10 +57,21 @@ def game(request, league: str, game_id: str):
         raise Http404("Game not found in the cached slate")
     if league == "NFL":
         from services.nfl_bridge import feed_game_id
+        from web.nfl import pregame_context
 
         archive_id = feed_game_id(slate_game)
         if archive_id:
+            # Played and in the feed: the game's own page, with its analysis.
             return redirect("nfl-matchup", game_id=archive_id)
+        # Upcoming (the feed holds only played games, so pregame never matches):
+        # a page built from aggregated data describing tonight's teams.
+        context = pregame_context(slate_game, slate_date)
+        if context is not None:
+            context["day"] = day
+            response = render(request, "web/nfl_matchup.html", context)
+            response["Server-Timing"] = f"matchup;dur={context['build_ms']}"
+            response["X-Sports-Today-Cache"] = context["cache_source"]
+            return response
     if league not in {"MLB", "WNBA", "MLS"}:
         return render(request, "web/game_simple.html",
                       simple_game_context(slate_game, slate_date, day))

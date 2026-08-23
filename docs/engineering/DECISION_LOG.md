@@ -9,6 +9,47 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-23 — Week Zero includes FCS; regular NCAAF remains FBS-focused
+
+**Decision.** During August, the NCAAF adapter unions ESPN groups 80 (FBS) and 81
+(FCS), deduplicated by event id. From September onward it returns to the default FBS
+slate. NCAAF also joins the browser's one-minute live-score refresh.
+
+**Reason.** The literal first 2026 college-football games on August 27 are FCS. Showing
+them is a useful live dry run before the main FBS slate; carrying ~100 games every later
+Saturday would make the product less readable. Live rehearsal found 22 games August 27,
+49 August 29, 11 September 3, and 68 September 5.
+
+**Tradeoffs.** “NCAAF” temporarily means broader Division I during Week Zero. Matchup
+pages remain schedule-only and intentionally withhold thin early-season editorial reads.
+
+## 2026-08-23 — NFL slate games get their own pregame page
+
+**Decision.** An upcoming ESPN NFL game opens a page about that game whenever both teams
+resolve to the ingested feed. Week 1 uses prior-season aggregates with the vintage stated;
+later weeks use current-season games strictly before kickoff. No historical game page is
+ever substituted for tonight's matchup.
+
+**Reason.** The vendor feed contains only played games, so requiring a shared game id made
+pregame links impossible. Aggregated history is valid context; an old game's page is not.
+
+**Tradeoffs.** Week 1 analysis describes last season and says so. The page sharpens only
+after weekly vendor feeds arrive; unknown teams keep the schedule-only fallback.
+
+## 2026-08-23 — Monthly signal discovery uses holdouts, clustering, and multiplicity
+
+**Decision.** The daily operator workflow checks whether a 28-day Signal Discovery
+report is due. It scans bounded one-condition slices inside each market/model version,
+compares against exact prop base rates, clusters uncertainty by slate, corrects discovery
+p-values for multiple testing, and requires positive later holdout lift.
+
+**Reason.** The ledger can reveal genuine specialties, but an unconstrained slice search
+will always manufacture an 80% small-sample story. Version separation and forward
+confirmation turn the scan into hypothesis generation rather than retrospective tuning.
+
+**Tradeoffs.** The first report can honestly say “none confirmed.” Watchlist findings do
+not change scores; promotion still requires a frozen prospective evaluation.
+
 ## 2026-08-21 — Product rule: a matchup link for today's game never serves a historical game
 
 **Decision (owner, verbatim intent).** "At no point when looking for a matchup of

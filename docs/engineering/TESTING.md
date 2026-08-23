@@ -71,6 +71,7 @@ logic beneath it.
 | --- | --- |
 | `test_web.py` | Route contracts: day parsing and the tomorrow toggle, threshold restriction, health, and that the schedule is deferred to a fragment rather than blocking the first render |
 | `test_analytics.py` | Results and Performance: filters, cohorts, period comparison, and **model versions grouped by market** — the live version expanded, earlier ones collapsed, retired markets separated so an unservable market's record is never read as an old engine's |
+| `test_signal_discovery.py` | Monthly segment scan: temporal holdout, model-version separation, duplicate-slice suppression, and cadence guard |
 | `test_games.py` · `test_nfl.py` | Per-league matchup contexts; unknown ids 404 rather than raising |
 | `test_static_export.py` | The export itself: canonical URLs, path-traversal refusal, the link audit, and **standards compliance on the built page** — exactly one `<h1>`, mobile web-app metadata, a working skip link, `prefers-reduced-motion`, a `standalone` manifest whose icons exist, and that template comments never leak into the page |
 

@@ -13,6 +13,7 @@ from services import matchup_cache
 from services.nfl_game_page import (
     ENGINE_VERSION,
     build_nfl_game_page,
+    build_nfl_pregame_page,
 )
 from src.config import DB_PATH
 
@@ -143,6 +144,55 @@ def matchup_context(game_id: str) -> dict | None:
         "section": "nfl",
         "page": page,
         "content": page_html(page),
+        "cache_source": cache_source,
+        "build_ms": round((perf_counter() - started) * 1000, 1),
+    }
+
+
+def pregame_context(slate_game, slate_date: date) -> dict | None:
+    """The matchup page for an **upcoming** slate game — built from aggregated data
+    describing tonight's teams, never from a historical game (product rule,
+    2026-08-21). Cached per slate date because the page sharpens daily as this
+    season's played games arrive in the feed."""
+    from services.nfl_bridge import canonical_team
+
+    started = perf_counter()
+    away = canonical_team(slate_game.away_name or slate_game.away_display)
+    home = canonical_team(slate_game.home_name or slate_game.home_display)
+    if not away or not home or away == home:
+        return None
+    phase = (slate_game.phase or "").lower()
+    week = slate_game.week
+    if phase == "preseason":
+        round_label = f"Preseason · Wk {week}" if week else "Preseason"
+    elif phase == "postseason":
+        round_label = "Playoffs"
+    else:
+        round_label = f"Week {week}" if week else "Upcoming"
+    kickoff = (slate_game.start_time.date() if slate_game.start_time else slate_date)
+
+    cache_id = f"pre-{slate_game.game_id}"
+    key = f"django:nfl-pregame:{ENGINE_VERSION}:{slate_date.isoformat()}:{slate_game.game_id}"
+    page = cache.get(key)
+    cache_source = "memory" if page is not None else None
+    if page is None:
+        page = matchup_cache.load("NFL", cache_id, slate_date, ENGINE_VERSION)
+        if page is not None:
+            cache.set(key, page, timeout=900)
+            cache_source = "database"
+    if page is None:
+        page = build_nfl_pregame_page(away, home, kickoff.isoformat(), round_label,
+                                      slate_game.season)
+        if page is None:
+            return None
+        matchup_cache.store("NFL", cache_id, slate_date, ENGINE_VERSION, page)
+        cache.set(key, page, timeout=900)
+        cache_source = "built"
+    return {
+        "section": "nfl",
+        "page": page,
+        "content": page_html(page),
+        "pregame": True,
         "cache_source": cache_source,
         "build_ms": round((perf_counter() - started) * 1000, 1),
     }

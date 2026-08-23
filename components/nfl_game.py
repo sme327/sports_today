@@ -150,10 +150,14 @@ def spotlights_html(page: NFLGamePage) -> str:
                     'ingested seasons the gap between the softest and toughest defences is '
                     'about <b>2 receiving yards</b>, against a 35-yard game-to-game swing. '
                     'We measured it rather than assuming it.</div>')
+    # ✓/✗ badges exist only on played games; a pregame page must not promise them.
+    graded = any(s.result is not None for s in spots)
+    legend = ('(pick from prior games · ✓/✗ = result this game · matchup effect is '
+              'measured, and only flagged where it is real)' if graded else
+              '(pick from prior games · matchup effect is measured, and only flagged '
+              'where it is real)')
     return (
-        '<div class="nfl-section-head">Player spotlights '
-        '<span>(pick from prior games · ✓/✗ = result this game · matchup effect is '
-        'measured, and only flagged where it is real)</span></div>'
+        f'<div class="nfl-section-head">Player spotlights <span>{legend}</span></div>'
         f'<div class="nfl-spots">{_spot_col(a, page.away_spotlights)}'
         f'{_spot_col(h, page.home_spotlights)}</div>{footnote}'
     )
@@ -179,6 +183,12 @@ def schedule_html(page: NFLGamePage) -> str:
 
 def page_html(page: NFLGamePage) -> str:
     note = f'<div class="nfl-note">{escape(page.note)}</div>' if page.note else ""
+    # A pregame page has no result to disclaim; saying "the final score is the actual
+    # result" on a game that hasn't kicked off would only confuse.
+    played = page.hero.away_score is not None
+    disclaimer = ('Preview uses only games before kickoff; the final score is the '
+                  'actual result. ' if played else
+                  'Preview uses only games already played. ')
     return (
         hero_html(page.hero)
         + note
@@ -188,6 +198,6 @@ def page_html(page: NFLGamePage) -> str:
         + spotlights_html(page)
         + form_html(page.away_form, page.home_form)
         + schedule_html(page)
-        + '<div class="opp-disclaimer">Preview uses only games before kickoff; the '
-          'final score is the actual result. Weather, injuries, and rest are not modeled yet.</div>'
+        + f'<div class="opp-disclaimer">{disclaimer}'
+          'Weather, injuries, and rest are not modeled yet.</div>'
     )

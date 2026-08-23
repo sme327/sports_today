@@ -66,6 +66,14 @@ class ScheduleOnlyESPN:
     rank_prefix: bool = False    # prepend "#N " to ranked teams (NCAA)
     default_round: str = ""      # round label when the source omits one
 
+    def scoreboard_groups(self, slate_date: date) -> tuple[str | int, ...]:
+        """ESPN groups to request for this date.
+
+        Most leagues use the adapter's fixed groups. The hook lets a league widen
+        coverage for a bounded part of its calendar without broadening every slate.
+        """
+        return self.espn_groups
+
     def describe_game(self, game: SlateGame) -> str:
         parts = [game.round_name or game.meta.get("round") or self.default_round]
         if game.venue:
@@ -74,9 +82,10 @@ class ScheduleOnlyESPN:
 
     def fetch_schedule(self, slate_date: date) -> list[SlateGame]:
         games: list[SlateGame] = []
+        groups = self.scoreboard_groups(slate_date)
         for g in espn_scoreboard.fetch(self.espn_path, slate_date,
                                        limit=self.espn_limit,
-                                       groups=self.espn_groups or None):
+                                       groups=groups or None):
             away_short, home_short = g.get("away_short"), g.get("home_short")
             if self.rank_prefix:
                 away_short = _ranked(away_short, g.get("away_rank"))

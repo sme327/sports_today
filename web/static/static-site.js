@@ -9,6 +9,10 @@
   const scoreLeagues = [
     ["MLB", "baseball", "mlb"], ["WNBA", "basketball", "wnba"],
     ["MLS", "soccer", "usa.1"], ["NFL", "football", "nfl"],
+    // Week Zero intentionally includes FBS + FCS. Duplicate cross-division events
+    // are harmless: cards match ESPN's stable event id before falling back to teams.
+    ["NCAAF", "football", "college-football", "80"],
+    ["NCAAF", "football", "college-football", "81"],
   ];
 
   function normalizeEspnEvent(event, league) {
@@ -64,9 +68,10 @@
 
   async function directScores(date) {
     const espnDate = date.replaceAll("-", "");
-    const batches = await Promise.all(scoreLeagues.map(async ([league, sport, slug]) => {
+    const batches = await Promise.all(scoreLeagues.map(async ([league, sport, slug, group]) => {
       try {
-        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport}/${slug}/scoreboard?dates=${espnDate}&limit=200`;
+        const groupParam = group ? `&groups=${group}` : "";
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport}/${slug}/scoreboard?dates=${espnDate}&limit=200${groupParam}`;
         const response = await fetch(url);
         if (!response.ok) return [];
         const data = await response.json();

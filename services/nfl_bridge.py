@@ -110,6 +110,19 @@ def feed_game_id(game: SlateGame, db_path: str | Path = DB_PATH) -> str | None:
     return str(row[0]) if row else None
 
 
+def can_preview(game: SlateGame, db_path: str | Path = DB_PATH) -> bool:
+    """Whether a **pregame** page can be built for this game: both teams resolve to
+    feed names and the feed holds any data at all. Cheap on purpose — cards call this
+    per game. The feed only ever contains *played* games, so before kickoff
+    ``feed_game_id`` is always ``None`` and this is the check that decides whether a
+    card offers a matchup link at all."""
+    if game.league != "NFL":
+        return False
+    away = canonical_team(game.away_name or game.away_display, db_path)
+    home = canonical_team(game.home_name or game.home_display, db_path)
+    return bool(away and home and away != home)
+
+
 def has_deep_dive(game: SlateGame, db_path: str | Path = DB_PATH) -> bool:
     """Whether a real matchup page can be built for this game right now.
 
