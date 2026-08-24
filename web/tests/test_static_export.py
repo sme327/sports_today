@@ -186,7 +186,6 @@ def test_home_screen_icons_are_sharp_versioned_pngs():
         "apple-touch-icon-v3.png": (180, 180),
         "icon-192-v3.png": (192, 192),
         "icon-512-v2.png": (512, 512),
-        "sports-today-1024-v2.png": (1024, 1024),
     }
     for name, size in expected.items():
         raw = (icon_dir / name).read_bytes()
@@ -194,6 +193,22 @@ def test_home_screen_icons_are_sharp_versioned_pngs():
         assert struct.unpack(">II", raw[16:24]) == size
     template = Path("web/templates/web/base.html").read_text()
     assert "apple-touch-icon-v3.png" in template
+
+
+def test_every_served_icon_is_actually_referenced():
+    """An unreferenced file in a served static directory ships as junk on every deploy.
+    It happened: three superseded app icons and a 1.25MB master sat in
+    web/static/icons for weeks, uploaded on every publish, referenced by nothing
+    (removed 2026-08-24; the master now lives unserved in icons/). Every file in the
+    served icon directories must be named by the base template or the web manifest —
+    add the reference or don't add the file."""
+    referencers = (Path("web/templates/web/base.html").read_text()
+                   + Path("web/static/site.webmanifest").read_text())
+    for served in (Path("web/static/icons"), Path("web/static/favicons")):
+        for f in served.iterdir():
+            if f.name.startswith("."):
+                continue
+            assert f.name in referencers, f"{f} is served but referenced by nothing"
 
 
 def test_a_keyboard_user_can_skip_the_navigation():
