@@ -9,6 +9,27 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-24 — Final game cards compact (supersedes "state treatments: color only")
+
+**Decision.** A completed game's card shrinks: no minimum height, the "at" separator
+gone (away-top/home-bottom already says who hosted), the editorial signal chip gone
+(a pregame read is stale by definition once the game ends), logos and names one step
+smaller. The **score keeps full size** — it is the payload of a final card — and the
+props-filter and Matchup links stay. Roughly a third off each card; finals sit in
+their own grid section, so the savings are real rather than eaten by row-height
+matching against taller pregame neighbours.
+
+**Reason.** The earlier rule ("state treatments — same layout/size, color only") kept
+finals pregame-sized while most of that size carried pregame content. Owner asked for
+the shrink; the constraint that survives is *don't lose what still means something
+after the final* — which is the score, the result emphasis, and the links.
+
+**Implementation constraint.** CSS-only, keyed off `.game-card--final`, because the
+live-score script flips cards to final during the day and they must compact without a
+markup change.
+
+---
+
 ## 2026-08-23 — Week Zero includes FCS; regular NCAAF remains FBS-focused
 
 **Decision.** During August, the NCAAF adapter unions ESPN groups 80 (FBS) and 81

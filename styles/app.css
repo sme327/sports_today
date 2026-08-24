@@ -204,7 +204,9 @@
   box-shadow: var(--edge-hi), var(--shadow-lg);
 }
 
-/* State treatments — same layout/size, color only (Homepage evolution). */
+/* State treatments. Live/upcoming share one layout and size; finals compact
+   (2026-08-24, superseding "same layout/size, color only" — a finished game's card
+   was pregame-sized while most of that size carried pregame content). */
 /* Live: thin orange accent bar on the left edge (pseudo-element = no size shift). */
 .game-card--live::before {
   content: "";
@@ -212,9 +214,22 @@
   border-radius: var(--r-lg) 0 0 var(--r-lg);
   background: var(--brand);
 }
-/* Final: recede with a slightly darker surface; readability/scores unchanged. */
+/* Final: recede with a slightly darker surface, and shrink — the score is the payload,
+   so it keeps full size while everything around it steps down. The "at" separator goes
+   (away-top/home-bottom already says who hosted) and the editorial signal chip goes
+   (a pregame read is stale by definition once the game ends). CSS-only on purpose:
+   the live-score script flips cards to final during the day, and they must shrink
+   without any markup change. */
 .game-card--final { background: linear-gradient(165deg, #141820, #0f1319); }
 .game-card--final:hover { background: linear-gradient(165deg, #181d25, #12161c); }
+.game-card--final { min-height: 0; padding-bottom: .6rem; }
+.game-card--final .team-sep { display: none; }
+.game-card--final .ed-card-signal { display: none; }
+.game-card--final .team-logo-wrap { width: 26px; height: 26px; }
+.game-card--final .team-logo { max-width: 26px; max-height: 26px; }
+.game-card--final .team-row { grid-template-columns: 26px 1fr auto; }
+.game-card--final .team-name { font-size: 1.08rem; }
+.game-card--final .game-meta { margin-top: .5rem; }
 /* Compact: schedule-only cards (no analysis footer) sit shorter — just enough for
    the matchup + time. The reader only needs awareness that the game is on. */
 .game-card--compact { min-height: 122px; padding-bottom: .72rem; }
