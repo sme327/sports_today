@@ -31,14 +31,16 @@ across a **Daily Results** view and a **Performance** dashboard — see
 
 **NFL spans two surfaces, now joined.** Its deep-dive — season-feed ingest, team
 analytics, player props, matchup pages — runs off ingested Big Data Ball seasons and is
-browsed through the **season archive** (`?view=nfl`). `services/nfl_bridge.py` matches a
-live ESPN slate game to its feed row **by date + teams** (the two sources key games
-differently), so a slate game whose season is loaded opens the same matchup page. A game
-the feed does not cover — **preseason always, and any season not yet ingested** — shows the
-team-level read and says which it is. NFL **does** score props onto the slate now (five
-over-only markets, since 2026-08-18), and goes quiet when the ingested feed is more than
-six weeks stale — which is every preseason day. See
-[NFL Game Page](docs/engineering/NFL_GAME_PAGE.md).
+browsed through the **season archive** (`?view=nfl`). The feed only ever contains
+**played** games, so an upcoming game can never match `services/nfl_bridge.py`'s
+date+teams join; a played, feed-covered game redirects to its archive page, and every
+other NFL game gets a **pregame page** (`build_nfl_pregame_page`, since 2026-08-21)
+built from aggregated data describing tonight's teams — this season's played games once
+they exist, else the latest full season with the vintage named on the page ("12-5 in
+2025"). No historical game ever stands in for today's (product rule, decision log
+2026-08-21). NFL **does** score props onto the slate now (five over-only markets, since
+2026-08-18), and goes quiet when the ingested feed is more than six weeks stale — which
+is every preseason day. See [NFL Game Page](docs/engineering/NFL_GAME_PAGE.md).
 
 **The NFL matchup effect is one-sided, and the page says so.** Measured over three ingested
 seasons: a tough defence reliably suppresses passing (−15 to −22 yards) and, weakly,
