@@ -151,6 +151,27 @@ a { color: inherit; }
 .cohort-cell { display: grid; grid-template-columns: 1fr auto auto auto; align-items: baseline; gap: .55rem; padding: .65rem .75rem; border-radius: var(--r-sm); background: var(--surface-1); color: var(--text-3); font-size: .72rem; }
 .cohort-cell strong, .cohort-cell b { color: var(--text-1); }
 .cohort-cell small { color: var(--text-4); }
+
+/* The one-line synthesized read: "what are we good at right now" ahead of the tables
+   that back it up. Left border in the brand color gives it a headline weight the plain
+   surface cards below don't have. */
+.perf-takeaway { background: var(--surface-1); border: 1px solid var(--divider);
+  border-left: 3px solid var(--brand); border-radius: var(--r-md); padding: .85rem 1.05rem;
+  margin: 0 0 1.2rem; font-size: 1rem; line-height: 1.55; color: var(--text-2); box-shadow: var(--edge-hi); }
+.perf-takeaway strong { color: var(--text-1); }
+
+.perf-lead > h2 { color: var(--text-1); }
+
+/* Headline record, cohort split and trend read as one compact band instead of three
+   stacked cards — the surrounding tables carry plenty of visual weight on their own. */
+.perf-scoreboard { margin: 1.6rem 0 0; }
+.perf-scoreboard .perf-headline { margin-bottom: .3rem; }
+.perf-scoreboard .cohort-comparison { margin: 0 0 .3rem; }
+.perf-scoreboard .perf-compare { margin: 0; }
+
+.deep-dive-label { margin: 1.8rem 0 -.4rem; padding-top: 1.3rem; border-top: 1px solid var(--divider);
+  color: var(--text-4); font-size: .7rem; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+
 .market-pulse-section { margin-top: 1.35rem; }
 .market-trend-scroll { overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
 .market-trend { min-width: calc(12rem + var(--trend-cols) * 4rem); border: 1px solid var(--divider); border-radius: var(--r-md); overflow: hidden; background: var(--surface-1); }
@@ -242,6 +263,9 @@ a { color: inherit; }
 @media (max-width: 560px) {
   .mc-row { grid-template-columns: minmax(6rem, 1.2fr) 1fr 1fr; }
   .mc-row > span:nth-child(4), .mc-head > span:nth-child(4) { display: none; }
+  /* .et-seg's nowrap+ellipsis is tuned for a single text run; with the Starved badge
+     as a second flex child it just clips the badge's label instead of eliding it. */
+  .mc-row .et-seg { white-space: normal; overflow: visible; text-overflow: clip; flex-wrap: wrap; row-gap: .2rem; }
 }
 
 /* Simplified matchup page — leagues that arrive as a schedule and nothing else. */

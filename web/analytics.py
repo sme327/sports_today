@@ -24,6 +24,7 @@ from components.results_feed import (
     period_comparison_html,
     period_summary_html,
     prop_list_html,
+    takeaway_html,
     version_table_html,
 )
 from domain import markets
@@ -390,6 +391,11 @@ def performance_context(params, today: date) -> dict:
             "filter_groups": performance_filter_groups(params, active, performance_markets),
         }
 
+    # period_range's label is meant for a section headline ("Last 30 days"), so used
+    # verbatim after "previous" it reads "previous last 30 days" — strip the leading
+    # "last" only for this phrasing.
+    label_lower = label.lower()
+    prior_label = f"previous {label_lower[5:] if label_lower.startswith('last ') else label_lower}"
     overall = grading.tally(rows)
     scores = [row["opportunity_score"] for row in rows if row.get("opportunity_score") is not None]
     slates = len({row.get("snapshot_date") for row in rows if row.get("snapshot_date")})
@@ -427,6 +433,22 @@ def performance_context(params, today: date) -> dict:
     band_base = {b: base_rates.segment_base_rate(rs) for b, rs in band_row_groups.items()}
     empty = grading.tally([])
     directions = grading.summarize_by(rows, _direction)
+    # Lift over each side's own base rate, for the takeaway's over/under clause — a raw
+    # hit-rate comparison would be misleading here for the same reason bands need their
+    # own base rate: Over and Under don't share a base event rate across the market mix.
+    direction_row_groups: dict[str, list[dict]] = {}
+    for row in rows:
+        d = _direction(row)
+        if d:
+            direction_row_groups.setdefault(d, []).append(row)
+    direction_lift: dict[str, tuple[float, int]] = {}
+    for d, rs in direction_row_groups.items():
+        base = base_rates.segment_base_rate(rs)
+        decided_d = [r for r in rs if r.get("result") in ("hit", "miss")]
+        if base is None or not decided_d:
+            continue
+        hit_rate_d = sum(r.get("result") == "hit" for r in decided_d) / len(decided_d)
+        direction_lift[d] = (hit_rate_d - base, len(decided_d))
     market_ou = []
     for key in performance_markets:
         subset = [row for row in rows if _market_type(row) == key]
@@ -511,6 +533,9 @@ def performance_context(params, today: date) -> dict:
         "cohort_options": _cohort_options(params, cohort),
         "period_options": _period_options(params, period),
         "filter_groups": performance_filter_groups(params, active, performance_markets),
+        "takeaway_html": takeaway_html(
+            coverage, direction_lift, overall, prior, prior_label, min_sample
+        ),
         "summary_html": period_summary_html(
             overall, sum(scores) / len(scores) if scores else None, label,
             cohort={"qualifying": "All qualifying", "featured": "Featured",
@@ -521,7 +546,7 @@ def performance_context(params, today: date) -> dict:
             grading.tally(other_rows)),
         "market_trend_html": market_trend_matrix_html(rows, base_of=base_rates.row_base_rate),
         "market_coverage_html": market_coverage_html(coverage, grading.CURATION_FLOOR),
-        "comparison_html": period_comparison_html(overall, prior, f"previous {label.lower()}", min_sample),
+        "comparison_html": period_comparison_html(overall, prior, prior_label, min_sample),
         "calibration_read": calibration_interpretation(bands, band_base),
         "calibration_scope": (
             f"Current scoring engine only — {superseded:,} prediction"

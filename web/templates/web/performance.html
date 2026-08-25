@@ -13,9 +13,24 @@
 {% include "web/_filters.html" %}
 
 {% if has_rows %}
-  {{ summary_html|safe }}
-  {{ cohort_comparison_html|safe }}
-  {{ comparison_html|safe }}
+  {% if takeaway_html %}{{ takeaway_html|safe }}{% endif %}
+
+  <section class="analytics-section perf-lead">
+    <h2>What's working</h2>
+    <p class="section-read">Every market's measured edge against how much of it we actually
+    serve, ranked by lift. The tables further down read served predictions only, so a
+    market that is good but never clears the floor is invisible there — and looks the
+    same as one that does not work.</p>
+    {{ market_coverage_html|safe }}
+  </section>
+
+  <div class="perf-scoreboard">
+    {{ summary_html|safe }}
+    {{ cohort_comparison_html|safe }}
+    {{ comparison_html|safe }}
+  </div>
+
+  <div class="deep-dive-label">Deeper diagnostics</div>
 
   <section class="analytics-section market-pulse-section">
     <h2>Market pulse</h2>
@@ -28,13 +43,6 @@
   <section class="analytics-section">
     <h2>Edge finder</h2>
     {{ edge_html|safe }}
-  </section>
-  <section class="analytics-section">
-    <h2>Market coverage</h2>
-    <p class="section-read">Every market's measured edge against how much of it we actually
-    serve. The tables above read served predictions only, so a market that is good but
-    never clears the floor is invisible there — and looks the same as one that does not work.</p>
-    {{ market_coverage_html|safe }}
   </section>
   <section class="analytics-section"><h2>Consistency</h2>{{ consistency_html|safe }}</section>
   <section class="analytics-section"><h2>By month</h2>{{ monthly_html|safe }}</section>

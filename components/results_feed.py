@@ -607,6 +607,55 @@ def period_comparison_html(current: dict, prior: dict, prior_label: str,
             f'vs {escape(prior_label)}</div>')
 
 
+def takeaway_html(coverage: list[dict], direction_lift: dict[str, tuple[float, int]],
+                  overall: dict, prior: dict, prior_label: str, min_sample: int) -> str:
+    """One synthesized headline for 'what are we good at' — every clause narrates a
+    figure already computed elsewhere on the page (market coverage, over/under lift,
+    the period-over-period trend); it never computes its own number.
+
+    ``coverage`` is expected pre-sorted by recorded_lift descending (as
+    ``performance_context`` already sorts it for the coverage table).
+    """
+    def pp(x: float) -> str:
+        return f'{"+" if x >= 0 else ""}{x * 100:.1f} pts'
+
+    clauses: list[str] = []
+    ranked = [c for c in coverage if c["recorded_lift"] is not None and c["recorded_n"]]
+    if ranked:
+        best = ranked[0]
+        share = best["served_n"] / best["recorded_n"] if best["recorded_n"] else 0.0
+        # Mirrors market_coverage_html's own "Starved" threshold, so the two never disagree.
+        starved = best["recorded_lift"] >= 0.05 and share < 0.10
+        label = f'<strong>{escape(best["label"])}</strong>'
+        if starved:
+            clauses.append(f'{label} carries the strongest edge ({pp(best["recorded_lift"])} '
+                            f'over base) but is barely served ({share:.0%} clear the floor)')
+        else:
+            clauses.append(f'{label} carries the strongest edge ({pp(best["recorded_lift"])} over base)')
+        volume_leader = max(ranked, key=lambda c: c["recorded_n"])
+        if volume_leader["label"] != best["label"]:
+            vlift = volume_leader["recorded_lift"]
+            vtxt = pp(vlift) if vlift is not None else "no measured lift"
+            clauses.append(f'<strong>{escape(volume_leader["label"])}</strong> is the volume leader '
+                            f'({volume_leader["recorded_n"]:,} graded, {vtxt})')
+    over, under = direction_lift.get("over"), direction_lift.get("under")
+    if over and under and over[1] and under[1]:
+        stronger, s_val, weaker_label, weaker_val = (
+            ("Over", over[0], "Under", under[0]) if over[0] >= under[0]
+            else ("Under", under[0], "Over", over[0])
+        )
+        clauses.append(f'{stronger} is currently the stronger side ({pp(s_val)} vs '
+                        f'{pp(weaker_val)} for {weaker_label})')
+    cr, pr = overall.get("hit_rate"), prior.get("hit_rate")
+    if cr is not None and pr is not None and (prior["hit"] + prior["miss"]) >= min_sample:
+        delta = (cr - pr) * 100
+        word = "Up" if delta >= 0 else "Down"
+        clauses.append(f'{word} {abs(delta):.1f} points vs {escape(prior_label)}')
+    if not clauses:
+        return ""
+    return f'<div class="perf-takeaway">{". ".join(clauses)}.</div>'
+
+
 def results_feed_html(rows: list[dict]) -> str:
     if not rows:
         return '<div class="mlb-empty">No graded props for this date and filter.</div>'
