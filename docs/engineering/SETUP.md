@@ -24,6 +24,29 @@ Normal operator steps:
 the published site a day behind.) To refresh local data without publishing, run
 `python -m scripts.morning_update` from a terminal.
 
+### One-click launcher (Dock / Desktop)
+
+`Update Sports Today.app` in the project root is a launcher for step 2: it opens a
+Terminal window running `update.command`, so the whole run stays visible. Drag it to
+the **Dock** (a Dock tile is a path reference — the app itself stays in the project),
+or keep the **Desktop alias** at `~/Desktop/Update Sports Today.app`.
+
+Two things it does that a bare double-click does not:
+
+- **It resolves the project root relative to its own bundle**, so no user path is baked
+  in. Moving the `.app` out of the project folder breaks it *loudly* — an alert saying
+  where it looked — rather than silently updating nothing. Put an alias elsewhere; keep
+  the app here.
+- **It refuses to start a second concurrent run.** Two updates would fight over the same
+  SQLite database and the atomic workbook swap; if one is already going it says so and
+  points at the open Terminal window.
+
+The bundle is deliberately **unsigned**. Its executable is a shell script, not a Mach-O
+binary, so macOS does not require a signature — and an ad-hoc one would only turn a later
+edit of that script into a broken-signature launch failure. Change the icon by
+regenerating `Contents/Resources/AppIcon.icns` from `icons/sports-today-1024-master.png`
+with `sips` + `iconutil`; edit the launcher itself in place.
+
 ## Part A — One-time installation
 
 ### 1. Put the project somewhere permanent

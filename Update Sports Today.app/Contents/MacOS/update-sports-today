@@ -1,0 +1,29 @@
+#!/bin/zsh
+# Dock/Desktop launcher for the daily run. Opens Terminal on update.command so the
+# whole update is visible while it runs — the same script update.command runs from
+# the shell, not a second copy of the steps.
+#
+# The repo root is resolved *relative to this bundle*, so no user path is baked in:
+# keep the .app inside the project and put an alias in the Dock or on the Desktop
+# (a Dock tile is a reference, so dragging it there does not move the app).
+
+set -e
+
+root="${0:A:h:h:h:h}"          # …/MacOS -> Contents -> .app -> project root
+target="$root/update.command"
+
+fail() {
+  osascript -e "display alert \"Update Sports Today\" message \"$1\" as critical" >/dev/null 2>&1
+  exit 1
+}
+
+[[ -x "$target" ]] || fail "Can't find update.command next to the app.\n\nThis launcher has to live in the Sports Today project folder. Move the .app back and put an alias in the Dock instead.\n\nLooked in: $root"
+
+# A second concurrent run would fight over the same SQLite database and the atomic
+# workbook swap. One update at a time.
+if pgrep -qf "scripts\.(morning_update|publish_pages)"; then
+  osascript -e 'display alert "Update Sports Today" message "An update is already running. Check the open Terminal window." as informational' >/dev/null 2>&1
+  exit 0
+fi
+
+open -a Terminal "$target"
