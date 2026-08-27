@@ -121,6 +121,11 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   publishes the static site. It warns loudly when the newest feed is older than
   yesterday, and appends each run's summary to `logs/update_runs.jsonl`.
   `NO_CHANGE` is handled safely; data-only is `python -m scripts.morning_update`.
+  The everyday entry point is **`Update Sports Today.app`** (Dock tile or Desktop
+  alias, since 2026-08-27) — it opens a Terminal on `update.command`, resolves the
+  project root from its own bundle so no user path is baked in, and refuses to start
+  a second run while one is in flight (concurrent runs fight over the same SQLite
+  database and the atomic workbook swap).
   Full steps: [Setup](docs/engineering/SETUP.md).
 - **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
   + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there

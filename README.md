@@ -52,6 +52,10 @@ feed in `~/Downloads` and run `python -m scripts.morning_update` (data only;
 For the zero-cost Cloudflare Pages deployment, `update_and_publish.command` runs the
 same local update, exports the public site, and publishes the finished snapshot. The
 Mac only needs to be online during that workflow; Cloudflare serves the site afterward.
+Day to day that run is launched from `Update Sports Today.app` in the project root —
+a Dock/Desktop launcher that opens a Terminal on `update.command` and blocks a second
+concurrent run.
+
 Exact steps and the macOS double-click workflow: [Setup](docs/engineering/SETUP.md).
 
 - Tests (offline): `pip install -r requirements-dev.txt && python -m pytest`
