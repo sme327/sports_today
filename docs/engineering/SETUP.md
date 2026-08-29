@@ -191,9 +191,13 @@ Use this when the database is already current — after a code or styling change
 
 ### Refresh data without publishing
 
-Double-click:
+```bash
+python -m scripts.morning_update
+```
 
-`update.command` (data only) or `update_and_publish.command` (data, then publish)
+Neither `.command` file does this. Since 2026-08-20 `update.command` is an alias of
+`update_and_publish.command` and both update **and** publish, precisely so the
+shortest-named command can never leave the published site a day behind.
 
 ### Run through Terminal
 
@@ -332,6 +336,30 @@ Run `update.command` (or `update_and_publish.command`) to build one from the day
 ### The schedule does not load
 
 The imported player data will still work, but live schedule retrieval requires an internet connection.
+
+### The run stops after "Data updated" and the site is a day behind
+
+The data half and the publish half are separate programs. `morning_update` ends by
+printing a line telling you to run `python -m scripts.publish_pages` — and it prints
+that **before** `publish_pages` starts. It is the halfway mark, not a success message.
+A run that stops there has not published.
+
+The static build takes several minutes and prints nothing until
+`Static link audit passed.`, so a silent terminal usually means it is still working.
+Confirm what the site is actually serving rather than trusting the terminal:
+
+```bash
+curl -s "https://sports.sme327.com/?cb=$(date +%s)" | grep sports-today-build
+```
+
+Compare that build stamp against `site-dist/index.html`. Equal means the publish
+landed; older means it did not. A finished run does this check itself (`verify_live`)
+and says `Verified live at ...`.
+
+Publishing needs Node and `npx`, which fetches `wrangler` into the npx cache. That
+resolution is forced non-interactive (`npx --yes`); before 2026-08-28 npm could stop
+on an `Ok to proceed?` prompt and wait forever with the build already complete and no
+error printed.
 
 ### The new download is not selected
 

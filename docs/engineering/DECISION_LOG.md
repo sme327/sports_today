@@ -9,6 +9,60 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-28 — The daily publish must fail loudly, never wait quietly
+
+**Decision.** `scripts/publish_pages` invokes `npx --yes`. The deploy step may never
+block on an interactive prompt.
+
+**Reason.** A run that day imported the feed, rebuilt the database, precomputed both
+slates and built all 740 pages — then stopped on npm's `Ok to proceed?` question while
+resolving `wrangler` into the npx cache, and waited. No error, no timeout, no exit
+code, 0% CPU. The build sat complete on disk while `sports.sme327.com` served the
+previous day's slate. Every existing guard assumed the deploy would either succeed or
+exit non-zero; none of them fire on a process that simply never finishes.
+
+**Tradeoffs.** `--yes` accepts whatever `wrangler` version npm resolves, since no
+`package.json` pins one. Judged the smaller risk: a surprising wrangler version fails
+loudly and gets noticed, whereas the hang is silent by construction. Pinning wrangler
+locally remains the more robust fix if the version ever floats somewhere harmful.
+
+**How to recognise it.** `Data updated. Run ...` is printed *before* the publish step
+begins, so it marks the halfway point, not success. The end of a real run is
+`Verified live at ...`. When in doubt compare the live `sports-today-build` meta stamp
+against `site-dist/index.html` — the terminal can lie about this, the origin cannot.
+
+**Future considerations.** The run log (`logs/update_runs.jsonl`) records only the data
+half; its `published` field refers to a database backup that does not exist yet, not to
+the site. A publish that never happens therefore leaves no trace in the log at all.
+Recording the site publish there would make the daily run self-auditing.
+
+---
+
+## 2026-08-28 — Commit history rewritten to the owner's real identity
+
+**Decision.** All 239 commits were re-authored from the machine-derived
+`sme <sme@shawns-macbook-neo.local>` to `sme <sme327@gmail.com>` with
+`git filter-repo --mailmap`, and force-pushed. `user.name`/`user.email` are now set
+globally so new commits are correct at creation.
+
+**Reason.** No git identity was ever configured, so git guessed from username and
+hostname. The repo is public, and GitHub links commits only to a *verified* account
+email — a `.local` hostname can never be verified, so six weeks of work showed as
+authored by nobody. Rewriting was the only available fix.
+
+**Tradeoffs.** Every commit hash changed and the remote was force-pushed. Acceptable
+only because of what was true here: 0 forks, 0 open PRs, 0 tags, a single clone.
+Verified before pushing that all 239 tree hashes, author dates and subjects were
+byte-identical to the pre-rewrite state — the identity changed and nothing else.
+
+**Consequence for readers.** Commit SHAs cited in docs written before this date are
+dangling. The two that existed were repointed through filter-repo's commit map
+(`288b917` → `cf19c1c` in this log; `262c3f8` → `ef759e4` in the structure review).
+Any SHA found in an older document or external note will not resolve; the commit
+subject is now the reliable way to find it. Any other clone must be re-cloned.
+
+---
+
 ## 2026-08-24 — Final game cards compact (supersedes "state treatments: color only")
 
 **Decision.** A completed game's card shrinks: no minimum height, the "at" separator

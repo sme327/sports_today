@@ -38,7 +38,13 @@ the current static architecture.
 3. The workflow imports data, updates connected feeds, creates immutable prediction
    snapshots, grades available results, precomputes Today/Tomorrow and matchup pages,
    exports the site, audits every internal link, and deploys to Pages.
-4. Verify `https://sports.sme327.com` after the command reports success.
+4. Verify `https://sports.sme327.com` after the command reports success. The run
+   already checks this itself: after deploying it refetches the live page and compares
+   its stylesheet hashes and `sports-today-build` stamp against what was just built,
+   printing `Verified live at ...`. Absent that line, treat the publish as unconfirmed.
+
+Deploying requires Node and `npx`, which resolves `wrangler` through the npx cache.
+There is no `package.json` here pinning it, so the version floats.
 
 ## Build and validate without deploying
 
@@ -65,5 +71,12 @@ The project and branch can be overridden with `SPORTS_TODAY_PAGES_PROJECT` and
 - A missing daily snapshot remains visibly missing; never reconstruct it after results.
 - A collector failure is reported but does not erase previously good data.
 - A failed export or broken internal link stops deployment.
-- A failed Cloudflare deployment leaves the previous production bundle online.
+- A failed Cloudflare deployment leaves the previous production bundle online, and
+  wrangler's non-zero exit is reported last and loudly — it can fail mid-upload after
+  the build and link audit have both passed.
+- **The deploy cannot block on a prompt.** `npx` is invoked with `--yes`. On
+  2026-08-28 a run built all 740 pages, then sat on npm's `Ok to proceed?` question
+  at 0% CPU with no error and no timeout while the site served the previous day's
+  slate. A hang is worse than a failure here: the failure paths above all leave a
+  loud signal, and this one left none.
 - Source data, database files, logs, and generated bundles remain outside Git.
