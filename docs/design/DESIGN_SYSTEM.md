@@ -523,6 +523,12 @@ Tablet should retain the same hierarchy.
 
 Mobile should stack gracefully without changing the design language.
 
+A stacked track is `minmax(0, 1fr)`, never a bare `1fr`. A bare `1fr` cannot shrink below
+its widest card's min-content width, and a card full of `white-space: nowrap` runs has a
+min-content of a whole line — one long string then widens every card on the page past the
+edge of the screen. Where a line genuinely cannot hold its content, prefer giving it a
+second line over an ellipsis that deletes the information.
+
 ---
 
 # Future Screens

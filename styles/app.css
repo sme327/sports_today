@@ -242,7 +242,13 @@
   margin-bottom: .3rem;
   min-height: 26px;
 }
-.game-top-left { display: inline-flex; align-items: center; gap: .55rem; min-width: 0; }
+/* Wraps: the context is allowed a second line when the first cannot hold it (a
+   doubleheader inside a series needs 178px and the row offers 68 on a phone, 80 in
+   the desktop column). Flex breaks a line on the item's *hypothetical* size, so a
+   short context ("Week 1") still rides beside the league and costs no height — only
+   a context that genuinely does not fit drops down. */
+.game-top-left { display: inline-flex; flex-wrap: wrap; align-items: center;
+                 gap: .2rem .55rem; min-width: 0; }
 .league-name { color: var(--text-2); flex: 0 0 auto; }
 
 /* "Best game" — the most watchable game in its league. Orange is the app's only
@@ -261,10 +267,10 @@
   white-space: nowrap;
 }
 
-/* Competition context (e.g. "Week 2", "Preseason · Wk 2", "World Series") — rides on
-   the league line so it costs no card height. Deliberately quiet: it is orienting
-   detail, not the headline, and it only renders when notable. Truncates rather than
-   wrapping, so the card's top row never grows to two lines. */
+/* Competition context (e.g. "Week 2", "Preseason · Wk 2", "Series · NYY leads 1-0") —
+   rides on the league line, dropping to its own line only when that line is too short
+   for it. Deliberately quiet: it is orienting detail, not the headline, and it only
+   renders when notable. Still truncates rather than wrapping to a *third* line. */
 .game-context {
   min-width: 0;
   overflow: hidden;
@@ -275,7 +281,13 @@
   font-weight: 600;
   letter-spacing: .01em;
 }
-.game-context::before { content: "·"; margin-right: .4rem; opacity: .6; }
+/* The separator hangs off the league name rather than leading the context, so a
+   context that drops to its own line does not open with a stray bullet. Unwrapped it
+   renders identically to a leading dot; wrapped, the trailing dot reads as the
+   continuation it is. Only drawn when there is a context to separate. */
+.game-top-left:has(.game-context) .league-name::after {
+  content: "·"; margin-left: .4rem; color: var(--text-4); opacity: .6;
+}
 
 /* Game time — sits beside the league (game identity), close to the matchup. */
 .game-time {
@@ -796,8 +808,15 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 
 /* -------------------------------------------------------- RESPONSIVE ----- */
 @media (max-width: 900px) {
-  .schedule-grid { grid-template-columns: 1fr; }
-  .op-list { grid-template-columns: 1fr; }        /* one card per row */
+  /* `minmax(0, 1fr)`, not `1fr`. A bare `1fr` is `minmax(auto, 1fr)`, so the track
+     never shrinks below the widest card's *min-content* width — and a card is full of
+     `white-space: nowrap` text (the time pill, the "Best game" chip, the competition
+     context), whose min-content is its whole line. One long context string ("Game 1 ·
+     Series · NYY leads 1-0") pushed the single mobile column to 465px inside a 361px
+     grid, so every card ran off the side of the phone and the page scrolled sideways.
+     The desktop track above was already floored at 0; these two were not. */
+  .schedule-grid { grid-template-columns: minmax(0, 1fr); }
+  .op-list { grid-template-columns: minmax(0, 1fr); }   /* one card per row */
 }
 
 @media (max-width: 650px) {

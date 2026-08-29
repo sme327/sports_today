@@ -9,6 +9,41 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-29 — Card grids are floored at zero, and a long context takes a line
+
+**Decision.** Every single-column card track is `minmax(0, 1fr)`, never a bare `1fr`, and
+`.game-top-left` wraps so a competition context too long for the league row drops to its
+own line instead of ellipsizing. The doubleheader marker still leads the context string;
+the separator moved from `.game-context::before` to `.league-name::after`.
+
+**Reason.** A bare `1fr` is `minmax(auto, 1fr)`: the track cannot shrink below the widest
+item's *min-content* width. Game cards are full of `white-space: nowrap` runs — the time
+pill, the "Best game" chip, the context — and nowrap min-content is the whole line. Today
+was the first slate to hold a card that exceeded the viewport: a Yankees doubleheader
+inside a series, carrying `Game 1 · Series · NYY leads 1-0` plus the "Best game" chip, with
+a min-content of 465px. That one card sized the single phone column for all 82, so every
+card ran ~90px off the right edge and the time was cut off. The desktop track was already
+floored at 0, which is why only mobile broke. Wrapping was the fix for the second half:
+that context needs 178px and the row offers 68 on a phone, 80 in a desktop column, so it
+was truncating to "Game 1 …" — dropping the series state on every screen size, not just
+phones, and a pure reorder would have dropped the doubleheader number instead, which is
+the only thing distinguishing two otherwise identical cards on the same slate.
+
+**Tradeoffs.** The wrapped card is ~10px taller on a phone and unchanged on desktop, where
+the card's `min-height` absorbs the extra line. Flex breaks a line on the item's
+hypothetical size, so a short context ("Week 1") still rides beside the league and costs
+nothing — the cost falls only on cards that genuinely have more to say. The trailing
+separator sits at the end of the league line when the context wraps; a leading one would
+have opened the second line with a stray bullet, which is worse.
+
+**Future considerations.** The other single-column phone tracks (`.mlb-identity-grid`,
+`.wnba-trend-grid` and friends) are still bare `1fr`. They hold wrapping prose rather than
+nowrap runs, so none of them can reproduce this today — but any new `nowrap` child would
+arm the same trap. Two tests in `test_static_export.py` guard the card grids specifically;
+they do not guard the rest.
+
+---
+
 ## 2026-08-29 — A missing MLB workbook stops the import, not the day
 
 **Decision.** `morning_update` treats a missing vendor workbook as non-fatal: it warns,

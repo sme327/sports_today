@@ -431,3 +431,41 @@ def test_the_hidden_attribute_actually_hides():
     for selector in (".game-card", ".schedule-grid"):
         assert re.search(rf'{re.escape(selector)}\s*\{{[^}}]*display:', app), (
             f"{selector} still sets display — the [hidden] override must stay")
+
+
+def test_phone_card_columns_cannot_be_widened_by_their_own_content():
+    """A bare `1fr` is `minmax(auto, 1fr)`: the track never shrinks below the widest
+    card's *min-content* width. Cards are full of `white-space: nowrap` runs (the time
+    pill, the "Best game" chip, the competition context), and nowrap min-content is the
+    whole line — so one long context string ("Game 1 · Series · NYY leads 1-0") sized the
+    single phone column to 465px inside a 361px grid and every card ran off the side of
+    the screen. Floor both card grids at 0 so the content truncates instead."""
+    css = Path("styles/app.css").read_text()
+    phone = css[css.index("@media (max-width: 900px)"):]
+    phone = phone[:phone.index("}", phone.index("}") + 1)]
+    for selector in (".schedule-grid", ".op-list"):
+        rule = re.search(rf'{re.escape(selector)}\s*\{{[^}}]*grid-template-columns:\s*([^;]+);',
+                         phone)
+        assert rule, f"{selector} must set its own column track on phones"
+        assert "minmax(0" in rule.group(1), (
+            f"{selector} phone track is `{rule.group(1).strip()}` — floor it at "
+            "minmax(0, 1fr) or a long nowrap run will widen the card past the screen")
+
+
+def test_a_long_competition_context_gets_a_second_line_rather_than_an_ellipsis():
+    """"Game 1 · Series · NYY leads 1-0" needs 178px and the league row offers 68 on a
+    phone (80 in the desktop column), so it truncated to "Game 1 …" — losing the series
+    state, and on a doubleheader the game number is the only thing telling two otherwise
+    identical cards apart. Wrapping gives the context the row's full width. Flex breaks a
+    line on the item's hypothetical size, so a short context ("Week 1") still rides beside
+    the league and costs no card height. The separator has to hang off the league name:
+    led by `.game-context::before`, a wrapped context opens with a stray bullet."""
+    css = Path("styles/app.css").read_text()
+    top_left = re.search(r'\.game-top-left\s*\{([^}]*)\}', css)
+    assert top_left and "flex-wrap: wrap" in top_left.group(1), (
+        ".game-top-left must wrap or a long context truncates instead of dropping a line")
+    assert not re.search(r'\.game-context::before\s*\{[^}]*content:\s*"·"', css), (
+        "a leading separator puts a stray bullet at the head of a wrapped context line")
+    assert re.search(r'\.game-top-left:has\(\.game-context\)\s+\.league-name::after\s*\{'
+                     r'[^}]*content:\s*"·"', css), (
+        "the separator hangs off the league name, and only when a context follows it")
