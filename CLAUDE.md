@@ -119,7 +119,10 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   atomically replaces the current workbook, rebuilds SQLite, collects WNBA **and
   MLS** concurrently (both non-fatal on failure), precomputes the daily feed, and
   publishes the static site. It warns loudly when the newest feed is older than
-  yesterday, and appends each run's summary to `logs/update_runs.jsonl`.
+  yesterday, and appends each run's summary to `logs/update_runs.jsonl`. The publish
+  half brackets itself with `publish_started`/`publish_finished` records there, because
+  a hung deploy exits nothing and prints nothing; **`python -m scripts.run_status`**
+  answers "did the last run actually finish, and is the site serving it?".
   `NO_CHANGE` is handled safely; data-only is `python -m scripts.morning_update`.
   The everyday entry point is **`Update Sports Today.app`** (Dock tile or Desktop
   alias, since 2026-08-27) — it opens a Terminal on `update.command`, resolves the

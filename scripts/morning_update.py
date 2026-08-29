@@ -1,31 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from datetime import datetime
 from pathlib import Path
 
+from scripts.run_log import RUN_LOG, append_run_log  # noqa: F401  (re-exported)
 from scripts.sync_mlb_download import sync_latest
 from services.update_pipeline import rebuild
-from src.config import CURRENT_FEED, DOWNLOADS_DIR, LOG_DIR
-
-RUN_LOG = LOG_DIR / "update_runs.jsonl"
-
-
-def append_run_log(record: dict, path: Path = RUN_LOG) -> str | None:
-    """One JSON line per update run, so "did Tuesday's update actually work?" is
-    answerable after the terminal window closed. The import-history CSV records only
-    the file copy; this records the whole rebuild summary — collectors, regrades,
-    precompute, matchup-page failures and all. Returns an error string instead of
-    raising: the record must never fail the update it records."""
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, default=str) + "\n")
-        return None
-    except Exception as exc:
-        return str(exc)
+from src.config import CURRENT_FEED, DOWNLOADS_DIR
 
 
 def main() -> int:

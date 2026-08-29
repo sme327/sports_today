@@ -31,10 +31,17 @@ begins, so it marks the halfway point, not success. The end of a real run is
 `Verified live at ...`. When in doubt compare the live `sports-today-build` meta stamp
 against `site-dist/index.html` — the terminal can lie about this, the origin cannot.
 
-**Future considerations.** The run log (`logs/update_runs.jsonl`) records only the data
-half; its `published` field refers to a database backup that does not exist yet, not to
-the site. A publish that never happens therefore leaves no trace in the log at all.
-Recording the site publish there would make the daily run self-auditing.
+**Follow-through (same day).** The run log recorded only the data half — its
+`published` field refers to a database backup that does not exist yet, not to the site
+— so a publish that never happened left no trace at all. `publish_pages` now writes a
+`publish_started` record before it begins and a `publish_finished` record when it ends,
+whatever the outcome. The pair is deliberate: a process that never returns cannot log
+its own failure, so an unmatched start is the only evidence a hang can leave.
+`python -m scripts.run_status` reads them, compares the live build stamp against the
+last one built, and exits non-zero when the site is behind.
+
+**Future considerations.** Nothing runs `run_status` automatically. The launcher could
+end with it, which would turn "the terminal looked fine" into an explicit verdict.
 
 ---
 

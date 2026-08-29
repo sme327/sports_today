@@ -132,6 +132,16 @@ morning's outcome is checkable after the terminal window has closed. If the
 newest feed in Downloads is older than yesterday, the run warns loudly before
 proceeding — that usually means the day's download didn't happen or didn't finish.
 
+To ask whether the last run actually finished — both halves — run:
+
+```bash
+python -m scripts.run_status
+```
+
+It prints the newest data run and the newest publish, checks the live site against
+what was last built, and exits non-zero when the site is not serving the current
+slate. Use it whenever a run ends ambiguously; it is the answer to "did that work?"
+
 ### 6. Verify the files
 
 After the update, confirm these exist:
@@ -346,15 +356,15 @@ A run that stops there has not published.
 
 The static build takes several minutes and prints nothing until
 `Static link audit passed.`, so a silent terminal usually means it is still working.
-Confirm what the site is actually serving rather than trusting the terminal:
+Rather than guess, ask:
 
 ```bash
-curl -s "https://sports.sme327.com/?cb=$(date +%s)" | grep sports-today-build
+python -m scripts.run_status
 ```
 
-Compare that build stamp against `site-dist/index.html`. Equal means the publish
-landed; older means it did not. A finished run does this check itself (`verify_live`)
-and says `Verified live at ...`.
+`Publish  STARTED ... — NEVER FINISHED` means a publish began and never returned:
+either it is still running, or it hung and was killed. A finished run does the live
+check itself (`verify_live`) and says `Verified live at ...`.
 
 Publishing needs Node and `npx`, which fetches `wrangler` into the npx cache. That
 resolution is forced non-interactive (`npx --yes`); before 2026-08-28 npm could stop

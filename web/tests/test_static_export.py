@@ -365,7 +365,10 @@ def test_a_failed_deploy_does_not_report_success():
 
     from scripts import publish_pages
 
-    src = inspect.getsource(publish_pages.main)
+    # The deploy moved out of `main` into `publish` on 2026-08-28, when `main` became
+    # the wrapper that records a start/finish pair around it. The guard follows the
+    # deploy, not the function name.
+    src = inspect.getsource(publish_pages.publish)
     assert "code = subprocess.call" in src, "the exit code must be captured"
     assert "if code != 0" in src, "a non-zero wrangler exit must short-circuit"
     assert "PUBLISH FAILED" in src

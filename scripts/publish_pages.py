@@ -6,9 +6,12 @@ import argparse
 import os
 import subprocess
 import sys
+from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
+
+from scripts.run_log import PUBLISH_FINISHED, PUBLISH_STARTED, append_run_log
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "site-dist"
@@ -48,6 +51,18 @@ def validate_internal_links(output: Path) -> None:
         raise RuntimeError(f"Static link audit found {len(broken)} broken links:\n{sample}")
 
 
+def build_stamp(html: str) -> str | None:
+    """The data build stamp `base.html` writes on every precompute. The CSS hashes only
+    prove the stylesheets deployed; after a pure data update they are unchanged, so a
+    half-failed HTML upload would pass that check while the site served yesterday's
+    slate. This changes every precompute, so it is what distinguishes "deployed" from
+    "deployed the thing we just built"."""
+    import re
+
+    found = re.search(r'<meta name="sports-today-build" content="([^"]+)"', html)
+    return found.group(1) if found else None
+
+
 def verify_live(url: str, timeout: float = 20.0) -> bool:
     """Confirm the deployed site serves the bundle we just built.
 
@@ -63,15 +78,7 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
 
     built = (OUTPUT / "index.html").read_text(encoding="utf-8")
     want = set(re.findall(r'/static/(\w+\.css\?v=[0-9a-f]{10})', built))
-    # The data build stamp (base.html meta tag). The CSS hashes only prove the
-    # stylesheets deployed; after a pure data update they are unchanged, so a
-    # half-failed HTML upload would pass that check while the site served
-    # yesterday's slate. The stamp changes on every precompute.
-    def stamp_of(html: str) -> str | None:
-        found = re.search(r'<meta name="sports-today-build" content="([^"]+)"', html)
-        return found.group(1) if found else None
-
-    want_stamp = stamp_of(built)
+    want_stamp = build_stamp(built)
     if not want and not want_stamp:
         print("No content-versioned stylesheets or build stamp in the build; "
               "skipping live check.")
@@ -107,7 +114,7 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
               file=sys.stderr)
         return True
     missing = sorted(a for a in want if a not in live)
-    live_stamp = stamp_of(live)
+    live_stamp = build_stamp(live)
     stale_data = want_stamp is not None and live_stamp != want_stamp
     if missing or stale_data:
         print(f"\nPUBLISHED, BUT {url} IS SERVING SOMETHING ELSE.", file=sys.stderr)
@@ -146,6 +153,43 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    if args.build_only:
+        build_site()
+        return 0
+
+    # Recorded *before* the work starts, and deliberately as its own line. A failed
+    # deploy reports itself; a hung one cannot, so a `publish_started` with no matching
+    # `publish_finished` is the only trace a hang can leave. See scripts/run_log.py.
+    started = datetime.now()
+    note_log_error(append_run_log({
+        "run_at": started.isoformat(timespec="seconds"),
+        "event": PUBLISH_STARTED,
+    }))
+
+    record: dict = {"event": PUBLISH_FINISHED, "ok": False}
+    try:
+        code = publish(args, record)
+        record["ok"] = code == 0
+        return code
+    except BaseException as exc:  # noqa: BLE001 - recorded, then re-raised untouched
+        record["error"] = f"{type(exc).__name__}: {exc}"
+        raise
+    finally:
+        finished = datetime.now()
+        record["run_at"] = finished.isoformat(timespec="seconds")
+        record["duration_seconds"] = round((finished - started).total_seconds(), 1)
+        note_log_error(append_run_log(record))
+
+
+def note_log_error(error: str | None) -> None:
+    """The record must never fail the publish it records — but a log that silently
+    stopped being written is the failure this whole feature exists to prevent, so say
+    so rather than swallowing it."""
+    if error:
+        print(f"Run log not written: {error}", file=sys.stderr)
+
+
+def build_site() -> None:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.settings")
     import django
     from django.core.management import call_command
@@ -154,8 +198,16 @@ def main(argv: list[str] | None = None) -> int:
     call_command("export_static", out=OUTPUT)
     validate_internal_links(OUTPUT)
     print("Static link audit passed.")
-    if args.build_only:
-        return 0
+
+
+def publish(args, record: dict) -> int:
+    build_site()
+    record["pages"] = len(list(OUTPUT.rglob("*.html")))
+    try:
+        record["build_stamp"] = build_stamp(
+            (OUTPUT / "index.html").read_text(encoding="utf-8"))
+    except OSError:
+        record["build_stamp"] = None
 
     # `--yes` because npm otherwise prompts "Ok to proceed?" whenever it has to resolve
     # wrangler into the npx cache, and there is no package.json here to pin it. The daily
@@ -170,6 +222,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         code = subprocess.call(command, cwd=ROOT)
     except FileNotFoundError:
+        record["error"] = "Node.js/npx not found"
         print("Cloudflare publishing requires Node.js and npx.", file=sys.stderr)
         return 1
 
@@ -178,13 +231,15 @@ def main(argv: list[str] | None = None) -> int:
     # wrangler's error and the run reads as a success — a deploy failed exactly this way
     # and the site served stale CSS for another twenty minutes while it was reported live.
     # Say so last, loudly, and exit non-zero.
+    record["deploy_exit"] = code
     if code != 0:
         sys.stdout.flush()
         print(f"\nPUBLISH FAILED — wrangler exited {code}. The site was NOT updated.",
               file=sys.stderr)
         return code
 
-    if not verify_live(args.verify_url):
+    record["verified"] = verify_live(args.verify_url)
+    if not record["verified"]:
         return 1
     return 0
 

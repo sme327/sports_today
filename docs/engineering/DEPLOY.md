@@ -79,4 +79,10 @@ The project and branch can be overridden with `SPORTS_TODAY_PAGES_PROJECT` and
   at 0% CPU with no error and no timeout while the site served the previous day's
   slate. A hang is worse than a failure here: the failure paths above all leave a
   loud signal, and this one left none.
+- **A publish that never finishes is still visible afterwards.** `publish_pages`
+  writes a `publish_started` record to `logs/update_runs.jsonl` before it begins and a
+  `publish_finished` record when it ends, whatever the outcome. A process that never
+  returns cannot log its own failure, so the unmatched start *is* the evidence.
+  `python -m scripts.run_status` reads that pair, compares the live build stamp
+  against the last one built, and exits non-zero when the site is behind.
 - Source data, database files, logs, and generated bundles remain outside Git.
