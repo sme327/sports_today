@@ -157,8 +157,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.build_only:
         return 0
 
+    # `--yes` because npm otherwise prompts "Ok to proceed?" whenever it has to resolve
+    # wrangler into the npx cache, and there is no package.json here to pin it. The daily
+    # launcher runs this in a Terminal nobody is watching: a run hung on that prompt for
+    # twenty minutes with the build already complete on disk, reporting no error, while
+    # the site quietly served the previous day's slate.
     command = [
-        "npx", "wrangler", "pages", "deploy", str(OUTPUT),
+        "npx", "--yes", "wrangler", "pages", "deploy", str(OUTPUT),
         "--project-name", args.project,
         "--branch", args.branch,
     ]
