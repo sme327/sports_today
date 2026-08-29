@@ -45,7 +45,10 @@ One **basketball foundation** (extracted from WNBA) serves every league below.
 ✅ matchup page, ✅ grading (fixed). Next: playoffs mode; more markets (3PM, stocks,
 double-doubles) if they clear the reliability bar; score top-end polish.
 
-**NBA** — 🟡 T0 schedule-only shipped (pre-staged). Path: extract the basketball
+**NBA** — 🟡 T0 schedule-only shipped (pre-staged), **now rankable on opening night**
+(2026-08-29): last season's record and point differential steer Game Interest while the
+real record is too young, decaying to nothing at four games. Before it, every game on an
+opening slate scored 0 and ranked identically. Path: extract the basketball
 foundation → T2 props (P/R/A + threes, stocks) → T3 matchup page (reuse WNBA's) →
 T4 Playoffs/Finals (series + bracket).
 
@@ -75,9 +78,15 @@ via the archive (`?view=nfl`). Remaining: T4 playoffs/Super Bowl depth, and conn
 the deep-dive to the **live** slate (today it is archive-only — see
 [NFL Game Page](../engineering/NFL_GAME_PAGE.md)). Spec: **[NFL deep-dive](#nfl-deep-dive-matchup-page-the-flagship)**.
 
-**NCAA Football** — 🟡 T0 schedule-only shipped (rank prefix `#5 Georgia`, week label).
-🚫 **No player props** (roster breadth / data). Its value is games, team edges, upset
-watch, rivalry/conference context, and **CFP** implications → T4 College Football Playoff
+**NCAA Football** — 🟢 T0 schedule-only shipped (rank prefix `#5 Georgia`, week label),
+**plus season context (2026-08-29)**: last season's record with the year named, the
+FBS-vs-FCS mismatch, whether last season's leading passer is still on the team, and the
+occasion. Built because the opener had nothing to say at all — two 0-0 teams produce zero
+editorial signals — and it took 47 of 48 games on the first slate from a shrug to a read.
+🚫 **No player props** (roster breadth / data). ⛔ **No coaching-change signal**: ESPN
+echoes today's coach for every past season, so it cannot be derived; the collector records
+the present coach for a comparison that becomes possible next season. Remaining: returning
+production beyond the quarterback, and **CFP** implications → T4 College Football Playoff
 mode (bracket, campus/neutral sites, selection-state honesty).
 
 **UFL** (spring, formerly XFL/USFL) — ⬜ T0 schedule-only + editorial; props only if a
@@ -88,7 +97,9 @@ reliable stat source exists (treat as data-availability-gated). T4 championship 
 Standalone, but the **best-fitting new prop sport**: its core stats are per-game counts
 that drop straight into the reachable-bar model.
 
-- **T0** 🟡 Schedule-only shipped. **T1** ⬜ period+clock live-state.
+- **T0** 🟡 Schedule-only shipped, **rankable on opening night** since 2026-08-29 —
+  last season steers Game Interest until four games are played (100% of NHL teams keep
+  their leading scorer, which is what licenses it). **T1** ⬜ period+clock live-state.
 - **T2** ⬜ Props from ESPN box scores. **Priority corrected 2026-08-12 against a full
   collected season — the original order was backwards.** Measured servability under the
   reachable-bar floor: **goalie saves 99.9% servable / 65.4% next-game clear** (build

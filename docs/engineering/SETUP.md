@@ -275,6 +275,16 @@ Coaches are recorded but nothing reads them yet — ESPN returns today's coach f
 past season, so a coaching change can only be detected by comparing against what we
 wrote down ourselves, starting next season.
 
+The same run also stores **completed NHL and NBA seasons** (two requests, 62 teams), so
+an opening-night slate can be ranked before any team has a record. A finished season
+never changes, so this is a no-op once stored. To force it:
+
+```bash
+python -c "from src.prior_season_collector import collect; print(collect(season=2026))"
+```
+
+Winter leagues are named for the year they end: the 2025-26 season is `season=2026`.
+
 ## NFL season feeds
 
 NFL does **not** collect from ESPN like WNBA/MLS — it loads Big Data Ball season
