@@ -9,6 +9,43 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-29 — Last season ranks the slate until this season can, in the pro leagues only
+
+**Decision.** `editorial.interest` blends each side's completed previous season into the
+Game Interest score while the real record is too young to speak, decaying its weight
+linearly to zero at `MIN_GAMES`: 1.00 at 0-0, 0.50 after two games, nothing from four.
+NHL and NBA only. A caveat naming the vintage travels with any score that used it, and a
+`prior_form` signal shows the records themselves — deliberately not card-worthy.
+
+**Reason.** The slate was unrankable for the first fortnight of a season, which defeats
+the product's own question. `Standing.win_pct` is None below `MIN_GAMES`, so on an
+opening-night NBA slate Celtics-Lakers, Hornets-Jazz and Wizards-Thunder **all scored 0
+and ranked identically**; in January the same three separate to 56, 41 and 35. With the
+fallback they open at 66, 36 and 39 — the two good teams on top, where they belong.
+
+**Why the pro leagues and not college.** Measured the same day: the previous season's
+key player is still on the team for 100% of NHL teams and 90% of NBA teams, against 41%
+in college football. Pro rosters persist, so last season describes roughly the same
+team. A college team's record describes a team that has largely left, which is why
+NCAAF gets last season as *stated evidence with a caveat* (2026-08-29 entry above) and
+never as a ranking input. One measurement, two opposite conclusions.
+
+**Tradeoffs.** Ranking today's slate on last year's results is the closest this project
+has come to forecasting, and it is bounded deliberately: it decays to exactly nothing at
+four games, is never presented without its vintage, and cannot reach a card chip. Past
+`MIN_GAMES` the scorer is byte-identical to what it was. The league norm is still built
+from current records, so on opening night it is unusable and cross-league comparison
+correctly refuses — within-league ranking is what is restored, not between-league.
+
+**Note for the next reader.** Three of the four NCAAF context signals do **not** transfer
+to the pro leagues and were deliberately not built: key-player turnover is 90-100%
+"unchanged" and therefore information-free, there is no division mismatch, and NHL/NBA
+scoreboards carry no event notes or neutral-site flags even for the Winter Classic and
+Christmas slates. Copying that feature wholesale would have shipped one working signal
+and three that never fire.
+
+---
+
 ## 2026-08-29 — College football gets season context; the coach question is unanswerable
 
 **Decision.** NCAAF matchup pages carry four new signals built from last season and the

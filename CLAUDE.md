@@ -212,6 +212,13 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   market** (AUC 0.566): folding it in moved AUC 0.519→0.583, served props 4→85, and
   served lift to +25.3 over base. Not a reversal of `batter-hit-v4` — strikeouts are
   pitcher-driven in a way hits are not, and both were measured.
+- **An opening-night slate is ranked on last season, in the pro leagues only.** Below
+  `MIN_GAMES` every team is 0-0 and every game scored 0, so the slate could not be
+  ordered at all. `editorial.interest` blends the previous season in, decaying to
+  **exactly nothing at four games**, with the vintage always stated
+  (`services/prior_season.py`). NHL/NBA only: their key player stays put 90-100% of the
+  time against 41% in NCAAF, so last season describes the same team there and a
+  different one in college. Never on a card chip; never for NCAAF ranking.
 - **Editorial signals are records, not forecasts.** They use no odds (a deliberate
   product decision, enforced by a test), no injuries and no weather. A "Game Interest"
   score ranks a slate for attention — it is **not** a win probability and not

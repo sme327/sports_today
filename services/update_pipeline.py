@@ -72,6 +72,23 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
         return {"teams": r["teams"], "passers": r["passers"],
                 "records": r["team_seasons"], "skipped": r["skipped"]}
 
+    def _refresh_prior_seasons() -> dict | None:
+        # Completed NHL/NBA seasons, so an opening-night slate can be ranked at all.
+        # Two requests, and a finished season never changes, so this is a no-op once
+        # stored. The season is resolved 30 days ahead: in August the useful "prior"
+        # season is the one the *upcoming* season looks back on, not the one today's
+        # (empty) calendar sits in.
+        from datetime import timedelta
+
+        from services.prior_season import prior_season_year
+        from src.prior_season_collector import LEAGUES, collect, have_season
+        season = prior_season_year(date.today() + timedelta(days=30))
+        missing = [lg for lg in LEAGUES if not have_season(lg, season)]
+        if not missing:
+            return None
+        got = collect(season=season, leagues=missing)
+        return {"season": season, **got}
+
     # The collectors are independent and dominated by network wait, so they run
     # concurrently. They all write to the one SQLite file, but to disjoint tables in
     # short transactions — SQLite serializes writers with a 5s busy timeout, and a
@@ -82,6 +99,7 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
     tasks.append(("nfl", _refresh_nfl))
     if collect_web:
         tasks.append(("ncaaf", _refresh_ncaaf))
+        tasks.append(("prior_seasons", _refresh_prior_seasons))
     with ThreadPoolExecutor(max_workers=len(tasks), thread_name_prefix="collect") as pool:
         futures = [(key, pool.submit(fn)) for key, fn in tasks]
         for key, future in futures:

@@ -94,6 +94,51 @@ class Standing:
 
 
 @dataclass(frozen=True)
+class PriorSeason:
+    """A team's completed previous season. Used only to rank a slate whose real records
+    are too young to mean anything — see ``_blend`` for the decay, and
+    ``services/prior_season`` for why this is allowed in the pro leagues and not in
+    college football."""
+
+    season: int
+    wins: int = 0
+    losses: int = 0
+    ties: int = 0
+    point_differential: float | None = None
+    team_name: str | None = None
+
+    @property
+    def games(self) -> int:
+        return self.wins + self.losses + self.ties
+
+    @property
+    def win_pct(self) -> float | None:
+        if not self.games:
+            return None
+        return (self.wins + 0.5 * self.ties) / self.games
+
+
+def _blend(current: Standing, prior: PriorSeason | None) -> tuple[float | None, float]:
+    """(win pct to score on, how much of it is last season).
+
+    Last season is worth most on opening night and nothing at all once the real record
+    can speak for itself, so its weight decays linearly to zero at ``MIN_GAMES``:
+    1.00 at 0-0, 0.50 after two games, 0 from four. Nothing is inferred beyond that
+    point — past four games this returns exactly what it did before this existed.
+    """
+    if prior is None or prior.win_pct is None:
+        return current.win_pct, 0.0
+    weight = max(0.0, (MIN_GAMES - current.games) / MIN_GAMES)
+    if weight <= 0:
+        return current.win_pct, 0.0
+    played = ((current.wins + 0.5 * current.ties) / current.games
+              if current.games else None)
+    if played is None:
+        return prior.win_pct, weight
+    return weight * prior.win_pct + (1 - weight) * played, weight
+
+
+@dataclass(frozen=True)
 class LeagueNorm:
     """How a league's records are spread, so a team can be judged against its own
     competition rather than an absolute number.
@@ -375,7 +420,21 @@ def league_norms(games: list[SlateGame]) -> dict[str, LeagueNorm]:
     return out
 
 
-def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
+def _lookup_priors(game: SlateGame) -> tuple[PriorSeason | None, PriorSeason | None]:
+    """Imported lazily and failure-swallowed on purpose. This module is otherwise pure
+    and every caller — cards, slate ranking, the matchup page, the outcome recorder —
+    goes through `interest`; doing the lookup here is what stops a new call site from
+    silently missing the fallback. A league we hold nothing for costs one dict miss."""
+    try:
+        from services import prior_season
+        return prior_season.pair_for(game)
+    except Exception:                                            # noqa: BLE001
+        return (None, None)
+
+
+def interest(game: SlateGame, norm: LeagueNorm | None = None, *,
+             priors: tuple[PriorSeason | None, PriorSeason | None] | None = None
+             ) -> GameInterest:
     """Rank one game's claim on the reader's attention, with its reasoning.
 
     The score is a transparent blend of three inspectable parts: how good the two
@@ -387,7 +446,11 @@ def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
     must not be compared between them — see ``LeagueNorm``.
     """
     away, home = standings(game)
-    ap, hp = away.win_pct, home.win_pct
+    if priors is None:
+        priors = _lookup_priors(game)
+    ap, away_prior_w = _blend(away, priors[0])
+    hp, home_prior_w = _blend(home, priors[1])
+    prior_weight = max(away_prior_w, home_prior_w)
     if norm is not None and norm.usable:
         ap, hp = norm.strength(ap), norm.strength(hp)
 
@@ -431,9 +494,44 @@ def interest(game: SlateGame, norm: LeagueNorm | None = None) -> GameInterest:
 
     signals = tuple(_rank_signals(game, away, home)
                     + _quality_signals(game, away, home, norm)
-                    + _stakes_signals(game))
+                    + _stakes_signals(game)
+                    + _prior_signals(game, priors, prior_weight))
+    caveats = _caveats(game, away, home)
+    if prior_weight > 0:
+        # Said plainly wherever this score is shown. A ranking built on last season is
+        # a different claim from one built on this season, and the reader is told which
+        # they are looking at rather than being left to assume the newer one.
+        seasons = {p.season for p in priors if p is not None}
+        vintage = f"{min(seasons)}" if seasons else "last season"
+        caveats = caveats + (
+            f"These teams have barely played. The ranking leans on their {vintage} "
+            f"records, which describe last year's teams, and stops doing so once "
+            f"each side has {MIN_GAMES} games.",)
     return GameInterest(score=score, components=components, signals=signals,
-                        caveats=_caveats(game, away, home))
+                        caveats=caveats)
+
+
+def _prior_signals(game: SlateGame, priors: tuple, weight: float) -> list[Signal]:
+    """What each side did last season. Deliberately absent from ``_CARD_WORTHY``: it
+    would appear on every card for the first fortnight of a season, and a label that
+    shows up on everything teaches the reader to stop reading it."""
+    if weight <= 0:
+        return []
+    parts = []
+    for side, prior in zip(("away", "home"), priors):
+        if prior is None:
+            continue
+        record = f"{prior.wins}-{prior.losses}"
+        if prior.ties:
+            record += f"-{prior.ties}"
+        diff = (f" ({prior.point_differential:+.1f})"
+                if prior.point_differential is not None else "")
+        parts.append(f"{_side_name(game, side)} were {record}{diff} in {prior.season}")
+    if not parts:
+        return []
+    return [Signal("prior_form", "Last season", "; ".join(parts) + ".", tuple(parts),
+                   ("Last season, not this one. Shown because these teams have not "
+                    "played enough games this season to say anything yet.",))]
 
 
 # Signals worth a card chip. The card answers "is this worth watching?", so it shows
