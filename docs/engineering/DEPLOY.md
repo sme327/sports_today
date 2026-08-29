@@ -46,6 +46,25 @@ the current static architecture.
 Deploying requires Node and `npx`, which resolves `wrangler` through the npx cache.
 There is no `package.json` here pinning it, so the version floats.
 
+## Publishing without a new MLB feed
+
+Double-click `refresh.command`, or:
+
+```bash
+python -m scripts.morning_update --skip-mlb
+python -m scripts.publish_pages
+```
+
+Today's and tomorrow's games come from the schedule sources, not the vendor workbook, so
+the published slate can be brought up to date on a morning the file has not arrived.
+Schedules, live results, the WNBA/MLS collectors, regrading and both precomputed slates
+all run; only the MLB import is skipped, and it is most of a full run's time. MLB props
+stay as they were at the last real import.
+
+The ordinary run degrades the same way rather than stopping: a missing workbook warns
+and carries on, because the alternative was publishing nothing at all (see Failure
+behavior).
+
 ## Build and validate without deploying
 
 ```bash
@@ -68,6 +87,11 @@ The project and branch can be overridden with `SPORTS_TODAY_PAGES_PROJECT` and
 
 ## Failure behavior
 
+- **A missing MLB workbook no longer stops the run.** It used to raise before the
+  publish step, and under `set -e` that meant the site kept the previous day's games —
+  the worst available outcome, since the slate never needed the workbook. The run now
+  warns, skips the import and publishes the day's games against the database as it
+  stands.
 - A missing daily snapshot remains visibly missing; never reconstruct it after results.
 - A collector failure is reported but does not erase previously good data.
 - A failed export or broken internal link stops deployment.

@@ -68,6 +68,8 @@ You should see:
 - `setup.command`
 - `update.command`
 - `update_and_publish.command`
+- `refresh.command` — today's and tomorrow's games, published, without the MLB feed
+- `update_wnba.command` — the WNBA collector on its own (the daily run already does it)
 - `manage.py`
 - `scripts/` (`morning_update.py`, `collect_wnba.py`, `diagnostics.py`, `import_feed.py`,
   `import_nfl_feed.py`, `import_boxscore_feed.py`, `sync_mlb_download.py`)

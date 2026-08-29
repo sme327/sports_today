@@ -9,6 +9,33 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-29 — A missing MLB workbook stops the import, not the day
+
+**Decision.** `morning_update` treats a missing vendor workbook as non-fatal: it warns,
+skips the import, and runs everything else against the database as it stands.
+`refresh.command` (`--skip-mlb`) does the same deliberately. Only the import is skipped —
+schedules, collectors, regrading and both precomputed slates still run.
+
+**Reason.** Today's and tomorrow's games come from the schedule sources; the workbook
+supplies MLB *props*, not the slate. But `sync_latest` raised when Downloads held no
+dated feed, and `update_and_publish.command` runs under `set -e`, so the publish never
+happened either. A morning the download was forgotten left the site showing the previous
+day's games — the worst outcome available, and the one thing a daily companion must not
+do. Failing fast is right when continuing would mislead; here continuing was strictly
+more honest than stopping.
+
+**Tradeoffs.** MLB props are then computed from the last feed actually imported, so they
+are a day stale while every other league is current. That is the existing degraded-mode
+contract rather than a new one — the run already rebuilt and published on `NO_CHANGE`,
+and the reader-facing freshness banner already reports the feed's age. The run log
+records `mlb_imported` so a later reader can tell which kind of run produced a slate.
+
+**Future considerations.** Nothing schedules this. A launchd job would make the site
+current without anyone remembering, but it needs the same single-run guard the `.app`
+launcher has — concurrent runs fight over the SQLite file and the atomic workbook swap.
+
+---
+
 ## 2026-08-29 — Last season ranks the slate until this season can, in the pro leagues only
 
 **Decision.** `editorial.interest` blends each side's completed previous season into the
