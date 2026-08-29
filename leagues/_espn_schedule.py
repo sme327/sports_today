@@ -130,6 +130,15 @@ class ScheduleOnlyESPN:
                              or self.default_round,
                     "broadcast": g.get("broadcast"),
                     "neutral_site": g.get("neutral_site"),
+                    # Carried in meta rather than on SlateGame: only the college
+                    # context service reads them, and widening the shared model for
+                    # one league's page would push them into every other league too.
+                    "away_team_id": g.get("away_team_id"),
+                    "home_team_id": g.get("home_team_id"),
+                    "venue_city": g.get("venue_city"),
+                    "venue_state": g.get("venue_state"),
+                    "venue_country": g.get("venue_country"),
+                    "event_note": g.get("event_note"),
                 },
             ))
         return games

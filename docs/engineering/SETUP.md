@@ -256,6 +256,25 @@ The MLS collector is **incremental** (skips already-collected matches), validate
 Cup, Open Cup, Concacaf, friendlies, or playoffs). Re-run periodically to pick up new
 results.
 
+## College football season context
+
+Nothing to download. During football months the daily run refreshes NCAAF season context
+— last season's records, that season's leading passer per team and where he is now, and
+the current head coach — from ESPN into SQLite, non-fatally like the other collectors.
+
+It is **staleness-gated**: a team checked within the last seven days is skipped, so the
+first run of a week does the work (~530 requests, roughly ten minutes) and the rest do
+nothing. To force a full pass:
+
+```bash
+python -c "from src.ncaaf_collector import collect; \
+           print(collect(prior_season=2025, current_season=2026))"
+```
+
+Coaches are recorded but nothing reads them yet — ESPN returns today's coach for every
+past season, so a coaching change can only be detected by comparing against what we
+wrote down ourselves, starting next season.
+
 ## NFL season feeds
 
 NFL does **not** collect from ESPN like WNBA/MLS — it loads Big Data Ball season

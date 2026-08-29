@@ -9,6 +9,50 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-29 — College football gets season context; the coach question is unanswerable
+
+**Decision.** NCAAF matchup pages carry four new signals built from last season and the
+present roster: each side's prior-season record with the year named, an FBS-vs-FCS
+mismatch flag, whether last season's leading passer is still on the team (and where he
+went if not), and the occasion — a named classic or a neutral site worth naming.
+`src/ncaaf_collector.py` stores them; `services/ncaaf_context.py` turns them into
+`editorial.Signal`s so the existing renderer draws them.
+
+**Reason.** The page was empty by construction. `services/editorial` needs four games of
+record before it speaks, so on two 0-0 teams it produced *zero* signals and every college
+card in Week 1 linked to the same shrug — even a #14 team, because `_rank_signals` only
+speaks for a lone ranked side inside the top ten. Measured on the real slate: 47 of 48
+games on 2026-08-29 now carry a read, and 36 of 68 on 2026-09-05 carry the mismatch flag.
+
+**Why last season is allowed here.** Same rule as the NFL pregame page (2026-08-21):
+aggregated prior-season data with the vintage stated is context; a historical *game*
+standing in for tonight's is not. Everything stays descriptive — "USC were 9-4 in 2025"
+— and the turnover caveat travels with it rather than being left to the reader.
+
+**The quarterback is the point of the record.** Across all 265 FBS+FCS teams only 109
+have their 2025 leading passer back: 97 are out of college football and 59 transferred.
+A prior record means something different when the player who produced it has gone, so
+the two signals are deliberately adjacent.
+
+**Coaching change: tested and impossible.** ESPN has no historical head coach. Every
+season-scoped endpoint echoes *today's* coach — `seasons/2022/teams/333/coaches` and
+`teams/333/roster?season=2023` both return Kalen DeBoer for Alabama, when it was Nick
+Saban — and the coach object carries no tenure (`experience: null`). A change could
+therefore never fire. The collector records the current coach anyway, at no extra
+request, so the comparison becomes available from the next season onward.
+
+**Tradeoffs.** Roster membership is deliberately not stored: ESPN's roster endpoint
+truncates at exactly 100 players against squads of 120+, so anyone below the cut would
+read as departed, and a false "he is gone" is the worst error this feature can make.
+Asking the athlete where he plays is one request, cannot truncate, and distinguishes a
+transfer from a player who aged out. `status` NULL means "not checked" and is reported
+as nothing rather than as departure.
+
+**Future considerations.** Returning production beyond the quarterback, and the same
+treatment for the other schedule-only leagues, whose openers have the identical problem.
+
+---
+
 ## 2026-08-28 — The daily publish must fail loudly, never wait quietly
 
 **Decision.** `scripts/publish_pages` invokes `npx --yes`. The deploy step may never

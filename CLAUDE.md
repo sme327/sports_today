@@ -24,6 +24,13 @@ ranks, stakes) shown as a card chip, and they have a **simplified matchup page**
 (`web/simple_game.py`) carrying that read plus a plain statement of what a schedule
 cannot show. It is offered **per game**: no link where the records are too young to
 read, so a card stays compact when there is nothing to say.
+**NCAAF goes further, because its opener had nothing to say at all** (two 0-0 teams
+produce zero editorial signals). `services/ncaaf_context.py` adds last season's record
+with the year named, an FBS-vs-FCS mismatch flag, whether last season's leading passer
+is still on the team — only 109 of 265 are — and the occasion. All description, never
+forecast. **A coaching change cannot be detected**: ESPN echoes today's coach for every
+past season, so the collector records the current one for a future comparison instead
+(decision log 2026-08-29).
 Picks are recorded and graded daily (hit/miss/void) split
 across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the

@@ -140,6 +140,21 @@ def parse_events(payload: dict) -> list[dict]:
             "away_rank": _rank(away),
             "home_rank": _rank(home),
             "venue": (comp.get("venue") or {}).get("fullName"),
+            # Team ids: the stable join key for anything stored per team. Names are
+            # never the key — "San José St" and "San Jose State" are the same team.
+            "away_team_id": at.get("id"),
+            "home_team_id": ht.get("id"),
+            # Where the game actually is. A neutral site is only interesting when you
+            # can say where: UNC-TCU in Dublin reads very differently from "neutral".
+            "venue_city": ((comp.get("venue") or {}).get("address") or {}).get("city"),
+            "venue_state": ((comp.get("venue") or {}).get("address") or {}).get("state"),
+            "venue_country": ((comp.get("venue") or {}).get("address") or {}).get("country"),
+            # The occasion, when the game has one ("Aer Lingus College Football
+            # Classic"). ESPN also uses notes for doubleheader labels, which is why
+            # _doubleheader_game reads the same list for a different purpose.
+            "event_note": next((str(n.get("headline")).strip()
+                                for n in (comp.get("notes") or [])
+                                if n.get("headline")), None),
             "neutral_site": bool(comp.get("neutralSite")),
             "doubleheader_game": _doubleheader_game(comp),
             "broadcast": ", ".join(dict.fromkeys(broadcasts)),

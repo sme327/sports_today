@@ -11,6 +11,7 @@ outlived the migration and would have greeted every college-football reader in S
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 from components.editorial import editorial_empty_html, editorial_html
@@ -18,6 +19,14 @@ from components.format import format_game_time, utc_start_iso
 from domain.models import SlateGame
 from leagues.base import get_adapter
 from services import editorial
+from services.editorial import GameInterest
+
+
+def _prior_season(slate_date: date) -> int:
+    """The most recent *completed* college season. The season is named for the year it
+    starts, so anything from August onward is looking back at last year; January and
+    February bowl dates still belong to the season before that."""
+    return slate_date.year - 1 if slate_date.month >= 3 else slate_date.year - 2
 
 # What a schedule alone cannot tell you. Said plainly, because the product rule is that a
 # gap is disclosed rather than papered over — and because for these leagues the gap is
@@ -45,8 +54,26 @@ def simple_game_context(game: SlateGame, slate_date: date, day: str) -> dict:
     except Exception:                                    # noqa: BLE001
         detail = None
 
-    if detail is not None and detail.signals:
+    # College football's opener is the case this page was worst at: two 0-0 teams
+    # produce zero editorial signals, so the read was a shrug on every card. The season
+    # context supplies what a schedule genuinely supports before a record exists —
+    # last season with its vintage named, division mismatch, and whether the passer who
+    # produced last season is still there. Appended, not substituted: once records mean
+    # something the editorial read leads and this becomes background.
+    extra: tuple = ()
+    if game.league == "NCAAF":
+        try:
+            from services import ncaaf_context
+            extra = ncaaf_context.signals_for(game, prior_season=_prior_season(slate_date))
+        except Exception:                                # noqa: BLE001
+            extra = ()
+
+    if detail is not None and (detail.signals or extra):
+        detail = replace(detail, signals=detail.signals + extra)
         read = editorial_html(detail)
+    elif extra:
+        read = editorial_html(GameInterest(score=0, components={}, signals=extra,
+                                           caveats=()))
     else:
         read = editorial_empty_html(
             label,

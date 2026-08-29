@@ -20,6 +20,10 @@ _REGRADE_DAYS = 7       # force-regrade this many recent days after an import
                         #  still-pending slate outside the window)
 
 
+# August through January: college football's calendar, plus the bowl tail.
+_NCAAF_MONTHS = {8, 9, 10, 11, 12, 1}
+
+
 def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
     """Rebuild the DB from ``feed_path`` and refresh the web-collected leagues.
     Returns a summary dict: ``mlb`` counts always; ``wnba``/``mls`` (or
@@ -51,6 +55,23 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
         return {"seasons": list(r.seasons), "team_rows": r.team_rows,
                 "player_rows": r.player_rows, "message": r.message}
 
+    def _refresh_ncaaf() -> dict | None:
+        # College football's season context: last season's records, that season's
+        # leading passer and where he is now. Season-stable, so the collector skips any
+        # team checked in the last week and most days this does nothing at all. Only
+        # runs in football months — there is no reason to ask about college rosters in
+        # May — and is non-fatal like the rest.
+        today = date.today()
+        if today.month not in _NCAAF_MONTHS:
+            return None
+        from src.ncaaf_collector import collect as collect_ncaaf
+        prior = today.year - 1 if today.month >= 3 else today.year - 2
+        r = collect_ncaaf(prior_season=prior, current_season=prior + 1, pause=0.02)
+        if not r.get("teams"):
+            return None                  # everything already fresh; stay quiet
+        return {"teams": r["teams"], "passers": r["passers"],
+                "records": r["team_seasons"], "skipped": r["skipped"]}
+
     # The collectors are independent and dominated by network wait, so they run
     # concurrently. They all write to the one SQLite file, but to disjoint tables in
     # short transactions — SQLite serializes writers with a 5s busy timeout, and a
@@ -59,6 +80,8 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
     if collect_web:
         tasks += [("wnba", _collect_wnba), ("mls", _collect_mls)]
     tasks.append(("nfl", _refresh_nfl))
+    if collect_web:
+        tasks.append(("ncaaf", _refresh_ncaaf))
     with ThreadPoolExecutor(max_workers=len(tasks), thread_name_prefix="collect") as pool:
         futures = [(key, pool.submit(fn)) for key, fn in tasks]
         for key, future in futures:
