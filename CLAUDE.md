@@ -131,6 +131,10 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   a hung deploy exits nothing and prints nothing; **`python -m scripts.run_status`**
   answers "did the last run actually finish, and is the site serving it?".
   `NO_CHANGE` is handled safely; data-only is `python -m scripts.morning_update`.
+  **A missing workbook is non-fatal** (since 2026-08-29): the run warns, skips the
+  import and still refreshes and publishes today's and tomorrow's games, because the
+  slate comes from the schedule sources and not from the MLB feed. `refresh.command`
+  (`--skip-mlb`) does the same deliberately and skips the slow import.
   The everyday entry point is **`Update Sports Today.app`** (Dock tile or Desktop
   alias, since 2026-08-27) — it opens a Terminal on `update.command`, resolves the
   project root from its own bundle so no user path is baked in, and refuses to start

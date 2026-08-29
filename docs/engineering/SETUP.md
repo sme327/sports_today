@@ -199,6 +199,25 @@ python -m scripts.publish_pages
 
 Use this when the database is already current — after a code or styling change, say.
 
+### Refresh the games without the MLB feed
+
+Double-click **`refresh.command`**, or:
+
+```bash
+python -m scripts.morning_update --skip-mlb
+python -m scripts.publish_pages
+```
+
+For the morning the vendor workbook has not arrived yet, or an evening when you want
+tomorrow's slate current. Schedules, live results, the WNBA/MLS collectors, regrading
+and both precomputed slates all run — only the MLB import is skipped, which is most of
+a full run's time and has no bearing on *which games are on*. MLB props stay as they
+were at the last real import.
+
+A missing workbook is also no longer fatal to the ordinary run: `update.command` warns
+loudly, skips the import and publishes today's games anyway, rather than stopping before
+the publish and leaving the site on yesterday's slate.
+
 ### Refresh data without publishing
 
 ```bash

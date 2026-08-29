@@ -53,3 +53,70 @@ def test_run_log_failure_is_reported_not_raised(tmp_path):
     blocker.write_text("a file sitting where the log's parent dir should be")
     error = append_run_log({"x": 1}, path=blocker / "runs.jsonl")
     assert error
+
+
+# --- a forgotten download must not stop the day reaching the reader (2026-08-29) -----
+
+def _run_update(monkeypatch, calls, *, downloads_raises=False, argv=None):
+    """Drive scripts.morning_update.main with the pipeline faked out."""
+    import sys
+
+    from scripts import morning_update
+
+    def fake_sync(downloads, force=False):
+        if downloads_raises:
+            raise FileNotFoundError("No dated MLB play-by-play workbook found")
+        return (morning_update.CURRENT_FEED, True)
+
+    def fake_rebuild(feed, *, import_mlb=True, **kw):
+        calls["import_mlb"] = import_mlb
+        return {"mlb": {"plate_appearances": 1, "games": 1, "batters": 1, "pitchers": 1},
+                "daily_feed": [], "regraded": {}} if import_mlb else {
+                "daily_feed": [], "regraded": {}}
+
+    monkeypatch.setattr(morning_update, "sync_latest", fake_sync)
+    monkeypatch.setattr(morning_update, "rebuild", fake_rebuild)
+    monkeypatch.setattr(morning_update, "append_run_log", lambda r, **k: None)
+    monkeypatch.setattr(sys, "argv", ["morning_update", *(argv or [])])
+    return morning_update.main()
+
+
+def test_a_missing_workbook_no_longer_ends_the_run(monkeypatch):
+    """It used to raise here, and because update_and_publish.command runs under `set -e`
+    the publish never happened either — a forgotten download left the site on the
+    previous day's games."""
+    calls: dict = {}
+    assert _run_update(monkeypatch, calls, downloads_raises=True) == 0
+    assert calls["import_mlb"] is False
+
+
+def test_skip_mlb_never_looks_in_downloads(monkeypatch):
+    """`--skip-mlb` is for the morning the file is not there yet. Searching Downloads
+    anyway would reintroduce the failure it exists to avoid."""
+    import sys
+
+    from scripts import morning_update
+
+    calls: dict = {}
+
+    def explode(*a, **k):
+        raise AssertionError("--skip-mlb must not search Downloads")
+
+    def fake_rebuild(feed, *, import_mlb=True, **kw):
+        calls["import_mlb"] = import_mlb
+        return {"daily_feed": [], "regraded": {}}
+
+    monkeypatch.setattr(morning_update, "sync_latest", explode)
+    monkeypatch.setattr(morning_update, "rebuild", fake_rebuild)
+    monkeypatch.setattr(morning_update, "append_run_log", lambda r, **k: None)
+    monkeypatch.setattr(sys, "argv", ["morning_update", "--skip-mlb"])
+
+    assert morning_update.main() == 0
+    assert calls["import_mlb"] is False
+
+
+def test_the_ordinary_run_still_imports(monkeypatch):
+    """The guard must not have quietly turned the daily update into a no-op."""
+    calls: dict = {}
+    assert _run_update(monkeypatch, calls) == 0
+    assert calls["import_mlb"] is True

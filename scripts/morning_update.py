@@ -34,31 +34,60 @@ def main() -> int:
         action="store_true",
         help="Kept for compatibility; nothing is launched either way.",
     )
+    parser.add_argument(
+        "--skip-mlb",
+        action="store_true",
+        help=("Don't look for or import an MLB workbook. Refreshes today's and "
+              "tomorrow's slates from the schedule sources against the database as it "
+              "already stands."),
+    )
     args = parser.parse_args()
 
     try:
-        current_file, changed = sync_latest(args.downloads, force=args.force)
-        print(f"Using feed: {current_file}")
+        current_file, changed = CURRENT_FEED, False
+        import_mlb = not args.skip_mlb
+        if import_mlb:
+            try:
+                current_file, changed = sync_latest(args.downloads, force=args.force)
+                print(f"Using feed: {current_file}")
+            except FileNotFoundError as exc:
+                # A missing workbook used to end the run here, and because
+                # update_and_publish.command runs under `set -e`, the publish never
+                # happened either — so a morning the download was forgotten left the
+                # site on the previous day's slate, games and all. The MLB feed is not
+                # what produces today's schedule; refuse to let its absence stop the
+                # rest of the day from reaching the reader.
+                import_mlb = False
+                print(f"{exc}", file=sys.stderr)
+                print("Continuing without it: the database is unchanged and MLB props "
+                      "come from the feed already loaded. Today's and tomorrow's games "
+                      "still refresh.", file=sys.stderr)
+        else:
+            print("Skipping the MLB feed by request; refreshing slates only.")
 
         # One shared pipeline: import the MLB feed, refresh WNBA + MLS (+ NFL pickup),
         # regrade, precompute, publish the DB to the cloud store (if configured).
         started = datetime.now()
-        result = rebuild(CURRENT_FEED)
+        result = rebuild(CURRENT_FEED, import_mlb=import_mlb)
         log_error = append_run_log({
             "run_at": started.isoformat(timespec="seconds"),
             "duration_seconds": round((datetime.now() - started).total_seconds(), 1),
             "feed": str(current_file),
             "feed_changed": changed,
+            "mlb_imported": import_mlb,
             **result,
         })
         if log_error:
             print(f"Run log not written: {log_error}", file=sys.stderr)
-        s = result["mlb"]
-        print(
-            "Database rebuilt successfully: "
-            f"{s['plate_appearances']:,} plate appearances, "
-            f"{s['games']:,} games, {s['batters']:,} batters, {s['pitchers']:,} pitchers."
-        )
+        if "mlb" in result:
+            s = result["mlb"]
+            print(
+                "Database rebuilt successfully: "
+                f"{s['plate_appearances']:,} plate appearances, "
+                f"{s['games']:,} games, {s['batters']:,} batters, {s['pitchers']:,} pitchers."
+            )
+        else:
+            print("MLB database left as it was — no feed imported this run.")
         if "wnba" in result:
             print(f"WNBA updated: {result['wnba']['games']:,} new games, "
                   f"{result['wnba']['rows']:,} player rows.")

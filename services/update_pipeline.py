@@ -24,14 +24,23 @@ _REGRADE_DAYS = 7       # force-regrade this many recent days after an import
 _NCAAF_MONTHS = {8, 9, 10, 11, 12, 1}
 
 
-def rebuild(feed_path: str | Path, *, collect_web: bool = True) -> dict:
+def rebuild(feed_path: str | Path, *, collect_web: bool = True,
+            import_mlb: bool = True) -> dict:
     """Rebuild the DB from ``feed_path`` and refresh the web-collected leagues.
-    Returns a summary dict: ``mlb`` counts always; ``wnba``/``mls`` (or
-    ``*_error``) when ``collect_web``; ``published`` True if pushed to the store."""
-    from src.ingest import import_feed
+    Returns a summary dict: ``mlb`` counts when the feed was imported;
+    ``wnba``/``mls`` (or ``*_error``) when ``collect_web``; ``published`` True if
+    pushed to the store.
 
+    ``import_mlb=False`` skips the workbook import and leaves the existing database
+    alone. Everything after it — collectors, regrading, the precomputed slates — still
+    runs, because today's and tomorrow's games come from the schedule sources, not from
+    the MLB feed. That is what makes the site refreshable on a morning when the vendor
+    file has not arrived, or has not been downloaded yet.
+    """
     out: dict = {}
-    _, out["mlb"] = import_feed(feed_path)
+    if import_mlb:
+        from src.ingest import import_feed
+        _, out["mlb"] = import_feed(feed_path)
 
     def _collect_wnba() -> dict:
         from src.wnba_collector import collect_wnba_season

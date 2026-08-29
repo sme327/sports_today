@@ -94,3 +94,22 @@ def test_game_outcomes_are_recorded_and_non_fatal(monkeypatch):
     out = P.rebuild("feed.xlsx", collect_web=False)
     assert "espn down" in out["game_outcomes_error"]
     assert out["mlb"], "the rebuild itself still succeeded"
+
+
+# --- refreshing the slate without the MLB feed (2026-08-29) --------------------------
+
+def test_rebuild_can_skip_the_mlb_import_entirely(monkeypatch):
+    """Today's and tomorrow's games come from the schedule sources, not the workbook, so
+    the slate must be refreshable on a morning the vendor file has not arrived."""
+    _fake_import(monkeypatch)
+    monkeypatch.setattr("services.data_store.is_configured", lambda: False)
+
+    def _must_not_import(*a, **k):
+        raise AssertionError("the workbook must not be imported when import_mlb=False")
+
+    monkeypatch.setattr("src.ingest.import_feed", _must_not_import)
+
+    out = P.rebuild("feed.xlsx", collect_web=False, import_mlb=False)
+    assert "mlb" not in out                      # nothing claimed about a feed we skipped
+    assert len(out["daily_feed"]) == 2           # today and tomorrow still precomputed
+    assert "regraded" in out

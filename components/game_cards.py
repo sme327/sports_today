@@ -67,7 +67,14 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
     unambiguous because a sighted reader can see which card it sits in. The 🎯 also
     opens with an emoji, which is announced by name ("direct hit") before anything useful.
     """
+    # The doubleheader number belongs in the *accessible* name, not just the visible
+    # card. Two games of a doubleheader share their team names, so without it a screen
+    # reader's link list shows "Matchup detail for Red Sox at Yankees" twice with no way
+    # to tell them apart — which is exactly what a sighted reader gets from the card
+    # around the link. `context_label` already leads with "Game N" for the same reason.
     matchup_name = f"{game.away_display} at {game.home_display}"
+    if game.doubleheader_game:
+        matchup_name += f", game {game.doubleheader_game}"
     fire = ""
     if count > 0:
         noun = "prop" if count == 1 else "props"
