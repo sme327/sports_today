@@ -91,7 +91,7 @@ framework-free and consumed by Django — that is the pattern to follow.
 
 Worth recording because the failure was invisible.
 
-`functions/api/scores.js` was superseded by commit `262c3f8`, which moved live scores to a
+`functions/api/scores.js` was superseded by commit `ef759e4`, which moved live scores to a
 browser-side fetch. Nothing had referenced it since. **It also could not have worked:**
 ESPN blocks Cloudflare's egress IPs — measured today, the identical request returns **200
 from this Mac and 403 from the Worker**. Both the Worker and the page's fallback swallowed

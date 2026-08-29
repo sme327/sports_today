@@ -79,7 +79,7 @@ not change scores; promotion still requires a frozen prospective evaluation.
 today's game should we serve up historical game data. Not any part of it." A feature
 built and shipped earlier the same day — preseason NFL cards opening the pairing's
 most recent archived meeting under a "Preseason preview" banner — was killed on first
-sight and reverted in full (commit 288b917 reverted; `last_meeting_game_id`, the
+sight and reverted in full (commit cf19c1c reverted; `last_meeting_game_id`, the
 adapter link, the view path, the banner and its styles are all gone).
 
 **Why the banner didn't save it.** The implementation was honest about what it showed;
