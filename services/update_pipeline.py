@@ -130,7 +130,14 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
             d = today - timedelta(days=i)
             s = grading.grade_slate(d, force=True)
             if s["graded"]:
-                regraded[d.isoformat()] = {"hit": s["hit"], "miss": s["miss"], "void": s["void"]}
+                # grade_slate counts snapshot *rows*, and a slate precomputed the day
+                # before holds two captures of every prop — so those counts run ~2x the
+                # day's actual record, and the terminal disagreed with the Results page
+                # about the same day. Report the deduped props through the one definition
+                # both surfaces already share.
+                record = grading.tally(grading.load_graded_slate(d))
+                regraded[d.isoformat()] = {"hit": record["hit"], "miss": record["miss"],
+                                           "void": record["void"]}
         out["regraded"] = regraded
     except Exception as exc:
         out["regrade_error"] = str(exc)

@@ -113,3 +113,27 @@ def test_rebuild_can_skip_the_mlb_import_entirely(monkeypatch):
     assert "mlb" not in out                      # nothing claimed about a feed we skipped
     assert len(out["daily_feed"]) == 2           # today and tomorrow still precomputed
     assert "regraded" in out
+
+
+def test_regrade_summary_counts_props_not_snapshot_rows(monkeypatch):
+    """The terminal and the Results page must report the same record for the same day.
+
+    `grade_slate` counts snapshot *rows*, and a slate precomputed the evening before
+    holds two captures of every prop — so the run summary read ~2x the day's real
+    record (431/344/214 printed against the 219/175/108 the app showed).
+    """
+    _fake_import(monkeypatch)
+    monkeypatch.setattr("services.data_store.is_configured", lambda: False)
+    # Rows touched: double-counted, as the real grader reports them.
+    monkeypatch.setattr("services.grading.grade_slate",
+                        lambda d, **k: {"graded": 20, "hit": 8, "miss": 8, "void": 4,
+                                        "pending": 0})
+    # What the deduped ledger actually holds: one row per prop, latest capture.
+    props = [{"result": "hit"}] * 4 + [{"result": "miss"}] * 4 + [{"result": "void"}] * 2
+    monkeypatch.setattr("services.grading.load_graded_slate", lambda d, **k: list(props))
+
+    out = P.rebuild("feed.xlsx", collect_web=False)
+
+    assert out["regraded"], "the regrade step must still report something"
+    for day in out["regraded"].values():
+        assert day == {"hit": 4, "miss": 4, "void": 2}

@@ -303,3 +303,54 @@ def test_impressiveness_is_measured_rarity_not_the_bar_number():
 
     assert _K_BASE[2] > _K_BASE[3], "2+ K must be the commoner event"
     assert 0.15 < _K_BASE[2] < 0.30
+
+
+def test_starved_flag_reads_only_the_current_engine():
+    """The fix that un-starved a market must actually clear its flag.
+
+    `batter_k` pooled two engines: v1 served 3.7% of what it predicted, v2 serves
+    17.7% with +33.8 over base on what it serves. Pooled they fall under the flag's
+    own threshold, so the Performance page went on advertising the starvation months
+    after `batter-k-v2` closed it — the same version-pooling error the calibration
+    bands were already split to avoid.
+    """
+    from components.results_feed import market_coverage_html
+
+    pooled_looks_starved = {
+        "label": "Batter Ks", "recorded_n": 145, "recorded_lift": 0.168,
+        "served_n": 13, "served_lift": 0.29,          # 9% pooled — under the tenth
+        "live_n": 96, "live_served_n": 17, "live_lift": 0.218,   # 17.7% live — healthy
+    }
+    assert 'class="mc-flag"' not in market_coverage_html([pooled_looks_starved], floor=70)
+
+
+def test_starved_flag_still_fires_when_the_current_engine_is_the_starved_one():
+    """Scoping to the live engine must not disarm the flag — that is its whole job."""
+    from components.results_feed import market_coverage_html
+
+    genuinely_starved = {
+        "label": "Batter Ks", "recorded_n": 145, "recorded_lift": 0.168,
+        "served_n": 13, "served_lift": 0.29,
+        "live_n": 136, "live_served_n": 5, "live_lift": 0.138,   # 3.7% — cannot reach
+    }
+    assert 'class="mc-flag"' in market_coverage_html([genuinely_starved], floor=70)
+
+
+def test_starved_flag_falls_back_to_pooled_without_a_live_record():
+    """A retired market has no current engine; the flag must still describe something."""
+    from components.results_feed import market_coverage_html
+
+    retired = {"label": "Total Bases", "recorded_n": 300, "recorded_lift": 0.12,
+               "served_n": 4, "served_lift": 0.1, "live_n": 0,
+               "live_served_n": 0, "live_lift": None}
+    assert 'class="mc-flag"' in market_coverage_html([retired], floor=70)
+
+
+def test_coverage_table_and_takeaway_share_one_starvation_definition():
+    """They disagreed once by mirroring the threshold in a comment instead of a call."""
+    import inspect
+
+    from components import results_feed
+
+    for fn in (results_feed.market_coverage_html, results_feed.takeaway_html):
+        assert "is_starved" in inspect.getsource(fn)

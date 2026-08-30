@@ -623,9 +623,11 @@ def takeaway_html(coverage: list[dict], direction_lift: dict[str, tuple[float, i
     ranked = [c for c in coverage if c["recorded_lift"] is not None and c["recorded_n"]]
     if ranked:
         best = ranked[0]
-        share = best["served_n"] / best["recorded_n"] if best["recorded_n"] else 0.0
-        # Mirrors market_coverage_html's own "Starved" threshold, so the two never disagree.
-        starved = best["recorded_lift"] >= 0.05 and share < 0.10
+        # Shares market_coverage_html's own definition, so the two cannot disagree —
+        # including which engine's serving share the claim is about.
+        starved = is_starved(best)
+        basis_n, basis_served, _ = starved_basis(best)
+        share = basis_served / basis_n if basis_n else 0.0
         label = f'<strong>{escape(best["label"])}</strong>'
         if starved:
             clauses.append(f'{label} carries the strongest edge ({pp(best["recorded_lift"])} '
@@ -677,6 +679,34 @@ def results_feed_html(rows: list[dict]) -> str:
     return f'<div class="result-feed">{"".join(items)}</div>'
 
 
+_STARVED_LIFT = 0.05    # beats its own base rate by this much...
+_STARVED_SHARE = 0.10   # ...yet under this share of it ever clears the floor
+
+
+def starved_basis(item: dict) -> tuple[int, int, float | None]:
+    """``(recorded, served, lift)`` the starvation test is judged on.
+
+    The **current engine's** own record where the caller supplies it, else everything
+    recorded. Serving share is a fact about the scorer running today, not about every
+    scorer a market has ever had: pooled across versions, `batter-k-v1`'s 3.7% share
+    held the flag on `batter-k-v2` months after the fix that took it to 17.7% and
+    +33.8 over base on what it serves. Falls back to the pooled figures so callers
+    predating `live_n` (and markets with no current engine at all) still work.
+    """
+    if item.get("live_n"):
+        return item["live_n"], item.get("live_served_n") or 0, item.get("live_lift")
+    return item.get("recorded_n") or 0, item.get("served_n") or 0, item.get("recorded_lift")
+
+
+def is_starved(item: dict) -> bool:
+    """Good but unservable: real edge, almost never offered. One definition, so the
+    coverage table and the takeaway sentence can never disagree about a market."""
+    recorded, served, lift = starved_basis(item)
+    if not recorded or lift is None:
+        return False
+    return lift >= _STARVED_LIFT and served / recorded < _STARVED_SHARE
+
+
 def market_coverage_html(coverage: list[dict], floor: int) -> str:
     """Every market's measured edge against how much of it we actually serve.
 
@@ -702,13 +732,13 @@ def market_coverage_html(coverage: list[dict], floor: int) -> str:
             f'<span>Served ({floor}+)</span><span>Share served</span></div>')
     body = []
     for item in coverage:
+        # The displayed share stays pooled across versions — it is the market's whole
+        # recorded history, which is what the other two columns report too.
         share = item["served_n"] / item["recorded_n"] if item["recorded_n"] else 0.0
         # Good and starved: the market earns its place but the scale cannot reach the
         # floor, so almost none of it is ever offered. That is a scoring problem wearing
         # a market's clothes, and it reads as "this market is bad" everywhere else.
-        starved = (item["recorded_lift"] is not None and item["recorded_lift"] >= 0.05
-                   and share < 0.10)
-        flag = '<span class="mc-flag">Starved</span>' if starved else ""
+        flag = '<span class="mc-flag">Starved</span>' if is_starved(item) else ""
         body.append(
             f'<div class="mc-row"><span class="et-seg">{escape(item["label"])}{flag}</span>'
             f'<span>{cell(item["recorded_lift"], item["recorded_n"])}</span>'
@@ -716,5 +746,8 @@ def market_coverage_html(coverage: list[dict], floor: int) -> str:
             f'<span class="cal-rate">{share:.0%}</span></div>')
     note = ('<div class="mtp-legend"><span>“Starved” means the market beats its base rate '
             'by 5+ points across everything it predicted, yet under a tenth of those ever '
-            'clear the floor — the scale cannot reach, so the edge is never offered.</span></div>')
+            'clear the floor — the scale cannot reach, so the edge is never offered. '
+            'Judged on the engine running today: a superseded scorer’s serving share is '
+            'not a fact about the current one. The columns stay pooled across '
+            'versions.</span></div>')
     return f'<div class="mc-table">{head}{"".join(body)}</div>{note}'

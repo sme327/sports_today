@@ -477,10 +477,20 @@ def performance_context(params, today: date) -> dict:
             hit = sum(r.get("result") == "hit" for r in group) / len(group)
             return hit - base
 
+        # Serving share is a property of the scorer running *today*, so the starvation
+        # flag is judged on the current engine alone — the same split the calibration
+        # bands above already make. Pooled, `batter-k-v1` (3.7% served) dragged the fixed
+        # `batter-k-v2` (17.7%, +33.8 over base on what it serves) back under the flag's
+        # own threshold, so the page advertised the exact problem the fix had closed.
+        # The displayed columns stay pooled: that is the table's point.
+        live = [r for r in subset if _is_current(r)]
+        live_served = [r for r in live
+                       if (r.get("opportunity_score") or 0) >= grading.CURATION_FLOOR]
         coverage.append({
             "label": LABELS.get(key, key),
             "recorded_n": len(subset), "recorded_lift": _lift(subset),
             "served_n": len(served), "served_lift": _lift(served),
+            "live_n": len(live), "live_served_n": len(live_served), "live_lift": _lift(live),
         })
     coverage.sort(key=lambda c: (c["recorded_lift"] is None, -(c["recorded_lift"] or 0)))
 
