@@ -26,6 +26,8 @@ data/archive/
 data/wnba/*.csv
 logs/*.csv
 logs/*.jsonl
+logs/*.log
+logs/*.log.1
 logs/signal_discovery_latest.md
 logs/signal_discovery_latest.json
 

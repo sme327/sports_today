@@ -9,13 +9,31 @@
 #
 # MLB props stay as they were at the last real import, and the site says so.
 # The full daily run remains update.command.
+#
+# Runs unattended too: the nightly launchd job (scripts/nightly_refresh.sh) calls this
+# script, so it must never block on input when nobody is at the keyboard.
 set -e
 
 cd "$(dirname "$0")"
+
+# A second concurrent run would fight over the same SQLite database and the atomic
+# workbook swap. One update at a time — the same guard the .app launcher applies, so
+# a nightly run in flight blocks a manual one and vice versa.
+if pgrep -qf "scripts\.(morning_update|publish_pages)"; then
+  echo "An update is already running. Not starting a second one." >&2
+  exit 0
+fi
+
 source .venv/bin/activate
 python -m scripts.morning_update --skip-mlb
 python -m scripts.publish_pages
 
 echo
 echo "Sports Today refreshed and published."
-read -k 1 "?Press any key to close..."
+
+# Only wait for a keypress when a human is actually watching. Under launchd stdin is
+# not a terminal, and this prompt would hold the job open until the next run's guard
+# tripped over it — the site would then sit on a stale slate with nothing reporting why.
+if [[ -t 0 ]]; then
+  read -k 1 "?Press any key to close..."
+fi
