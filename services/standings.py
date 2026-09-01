@@ -42,6 +42,7 @@ class TeamStanding:
     streak: str | None
     last_ten: str | None
     win_pct: float | None = None
+    logo: str | None = None
 
     @property
     def record(self) -> str:
@@ -105,7 +106,7 @@ def for_league(league: str, as_of: date | None = None,
             wins=row.get("wins") or 0, losses=row.get("losses") or 0,
             ties=row.get("ties") or 0, games_behind=row.get("games_behind"),
             streak=row.get("streak"), last_ten=row.get("last_ten"),
-            win_pct=row.get("win_pct"),
+            win_pct=row.get("win_pct"), logo=row.get("logo"),
         )
     return out
 

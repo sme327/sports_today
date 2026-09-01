@@ -133,7 +133,14 @@ def _hero(game: SlateGame, away_ident=None, home_ident=None,
     except Exception:
         away_st = home_st = None
 
+    try:
+        from services import park_factors
+        venue_note = park_factors.note_for(game.home_name or game.home_display, as_of)
+    except Exception:
+        venue_note = None
+
     return MLBGameHero(
+        venue_note=venue_note,
         away_standing=away_st.summary if away_st else None,
         home_standing=home_st.summary if home_st else None,
         # Full city + team name (Baseball is tied to cities) — fall back to display.

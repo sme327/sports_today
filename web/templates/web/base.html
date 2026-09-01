@@ -109,10 +109,29 @@ no slate (Performance) render no attribute and the pick UI stays dormant.{% endc
           <span class="nav-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
         </summary>
         <div class="nav-menu-panel">
+          {% comment %}Leagues first, because that is how the reader thinks about the
+          sport; the two analysis pages sit at the bottom where they are found rather
+          than tripped over.
+
+          Entries with no page yet render as plain text, not links. A menu appears on
+          every page, so one link to an unexported target is not one dead end but one
+          per page — that is exactly how the NFL archive produced 640 broken links. This
+          way the shape of what is coming is visible and nothing is broken.{% endcomment %}
+          <div class="nav-menu-group"><span aria-hidden="true">⚾️</span> MLB</div>
+          <a class="{% if section == 'standings' %}active{% endif %}" href="{% url 'standings' %}?league=MLB"{% if section == 'standings' %} aria-current="page"{% endif %}>Standings</a>
+          <span class="nav-future" title="Not built yet">Playoffs</span>
+          <span class="nav-future" title="Not built yet">Hot streaks &amp; trending</span>
+
+          <div class="nav-menu-group"><span aria-hidden="true">⚽️</span> MLS</div>
+          <span class="nav-future" title="Not built yet">Standings</span>
+
+          <div class="nav-menu-group"><span aria-hidden="true">🏀</span> WNBA</div>
+          <span class="nav-future" title="Not built yet">Standings</span>
+          <span class="nav-future" title="Not built yet">Hot streaks &amp; trending</span>
+
+          <div class="nav-menu-sep" role="separator"></div>
           <a class="{% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}"{% if section == 'performance' %} aria-current="page"{% endif %}>Performance</a>
           <a class="{% if section == 'results' %}active{% endif %}" href="{% url 'results' %}"{% if section == 'results' %} aria-current="page"{% endif %}>Daily Results</a>
-          <div class="nav-menu-group">Leagues</div>
-          <a class="{% if section == 'standings' %}active{% endif %}" href="{% url 'standings' %}"{% if section == 'standings' %} aria-current="page"{% endif %}>Standings</a>
         </div>
       </details>
     </nav>

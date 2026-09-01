@@ -29,7 +29,7 @@ COLUMNS = (
     "league", "season", "snapshot_date", "team_id", "team_name", "team_abbr",
     "conference", "division", "division_rank", "wins", "losses", "ties",
     "win_pct", "games_behind", "playoff_seed", "streak", "last_ten",
-    "home_record", "road_record", "collected_at",
+    "home_record", "road_record", "logo", "collected_at",
 )
 
 
@@ -56,6 +56,7 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
             last_ten TEXT,
             home_record TEXT,
             road_record TEXT,
+            logo TEXT,
             collected_at TEXT,
             PRIMARY KEY (league, season, snapshot_date, team_id)
         )
@@ -65,6 +66,9 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
         f"CREATE INDEX IF NOT EXISTS idx_{TABLE}_lookup "
         f"ON {TABLE} (league, snapshot_date)"
     )
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({TABLE})")}
+    if "logo" not in existing:
+        conn.execute(f"ALTER TABLE {TABLE} ADD COLUMN logo TEXT")
 
 
 def upsert(conn: sqlite3.Connection, rows: list[dict]) -> int:

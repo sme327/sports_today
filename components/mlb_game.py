@@ -75,7 +75,11 @@ def _hero_side(name, logo, form_note, form_dir, pitcher, hand, pitcher_note, hom
 
 
 def hero_html(h: MLBGameHero) -> str:
-    meta_bits = [b for b in (h.league_context, h.venue, h.scheduled_time) if b]
+    # The park note rides directly behind the venue it is about, so the line reads
+    # "Great American Ball Park, hits run 5% below average here" rather than stranding
+    # the fact away from its subject.
+    venue = f"{h.venue}, {h.venue_note}" if (h.venue and h.venue_note) else h.venue
+    meta_bits = [b for b in (h.league_context, venue, h.scheduled_time) if b]
     meta = " · ".join(escape(b) for b in meta_bits)
     note = ""
     if h.probable_pitcher_status == "unavailable":

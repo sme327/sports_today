@@ -628,3 +628,42 @@ def test_every_page_the_header_menu_links_to_is_exported():
     for path in ("/performance/", "/results/", "/standings/"):
         assert path in _SEEDS, f"{path} is linked from the header menu but never seeded"
         assert should_crawl(f"https://sports.sme327.com{path}"), f"{path} is not crawlable"
+
+
+def test_day_today_is_the_index_not_a_hashed_duplicate():
+    """The Today pill links "/?day=today". Falling through to the hashed catch-all gave
+    it /view/home-<hash>/ — a byte-identical copy of the home page under a URL nobody
+    could recognise — so the control read as broken and the site carried the page twice."""
+    from web.management.commands.export_static import output_path
+
+    assert output_path("/?day=today").as_posix() == "index.html"
+    assert output_path("/").as_posix() == "index.html"
+    assert output_path("/?day=tomorrow").as_posix() == "tomorrow/index.html"
+    assert output_path("/?day=day-after").as_posix() == "day-after/index.html"
+
+
+def test_menu_entries_without_a_page_are_not_links():
+    """The menu lists what is coming (MLS/WNBA standings, playoffs, trending) before
+    those pages exist. They must render as plain text: a menu shows on every page, so a
+    link to an unexported target is one dead end *per page* — how the NFL archive turned
+    into 640 broken links."""
+    import re
+    from pathlib import Path
+
+    html = Path("web/templates/web/base.html").read_text(encoding="utf-8")
+    panel = html[html.index('class="nav-menu-panel"'):html.index("</details>")]
+    for label in ("Playoffs", "Hot streaks"):
+        # The label may appear only inside a non-anchor element.
+        for match in re.finditer(rf"<(\w+)[^>]*>[^<]*{label}", panel):
+            assert match.group(1) != "a", f"{label} must not be a link until it has a page"
+
+
+def test_leagues_come_before_the_analysis_pages_in_the_menu():
+    """Leagues first is how the reader thinks about the sport; Performance and Results
+    sit at the bottom where they are found rather than tripped over."""
+    from pathlib import Path
+
+    html = Path("web/templates/web/base.html").read_text(encoding="utf-8")
+    panel = html[html.index('class="nav-menu-panel"'):html.index("</details>")]
+    assert panel.index("MLB") < panel.index("Performance")
+    assert panel.index("WNBA") < panel.index("Daily Results")

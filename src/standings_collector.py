@@ -120,6 +120,8 @@ def league_rows(league: str, season: int, snapshot: str) -> list[dict]:
                 "last_ten": _text(entry, "Last Ten Games"),
                 "home_record": _text(entry, "Home"),
                 "road_record": _text(entry, "Road"),
+                "logo": next((l.get("href") for l in (team.get("logos") or [])
+                              if l.get("href")), None),
                 "collected_at": collected,
             })
     return rows
@@ -224,6 +226,9 @@ def mlb_rows(season: int, snapshot: str) -> list[dict]:
                 "last_ten": _split("lastTen"),
                 "home_record": _split("home"),
                 "road_record": _split("away"),
+                # StatsAPI has no logo field; the CDN path is derived from the team id,
+                # which is the same convention src/mlb_api already uses for the slate.
+                "logo": f"https://www.mlbstatic.com/team-logos/{team_id}.svg",
                 "collected_at": collected,
             })
     return rows

@@ -59,6 +59,10 @@ class MLBGameHero:
     # is a fact about games already played and must never be worded as a prediction.
     away_standing: str | None = None    # "82-54 · 1st in AL East"
     home_standing: str | None = None
+    # "hits run 13% above average here" — measured, description-only, and absent for the
+    # ~two thirds of parks whose effect is inside the noise. Evidence, never in a score:
+    # the same adjustment failed the scoring ship gate (decision log 2026-08-31).
+    venue_note: str | None = None
     # Presentation-only summary fields (V1.1). Populated from already-computed
     # analytics — no new calculations.
     away_form_label: str | None = None      # "Trending Up" | "Trending Down" | "Holding Steady"

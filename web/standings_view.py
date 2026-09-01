@@ -99,6 +99,7 @@ def build_context(league: str | None, as_of: date | None = None, db_path=None) -
             "teams": [{
                 "rank": t.division_rank,
                 "name": t.team_name,
+                "logo": t.logo,
                 "record": t.record,
                 "win_pct": f"{t.win_pct:.3f}".lstrip("0") if t.win_pct is not None else "",
                 # A leader's deficit is zero; printing "0.0" in a GB column reads as a

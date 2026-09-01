@@ -81,6 +81,11 @@ def output_path(url: str) -> Path:
     parts = urlsplit(url)
     if parts.path == "/" and not parts.query:
         return Path("index.html")
+    # "?day=today" *is* the index. Without this it fell through to the hashed catch-all
+    # and the Today pill linked /view/home-<hash>/ — a byte-identical duplicate of the
+    # home page under a URL nobody could recognise, so the control looked broken.
+    if parts.path == "/" and parts.query == "day=today":
+        return Path("index.html")
     if parts.path == "/" and parts.query == "day=tomorrow":
         return Path("tomorrow/index.html")
     if parts.path == "/" and parts.query == "day=day-after":

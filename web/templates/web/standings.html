@@ -31,7 +31,7 @@
       </div>
       {% for team in group.teams %}
       <div class="standings-row{% if team.leader %} leader{% endif %}" role="row">
-        <span role="cell" class="standings-team"><b>{{ team.rank }}</b> {{ team.name }}</span>
+        <span role="cell" class="standings-team"><b>{{ team.rank }}</b>{% if team.logo %}<img class="standings-logo" src="{{ team.logo }}" alt="" width="20" height="20" loading="lazy">{% endif %}<span class="standings-name">{{ team.name }}</span></span>
         <span role="cell" class="num">{{ team.record }}</span>
         <span role="cell" class="num">{{ team.win_pct }}</span>
         <span role="cell" class="num">{{ team.games_behind }}</span>

@@ -440,3 +440,15 @@ html[data-slate-stale] .opportunity-section { display: none; }
   padding: .55rem .65rem .25rem; color: var(--text-4);
   font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase;
 }
+
+/* Team marks on the standings table. `alt=""` on purpose: the team name sits right
+   beside it, so announcing the logo would read the name twice. Fixed box so a slow or
+   missing logo cannot shift the column — several are SVGs served from a CDN. */
+.standings-team { display: flex; align-items: center; gap: .5rem; }
+.standings-logo { width: 20px; height: 20px; object-fit: contain; flex: 0 0 20px; }
+.standings-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-menu-panel .nav-future {
+  padding: .5rem .65rem; font-size: .85rem; font-weight: 650;
+  color: var(--text-3);
+}
+.nav-menu-sep { height: 1px; margin: .4rem .3rem; background: var(--hairline); }
