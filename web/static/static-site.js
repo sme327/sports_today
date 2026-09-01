@@ -468,3 +468,20 @@
     else link.removeAttribute("aria-current");
   }
 })();
+
+/* --- Header menu: close it the ways a menu is expected to close -------------------
+   `details` gives us open/close, Escape and keyboard reach for free, but it has no
+   notion of "click away", so the panel would sit open over the slate while the reader
+   scrolled past it. */
+(() => {
+  "use strict";
+  const menu = document.querySelector(".nav-menu");
+  if (!menu) return;
+  document.addEventListener("click", (event) => {
+    if (menu.open && !menu.contains(event.target)) menu.open = false;
+  });
+  // A link inside the panel navigates, but on a same-page anchor nothing would close it.
+  menu.addEventListener("click", (event) => {
+    if (event.target.closest("a")) menu.open = false;
+  });
+})();

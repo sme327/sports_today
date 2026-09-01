@@ -1,0 +1,53 @@
+{% extends "web/base.html" %}
+{% block title %}{{ league }} Standings · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero">
+  <div>
+    <div class="eyebrow">Where every team actually sits</div>
+    <h1 class="page-title">{{ league }} Standings</h1>
+  </div>
+</section>
+
+{% if leagues %}
+<section class="filter-row" aria-label="League">
+  <div class="filter-pills">
+    {% for name in leagues %}<a class="filter-pill {% if name == league %}active{% endif %}" href="{% url 'standings' %}?league={{ name }}" aria-label="{{ name }} standings"{% if name == league %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if groups %}
+  {% for group in groups %}
+  <section class="standings-group">
+    <h2 class="standings-group-name">{{ group.name }}</h2>
+    <div class="standings-table" role="table" aria-label="{{ group.name }} standings">
+      <div class="standings-row standings-head" role="row">
+        <span role="columnheader">{{ group_noun }}</span>
+        <span role="columnheader">W-L</span>
+        <span role="columnheader">Pct</span>
+        <span role="columnheader" title="Games behind the leader">GB</span>
+        <span role="columnheader">Strk</span>
+        <span role="columnheader">L10</span>
+      </div>
+      {% for team in group.teams %}
+      <div class="standings-row{% if team.leader %} leader{% endif %}" role="row">
+        <span role="cell" class="standings-team"><b>{{ team.rank }}</b> {{ team.name }}</span>
+        <span role="cell" class="num">{{ team.record }}</span>
+        <span role="cell" class="num">{{ team.win_pct }}</span>
+        <span role="cell" class="num">{{ team.games_behind }}</span>
+        <span role="cell" class="num">{{ team.streak }}</span>
+        <span role="cell" class="num">{{ team.last_ten }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  {% comment %}The product rule: say what a number is, and what it is not. A standings
+  table is the most forecast-looking surface here, so it states plainly that it isn't
+  one.{% endcomment %}
+  <p class="quiet-note">Records through the last completed day. Standings describe games
+     already played — they are not a projection of what happens next.</p>
+{% else %}
+  <div class="notice">No standings are loaded yet. They arrive with the next daily run.</div>
+{% endif %}
+{% endblock %}

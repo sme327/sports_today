@@ -372,3 +372,71 @@ html[data-slate-stale] .opportunity-section { display: none; }
   font-variant-numeric: tabular-nums;
   margin: .1rem 0 .15rem;
 }
+
+/* --- Standings ------------------------------------------------------------------
+   The one surface that shows a league whole rather than a slate. Tabular numerals so
+   the columns line up down the page, and the division leader carried by a left rule
+   rather than a colour fill — orange is the accent and a table of six highlighted rows
+   would spend it on nothing. */
+.standings-group { margin: 1.5rem 0; }
+.standings-group-name {
+  font-size: .95rem; font-weight: 750; color: var(--text-2);
+  margin: 0 0 .5rem; letter-spacing: .01em;
+}
+.standings-table { border-radius: var(--r-md); background: var(--surface-1); overflow: hidden; }
+.standings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 3.5rem 3.5rem 3.5rem 4rem;
+  gap: .5rem; align-items: center;
+  padding: .6rem .9rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.standings-row:last-child { border-bottom: 0; }
+.standings-head {
+  color: var(--text-4); font-size: .68rem; font-weight: 750;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.standings-row.leader { box-shadow: inset 3px 0 0 var(--brand); }
+.standings-team { color: var(--text-1); font-weight: 650; min-width: 0; }
+.standings-team b { color: var(--text-4); font-weight: 700; margin-right: .4rem; }
+.standings-row .num { color: var(--text-2); font-variant-numeric: tabular-nums; font-size: .88rem; }
+@media (max-width: 720px) {
+  /* Streak and last-ten are the first things to go on a phone: the record, percentage
+     and games back are what the page is for. */
+  .standings-row { grid-template-columns: minmax(0, 1fr) 4rem 3rem 3rem; }
+  .standings-row > :nth-child(5), .standings-row > :nth-child(6) { display: none; }
+}
+
+/* --- Header menu ----------------------------------------------------------------
+   Everything that is not "today" lives behind one control, so a new league page costs
+   the header nothing. `details/summary` on purpose: it opens without JavaScript, closes
+   on Escape, and is keyboard-reachable without us reimplementing any of that. */
+.nav-menu { position: relative; }
+.nav-menu > summary {
+  list-style: none; cursor: pointer; display: grid; place-items: center;
+  width: 2.1rem; height: 2.1rem; border-radius: var(--r-pill);
+  border: 1px solid var(--divider); background: var(--surface-2);
+}
+.nav-menu > summary::-webkit-details-marker { display: none; }
+.nav-menu > summary:hover { border-color: var(--brand); }
+.nav-menu > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.nav-menu-bars { display: grid; gap: 3px; }
+.nav-menu-bars i { display: block; width: 15px; height: 2px; border-radius: 1px; background: var(--text-2); }
+.nav-menu[open] > summary .nav-menu-bars i { background: var(--brand); }
+.nav-menu-panel {
+  position: absolute; right: 0; top: calc(100% + .45rem); z-index: 40;
+  min-width: 13rem; padding: .4rem;
+  display: flex; flex-direction: column; gap: .1rem;
+  border: 1px solid var(--divider); border-radius: var(--r-md);
+  background: var(--surface-1); box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+.nav-menu-panel a {
+  padding: .5rem .65rem; border-radius: var(--r-sm);
+  color: var(--text-2); text-decoration: none; font-size: .85rem; font-weight: 650;
+}
+.nav-menu-panel a:hover { background: var(--surface-2); color: var(--text-1); }
+.nav-menu-panel a.active { color: var(--brand-2); }
+.nav-menu-group {
+  padding: .55rem .65rem .25rem; color: var(--text-4);
+  font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase;
+}

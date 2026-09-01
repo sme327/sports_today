@@ -103,3 +103,130 @@ def test_mlb_standings_do_not_come_from_espn():
     from src.standings_collector import LEAGUES
 
     assert "MLB" not in LEAGUES, "MLB must not be fetched from the ESPN standings map"
+
+
+# --- The page -------------------------------------------------------------------------
+
+def test_the_standings_page_groups_by_division_and_marks_the_leader(db):
+    from web import standings_view
+
+    context = standings_view.build_context("MLB", db_path=db)
+    assert context["league"] == "MLB"
+    group = context["groups"][0]
+    assert group["name"] == "American League East"
+    assert [t["name"] for t in group["teams"]] == ["Rays", "Yankees"]
+    assert group["teams"][0]["leader"] is True
+    assert group["teams"][1]["leader"] is False
+
+
+def test_the_leaders_games_behind_column_is_a_dash_not_a_zero(db):
+    """"0.0" in a GB column reads as a deficit. The dash is the scoreboard convention
+    and the same reasoning as the hero line, which omits it entirely."""
+    from web import standings_view
+
+    teams = standings_view.build_context("MLB", db_path=db)["groups"][0]["teams"]
+    assert teams[0]["games_behind"] == "—"
+    assert teams[1]["games_behind"] == "4.5"
+
+
+def test_an_unknown_league_falls_back_rather_than_erroring(db):
+    from web import standings_view
+
+    assert standings_view.build_context("CRICKET", db_path=db)["league"] == "MLB"
+
+
+def test_no_standings_at_all_is_an_honest_empty_page(tmp_path):
+    """A league with nothing loaded must say so, not render an empty table."""
+    import sqlite3
+
+    from src import standings_store
+    from web import standings_view
+
+    empty = tmp_path / "empty.db"
+    standings_store.ensure_tables(sqlite3.connect(empty))
+    context = standings_view.build_context(None, db_path=empty)
+    assert context["league"] is None and context["groups"] == []
+
+
+def test_the_page_says_it_is_not_a_projection():
+    """A standings table is the most forecast-looking surface in the product; the
+    product rule is that it states what it is not."""
+    from pathlib import Path
+
+    html = Path("web/templates/web/standings.html").read_text(encoding="utf-8")
+    assert "not a projection" in html
+
+
+def test_every_league_page_is_exported():
+    """Reachable from the menu means nothing if the static build never wrote the page."""
+    from web.management.commands.export_static import _SEEDS
+
+    assert "/standings/" in _SEEDS
+    for league in ("MLB", "NFL", "NBA", "NHL"):
+        assert f"/standings/?league={league}" in _SEEDS
+
+
+def test_a_league_that_has_not_started_is_not_listed(tmp_path):
+    """Before the opener every team is 0-0, and a table of thirty-two zeroes tells a
+    reader nothing while looking authoritative. On 1 September the NFL page rendered
+    3-0 and 1-1-1 — ESPN's *preseason* records wearing a standings table."""
+    import sqlite3
+
+    from src import standings_store
+    from web import standings_view
+
+    db = tmp_path / "s.db"
+    conn = sqlite3.connect(db)
+    standings_store.ensure_tables(conn)
+    from datetime import date as _date
+
+    base = dict(season=2026, snapshot_date=_date.today().isoformat(), team_abbr=None,
+                conference="AFC", division="AFC East", win_pct=0.0, games_behind=0.0,
+                playoff_seed=None, streak=None, last_ten=None, home_record=None,
+                road_record=None, collected_at="x")
+    standings_store.upsert(conn, [
+        dict(base, league="NFL", team_id="1", team_name="Bills",
+             division_rank=1, wins=0, losses=0, ties=0),
+        dict(base, league="MLB", team_id="2", team_name="Rays", conference="AL",
+             division="AL East", division_rank=1, wins=82, losses=54, ties=0),
+    ])
+    conn.commit()
+
+    assert standings_view.available_leagues(db_path=db) == ["MLB"]
+
+
+def test_espn_standings_are_asked_for_the_regular_season():
+    """Without seasontype=2 the endpoint serves preseason results."""
+    from pathlib import Path
+
+    src = Path("src/standings_collector.py").read_text(encoding="utf-8")
+    assert "seasontype=2" in src
+
+
+def test_a_future_dated_snapshot_is_never_served(tmp_path):
+    """`date.today()` is local; `datetime.now(timezone.utc)` is not. A collector run in
+    a UTC process writes tomorrow's snapshot_date, and MAX() then prefers it forever —
+    which is exactly how a page came to serve future-dated preseason rows instead of
+    the current table."""
+    import sqlite3
+    from datetime import date, timedelta
+
+    from src import standings_store
+
+    db = tmp_path / "s.db"
+    conn = sqlite3.connect(db)
+    standings_store.ensure_tables(conn)
+    base = dict(season=2026, team_abbr=None, conference="AL", division="AL East",
+                division_rank=1, ties=0, win_pct=.5, games_behind=0.0, playoff_seed=None,
+                streak=None, last_ten=None, home_record=None, road_record=None,
+                collected_at="x", league="MLB", team_id="139", team_name="Rays")
+    today = date.today()
+    standings_store.upsert(conn, [
+        dict(base, snapshot_date=today.isoformat(), wins=82, losses=54),
+        dict(base, snapshot_date=(today + timedelta(days=1)).isoformat(),
+             wins=0, losses=0),
+    ])
+    conn.commit()
+
+    assert standings_store.latest_snapshot(conn, "MLB") == today.isoformat()
+    assert standings.for_league("MLB", db_path=db)["139"].wins == 82

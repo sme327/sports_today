@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.today, name="today"),
     path("results/", views.results, name="results"),
     path("performance/", views.performance, name="performance"),
+    path("standings/", views.standings, name="standings"),
     path("nfl/", views.nfl_archive, name="nfl-archive"),
     path("nfl/game/<str:game_id>/", views.nfl_matchup, name="nfl-matchup"),
     path("game/<str:league>/<str:game_id>/", views.game, name="game"),

@@ -99,7 +99,23 @@ no slate (Performance) render no attribute and the pick UI stays dormant.{% endc
         <a data-day-link="today" class="{% if day != 'tomorrow' %}{% if section == 'today' or not section %}active{% endif %}{% endif %}" href="/?day=today" {% if day != 'tomorrow' and section == 'today' %}aria-current="page"{% endif %}>Today</a>
         <a data-day-link="tomorrow" class="{% if day == 'tomorrow' %}active{% endif %}" href="/?day=tomorrow" {% if day == 'tomorrow' %}aria-current="page"{% endif %}>Tomorrow</a>
       </span>
-      <a class="performance-link {% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}" {% if section == 'performance' %}aria-current="page"{% endif %}>Performance</a>
+      {% comment %}The day toggle stays a first-class control — the slate is what this
+      product is for. Everything that is *not* today goes behind one menu, so adding a
+      league page does not cost the header another pill. Details/summary rather than a
+      scripted dropdown: it opens with no JavaScript, closes on Escape for free, and is
+      keyboard-navigable without a roving tabindex of our own.{% endcomment %}
+      <details class="nav-menu">
+        <summary aria-label="More pages" title="More pages">
+          <span class="nav-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        </summary>
+        <div class="nav-menu-panel">
+          <a class="{% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}"{% if section == 'performance' %} aria-current="page"{% endif %}>Performance</a>
+          <a class="{% if section == 'results' %}active{% endif %}" href="{% url 'results' %}"{% if section == 'results' %} aria-current="page"{% endif %}>Daily Results</a>
+          <div class="nav-menu-group">Leagues</div>
+          <a class="{% if section == 'standings' %}active{% endif %}" href="{% url 'standings' %}"{% if section == 'standings' %} aria-current="page"{% endif %}>Standings</a>
+          <a class="{% if section == 'nfl' %}active{% endif %}" href="{% url 'nfl-archive' %}"{% if section == 'nfl' %} aria-current="page"{% endif %}>NFL season archive</a>
+        </div>
+      </details>
     </nav>
   </header>
   <main class="site-shell" id="main" tabindex="-1">

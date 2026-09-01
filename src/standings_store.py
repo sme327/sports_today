@@ -87,13 +87,17 @@ def latest_snapshot(conn: sqlite3.Connection, league: str,
     standings as they stood then, not as they stand now — otherwise a matchup page
     rebuilt in October would describe an August game with October's records.
     """
-    if on_or_before:
-        row = conn.execute(
-            f"SELECT MAX(snapshot_date) FROM {TABLE} "
-            f"WHERE league = ? AND snapshot_date <= ?", (league, on_or_before)).fetchone()
-    else:
-        row = conn.execute(
-            f"SELECT MAX(snapshot_date) FROM {TABLE} WHERE league = ?", (league,)).fetchone()
+    # Never later than local today, even when no bound is asked for. `date.today()` is
+    # local while `datetime.now(timezone.utc)` is not, and a collector run in a UTC
+    # process writes tomorrow's snapshot_date — which MAX() then prefers forever. That
+    # happened: a page read future-dated preseason rows in place of the current table.
+    from datetime import date as _date
+
+    bound = min(on_or_before, _date.today().isoformat()) if on_or_before \
+        else _date.today().isoformat()
+    row = conn.execute(
+        f"SELECT MAX(snapshot_date) FROM {TABLE} "
+        f"WHERE league = ? AND snapshot_date <= ?", (league, bound)).fetchone()
     return row[0] if row and row[0] else None
 
 

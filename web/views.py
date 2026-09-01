@@ -117,3 +117,12 @@ def schedule_fragment(request):
             cache.delete(lock_key)
     context = build_context(request.GET, timezone.localdate())
     return render(request, "web/_schedule.html", context)
+
+
+def standings(request):
+    """Per-league standings. The league is a query param rather than a path segment so
+    the static export gives each one its own directory without a new route shape."""
+    from web.standings_view import build_context as standings_context
+
+    context = standings_context(request.GET.get("league"), timezone.localdate())
+    return render(request, "web/standings.html", context)

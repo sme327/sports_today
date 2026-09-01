@@ -81,7 +81,12 @@ def league_rows(league: str, season: int, snapshot: str) -> list[dict]:
     spec = LEAGUES.get(league)
     if spec is None:
         return []
-    payload = fetch_json(f"{STANDINGS}/{spec.path}/standings?season={season}&level=3")
+    # seasontype=2 is the regular season. Without it ESPN serves *preseason* records,
+    # and on 1 September the NFL page showed 3-0 and 1-1-1 as if they were standings —
+    # exhibition results wearing a standings table. The MLB path already asks StatsAPI
+    # for regularSeason explicitly, for the same reason.
+    payload = fetch_json(
+        f"{STANDINGS}/{spec.path}/standings?season={season}&level=3&seasontype=2")
     if not payload:
         return []
     groups: list = []
