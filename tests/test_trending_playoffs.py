@@ -67,3 +67,47 @@ def test_new_pages_are_public_static_export_seeds():
 
     assert "/trending/" in _SEEDS
     assert "/playoffs/" in _SEEDS
+
+
+# --- Remaining games against the rest of the race -------------------------------------
+
+def test_rival_meetings_counts_only_games_between_teams_in_the_race():
+    """"Games left" does not say who they are against, and 24 against the field is a
+    different September from 24 against the basement. Only games where *both* sides sit
+    in the same conference's field-or-bubble count."""
+    from services.mlb_playoffs import _rival_meetings
+
+    status = {
+        "1": {"conference": "AL", "division": "AL East", "gap": 0.0, "status": "x", "in_field": True},
+        "2": {"conference": "AL", "division": "AL West", "gap": 1.0, "status": "x", "in_field": False},
+        "3": {"conference": "NL", "division": "NL East", "gap": 0.0, "status": "x", "in_field": True},
+    }
+    games = [
+        {"phase": "regular", "state": "pre", "away_id": "1", "home_id": "2"},    # counts
+        {"phase": "regular", "state": "pre", "away_id": "1", "home_id": "3"},    # cross-conference
+        {"phase": "regular", "state": "pre", "away_id": "1", "home_id": "99"},   # not in the race
+        {"phase": "regular", "state": "final", "away_id": "1", "home_id": "2"},  # already played
+        {"phase": "postseason", "state": "pre", "away_id": "1", "home_id": "2"},
+    ]
+    counts = _rival_meetings(games, status)
+    assert counts["1"] == 1 and counts["2"] == 1
+    assert counts["3"] == 0
+
+
+def test_the_head_to_head_window_runs_past_the_two_week_view():
+    """The fortnight bounds the *judgment* ("these games matter"), which is a claim about
+    standings that have not happened yet. The head-to-head count is arithmetic over the
+    whole run-in, so it must not be clipped to the same fortnight."""
+    from datetime import date
+
+    from services import mlb_playoffs
+
+    asked = {}
+
+    def _fetch(start, end):
+        asked["start"], asked["end"] = start, end
+        return []
+
+    today = date(2026, 9, 1)
+    mlb_playoffs.build_context(today, schedule_fetcher=_fetch)
+    assert (asked["end"] - today).days > 14

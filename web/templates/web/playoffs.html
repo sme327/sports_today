@@ -16,12 +16,16 @@
   <section class="playoff-panel">
     <div class="section-heading"><div><h2>{{ panel.name }} picture</h2><p>Three division leaders + three Wild Cards</p></div></div>
     <div class="race-table" role="table" aria-label="{{ panel.name }} playoff picture">
-      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>Record</span><span>Games left</span></div>
+      {% comment %}"Games left" alone does not say who they are against, and 24 games
+      against the field is a different September from 24 against the basement. The last
+      column is schedule arithmetic — every one of those games is on the calendar today —
+      and it forecasts nothing about who wins them.{% endcomment %}
+      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>Record</span><span>Games left</span><span title="Remaining games against the other teams in this conference's field and bubble">vs. race</span></div>
       {% for team in panel.field %}
       <div class="race-row in-field" role="row">
         <b class="race-seed">{{ team.seed }}</b>
         <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
-        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span><span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>
       </div>
       {% endfor %}
       {% if panel.bubble %}<div class="race-divider"><span>Chasing the line</span></div>{% endif %}
@@ -29,7 +33,7 @@
       <div class="race-row bubble" role="row">
         <b class="race-seed">—</b>
         <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
-        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span><span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>
       </div>
       {% endfor %}
     </div>

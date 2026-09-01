@@ -57,6 +57,37 @@ def _team_row(team, *, seed=None, status: str, gap: str) -> dict:
             "remaining": max(0, 162 - team.wins - team.losses), "streak": team.streak or ""}
 
 
+def _rival_meetings(games: list[dict], status: dict[str, dict]) -> dict[str, int]:
+    """Remaining games against the teams a club is actually racing.
+
+    "Games remaining" alone does not say who they are against, and 24 games against the
+    field is a different September from 24 against the basement. A club's rivals are the
+    other clubs in its own conference's field and bubble — the set it can still gain or
+    lose ground on directly.
+
+    This is schedule arithmetic, not a projection: every one of these games is on the
+    calendar today. It says nothing about who wins them, which is the line the rest of
+    this page holds too.
+    """
+    by_conference: dict[str, set] = {}
+    for team_id, meta in status.items():
+        by_conference.setdefault(meta["conference"], set()).add(str(team_id))
+
+    counts: dict[str, int] = {tid: 0 for tid in status}
+    for game in games:
+        if game.get("phase") != "regular" or game.get("state") == "final":
+            continue
+        away, home = str(game.get("away_id") or ""), str(game.get("home_id") or "")
+        a, h = status.get(away), status.get(home)
+        if not a or not h or a["conference"] != h["conference"]:
+            continue
+        rivals = by_conference.get(a["conference"], set())
+        if away in rivals and home in rivals:
+            counts[away] += 1
+            counts[home] += 1
+    return counts
+
+
 def _important_games(games: list[dict], status: dict[str, dict]) -> list[dict]:
     ranked = []
     for game in games:
@@ -107,11 +138,24 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH,
     table = standings.for_league("MLB", today, db_path=db_path)
     panels, status = _race_rows(table)
     end = today + timedelta(days=14)
+    # The regular season ends in the first days of October; asking to the end of the
+    # month costs nothing and means the head-to-head count is the *whole* run-in rather
+    # than a fortnight of it.
+    season_end = date(today.year, 10, 31)
     schedule, schedule_available = [], True
     try:
-        schedule = schedule_fetcher(today, end)
+        schedule = schedule_fetcher(today, max(end, season_end))
     except Exception:
         schedule_available = False
+
+    meetings = _rival_meetings(schedule, status) if schedule else {}
+    for panel in panels:
+        for row in (*panel["field"], *panel["bubble"]):
+            row["vs_rivals"] = meetings.get(str(row["id"]))
+
+    window = [g for g in schedule if str(g.get("date") or g.get("game_date") or "")[:10] <= end.isoformat()] \
+        if schedule else []
     return {"section": "playoffs", "league": "MLB", "panels": panels,
-            "games": _important_games(schedule, status), "schedule_available": schedule_available,
+            "games": _important_games(window or schedule, status),
+            "schedule_available": schedule_available,
             "window_end": end, "as_of": today, "has_data": bool(table)}

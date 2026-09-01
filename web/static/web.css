@@ -499,7 +499,7 @@ html[data-slate-stale] .opportunity-section { display: none; }
 .playoff-panel { min-width: 0; }
 .race-table { overflow: hidden; border: 1px solid var(--divider); border-radius: var(--r-md);
   background: var(--surface-1); }
-.race-row { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 4.3rem 4.2rem;
+.race-row { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 4.3rem 4.2rem 4.2rem;
   align-items: center; gap: .5rem; min-height: 2.8rem; padding: .35rem .7rem;
   border-bottom: 1px solid var(--hairline); color: var(--text-2); font-size: .8rem; }
 .race-row:last-child { border-bottom: 0; }
@@ -591,4 +591,14 @@ html[data-slate-stale] .opportunity-section { display: none; }
 @media (max-width: 720px) {
   .standings-row.points { grid-template-columns: minmax(0, 1fr) 3rem 2.5rem 4.5rem; }
   .standings-row.points > :nth-child(5) { display: none; }
+}
+
+/* Remaining games against the rest of the race. Dimmer than the record because it is
+   context for "games left", not a second headline number. */
+.race-rivals { color: var(--text-3); font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) {
+  /* On a phone the seed, team and record carry the page; "games left" and "vs. race"
+     are the pair that goes, together — one without the other is the misleading half. */
+  .race-row { grid-template-columns: 2.2rem minmax(0, 1fr) 4.1rem; }
+  .race-row > :nth-child(4), .race-row > :nth-child(5) { display: none; }
 }
