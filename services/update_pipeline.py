@@ -147,6 +147,15 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
     except Exception as exc:
         out["regrade_error"] = str(exc)
 
+    # Current standings — the reference point a style read cannot give. Four cheap
+    # requests, and like every other collector here it is non-fatal: context must never
+    # fail a data run, and a matchup page without a record is merely quieter.
+    try:
+        from src.standings_collector import collect as collect_standings
+        out["standings"] = collect_standings()
+    except Exception as exc:
+        out["standings_error"] = str(exc)
+
     # How interesting the finished games actually were, so the editorial score has a
     # feedback loop rather than accumulating unchecked. Non-fatal: this is analysis,
     # and a network wobble must not fail the daily rebuild.

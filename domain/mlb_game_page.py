@@ -52,7 +52,13 @@ class MLBGameHero:
     probable_away_pitcher: str | None
     probable_home_pitcher: str | None
     probable_pitcher_status: str     # "available" | "partial" | "unavailable"
-    league_context: str              # "MLB" (division/standings not available in Phase 1)
+    league_context: str              # "MLB"
+    # The reference point the sliders cannot give. Power/Contact/Speed describe *how* a
+    # team plays and never whether they are any good, so a reader had nothing on the page
+    # denominated in wins. Description, not forecast: "71-66, 2nd in NL Central, 4.5 GB"
+    # is a fact about games already played and must never be worded as a prediction.
+    away_standing: str | None = None    # "82-54 · 1st in AL East"
+    home_standing: str | None = None
     # Presentation-only summary fields (V1.1). Populated from already-computed
     # analytics — no new calculations.
     away_form_label: str | None = None      # "Trending Up" | "Trending Down" | "Holding Steady"

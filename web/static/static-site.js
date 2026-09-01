@@ -33,10 +33,41 @@
     };
   }
 
+  // The opportunity rows already carry their game (data-pick-game-id, added for saved
+  // picks), so filtering the slate can filter the picks with it — asking for "live" and
+  // getting live games above a list of picks for games that finished hours ago was
+  // reading the two halves of the page as unrelated when they are the same slate.
+  const oppRows = [...document.querySelectorAll(".op-row[data-pick-game-id]")];
+  const oppSection = document.querySelector("#opps");
+
+  function applyOpportunityVisibility(visibleGames) {
+    if (!oppRows.length) return;
+    for (const row of oppRows) {
+      row.hidden = gameState !== "all" && !visibleGames.has(row.dataset.pickGameId);
+    }
+    const shown = oppRows.filter((row) => !row.hidden).length;
+    let note = oppSection && oppSection.querySelector("[data-opp-state-empty]");
+    if (oppSection && !note) {
+      note = document.createElement("div");
+      note.className = "notice";
+      note.setAttribute("data-opp-state-empty", "");
+      oppSection.append(note);
+    }
+    if (note) {
+      note.hidden = shown > 0 || gameState === "all";
+      note.textContent = shown > 0 || gameState === "all" ? "" :
+        `No opportunities in ${{live: "live", pre: "upcoming", final: "completed"}[gameState]} games.`;
+    }
+  }
+
   function applyStateVisibility() {
     for (const card of cards) {
       card.hidden = gameState !== "all" && !card.classList.contains(`game-card--${gameState}`);
     }
+    // Built from the cards themselves, after they are filtered, so live scores moving a
+    // game between states carries the picks along with it on the next tick.
+    applyOpportunityVisibility(new Set(
+      cards.filter((card) => !card.hidden).map((card) => card.dataset.liveGame)));
     // A group heading with every card hidden is a heading over nothing.
     for (const grid of region.querySelectorAll(".schedule-grid")) {
       const gridCards = [...grid.querySelectorAll(".game-card")];

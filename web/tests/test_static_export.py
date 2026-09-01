@@ -580,3 +580,33 @@ def test_each_verify_attempt_busts_the_edge_cache_afresh(monkeypatch, tmp_path):
     publish_pages.verify_live("https://example.test/", retry_delays=(0, 0))
     assert len(seen) == 3
     assert len(set(seen)) == 3, f"probe URLs repeated across attempts: {seen}"
+
+
+def test_state_filter_also_filters_the_opportunity_list():
+    """Filtering the slate to "live" left the picks list untouched, so the page showed
+    live games above opportunities for games that finished hours ago — the two halves
+    reading as unrelated when they describe the same slate."""
+    from pathlib import Path
+
+    js = Path("web/static/static-site.js").read_text(encoding="utf-8")
+    assert "applyOpportunityVisibility" in js
+    # Reuses the game id the pick UI already emits rather than adding a second one.
+    assert 'op-row[data-pick-game-id]' in js
+    # The visible set is built from the cards *after* they are filtered, so a live score
+    # moving a game between states carries its picks along on the next tick.
+    assert "cards.filter((card) => !card.hidden)" in js
+
+
+def test_opportunity_rows_expose_the_game_they_belong_to():
+    """The filter joins picks to games on this attribute; without it the join is silent
+    and every pick would vanish whenever a state filter was applied."""
+    from components.opportunity_feed import _pick_attrs
+    from domain.models import Opportunity
+
+    opp = Opportunity(
+        league="MLB", player_id="1", player_name="A Batter", team_id="2",
+        team_name="Reds", market="1+ Hit", threshold=1, opportunity_score=90,
+        stability_score=80, supporting_evidence=[], negative_evidence=[],
+        game_id="824636",
+    )
+    assert 'data-pick-game-id="824636"' in _pick_attrs(opp)

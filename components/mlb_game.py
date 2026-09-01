@@ -49,7 +49,11 @@ def _hand_label(hand: str | None) -> str:
 
 
 # --------------------------------------------------------------- HERO --------
-def _hero_side(name, logo, form_note, form_dir, pitcher, hand, pitcher_note, home=False) -> str:
+def _hero_side(name, logo, form_note, form_dir, pitcher, hand, pitcher_note, home=False,
+               standing=None) -> str:
+    # Record and division position: the anchor the sliders cannot provide. Rendered
+    # before the form pill so the reader meets "is this team good" before "are they hot".
+    place = f'<div class="mlb-hero-standing">{escape(standing)}</div>' if standing else ""
     form = ""
     if form_note:
         cls = form_dir if form_dir in ("up", "down") else "steady"
@@ -65,7 +69,7 @@ def _hero_side(name, logo, form_note, form_dir, pitcher, hand, pitcher_note, hom
         f'<div class="mlb-hero-team{" home" if home else ""}">'
         f'{logo_img(logo, name, "mlb-hero-logo")}'
         f'<div class="mlb-hero-side">'
-        f'<span class="mlb-hero-name">{escape(name)}</span>{form}{sp}'
+        f'<span class="mlb-hero-name">{escape(name)}</span>{place}{form}{sp}'
         f'</div></div>'
     )
 
@@ -79,9 +83,9 @@ def hero_html(h: MLBGameHero) -> str:
     return (
         '<div class="mlb-hero">'
         '<div class="mlb-hero-row">'
-        f'{_hero_side(h.away_team, h.away_logo_url, h.away_form_note, h.away_form_dir, h.probable_away_pitcher, h.away_pitcher_hand, h.away_pitcher_note)}'
+        f'{_hero_side(h.away_team, h.away_logo_url, h.away_form_note, h.away_form_dir, h.probable_away_pitcher, h.away_pitcher_hand, h.away_pitcher_note, standing=h.away_standing)}'
         '<div class="mlb-hero-vs">@</div>'
-        f'{_hero_side(h.home_team, h.home_logo_url, h.home_form_note, h.home_form_dir, h.probable_home_pitcher, h.home_pitcher_hand, h.home_pitcher_note, home=True)}'
+        f'{_hero_side(h.home_team, h.home_logo_url, h.home_form_note, h.home_form_dir, h.probable_home_pitcher, h.home_pitcher_hand, h.home_pitcher_note, home=True, standing=h.home_standing)}'
         '</div>'
         f'<div class="mlb-hero-meta">{meta}</div>'
         f'{note}'

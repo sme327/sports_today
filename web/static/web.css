@@ -362,3 +362,13 @@ html[data-slate-stale] .filter-row,
 html[data-slate-stale] #schedule-region,
 html[data-slate-stale] .freshness-strip,
 html[data-slate-stale] .opportunity-section { display: none; }
+
+/* Record + division position under the team name in the MLB hero. The sliders below
+   describe how a team plays; this is the only thing on the page denominated in wins,
+   so it sits directly under the name where the eye lands first. */
+.mlb-hero-standing {
+  font-size: .82rem;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  margin: .1rem 0 .15rem;
+}

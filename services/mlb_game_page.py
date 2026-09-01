@@ -94,7 +94,8 @@ def _pitcher_note(k_pct: float | None, ctrl_pct: float | None) -> str | None:
 
 # --------------------------------------------------------------- HERO --------
 def _hero(game: SlateGame, away_ident=None, home_ident=None,
-          ptable=None, away_pid=None, home_pid=None) -> MLBGameHero:
+          ptable=None, away_pid=None, home_pid=None,
+          as_of: date | None = None) -> MLBGameHero:
     ap, hp = game.meta.get("away_pitcher"), game.meta.get("home_pitcher")
     if ap and hp:
         status = "available"
@@ -121,7 +122,20 @@ def _hero(game: SlateGame, away_ident=None, home_ident=None,
     a_form, a_dir = _form(away_ident)
     h_form, h_dir = _form(home_ident)
 
+    # Standings as they stood on the slate, joined on the league's own team ids. The
+    # date bound matters: a page rebuilt in October must describe an August game with
+    # August's records. Missing standings are simply absent, never guessed.
+    from services import standings as standings_service
+
+    try:
+        away_st, home_st = standings_service.pair_for(
+            "MLB", game.away_id, game.home_id, as_of)
+    except Exception:
+        away_st = home_st = None
+
     return MLBGameHero(
+        away_standing=away_st.summary if away_st else None,
+        home_standing=home_st.summary if home_st else None,
         # Full city + team name (Baseball is tied to cities) — fall back to display.
         away_team=game.away_name or game.away_display,
         home_team=game.home_name or game.home_display,
@@ -541,7 +555,7 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
     away, home = game.away_name, game.home_name
     a_disp = game.away_short or away
     h_disp = game.home_short or home
-    hero = _hero(game)
+    hero = _hero(game, as_of=as_of)
     context = (f"Based on plate appearances before {as_of.isoformat()}, with today's posted "
                "lineups when available. Injuries, weather, bullpen availability, and park "
                "factors are not yet included.")
@@ -566,7 +580,7 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
     away_ident = _team_identity(pa, away, game.away_logo, table)
     home_ident = _team_identity(pa, home, game.home_logo, table)
     # Enrich the hero into a game summary (form + starter K-percentile/hand).
-    hero = _hero(game, away_ident, home_ident, ptable, away_pid, home_pid)
+    hero = _hero(game, away_ident, home_ident, ptable, away_pid, home_pid, as_of)
     matchups = _build_matchups(pa, away, home, a_disp, h_disp, table, ptable, away_pid, home_pid,
                                game.meta.get("away_pitcher"), game.meta.get("home_pitcher"))
     heating, cooling = _build_trends(pa, [away, home])
