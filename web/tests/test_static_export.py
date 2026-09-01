@@ -643,19 +643,16 @@ def test_day_today_is_the_index_not_a_hashed_duplicate():
 
 
 def test_menu_entries_without_a_page_are_not_links():
-    """The menu lists what is coming (MLS/WNBA standings, playoffs, trending) before
-    those pages exist. They must render as plain text: a menu shows on every page, so a
-    link to an unexported target is one dead end *per page* — how the NFL archive turned
-    into 640 broken links."""
-    import re
+    """The remaining future entries stay plain text. Playoffs and MLB trends are now
+    real exported pages; MLS/WNBA league pages still must not become dead links."""
     from pathlib import Path
 
     html = Path("web/templates/web/base.html").read_text(encoding="utf-8")
     panel = html[html.index('class="nav-menu-panel"'):html.index("</details>")]
-    for label in ("Playoffs", "Hot streaks"):
-        # The label may appear only inside a non-anchor element.
-        for match in re.finditer(rf"<(\w+)[^>]*>[^<]*{label}", panel):
-            assert match.group(1) != "a", f"{label} must not be a link until it has a page"
+    assert '<span class="nav-future" title="Not built yet">Standings</span>' in panel
+    assert '<span class="nav-future" title="Not built yet">Hot streaks &amp; trending</span>' in panel
+    assert panel.count('href="{% url \'playoffs\' %}"') == 1
+    assert panel.count('href="{% url \'trending\' %}"') == 1
 
 
 def test_leagues_come_before_the_analysis_pages_in_the_menu():

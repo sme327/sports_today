@@ -20,7 +20,7 @@ opportunities on merit (no per-league quota), explains **why** each stands out a
 ## How the repo is organized
 
 ```
-web/              # Django renderer + static export: Today, matchups, Results, Performance
+web/              # Django renderer + static export: Today, matchups, standings, trends, playoffs, results
 domain/           # normalized models: SlateGame, Opportunity, Evidence, DataStatus
 leagues/          # one adapter per league (8: MLB, WNBA, MLS, World Cup, NFL, NHL, NBA, NCAAF) + registry
 services/         # data access (as_of), schedules, cache, snapshots, migrations, freshness, analytics

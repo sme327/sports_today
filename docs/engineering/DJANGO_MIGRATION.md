@@ -28,6 +28,10 @@ and the Downloads-based morning update remain shared.
 - Public Performance with All qualifying / Featured / Other qualifying cohorts,
   calibration, over/under, edge-finder segments, consistency windows, monthly results,
   and model versions
+- League-wide standings plus an MLB playoff-race view: the current six-team fields,
+  Wild Card bubbles, and a factual two-week watch list of consequential games
+- MLB player trends for active players only: hit streaks, batter-hit changes,
+  multi-strikeout changes, and recent starting-pitcher strikeout pace
 - MLB matchup pages using the existing analytical model and section renderers; models
   are prewarmed by the morning update and persisted by game/date/engine version
 - WNBA matchup pages using the existing basketball-specific model, snapshots, trends,
