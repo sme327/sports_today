@@ -36,7 +36,7 @@ def test_rebuild_mlb_only(monkeypatch):
     assert out["mlb"] == _MLB
     assert "wnba" not in out and "mls" not in out
     assert out["published"] is False
-    assert len(out["daily_feed"]) == 2
+    assert len(out["daily_feed"]) == P.SLATE_DAYS
 
 
 def test_rebuild_with_collectors(monkeypatch):
@@ -111,7 +111,7 @@ def test_rebuild_can_skip_the_mlb_import_entirely(monkeypatch):
 
     out = P.rebuild("feed.xlsx", collect_web=False, import_mlb=False)
     assert "mlb" not in out                      # nothing claimed about a feed we skipped
-    assert len(out["daily_feed"]) == 2           # today and tomorrow still precomputed
+    assert len(out["daily_feed"]) == P.SLATE_DAYS   # every slate day still precomputed
     assert "regraded" in out
 
 
@@ -137,3 +137,30 @@ def test_regrade_summary_counts_props_not_snapshot_rows(monkeypatch):
     assert out["regraded"], "the regrade step must still report something"
     for day in out["regraded"].values():
         assert day == {"hit": 4, "miss": 4, "void": 2}
+
+
+def test_slate_days_matches_the_web_layer_day_map():
+    """Three days get precomputed and three get exported, or the roll-over breaks.
+
+    `services` may not import `web` (test_layering), so the count lives in both places.
+    If they drift, the browser rolls onto a day the build never computed and the page
+    goes blank — hence this assertion rather than a shared import.
+    """
+    from web.today import DAY_OFFSETS
+
+    assert P.SLATE_DAYS == len(DAY_OFFSETS)
+    # Contiguous from today: the roll-over indexes DAY_PAGES by elapsed days, so a gap
+    # would silently skip a day rather than fail.
+    assert sorted(DAY_OFFSETS.values()) == list(range(P.SLATE_DAYS))
+
+
+def test_rebuild_precomputes_every_slate_day(monkeypatch):
+    _fake_import(monkeypatch)
+    monkeypatch.setattr("services.data_store.is_configured", lambda: False)
+    out = P.rebuild("feed.xlsx", collect_web=False)
+    assert len(out["daily_feed"]) == P.SLATE_DAYS
+
+    from datetime import date as _date
+    from datetime import timedelta as _td
+    expected = [(_date.today() + _td(days=n)).isoformat() for n in range(P.SLATE_DAYS)]
+    assert [feed["date"] for feed in out["daily_feed"]] == expected

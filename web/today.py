@@ -48,9 +48,20 @@ def django_matchup_links(html: str) -> str:
     return _MATCHUP_LINK.sub(replace, html)
 
 
+# The slate days the site precomputes, as offsets from the build date. The third is
+# deliberately not linked from anywhere: it is the back pocket the client-side rollover
+# promotes into "tomorrow" once the calendar has moved past the build. Adding a day here
+# is most of what it takes to hold one more (the other half is _SEEDS in export_static).
+DAY_OFFSETS = {"today": 0, "tomorrow": 1, "day-after": 2}
+
+# Days the navigation offers directly. "day-after" is reachable only by rollover, so the
+# nav never grows a third pill and the slate keeps its two-way toggle.
+NAV_DAYS = ("today", "tomorrow")
+
+
 def parse_day(raw: str | None, today: date) -> tuple[str, date]:
-    day = raw if raw in {"today", "tomorrow"} else "today"
-    return day, today + timedelta(days=1 if day == "tomorrow" else 0)
+    day = raw if raw in DAY_OFFSETS else "today"
+    return day, today + timedelta(days=DAY_OFFSETS[day])
 
 
 def parse_threshold(raw: str | None) -> int:
@@ -148,6 +159,14 @@ def build_context(params, local_today: date) -> dict:
     fresh = get_freshness()
     return {
         "day": day,
+        # Which of the precomputed days this page is, so the client-side roll-over knows
+        # where it stands without having to parse its own URL. The flag gates the script
+        # in base.html: matchup pages also carry a slate_date, and they must neither run
+        # the roll-over (a game page addresses one game, not "today") nor render
+        # `const index = ;` from an absent day_index, which is a syntax error that would
+        # take the whole inline script down with it.
+        "day_index": DAY_OFFSETS[day],
+        "slate_rollover": True,
         "slate_date": slate_date,
         "collapsed": collapsed,
         "threshold": threshold,

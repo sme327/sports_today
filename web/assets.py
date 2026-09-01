@@ -1,4 +1,5 @@
-"""Cache-busting stylesheet URLs, derived from the files rather than remembered.
+"""Cache-busting asset URLs (stylesheets and the script), derived from the files
+rather than remembered.
 
 The stylesheets were versioned by a hand-typed query string (`?v=20260817-2`). It failed
 the way hand-maintained versions always do: a header rewrite landed entirely in
@@ -68,10 +69,19 @@ def build_stamp() -> str:
 
 
 def asset_versions(request=None) -> dict:
-    """Context processor: ``{{ v_app }}`` / ``{{ v_web }}`` for the stylesheet links,
-    plus ``{{ build_stamp }}`` for the publish check's data freshness meta tag."""
+    """Context processor: ``{{ v_app }}`` / ``{{ v_web }}`` / ``{{ v_js }}`` for the
+    stylesheet and script links, plus ``{{ build_stamp }}`` for the publish check's data
+    freshness meta tag.
+
+    ``v_js`` was added after the script kept the hand-typed ``?v=20260821-2`` it shipped
+    with: the roll-over logic landed in ``static-site.js`` and the string was not bumped,
+    so every returning visitor would have kept the cached copy and the nav would have
+    labelled the wrong day. Exactly the failure this module was written to end, in the
+    one file it had not been applied to.
+    """
     return {
         "v_app": stylesheet_version("app.css"),
         "v_web": stylesheet_version("web.css"),
+        "v_js": stylesheet_version("static-site.js"),
         "build_stamp": build_stamp(),
     }

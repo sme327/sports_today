@@ -10,6 +10,17 @@ Django's {# #} is single-line only: written as a multi-line block it renders the
 continuation lines as page text, which is exactly what happened here first time.
 {% endcomment %}
 <h1 class="visually-hidden">{% if slate_date %}{{ slate_date|date:"l, F j" }}{% else %}{% now "l, F j" %}{% endif %} — games and opportunities</h1>
+{% comment %}Shown only when the viewer's date has run past every day this build holds
+(three days: today plus two the browser can roll into). The rest of the page is hidden
+with it, because a schedule for a day that has already finished is not degraded data —
+it is wrong data, and the product rule is to say so rather than show it.{% endcomment %}
+<section class="slate-stale" role="status">
+  <h2>This slate is out of date</h2>
+  <p>These games were built for <b>{{ slate_date|date:"l, F j" }}</b> and that day has
+     passed. Rather than show you a schedule for games that are already over, the page is
+     holding back until it has been refreshed.</p>
+  <p class="slate-stale-fix">Run <code>update.command</code> to bring it current.</p>
+</section>
 {% if league_filters %}
 <section class="filter-row" aria-label="League filters">
   <div class="filter-pills">

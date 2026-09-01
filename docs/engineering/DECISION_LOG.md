@@ -9,6 +9,48 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-31 — The browser rolls the slate over, because the machine cannot
+
+**Decision.** The daily run precomputes **three** days rather than two (`SLATE_DAYS`), and
+the third is exported to `/day-after/` and linked from nowhere. An inline script in
+`base.html`'s `<head>` compares the page's own `slate_date` against the *viewer's* local
+date and redirects to whichever published day is actually today. Past the third day it
+sets `data-slate-stale` and the page withholds the slate entirely, saying so. `parse_day`
+gained a third key; the nav is re-pointed and re-labelled from numbers the head script
+leaves on the root element.
+
+**Reason.** The site is static: "today" is baked in at build time, so from the viewer's
+midnight until the next run every page describes a day that has gone. The obvious fix — a
+scheduled overnight rebuild — is not available. macOS TCC refuses launchd any read access
+to `~/Documents`, where this project lives, and the three ways around that each cost more
+than they are worth right now: moving the repo breaks the iCloud Drive sync that makes it
+usable across devices, granting Full Disk Access to `/bin/zsh` hands every script on the
+machine full disk access, and delegating to Terminal opens a window every night. The
+script and its LaunchAgent are committed but parked (`scripts/nightly_refresh.sh`).
+So the *browser* does the rolling instead. The real complaint this answers is not
+cosmetic: an update that lands at midday meant games had already started while the page
+still showed yesterday.
+
+**Tradeoffs.** Two rollovers, not indefinite freshness — day four is the honest-failure
+state, not a fourth slate. The rolled-over days carry progressively staler scoring: their
+props were computed one or two days early with no posted lineups, which is exactly the
+contract `/tomorrow/` already had, now reaching one day further. The third day costs
+~104s of precompute and ~15 more matchup pages per run. The comparison is against the
+viewer's clock, not the build machine's, which is deliberate — the two are routinely in
+different time zones and a slate should turn over at the midnight of whoever is reading
+it. The flip is at local midnight (`FLIP_HOUR = 0`); a late West Coast game still in
+progress at 00:05 therefore drops off the page, and moving the constant to 3 would hold
+it — left at midnight because that is what was asked for, and it is one line to change.
+
+**Future considerations.** If the scheduling block is ever lifted (a Full Disk Access
+grant, or the project moving off `~/Documents`), the nightly run and this roll-over are
+complementary rather than redundant: the run would refresh the props the roll-over can
+only carry forward. Holding a fourth day is one entry in `DAY_OFFSETS` plus one seed in
+`export_static`, but each day added is scored further ahead of its lineups, so the limit
+is honesty rather than cost.
+
+---
+
 ## 2026-08-29 — Card grids are floored at zero, and a long context takes a line
 
 **Decision.** Every single-column card track is `minmax(0, 1fr)`, never a bare `1fr`, and

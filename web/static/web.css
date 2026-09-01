@@ -334,3 +334,31 @@ a { color: inherit; }
     scroll-behavior: auto !important;
   }
 }
+
+/* --- Slate roll-over: the out-of-date state -------------------------------------
+   The site is static, so the browser rolls the slate forward through the three days
+   each build publishes (base.html's head script). Past those, there is no honest slate
+   left to show: a schedule for a finished day is wrong rather than merely stale, so the
+   page says so and withholds the rest. Hidden unless the head script sets the flag, and
+   because that runs inline before the body is parsed, the correct state is the first
+   thing painted — the slate never flashes up and then disappears. */
+.slate-stale { display: none; }
+html[data-slate-stale] .slate-stale {
+  display: block;
+  padding: 1.25rem 1.35rem;
+  margin: 1rem 0;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border-left: 3px solid var(--brand);
+  color: var(--text-2);
+}
+html[data-slate-stale] .slate-stale h2 { margin: 0 0 .4rem; font-size: 1.05rem; color: var(--text-1); }
+html[data-slate-stale] .slate-stale p { margin: .35rem 0; }
+html[data-slate-stale] .slate-stale-fix code {
+  background: var(--surface-2); padding: .1rem .35rem; border-radius: var(--r-sm);
+}
+/* Everything the stale notice replaces. The heading and the notice itself survive. */
+html[data-slate-stale] .filter-row,
+html[data-slate-stale] #schedule-region,
+html[data-slate-stale] .freshness-strip,
+html[data-slate-stale] .opportunity-section { display: none; }

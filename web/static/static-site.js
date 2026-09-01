@@ -397,3 +397,43 @@
     }
   }
 })();
+
+/* --- Slate roll-over: re-point the day toggle ------------------------------------
+   base.html's head script decides which of the three published days the viewer should
+   be on and redirects there. What it cannot do before the body exists is fix the nav:
+   once the calendar has moved past the build, "Today" is no longer "/" and the lit pill
+   is not the one the build chose — the page would show today's games with "Tomorrow"
+   highlighted, which reads as a bug.
+
+   The arithmetic is not repeated here. The head script leaves its conclusions on the
+   root element and this only applies them, so there is one place where a day is
+   counted and one place where the DOM is touched. */
+(() => {
+  "use strict";
+  const DAY_PAGES = ["/", "/tomorrow/", "/day-after/"];
+  const root = document.documentElement;
+  const todayIndex = Number(root.dataset.slateTodayIndex);
+  const index = Number(root.dataset.slateIndex);
+  // Absent on pages with no slate (Performance), and on a stale slate where the nav is
+  // moot because there is nothing to navigate between.
+  if (!Number.isInteger(todayIndex) || !Number.isInteger(index)) return;
+  if (todayIndex === 0) return;            // build date is still the viewer's today
+
+  for (const [key, offset] of [["today", 0], ["tomorrow", 1]]) {
+    const link = document.querySelector(`[data-day-link="${key}"]`);
+    if (!link) continue;
+    const target = todayIndex + offset;
+    if (target >= DAY_PAGES.length) {
+      // We do not hold that day. Leave the pill visible but inert rather than sending
+      // the viewer to a page that would only tell them it is out of date.
+      link.removeAttribute("href");
+      link.setAttribute("aria-disabled", "true");
+    } else {
+      link.setAttribute("href", DAY_PAGES[target]);
+    }
+    const current = target === index;
+    link.classList.toggle("active", current);
+    if (current) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  }
+})();

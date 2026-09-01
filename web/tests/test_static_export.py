@@ -469,3 +469,43 @@ def test_a_long_competition_context_gets_a_second_line_rather_than_an_ellipsis()
     assert re.search(r'\.game-top-left:has\(\.game-context\)\s+\.league-name::after\s*\{'
                      r'[^}]*content:\s*"·"', css), (
         "the separator hangs off the league name, and only when a context follows it")
+
+
+def test_rollover_script_only_renders_where_a_day_index_exists():
+    """`const index = {{ day_index }}` is a syntax error when day_index is absent.
+
+    Matchup pages carry a slate_date too, so gating the block on that would have emitted
+    `const index = ;` and taken the whole inline script down — including the redirect —
+    on every game page. They also must not roll over: a game page addresses one game,
+    not "today".
+    """
+    from pathlib import Path
+
+    template = Path("web/templates/web/base.html").read_text(encoding="utf-8")
+    assert "{% if slate_rollover %}" in template
+    assert "{% if slate_date %}{% comment %}\n  The slate roll-over" not in template
+
+    from datetime import date
+
+    from web.today import build_context
+    from django.http import QueryDict
+
+    context = build_context(QueryDict(""), date.today())
+    assert context["slate_rollover"] is True
+    assert context["day_index"] == 0
+
+
+def test_script_url_is_content_hashed_like_the_stylesheets():
+    """A hand-typed ?v= on the script is the same bug the stylesheets already fixed:
+    the roll-over shipped in static-site.js and the string would not have moved, so
+    returning visitors would keep a cached copy that labels the wrong day."""
+    from web.assets import asset_versions, stylesheet_version
+
+    live = asset_versions()
+    assert live["v_js"] == stylesheet_version("static-site.js")
+    assert live["v_js"] not in ("", "0")
+
+    from pathlib import Path
+    template = Path("web/templates/web/base.html").read_text(encoding="utf-8")
+    assert "static-site.js' %}?v={{ v_js }}" in template
+    assert "?v=20260821-2" not in template

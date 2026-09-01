@@ -32,7 +32,9 @@ _RESULT_SEEDS = tuple(
     for offset in range(1, 8)
 )
 _SEEDS = (
-    "/", "/?day=tomorrow", "/results/", "/performance/",
+    # "day-after" is exported but linked from nothing: the client-side rollover
+    # promotes it once the viewer's calendar passes the build date.
+    "/", "/?day=tomorrow", "/?day=day-after", "/results/", "/performance/",
     *_RESULT_SEEDS, *_PERFORMANCE_SEEDS, *_PERFORMANCE_MARKET_SEEDS,
 )
 _SKIP_PATHS = ("/health/", "/fragments/", "/static/")
@@ -80,6 +82,8 @@ def output_path(url: str) -> Path:
         return Path("index.html")
     if parts.path == "/" and parts.query == "day=tomorrow":
         return Path("tomorrow/index.html")
+    if parts.path == "/" and parts.query == "day=day-after":
+        return Path("day-after/index.html")
     clean = parts.path.strip("/") or "home"
     if ".." in Path(clean).parts:
         raise ValueError(f"Unsafe export path: {url}")

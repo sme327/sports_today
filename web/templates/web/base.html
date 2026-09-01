@@ -29,7 +29,57 @@
   <link rel="stylesheet" href="{% static 'app.css' %}?v={{ v_app }}">
   <link rel="stylesheet" href="{% static 'web.css' %}?v={{ v_web }}">
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
-  <script src="{% static 'static-site.js' %}?v=20260821-2" defer></script>
+  <script src="{% static 'static-site.js' %}?v={{ v_js }}" defer></script>
+  {% if slate_rollover %}{% comment %}
+  The slate roll-over, inline and in the head on purpose.
+
+  This site is static: "today" is baked in at build time, so from the viewer's midnight
+  until the next run every page describes a day that has already gone. The run cannot be
+  scheduled (macOS refuses launchd any read access to this project's folder), so the
+  browser does the rolling instead. The build publishes three days; this decides which
+  one the viewer should actually be looking at and sends them there.
+
+  It runs inline in the head, before any body markup is parsed, so a stale slate is never
+  painted and then yanked. Deferring it to static-site.js would show yesterday's games
+  first and correct them a moment later, which is worse than the bug it fixes.
+
+  The comparison is on the *viewer's* local date, not the build machine's: the two are
+  routinely in different time zones, and a slate should turn over at the midnight of
+  whoever is reading it.
+  {% endcomment %}<script>
+    (() => {
+      "use strict";
+      // Flip at local midnight. Set to 3 to hold the slate until the small hours, so a
+      // late West Coast game still in progress does not vanish from the page mid-game.
+      const FLIP_HOUR = 0;
+      const DAY_PAGES = ["/", "/tomorrow/", "/day-after/"];
+      const slate = "{{ slate_date|date:'Y-m-d' }}";
+      const index = {{ day_index }};
+      try {
+        const now = new Date();
+        now.setHours(now.getHours() - FLIP_HOUR);
+        const local = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const [y, m, d] = slate.split("-").map(Number);
+        const elapsed = Math.round((local - new Date(y, m - 1, d)) / 86400000);
+        const wanted = index + elapsed;
+        if (elapsed > 0 && wanted < DAY_PAGES.length) {
+          location.replace(DAY_PAGES[wanted] + location.search + location.hash);
+          return;
+        }
+        if (elapsed > 0) {
+          // Past the last day we hold. Never show a schedule for a day that is over:
+          // say so instead. The stale state is styled from this attribute.
+          document.documentElement.dataset.slateStale = String(elapsed);
+          return;
+        }
+        // Staying put. Hand the nav the numbers it needs so it can label itself against
+        // the viewer's today rather than the build's — computed once, here, so the date
+        // arithmetic has exactly one home.
+        document.documentElement.dataset.slateTodayIndex = String(wanted);
+        document.documentElement.dataset.slateIndex = String(index);
+      } catch (e) { /* a broken clock must not blank the page */ }
+    })();
+  </script>{% endif %}
 </head>
 {% comment %}The shortlist script keys device-local picks by this date; pages with
 no slate (Performance) render no attribute and the pick UI stays dormant.{% endcomment %}
@@ -41,9 +91,13 @@ no slate (Performance) render no attribute and the pick UI stays dormant.{% endc
       <span class="site-date">{% if slate_date %}{{ slate_date|date:"l, F j" }}{% else %}{% now "l, F j" %}{% endif %}</span>
     </a>
     <nav class="compact-nav" aria-label="Main navigation">
+      {% comment %}data-day-link marks these for the roll-over: once the viewer's date has
+      moved past the build, "Today" is no longer "/" and the pill that should be lit is
+      not the one the build chose. static-site.js re-points and re-labels them from the
+      numbers the head script worked out.{% endcomment %}
       <span class="nav-day-toggle">
-        <a class="{% if day != 'tomorrow' %}{% if section == 'today' or not section %}active{% endif %}{% endif %}" href="/?day=today" {% if day != 'tomorrow' and section == 'today' %}aria-current="page"{% endif %}>Today</a>
-        <a class="{% if day == 'tomorrow' %}active{% endif %}" href="/?day=tomorrow" {% if day == 'tomorrow' %}aria-current="page"{% endif %}>Tomorrow</a>
+        <a data-day-link="today" class="{% if day != 'tomorrow' %}{% if section == 'today' or not section %}active{% endif %}{% endif %}" href="/?day=today" {% if day != 'tomorrow' and section == 'today' %}aria-current="page"{% endif %}>Today</a>
+        <a data-day-link="tomorrow" class="{% if day == 'tomorrow' %}active{% endif %}" href="/?day=tomorrow" {% if day == 'tomorrow' %}aria-current="page"{% endif %}>Tomorrow</a>
       </span>
       <a class="performance-link {% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}" {% if section == 'performance' %}aria-current="page"{% endif %}>Performance</a>
     </nav>

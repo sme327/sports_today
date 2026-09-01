@@ -19,6 +19,11 @@ _REGRADE_DAYS = 7       # force-regrade this many recent days after an import
                         # (a week's buffer so a skipped update day can't strand a
                         #  still-pending slate outside the window)
 
+SLATE_DAYS = 3          # slate days to precompute, starting today. The third is the
+                        # back pocket the browser promotes when the calendar rolls past
+                        # the build date — it must equal len(web.today.DAY_OFFSETS),
+                        # which a test asserts, since services may not import web.
+
 
 # August through January: college football's calendar, plus the bowl tail.
 _NCAAF_MONTHS = {8, 9, 10, 11, 12, 1}
@@ -156,7 +161,17 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
     try:
         from services.daily_feed import precompute_days
         today = date.today()
-        out["daily_feed"] = precompute_days([today, today + timedelta(days=1)])
+        # Three days, not two. The site is static, so at the viewer's midnight every
+        # page is still describing the build date until something rebuilds it — and the
+        # rebuild cannot be scheduled here (macOS refuses launchd read access to this
+        # project's folder; see scripts/nightly_refresh.sh). Precomputing a third day
+        # instead lets the *browser* roll the slate over: yesterday's "tomorrow" becomes
+        # today, and this third day becomes tomorrow. Buys two rollovers, which covers a
+        # run that lands at midday rather than at dawn.
+        # Deliberately not imported from web.today.DAY_OFFSETS: services must not import
+        # the web layer (test_layering). The two are asserted equal by a test instead.
+        out["daily_feed"] = precompute_days(
+            [today + timedelta(days=offset) for offset in range(SLATE_DAYS)])
     except Exception as exc:
         out["daily_feed_error"] = str(exc)
 
