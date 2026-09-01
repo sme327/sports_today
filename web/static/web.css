@@ -430,12 +430,20 @@ html[data-slate-stale] .opportunity-section { display: none; }
   border: 1px solid var(--divider); border-radius: var(--r-md);
   background: var(--surface-1); box-shadow: 0 18px 40px rgba(0,0,0,.45);
 }
+/* Quieter than the default link. The panel is a list of destinations, not a call to
+   action, and at --text-2/650 the built entries shouted over the league headings that
+   are supposed to organise them — the eye met a stack of white words and had to read
+   all of them to find the grouping. Dropping to --text-3 and a lighter weight lets the
+   uppercase league labels do the sorting. Hover and the active state carry the
+   affordance instead of resting weight. */
 .nav-menu-panel a {
-  padding: .5rem .65rem; border-radius: var(--r-sm);
-  color: var(--text-2); text-decoration: none; font-size: .85rem; font-weight: 650;
+  padding: .45rem .65rem; border-radius: var(--r-sm);
+  color: var(--text-3); text-decoration: none; font-size: .82rem; font-weight: 600;
+  transition: color .12s ease, background .12s ease;
 }
 .nav-menu-panel a:hover { background: var(--surface-2); color: var(--text-1); }
-.nav-menu-panel a.active { color: var(--brand-2); }
+.nav-menu-panel a:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.nav-menu-panel a.active { color: var(--brand-2); font-weight: 700; }
 .nav-menu-group {
   padding: .55rem .65rem .25rem; color: var(--text-4);
   font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase;
@@ -448,8 +456,8 @@ html[data-slate-stale] .opportunity-section { display: none; }
 .standings-logo { width: 20px; height: 20px; object-fit: contain; flex: 0 0 20px; }
 .standings-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-menu-panel .nav-future {
-  padding: .5rem .65rem; font-size: .85rem; font-weight: 650;
-  color: var(--text-3);
+  padding: .45rem .65rem; font-size: .82rem; font-weight: 600;
+  color: var(--text-4);
 }
 .nav-menu-sep { height: 1px; margin: .4rem .3rem; background: var(--hairline); }
 
