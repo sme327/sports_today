@@ -393,11 +393,11 @@ def test_the_live_site_is_checked_against_what_was_built(monkeypatch, tmp_path):
     import urllib.request
     monkeypatch.setattr(urllib.request, "urlopen",
                         lambda *a, **k: _Response("web.css?v=abc1234567 app.css?v=def8901234"))
-    assert publish_pages.verify_live("https://example.test/") is True
+    assert publish_pages.verify_live("https://example.test/", retry_delays=()) is True
 
     monkeypatch.setattr(urllib.request, "urlopen",
                         lambda *a, **k: _Response("web.css?v=0000000000"))
-    assert publish_pages.verify_live("https://example.test/") is False
+    assert publish_pages.verify_live("https://example.test/", retry_delays=()) is False
 
 
 def test_an_unreachable_site_is_not_reported_as_a_publish_failure():
@@ -411,7 +411,7 @@ def test_an_unreachable_site_is_not_reported_as_a_publish_failure():
     real = urllib.request.urlopen
     urllib.request.urlopen = lambda *a, **k: (_ for _ in ()).throw(urllib.error.URLError("down"))
     try:
-        assert publish_pages.verify_live("https://example.test/") is True
+        assert publish_pages.verify_live("https://example.test/", retry_delays=()) is True
     finally:
         urllib.request.urlopen = real
 
@@ -509,3 +509,74 @@ def test_script_url_is_content_hashed_like_the_stylesheets():
     template = Path("web/templates/web/base.html").read_text(encoding="utf-8")
     assert "static-site.js' %}?v={{ v_js }}" in template
     assert "?v=20260821-2" not in template
+
+
+def test_verify_retries_before_calling_a_deploy_stale(monkeypatch, tmp_path):
+    """Cloudflare needs a moment. Two deploys in three days were logged FAILED with
+    deploy_exit 0 because the check read the edge before it had caught up — which makes
+    a propagation lag and a real failure identical in the log."""
+    from scripts import publish_pages
+
+    monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
+    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+
+    class _Response:
+        def __init__(self, body): self._body = body
+        def read(self): return self._body.encode()
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+
+    bodies = iter(["stale page", "stale page", "web.css?v=abc1234567"])
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: _Response(next(bodies)))
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+
+    assert publish_pages.verify_live("https://example.test/", retry_delays=(0, 0, 0)) is True
+
+
+def test_verify_still_fails_when_the_page_never_catches_up(monkeypatch, tmp_path):
+    """The backoff must not turn a genuine bad deploy into a pass — a real mid-upload
+    failure happened the same afternoon the lag did."""
+    from scripts import publish_pages
+
+    monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
+    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+
+    class _Response:
+        def read(self): return b"a permanently wrong page"
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: _Response())
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+
+    assert publish_pages.verify_live("https://example.test/", retry_delays=(0, 0)) is False
+
+
+def test_each_verify_attempt_busts_the_edge_cache_afresh(monkeypatch, tmp_path):
+    """One probe URL reused across retries would let the edge replay its cached copy,
+    so the backoff would stare at a frozen page and still report failure."""
+    from scripts import publish_pages
+
+    monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
+    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+
+    seen = []
+
+    class _Response:
+        def read(self): return b"stale"
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+
+    def _urlopen(request, *a, **k):
+        seen.append(request.full_url)
+        return _Response()
+
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+
+    publish_pages.verify_live("https://example.test/", retry_delays=(0, 0))
+    assert len(seen) == 3
+    assert len(set(seen)) == 3, f"probe URLs repeated across attempts: {seen}"

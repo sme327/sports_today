@@ -63,7 +63,8 @@ def build_stamp(html: str) -> str | None:
     return found.group(1) if found else None
 
 
-def verify_live(url: str, timeout: float = 20.0) -> bool:
+def verify_live(url: str, timeout: float = 20.0,
+                retry_delays: tuple[float, ...] = (5.0, 10.0, 20.0)) -> bool:
     """Confirm the deployed site serves the bundle we just built.
 
     Deploying successfully is not the same as the reader seeing the change. A stale
@@ -71,6 +72,15 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
     while every local check passed, because every local check read `site-dist/` — the
     thing we had just written — rather than the origin. So this compares the *live*
     page's stylesheet versions against the built page's, which are content hashes.
+
+    **Why it retries.** Cloudflare takes a few seconds to finish propagating, and a
+    check run the instant the deploy returns reads the *previous* build. That happened
+    twice in three days: both were logged ``FAILED`` with ``deploy_exit 0`` on deploys
+    that were fine seconds later. The check is worth keeping strict — it caught a real
+    mid-upload failure the same afternoon — but a propagation lag and a genuine failure
+    have to look different in the log, or the operator learns to ignore both. So a
+    mismatch is retried on a short backoff and only reported after it persists.
+    ``retry_delays=()`` checks once, which is what the tests want.
     """
     import re
     import urllib.error
@@ -92,30 +102,63 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
         context = ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         pass
-    # A unique query string busts the edge cache (the _headers file gives HTML a
-    # 60s max-age, so a plain fetch right after deploying reads the *previous*
-    # deploy and every data publish would false-alarm). Pages ignores the query
-    # for routing, so this still fetches the real page from the origin.
-    from time import time as _now
-    probe = url + ("&" if "?" in url else "?") + f"cb={int(_now())}"
-    # Cloudflare 403s urllib's default "Python-urllib/3.x" agent.
-    request = urllib.request.Request(probe, headers={
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-        "Cache-Control": "no-cache",
-    })
-    try:
-        with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
-            live = response.read().decode("utf-8", "replace")
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        # Not a deploy failure — the deploy already reported success. Say what we could
-        # not confirm rather than implying the publish broke.
-        print(f"Could not reach {url} to verify ({exc}). Deploy reported success.",
-              file=sys.stderr)
+    import time as _time
+
+    def _probe_request():
+        """A fresh cache-busted request per attempt.
+
+        The unique query string busts the edge cache (the _headers file gives HTML a
+        60s max-age, so a plain fetch right after deploying reads the *previous*
+        deploy and every data publish would false-alarm). Pages ignores the query for
+        routing, so this still fetches the real page from the origin. It has to be
+        rebuilt on every retry: reusing one probe URL would let the edge serve back
+        the same cached miss we are waiting to see change, and the backoff would
+        watch a frozen copy for 35 seconds and then call it a failure.
+        """
+        probe = url + ("&" if "?" in url else "?") + f"cb={_time.time():.6f}"
+        # Cloudflare 403s urllib's default "Python-urllib/3.x" agent.
+        return urllib.request.Request(probe, headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Cache-Control": "no-cache",
+        })
+
+    def _fetch() -> str | None:
+        """The live page, or None if it could not be reached."""
+        try:
+            with urllib.request.urlopen(_probe_request(), timeout=timeout,
+                                        context=context) as response:
+                return response.read().decode("utf-8", "replace")
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            # Not a deploy failure — the deploy already reported success. Say what we
+            # could not confirm rather than implying the publish broke.
+            print(f"Could not reach {url} to verify ({exc}). Deploy reported success.",
+                  file=sys.stderr)
+            return None
+
+    def _mismatch(live: str) -> tuple[list[str], bool]:
+        return (sorted(a for a in want if a not in live),
+                want_stamp is not None and build_stamp(live) != want_stamp)
+
+    live = _fetch()
+    if live is None:
         return True
-    missing = sorted(a for a in want if a not in live)
+    missing, stale_data = _mismatch(live)
+    waited = 0.0
+    for delay in retry_delays:
+        if not (missing or stale_data):
+            break
+        # Give the edge time to catch up before calling it a failure.
+        print(f"  live page not updated yet; re-checking in {delay:.0f}s…", flush=True)
+        _time.sleep(delay)
+        waited += delay
+        again = _fetch()
+        if again is None:
+            return True
+        live = again
+        missing, stale_data = _mismatch(live)
+
     live_stamp = build_stamp(live)
-    stale_data = want_stamp is not None and live_stamp != want_stamp
     if missing or stale_data:
         print(f"\nPUBLISHED, BUT {url} IS SERVING SOMETHING ELSE.", file=sys.stderr)
         if missing:
@@ -125,11 +168,13 @@ def verify_live(url: str, timeout: float = 20.0) -> bool:
             print(f"  build stamp: expected {want_stamp}, live page has "
                   f"{live_stamp or 'none'} — the HTML is stale even though the "
                   f"stylesheets may match.", file=sys.stderr)
-        print("  (Cloudflare may still be propagating — re-check in a minute.)",
-              file=sys.stderr)
+        if waited:
+            print(f"  still wrong {waited:.0f}s after the deploy, so this is not "
+                  f"propagation lag.", file=sys.stderr)
         return False
     checks = sorted(want) + ([f"build {want_stamp}"] if want_stamp else [])
-    print(f"Verified live at {url}: {', '.join(checks)}")
+    suffix = f" (after {waited:.0f}s)" if waited else ""
+    print(f"Verified live at {url}: {', '.join(checks)}{suffix}")
     return True
 
 

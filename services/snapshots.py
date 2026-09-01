@@ -145,6 +145,63 @@ def _backfill_market_keys(conn: sqlite3.Connection) -> None:
                      (key, direction, rowid))
 
 
+def _backfill_opponents(conn: sqlite3.Connection) -> int:
+    """Fill ``opponent`` on rows captured before the column existed.
+
+    The column landed 2026-08-07; everything from the 8th on records it, and everything
+    before it is blank — 15% of the ledger. That is not cosmetic: any split by opponent
+    silently pools those rows into one nameless bucket, and in an actual cohort scan
+    that bucket came out the single strongest "signal" in the dimension at 3.8 sigma,
+    purely because it was 65 games of missing data wearing a team's clothes.
+
+    Recoverable from the cached schedule, which still holds the two sides of each game.
+    Rows older than ``game_id`` itself (500 of them) stay blank — there is nothing to
+    join on, and inventing one would be worse than the gap.
+    """
+    rows = conn.execute(
+        f"SELECT rowid, game_id, team_name FROM {_TABLE} "
+        f"WHERE (opponent IS NULL OR opponent = '') AND game_id IS NOT NULL "
+        f"AND game_id != ''").fetchall()
+    if not rows:
+        return 0
+    import json as _json
+
+    sides: dict[str, tuple] = {}
+    for (payload,) in conn.execute(
+            "SELECT payload FROM schedule_cache WHERE game_count > 0"):
+        try:
+            games = _json.loads(payload)
+        except (TypeError, ValueError):
+            continue
+        for game in games:
+            gid = str(game.get("game_id") or "")
+            if gid:
+                # Side is identified by full name (team_name is stored full: "Cincinnati
+                # Reds") but written back as the *short* name, because that is what the
+                # live recorder stores — SlateGame.home_display prefers home_short. Filling
+                # full names here instead split every team into two cohorts, turning 29
+                # opponents into 58 and halving the sample behind each.
+                sides[gid] = (game.get("home_name"), game.get("away_name"),
+                              game.get("home_short") or game.get("home_name"),
+                              game.get("away_short") or game.get("away_name"))
+    filled = 0
+    for rowid, game_id, team_name in rows:
+        home, away, home_short, away_short = sides.get(
+            str(game_id), (None, None, None, None))
+        if not home or not away:
+            continue
+        # The row's own team names the side it is on; the opponent is the other one.
+        if team_name == home:
+            other = away_short
+        elif team_name == away:
+            other = home_short
+        else:
+            continue        # a name we cannot place: leave it blank rather than guess
+        conn.execute(f"UPDATE {_TABLE} SET opponent = ? WHERE rowid = ?", (other, rowid))
+        filled += 1
+    return filled
+
+
 def ensure_table(conn: sqlite3.Connection) -> None:
     conn.execute(
         f"""

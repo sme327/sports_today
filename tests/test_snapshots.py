@@ -105,3 +105,70 @@ def test_engine_version_strings_match_the_scorers_actually_shipped():
     assert bool(_BASE_CLEAR) == MODEL_VERSIONS["wnba_points"].endswith("v4")
     for market in ("wnba_points", "wnba_rebounds", "wnba_assists"):
         assert MODEL_VERSIONS[market] == MODEL_VERSIONS["wnba_points"]
+
+
+def test_opponent_backfill_fills_from_the_cached_schedule(tmp_path):
+    """15% of the ledger had no opponent — the column landed 2026-08-07. That is not
+    cosmetic: a cohort scan pooled every blank row into one nameless bucket and it came
+    out the strongest 'signal' in the dimension at 3.8 sigma, being 65 games of missing
+    data wearing a team's clothes."""
+    import json
+    import sqlite3
+
+    from services import snapshots
+
+    db = tmp_path / "t.db"
+    conn = sqlite3.connect(db)
+    snapshots.ensure_table(conn)
+    conn.execute("CREATE TABLE schedule_cache (league TEXT, payload TEXT, game_count INT)")
+    conn.execute(
+        "INSERT INTO schedule_cache VALUES ('MLB', ?, 1)",
+        (json.dumps([{"game_id": "g1",
+                      "home_name": "Cincinnati Reds", "home_short": "Reds",
+                      "away_name": "San Diego Padres", "away_short": "Padres"}]),))
+
+    cols = "snapshot_date, captured_on, calculated_at, league, player_id, market, threshold"
+    for pid, team in (("p1", "Cincinnati Reds"), ("p2", "San Diego Padres")):
+        conn.execute(
+            f"INSERT INTO {snapshots._TABLE} ({cols}, game_id, team_name, opponent) "
+            f"VALUES ('2026-07-01','2026-07-01','x','MLB',?,'1+ Hit',1,'g1',?,NULL)",
+            (pid, team))
+    # Unrecoverable: no game_id to join on. Must stay blank, never guessed.
+    conn.execute(
+        f"INSERT INTO {snapshots._TABLE} ({cols}, game_id, team_name, opponent) "
+        f"VALUES ('2026-07-01','2026-07-01','x','MLB','q','1+ Hit',1,NULL,"
+        f"'Cincinnati Reds',NULL)")
+
+    assert snapshots._backfill_opponents(conn) == 2
+    got = dict(conn.execute(
+        f"SELECT team_name, opponent FROM {snapshots._TABLE} WHERE game_id = 'g1'"))
+    # Short names, matching SlateGame.home_display, which is what the live recorder
+    # stores. Writing full names here split every team into two cohorts — 29 opponents
+    # became 58 and each one's sample halved.
+    assert got == {"Cincinnati Reds": "Padres", "San Diego Padres": "Reds"}
+    orphan = conn.execute(
+        f"SELECT opponent FROM {snapshots._TABLE} WHERE game_id IS NULL").fetchone()[0]
+    assert orphan is None
+
+
+def test_opponent_backfill_refuses_a_team_it_cannot_place(tmp_path):
+    """A name matching neither side means the join is wrong; a blank beats a guess."""
+    import json
+    import sqlite3
+
+    from services import snapshots
+
+    conn = sqlite3.connect(tmp_path / "t.db")
+    snapshots.ensure_table(conn)
+    conn.execute("CREATE TABLE schedule_cache (league TEXT, payload TEXT, game_count INT)")
+    conn.execute(
+        "INSERT INTO schedule_cache VALUES ('MLB', ?, 1)",
+        (json.dumps([{"game_id": "g1", "home_name": "Reds", "away_name": "Padres"}]),))
+    conn.execute(
+        f"INSERT INTO {snapshots._TABLE} (snapshot_date, captured_on, calculated_at, "
+        f"league, player_id, market, threshold, game_id, team_name, opponent) "
+        f"VALUES ('2026-07-01','2026-07-01','x','MLB','p','1+ Hit',1,'g1','Mets',NULL)")
+
+    assert snapshots._backfill_opponents(conn) == 0
+    assert conn.execute(
+        f"SELECT opponent FROM {snapshots._TABLE}").fetchone()[0] is None
