@@ -450,9 +450,17 @@ html[data-slate-stale] .opportunity-section { display: none; }
 .nav-menu-panel a:hover { background: var(--surface-2); color: var(--text-1); }
 .nav-menu-panel a:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
 .nav-menu-panel a.active { color: var(--brand-2); font-weight: 700; }
+/* The league headings have to out-rank the links under them. Quietening the links to
+   --text-3 left these at --text-4 — dimmer than the items they organise — so the
+   hierarchy read upside down and they stopped working as dividers. Brightest text in
+   the panel now, and a hairline above each group so the separation is structural
+   rather than only tonal. Small caps keep them from shouting at full brightness. */
 .nav-menu-group {
-  padding: .55rem .65rem .25rem; color: var(--text-4);
-  font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase;
+  padding: .5rem .65rem .3rem; color: var(--text-1);
+  font-size: .67rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+}
+.nav-menu-group ~ .nav-menu-group {
+  margin-top: .45rem; padding-top: .6rem; border-top: 1px solid var(--divider);
 }
 
 /* Team marks on the standings table. `alt=""` on purpose: the team name sits right
