@@ -155,3 +155,23 @@ def schedule(game_date: date | str) -> list[dict]:
     )
     response.raise_for_status()
     return _parse_schedule(response.json())
+
+
+def schedule_range(start_date: date | str, end_date: date | str) -> list[dict]:
+    """One StatsAPI request for a range of MLB games.
+
+    The playoff page needs a forward-looking schedule, but making one request per day
+    would turn a static export into dozens of network calls. StatsAPI accepts a bounded
+    range, so the whole two-week watch list arrives atomically and uses the exact same
+    parser as the daily slate.
+    """
+    start = start_date.isoformat() if hasattr(start_date, "isoformat") else str(start_date)
+    end = end_date.isoformat() if hasattr(end_date, "isoformat") else str(end_date)
+    response = requests.get(
+        f"{BASE}/schedule",
+        params={"sportId": 1, "startDate": start, "endDate": end,
+                "hydrate": "probablePitcher,team,venue,seriesStatus"},
+        timeout=20,
+    )
+    response.raise_for_status()
+    return _parse_schedule(response.json())

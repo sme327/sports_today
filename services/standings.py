@@ -43,6 +43,11 @@ class TeamStanding:
     last_ten: str | None
     win_pct: float | None = None
     logo: str | None = None
+    conference: str | None = None
+    team_abbr: str | None = None
+    playoff_seed: int | None = None
+    home_record: str | None = None
+    road_record: str | None = None
 
     @property
     def record(self) -> str:
@@ -107,6 +112,9 @@ def for_league(league: str, as_of: date | None = None,
             ties=row.get("ties") or 0, games_behind=row.get("games_behind"),
             streak=row.get("streak"), last_ten=row.get("last_ten"),
             win_pct=row.get("win_pct"), logo=row.get("logo"),
+            conference=row.get("conference"), team_abbr=row.get("team_abbr"),
+            playoff_seed=row.get("playoff_seed"), home_record=row.get("home_record"),
+            road_record=row.get("road_record"),
         )
     return out
 

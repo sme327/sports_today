@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}
+{% block title %}MLB Playoff Race · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero playoff-hero">
+  <div>
+    <div class="eyebrow">If the season ended today</div>
+    <h1 class="page-title">MLB playoff race</h1>
+    <p class="page-read">The current six-team field in each league, the nearest chasers, and the games that can move those races.</p>
+  </div>
+  <a class="text-link" href="{% url 'standings' %}?league=MLB">Full standings →</a>
+</section>
+
+{% if has_data %}
+<div class="playoff-leagues">
+  {% for panel in panels %}
+  <section class="playoff-panel">
+    <div class="section-heading"><div><h2>{{ panel.name }} picture</h2><p>Three division leaders + three Wild Cards</p></div></div>
+    <div class="race-table" role="table" aria-label="{{ panel.name }} playoff picture">
+      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>Record</span><span>Games left</span></div>
+      {% for team in panel.field %}
+      <div class="race-row in-field" role="row">
+        <b class="race-seed">{{ team.seed }}</b>
+        <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>
+      </div>
+      {% endfor %}
+      {% if panel.bubble %}<div class="race-divider"><span>Chasing the line</span></div>{% endif %}
+      {% for team in panel.bubble %}
+      <div class="race-row bubble" role="row">
+        <b class="race-seed">—</b>
+        <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+
+<section class="important-games">
+  <div class="section-heading">
+    <div><h2>Games that matter next</h2><p>Highest-leverage matchups in the next two weeks, based on the current division and Wild Card races.</p></div>
+    <span>Through {{ window_end|date:"M j" }}</span>
+  </div>
+  {% if games %}
+  <div class="race-games">
+    {% for game in games %}
+    <article class="race-game">
+      <span class="race-game-date">{{ game.day }}</span>
+      <div class="race-matchup"><span>{% if game.away_logo %}<img src="{{ game.away_logo }}" alt="" width="28" height="28">{% endif %}{{ game.away }}</span><i>at</i><span>{% if game.home_logo %}<img src="{{ game.home_logo }}" alt="" width="28" height="28">{% endif %}{{ game.home }}</span></div>
+      <p>{{ game.why }}</p>
+    </article>
+    {% endfor %}
+  </div>
+  {% elif not schedule_available %}<div class="notice">The race is current, but the remaining schedule could not be refreshed for this build.</div>
+  {% else %}<div class="notice">No matchup in the next two weeks clears the race-importance threshold.</div>{% endif %}
+</section>
+<p class="quiet-note">This is a standings-based snapshot, not playoff odds. Ties and official postseason tiebreakers are not projected.</p>
+{% else %}<div class="notice">No current MLB standings are loaded yet. The race will appear after the next daily update.</div>{% endif %}
+{% endblock %}

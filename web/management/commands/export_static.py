@@ -35,7 +35,8 @@ _SEEDS = (
     # "day-after" is exported but linked from nothing: the client-side rollover
     # promotes it once the viewer's calendar passes the build date.
     "/", "/?day=tomorrow", "/?day=day-after", "/results/", "/performance/",
-    "/standings/", *(f"/standings/?league={lg}" for lg in ("MLB", "NFL", "NBA", "NHL")),
+    "/standings/", "/trending/", "/playoffs/",
+    *(f"/standings/?league={lg}" for lg in ("MLB", "NFL", "NBA", "NHL")),
     *_RESULT_SEEDS, *_PERFORMANCE_SEEDS, *_PERFORMANCE_MARKET_SEEDS,
 )
 _SKIP_PATHS = ("/health/", "/fragments/", "/static/")

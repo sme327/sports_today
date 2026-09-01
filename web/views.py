@@ -126,3 +126,15 @@ def standings(request):
 
     context = standings_context(request.GET.get("league"), timezone.localdate())
     return render(request, "web/standings.html", context)
+
+
+def trending(request):
+    from services.mlb_trending import build_context
+
+    return render(request, "web/trending.html", build_context(timezone.localdate()))
+
+
+def playoffs(request):
+    from services.mlb_playoffs import build_context
+
+    return render(request, "web/playoffs.html", build_context(timezone.localdate()))

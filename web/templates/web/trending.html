@@ -1,0 +1,43 @@
+{% extends "web/base.html" %}
+{% block title %}Trending MLB Players · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero trend-hero">
+  <div>
+    <div class="eyebrow">What has changed lately</div>
+    <h1 class="page-title">Trending MLB players</h1>
+    <p class="page-read">Recent form compared with each player's own earlier games—not a leaderboard and not a prediction.</p>
+  </div>
+  {% if through %}<span class="data-through">Data through {{ through|date:"M j" }}</span>{% endif %}
+</section>
+
+{% if has_data %}
+  <nav class="trend-jump" aria-label="Trend markets">
+    {% for group in sections %}<a href="#{{ group.slug }}">{{ group.title }}</a>{% endfor %}
+  </nav>
+  {% for group in sections %}
+  <section class="trend-section" id="{{ group.slug }}">
+    <div class="section-heading">
+      <div><h2>{{ group.title }}</h2><p>{{ group.read }}</p></div>
+      <span>{% if group.comparison %}{{ group.comparison }}{% else %}Last 10 vs earlier sample{% endif %}</span>
+    </div>
+    {% if group.cards %}
+    <div class="trend-grid">
+      {% for card in group.cards %}
+      <article class="trend-card {{ card.tone }}">
+        <div class="trend-player">
+          <img src="{{ card.headshot }}" alt="" width="64" height="64" loading="lazy">
+          <div><span class="trend-market">{{ card.icon }} {{ card.market }}</span><h3>{{ card.name }}</h3><small>{{ card.team }}</small></div>
+        </div>
+        <p class="trend-headline">{{ card.headline }}</p>
+        <p class="trend-detail">{{ card.detail }}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}<div class="notice">No trend clears the minimum sample and change threshold right now.</div>{% endif %}
+  </section>
+  {% endfor %}
+  <p class="quiet-note">A trend describes a change in recorded results. It does not account for today's opponent, park, lineup spot, injuries, or betting price.</p>
+{% else %}
+  <div class="notice">No MLB player history is loaded yet. Trends will appear after the next data update.</div>
+{% endif %}
+{% endblock %}
