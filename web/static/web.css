@@ -223,18 +223,24 @@ a { color: inherit; }
   .performance-controls > div { align-items: flex-start; flex-direction: column; gap: .35rem; }
   .cohort-comparison { grid-template-columns: 1fr; }
 }
-/* Phones: the nav stacks to mirror the brand — day toggle over Performance, against
-   "Sports Today" over the date. The brand already sets the header's height with two
-   lines, so the second nav line costs nothing, and moving Performance out of row one
-   gives the date the whole left column. That replaces a `max-width: 7.5rem` ellipsis
-   that had been truncating it to "WEDNESDAY, AUG…". */
+/* Phones: the nav stays one row — day toggle, then the menu button beside it.
+
+   It used to stack, and that was right at the time: the second row held a text
+   "Performance" link, which was too wide to sit next to the toggle. Performance now
+   lives inside the menu, so row two is a 2.1rem circle — stacking it only pushed the
+   control away from the pill it belongs with and made the header taller for nothing.
+
+   The brand keeps `min-width: 0` so the date shortens rather than shoving the nav down;
+   that is what replaced a `max-width: 7.5rem` ellipsis truncating it to
+   "WEDNESDAY, AUG…". `flex-shrink: 0` on the nav is the load-bearing half: without it
+   the toggle is the thing that gives way when the two compete. */
 @media (max-width: 560px) {
-  .site-header { align-items: flex-start; }
+  .site-header { align-items: center; }
   .site-header nav.compact-nav {
-    flex-direction: column; align-items: flex-end; gap: .3rem; flex: 0 0 auto;
+    flex-direction: row; align-items: center; gap: .4rem; flex: 0 0 auto;
   }
   .site-brand { min-width: 0; flex: 1 1 auto; }
-  .site-date { white-space: nowrap; }
+  .site-date { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 @media (max-width: 430px) {
   .site-brand-name { font-size: 1rem; }
@@ -535,9 +541,13 @@ html[data-slate-stale] .opportunity-section { display: none; }
 @media (max-width: 560px) {
   .trend-grid, .race-games { grid-template-columns: 1fr; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: .3rem; }
-  .race-row { grid-template-columns: 2rem minmax(0, 1fr) 3.8rem 3rem; padding-inline: .5rem; }
-  .race-head span:last-child { font-size: 0; }
-  .race-head span:last-child::after { content: "Left"; font-size: .62rem; }
+  /* Only the padding survives here. This block used to declare a four-column race row
+     and relabel its last header to "Left"; adding the "vs. race" column made the row
+     five wide, so the 720px rule below now sets the phone grid and hides both numeric
+     columns together — which leaves `span:last-child` pointing at a hidden element and
+     the four-column track overridden. Dead declarations that still read as intent are
+     worse than none, so they are gone rather than left to mislead the next edit. */
+  .race-row { padding-inline: .5rem; }
   .race-game { grid-template-columns: 4.4rem minmax(0, 1fr); }
 }
 
