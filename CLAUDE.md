@@ -36,6 +36,38 @@ across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
 
+**The slate is not the whole site any more.** Beside today's games there are now
+league surfaces, reached from one header menu (leagues first, Performance and Daily
+Results at the bottom): **Standings** for MLB, WNBA, MLS, NFL, NBA and NHL;
+**Trending players** for MLB and WNBA; an **MLB playoff race**; and the **NFL season
+schedule**, browsable by week or by team. Every one of them is description, never
+forecast — the rule the editorial signals follow applies to all of them, and each page
+states what it is *not*. A menu entry with no page yet renders as plain text rather
+than a link: the menu appears on every page, so one link to an unexported target is one
+dead link *per page* (that mistake once produced 640 of them).
+
+Two of those carry rules worth knowing before touching them. **Standings for MLB come
+from StatsAPI, not ESPN** — the MLB slate is scheduled from StatsAPI, so its team ids
+are StatsAPI ids, and pairing them with ESPN's would mean joining on team *names*.
+Everything else is scheduled from ESPN and so takes ESPN's standings natively. And
+**MLS is scored rather than won**: points, played, W-D-L and goal difference, from its
+own `mls_standings` table, because "games behind" means nothing where a draw is a
+result.
+
+**The playoff page lives inside a window** (`services/playoff_window.py`), gated on
+*games remaining* rather than a date — a date breaks on a lockout or a shortened season.
+MLB opens at 30 games left (~Aug 27), the NFL at 7 (week 12). It persists through the
+offseason showing how the race finished, worded as finished, and disappears when the
+next season's standings reset to 0-0.
+
+**The site rolls itself over at midnight.** The export is static, so "today" is baked
+in at build time; the daily run precomputes **three** days and an inline script in
+`base.html` redirects the viewer to whichever is actually today, by their clock. It
+buys two roll-overs and then says the slate is out of date rather than showing a day
+that has been played. This exists because the overnight rebuild cannot be scheduled:
+macOS refuses launchd any read access to this project's folder (decision log
+2026-08-31; `scripts/nightly_refresh.sh` is committed but parked).
+
 **NFL spans two surfaces, now joined.** Its deep-dive — season-feed ingest, team
 analytics, player props, matchup pages — runs off ingested Big Data Ball seasons and is
 browsed through the **season archive** (`?view=nfl`). The feed only ever contains
@@ -140,6 +172,9 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   project root from its own bundle so no user path is baked in, and refuses to start
   a second run while one is in flight (concurrent runs fight over the same SQLite
   database and the atomic workbook swap).
+  It also collects **current standings** (five leagues plus the MLS name lookup) and
+  the **NFL season schedule** (18 weeks, one request each). Both are non-fatal like every
+  other collector: context must never fail a data run.
   Full steps: [Setup](docs/engineering/SETUP.md).
 - **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
   + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there
@@ -191,6 +226,13 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   not on evidence of inversion. Base rate for a starting
   batter is ~61%, not the ~55% quoted before — that older figure counted everyone who
   batted, pinch hitters included.
+- **Ballpark is real, measured, and deliberately not in the score.** Park factors run
+  1.13 at Coors to 0.92 at Dodger Stadium over 160k plate appearances, split-half
+  r +0.589. Folded into `batter_hit` it widened the quartile spread and lifted
+  correlation but left the **top 20% unmoved**, and the top is the only part any surface
+  serves — so it failed the ship gate and appears as *evidence* on the matchup page
+  instead ("hits run 13% above average here"). Two thirds of parks are inside the
+  measured ±4% and say nothing at all. Decision log 2026-08-31.
 - **Compare a hit rate only against a base rate.** `services/base_rates.py` holds them;
   the Performance page ranks by lift. A shared average across markets is the one
   comparison the project treats as a bug — it reversed the true market ranking once.

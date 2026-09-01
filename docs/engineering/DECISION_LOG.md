@@ -9,6 +9,58 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-01 — The season, and the window a race page lives inside
+
+**Decision.** Two league surfaces and the rule that governs when one of them exists.
+
+The **NFL season schedule** is collected whole (272 games, 18 weeks) into its own
+`nfl_schedule` table and browsed by week or by team. It is deliberately *not* joined to
+`nfl_team_games`, which holds played games from the ingested vendor seasons in the
+vendor's id space.
+
+The **playoff race page** is gated by `services/playoff_window.py` on **games
+remaining**: MLB opens at 30 left (~Aug 27), the NFL at 7 (week 12), NBA/NHL at 20,
+WNBA at 12, MLS at 8. Four states — `early`, `live`, `final`, `preseason`.
+
+**Reason.** A date is the obvious trigger and the wrong one: it breaks on a lockout or a
+shortened season, has to be re-derived for every league, and describes the calendar
+rather than the race. Games left is what actually decides whether standings are legible,
+it is already on every standings row, and it moves with the schedule by itself.
+
+The thresholds look inconsistent and are not. MLB opens at ~85% of the season played and
+the NFL at ~65%, because six football games make a two-game deficit close to fatal while
+twenty-five baseball games leave a five-game deficit very much alive. Percent-complete
+would have called those moments far apart; games-left calls them the same moment, which
+is why the rule extends to the leagues nobody had an instinct about.
+
+The **off** state fixes a live defect rather than adding polish. `has_data` was
+`bool(table)`, and standings persist, so from the end of the regular season the page
+would have rendered October's final table as a live race indefinitely — the same species
+as the NBA standings that showed a completed season as current (fixed the same week). A
+finished race now persists on purpose, because how it ended is a record worth keeping,
+but the eyebrow and disclaimer both come from the state so it stops saying "if the season
+ended today" about a season that has. It disappears when the next season's standings
+reset to 0-0.
+
+**Tradeoffs.** The gate reads the *fewest* games any club has left rather than the most,
+so one rained-out team with games in hand cannot hold a resolved race open; the cost is
+that a genuinely lopsided schedule closes the page a day or two early. The thresholds are
+judgement calls fitted to two stated instincts (MLB ~Sept 1, NFL ~Thanksgiving) and then
+extended by analogy — the other four leagues have not been checked against a season.
+
+The NFL schedule's export enumerates both axes from the collected table rather than
+crawling, because the crawler is where this has gone wrong before: `/nfl/` links a page
+per week, and allowing it would have exploded the export — an earlier attempt matched
+`/nfl/?season=2025&week=4` too, which the existing bound test caught.
+
+**Future considerations.** The NFL archive is still unlinked, and the schedule browser
+may have made it redundant; decide that before exporting seventeen week pages to
+re-link it. The playoff page is MLB-only, so `LEAGUE_WINDOWS` currently describes five
+leagues that have no page yet — that is intentional (the rule should exist before the
+surface does), but the NFL one will get its first real test in November.
+
+---
+
 ## 2026-08-31 — Ballpark is a real effect on hits and still does not ship
 
 **Decision.** No `batter-hit-v7`. A park adjustment is **not** folded into the batter-hit
