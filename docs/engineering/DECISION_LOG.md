@@ -9,6 +9,71 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-08-31 — Ballpark is a real effect on hits and still does not ship
+
+**Decision.** No `batter-hit-v7`. A park adjustment is **not** folded into the batter-hit
+scorer, despite the park effect itself being real and well measured. Three companion
+questions were answered at the same time and are recorded here so they are not re-asked:
+same-game hit clustering, the "best game" chip as a prop signal, and per-team/opponent
+cohorts.
+
+**Reason.** Taken in order of how much each one promised.
+
+*Same-game clustering is nothing.* Across 1,431 served picks in 318 games, the rate at
+which 3/4/5/6 picks in one game all hit matches independent coin flips at the per-prop
+rate (66.5% vs 65.5%, 53.1% vs 48.3%, 40.7% vs 42.4%, 40.5% vs 44.3%). A same-game stack
+is worth no more than the same legs spread across games. The likely reason is that
+`batter-hit-v5` already leans on plate appearances per game, and PA volume *is* the
+mechanism by which a big offensive game lifts everyone — the correlation is priced in.
+
+*The "best game" chip does not predict props.* Pooled it looked like a 2x effect (+18.6
+in the best game against +8.4 elsewhere) and it is entirely mix: best-game props are 47%
+WNBA against 81% MLB elsewhere. Within league, MLB +2.9 [-4.8, +11.0] and WNBA +4.4
+[-4.9, +14.1]. A Performance section for it would have shelved noise.
+
+*Team, opponent and park cohorts are all empty* at the level of served props — 0 of 20,
+0 of 18 and 0 of 23 groups clear `sqrt(2 ln k)`, with a median of 8-10 team-games each.
+The one thing that did clear, at 3.80 sigma, was a bucket of rows with no `opponent`
+recorded (fixed the same day; see the ledger backfill).
+
+*The park effect is real, and that is the interesting part.* Measured across all 160,963
+plate appearances as a park factor that cancels team quality (a park's hits against what
+those same batting teams did elsewhere), the spread runs 1.132 at Coors to 0.917 at
+Dodger Stadium. Colorado first and the Athletics' temporary minor-league park second is
+external validation nobody tuned for. It survives both gates the method asks for:
+split-half correlation **+0.589**, and 73% of the observed variance is real once the
+binomial noise floor is subtracted (variance 3.7x noise). On a 61% base rate that is
++7.9 points at Coors and -4.9 at Dodger Stadium — not a rounding error against a market
+whose served lift is +4.5.
+
+*But it does not improve the picks.* Backtested the project's way — fitted only on plate
+appearances strictly before each game, evaluated on 28,535 starting batter-games across
+125 slates, the same population and scale that established v5 — the adjustment widens the
+quartile spread (+0.0113, CI [+0.0032, +0.0212]) and lifts correlation (+0.0064, CI
+[+0.0027, +0.0106]), both real. The **top 20% does not move**: +0.0023, CI [-0.0051,
++0.0109]. The ship gate is spread *and* top-20%, and only the top is served, so this
+fails on the half that matters. Mechanically that fits: the top quintile is already
+high-PA, in-form batters, where park is second order. Shrinkage was varied across 2000 /
+500 / 0 PA and changed nothing material, so the result is not an artifact of that knob.
+
+**Tradeoffs.** Leaving a measured, persistent effect out of the scorer is uncomfortable,
+and the temptation is to ship it on the spread gain alone. The gate exists because
+spread across the whole field is not what the product sells; a floor of 70 and a featured
+eight both read the top. Shipping on a metric no surface uses is how `batter_k` ended up
+serving six props in six weeks.
+
+**Future considerations.** The top-20% interval is asymmetric toward positive and this is
+one season; a second season may resolve it, and MLB is currently single-season by design
+(see Historical Data). A variant that adjusts **only** at the reliable extremes is
+motivated rather than fished — the split-half showed Coors and Dodger Stadium stable
+across halves (1.138/1.128 and 0.917/0.914) while the middle churns (Texas 0.935/1.065) —
+and is the one version worth trying next. Park is also plainly useful *as evidence* even
+when it is not in the score: "Coors Field, where hits run 13% above average" is exactly
+the explainable, non-forecasting note the product already serves, and it needs no ship
+gate because it changes no ranking.
+
+---
+
 ## 2026-08-31 — The browser rolls the slate over, because the machine cannot
 
 **Decision.** The daily run precomputes **three** days rather than two (`SLATE_DAYS`), and
