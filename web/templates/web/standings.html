@@ -21,6 +21,19 @@
   <section class="standings-group">
     <h2 class="standings-group-name">{{ group.name }}</h2>
     <div class="standings-table" role="table" aria-label="{{ group.name }} standings">
+      {% comment %}Two shapes, because two sports count differently. MLS is scored —
+      three points a win, one a draw — so "games behind" is meaningless there and points
+      with goal difference is the real table. Forcing both into one column set would
+      misdescribe one of them.{% endcomment %}
+      {% if points_table %}
+      <div class="standings-row points standings-head" role="row">
+        <span role="columnheader">{{ group_noun }}</span>
+        <span role="columnheader" title="Points">Pts</span>
+        <span role="columnheader" title="Games played">Pl</span>
+        <span role="columnheader" title="Wins-Draws-Losses">W-D-L</span>
+        <span role="columnheader" title="Goal difference">GD</span>
+      </div>
+      {% else %}
       <div class="standings-row standings-head" role="row">
         <span role="columnheader">{{ group_noun }}</span>
         <span role="columnheader">W-L</span>
@@ -29,14 +42,22 @@
         <span role="columnheader">Strk</span>
         <span role="columnheader">L10</span>
       </div>
+      {% endif %}
       {% for team in group.teams %}
-      <div class="standings-row{% if team.leader %} leader{% endif %}" role="row">
+      <div class="standings-row{% if points_table %} points{% endif %}{% if team.leader %} leader{% endif %}" role="row">
         <span role="cell" class="standings-team"><b>{{ team.rank }}</b>{% if team.logo %}<img class="standings-logo" src="{{ team.logo }}" alt="" width="20" height="20" loading="lazy">{% endif %}<span class="standings-name">{{ team.name }}</span></span>
+        {% if points_table %}
+        <span role="cell" class="num pts">{{ team.points }}</span>
+        <span role="cell" class="num">{{ team.played }}</span>
+        <span role="cell" class="num">{{ team.record }}</span>
+        <span role="cell" class="num">{{ team.goal_difference }}</span>
+        {% else %}
         <span role="cell" class="num">{{ team.record }}</span>
         <span role="cell" class="num">{{ team.win_pct }}</span>
         <span role="cell" class="num">{{ team.games_behind }}</span>
         <span role="cell" class="num">{{ team.streak }}</span>
         <span role="cell" class="num">{{ team.last_ten }}</span>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
@@ -45,8 +66,9 @@
   {% comment %}The product rule: say what a number is, and what it is not. A standings
   table is the most forecast-looking surface here, so it states plainly that it isn't
   one.{% endcomment %}
-  <p class="quiet-note">Records through the last completed day. Standings describe games
-     already played — they are not a projection of what happens next.</p>
+  <p class="quiet-note">Through the last completed day. Standings describe games already
+     played — they are not a projection of what happens next.{% if points_table %}
+     Three points for a win, one for a draw; goal difference breaks ties.{% endif %}</p>
 {% else %}
   <div class="notice">No standings are loaded yet. They arrive with the next daily run.</div>
 {% endif %}

@@ -18,8 +18,15 @@ from services import standings
 
 # The order leagues appear, and what each calls its groups. A league only shows up once
 # it has rows, so an offseason league is absent rather than empty.
-LEAGUE_ORDER = ("MLB", "NFL", "NBA", "NHL")
-GROUP_NOUN = {"MLB": "Division", "NFL": "Division", "NBA": "Division", "NHL": "Division"}
+LEAGUE_ORDER = ("MLB", "WNBA", "MLS", "NFL", "NBA", "NHL")
+GROUP_NOUN = {"MLB": "Division", "NFL": "Division", "NBA": "Division",
+              "NHL": "Division", "WNBA": "Conference", "MLS": "Conference"}
+
+# MLS is scored, not won: three points a win, one a draw, and the table is ordered on
+# points with goal difference breaking ties. Rendering it in a W-L-GB shape would be a
+# category error — "games behind" means nothing in a league where a draw is a result —
+# so it carries its own columns and its own source table.
+POINTS_LEAGUES = ("MLS",)
 
 # How far back to look for a game before calling a league out of season. Wide enough
 # to survive an All-Star break or a scheduling gap, short enough that a finished
@@ -39,10 +46,14 @@ def available_leagues(as_of: date | None = None, db_path=None) -> list[str]:
     playing = _in_season(as_of, db_path)
     out = []
     for league in LEAGUE_ORDER:
-        table = standings.for_league(league, as_of, **kwargs)
-        if not table or league not in playing:
+        if league not in playing:
             continue
-        if any((t.wins + t.losses + t.ties) > 0 for t in table.values()):
+        if league in POINTS_LEAGUES:
+            if _mls_context(as_of, db_path):
+                out.append(league)
+            continue
+        table = standings.for_league(league, as_of, **kwargs)
+        if table and any((t.wins + t.losses + t.ties) > 0 for t in table.values()):
             out.append(league)
     return out
 
@@ -73,6 +84,45 @@ def _in_season(as_of: date | None, db_path=None) -> set[str]:
     return {r[0] for r in rows}
 
 
+def _mls_context(as_of: date | None, db_path=None) -> list[dict]:
+    """MLS from its own table, joined to the names ESPN supplies for the same ids."""
+    import sqlite3
+
+    from src.config import DB_PATH
+
+    try:
+        with sqlite3.connect(db_path or DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            latest = conn.execute(
+                "SELECT MAX(snapshot_date) FROM mls_standings").fetchone()[0]
+            if not latest:
+                return []
+            names = {r[0]: (r[1], r[2]) for r in conn.execute(
+                "SELECT team_id, name, logo FROM mls_teams")}
+            rows = [dict(r) for r in conn.execute(
+                "SELECT * FROM mls_standings WHERE snapshot_date = ? "
+                "ORDER BY conference, conference_rank", (latest,))]
+    except sqlite3.OperationalError:
+        return []
+
+    grouped: dict[str, list] = {}
+    for row in rows:
+        name, logo = names.get(str(row["team_id"]), (None, None))
+        grouped.setdefault(row["conference"] or "Table", []).append({
+            "rank": row["conference_rank"],
+            "name": name or f"Team {row['team_id']}",
+            "logo": logo,
+            "points": row["points"],
+            "played": row["games_played"],
+            "record": f"{row['wins']}-{row['draws']}-{row['losses']}",
+            "goal_difference": (f"+{row['goal_difference']}"
+                                if (row["goal_difference"] or 0) > 0
+                                else str(row["goal_difference"] or 0)),
+            "leader": row["conference_rank"] == 1,
+        })
+    return [{"name": k, "short": k, "teams": v} for k, v in sorted(grouped.items())]
+
+
 def build_context(league: str | None, as_of: date | None = None, db_path=None) -> dict:
     # db_path is threaded rather than read from the module default so this is testable:
     # `db_path=DB_PATH` binds at import, so patching the constant afterwards changes
@@ -82,6 +132,11 @@ def build_context(league: str | None, as_of: date | None = None, db_path=None) -
     chosen = league if league in leagues else (leagues[0] if leagues else None)
     if chosen is None:
         return {"section": "standings", "leagues": [], "league": None, "groups": []}
+
+    if chosen in POINTS_LEAGUES:
+        return {"section": "standings", "leagues": leagues, "league": chosen,
+                "group_noun": GROUP_NOUN.get(chosen, "Conference"),
+                "points_table": True, "groups": _mls_context(as_of, db_path)}
 
     table = standings.for_league(chosen, as_of, **kwargs)
     grouped: dict[str, list] = {}
@@ -115,6 +170,7 @@ def build_context(league: str | None, as_of: date | None = None, db_path=None) -
         "section": "standings",
         "leagues": leagues,
         "league": chosen,
+        "points_table": False,
         "group_noun": GROUP_NOUN.get(chosen, "Division"),
         "groups": groups,
     }

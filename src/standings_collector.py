@@ -32,6 +32,7 @@ class LeagueSpec:
 # (points, draws, goal difference). NCAAF is absent because it has no stable divisions
 # to rank within — the same reason prior_season excludes it.
 LEAGUES: dict[str, LeagueSpec] = {
+    "WNBA": LeagueSpec("basketball/wnba"),
     "NFL": LeagueSpec("football/nfl", ties_stat="ties"),
     "NBA": LeagueSpec("basketball/nba"),
     "NHL": LeagueSpec("hockey/nhl", ties_stat="otLosses"),
@@ -237,3 +238,51 @@ def mlb_rows(season: int, snapshot: str) -> list[dict]:
 if __name__ == "__main__":
     for name, count in collect().items():
         print(f"{name}: {count} teams")
+
+
+# --- MLS: names only ------------------------------------------------------------------
+_MLS_STANDINGS = f"{STANDINGS}/soccer/usa.1/standings"
+
+
+def mls_team_lookup(season: int) -> list[dict]:
+    """``mls_standings`` is keyed by team id and holds no names, because the MLS
+    schedule feed carries none either. ESPN's table uses the *same* ids, so it can
+    supply the missing names and crests without the standings themselves moving source.
+    """
+    payload = fetch_json(f"{_MLS_STANDINGS}?season={season}&level=3")
+    if not payload:
+        return []
+    groups: list = []
+    _walk(payload, None, None, groups)
+    rows = []
+    for _conf, _div, entries in groups:
+        for entry in entries:
+            team = entry.get("team") or {}
+            tid = str(team.get("id") or "")
+            if not tid:
+                continue
+            rows.append({
+                "team_id": tid,
+                "name": team.get("displayName"),
+                "abbr": team.get("abbreviation"),
+                "logo": next((l.get("href") for l in (team.get("logos") or [])
+                              if l.get("href")), None),
+            })
+    return rows
+
+
+def collect_mls_teams(season: int, db_path: Path = DB_PATH) -> int:
+    rows = mls_team_lookup(season)
+    if not rows:
+        return 0
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS mls_teams (
+                team_id TEXT PRIMARY KEY, name TEXT, abbr TEXT, logo TEXT)
+        """)
+        conn.executemany(
+            "INSERT OR REPLACE INTO mls_teams (team_id, name, abbr, logo) "
+            "VALUES (?, ?, ?, ?)",
+            [(r["team_id"], r["name"], r["abbr"], r["logo"]) for r in rows])
+        conn.commit()
+    return len(rows)

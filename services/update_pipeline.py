@@ -152,7 +152,10 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
     # fail a data run, and a matchup page without a record is merely quieter.
     try:
         from src.standings_collector import collect as collect_standings
+        from src.standings_collector import collect_mls_teams
         out["standings"] = collect_standings()
+        # mls_standings is keyed by team id and holds no names; this is the lookup.
+        out["mls_teams"] = collect_mls_teams(date.today().year)
     except Exception as exc:
         out["standings_error"] = str(exc)
 

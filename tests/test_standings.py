@@ -230,3 +230,72 @@ def test_a_future_dated_snapshot_is_never_served(tmp_path):
 
     assert standings_store.latest_snapshot(conn, "MLB") == today.isoformat()
     assert standings.for_league("MLB", db_path=db)["139"].wins == 82
+
+
+# --- MLS: a league that is scored rather than won -------------------------------------
+
+def _mls_db(tmp_path):
+    import sqlite3
+    db = tmp_path / "mls.db"
+    conn = sqlite3.connect(db)
+    conn.execute("""CREATE TABLE mls_standings (season INT, team_id TEXT,
+        snapshot_date TEXT, conference TEXT, conference_rank INT, league_rank INT,
+        points INT, games_played INT, wins INT, draws INT, losses INT,
+        goals_for INT, goals_against INT, goal_difference INT, collected_at TEXT)""")
+    conn.execute("CREATE TABLE mls_teams (team_id TEXT PRIMARY KEY, name TEXT, abbr TEXT, logo TEXT)")
+    conn.executemany("INSERT INTO mls_standings VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+        (2026, "18986", "2026-09-01", "Eastern Conference", 1, 1, 52, 22, 16, 4, 2, 50, 20, 30, "x"),
+        (2026, "182", "2026-09-01", "Eastern Conference", 2, 4, 37, 21, 11, 4, 6, 33, 22, 11, "x"),
+    ])
+    conn.executemany("INSERT INTO mls_teams VALUES (?,?,?,?)", [
+        ("18986", "Nashville SC", "NSH", "n.png"), ("182", "Chicago Fire FC", "CHI", "c.png")])
+    conn.commit()
+    return db
+
+
+def test_mls_is_shown_as_points_not_games_behind(tmp_path):
+    """Three points a win, one a draw. "Games behind" means nothing in a league where a
+    draw is a result, so forcing MLS into the W-L-GB shape would misdescribe the sport."""
+    from web import standings_view
+
+    ctx = standings_view.build_context("MLS", db_path=_mls_db(tmp_path))
+    assert ctx["points_table"] is True
+    top = ctx["groups"][0]["teams"][0]
+    assert top["points"] == 52 and top["record"] == "16-4-2"
+    assert top["goal_difference"] == "+30"
+    assert "games_behind" not in top
+
+
+def test_mls_names_come_from_the_id_lookup(tmp_path):
+    """mls_standings is keyed by team id and carries no names — the MLS schedule feed
+    has none either. ESPN's table uses the same ids, so it supplies them."""
+    from web import standings_view
+
+    ctx = standings_view.build_context("MLS", db_path=_mls_db(tmp_path))
+    assert [t["name"] for t in ctx["groups"][0]["teams"]] == ["Nashville SC", "Chicago Fire FC"]
+
+
+def test_a_missing_mls_name_is_not_rendered_as_a_bare_id(tmp_path):
+    import sqlite3
+
+    from web import standings_view
+
+    db = _mls_db(tmp_path)
+    sqlite3.connect(db).execute("DELETE FROM mls_teams").connection.commit()
+    teams = standings_view.build_context("MLS", db_path=db)["groups"][0]["teams"]
+    assert all(t["name"].startswith("Team ") for t in teams)
+
+
+def test_wnba_uses_the_shared_record_shape():
+    """WNBA is scheduled from ESPN, so ESPN's standings ids match it natively — the
+    same reason MLB must not come from there."""
+    from src.standings_collector import LEAGUES
+
+    assert "WNBA" in LEAGUES and "MLB" not in LEAGUES
+
+
+def test_both_new_league_tables_are_exported():
+    from web.management.commands.export_static import _SEEDS
+
+    for league in ("WNBA", "MLS"):
+        assert f"/standings/?league={league}" in _SEEDS

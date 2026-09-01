@@ -584,3 +584,11 @@ html[data-slate-stale] .opportunity-section { display: none; }
   .sched-when { grid-column: 2 / -1; font-size: .75rem; }
   .sched-venue { display: none; }
 }
+
+/* MLS counts points, not games behind, so its table takes its own column set. */
+.standings-row.points { grid-template-columns: minmax(0, 1fr) 3.5rem 3rem 5rem 3.5rem; }
+.standings-row .num.pts { color: var(--text-1); font-weight: 750; }
+@media (max-width: 720px) {
+  .standings-row.points { grid-template-columns: minmax(0, 1fr) 3rem 2.5rem 4.5rem; }
+  .standings-row.points > :nth-child(5) { display: none; }
+}

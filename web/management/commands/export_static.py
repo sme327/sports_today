@@ -59,7 +59,8 @@ _SEEDS = (
     # promotes it once the viewer's calendar passes the build date.
     "/", "/?day=tomorrow", "/?day=day-after", "/results/", "/performance/",
     "/standings/", "/trending/", "/playoffs/",
-    *(f"/standings/?league={lg}" for lg in ("MLB", "NFL", "NBA", "NHL")),
+    *(f"/standings/?league={lg}" for lg in
+      ("MLB", "WNBA", "MLS", "NFL", "NBA", "NHL")),
     # Both axes of the NFL schedule, enumerated rather than crawled: 18 weeks and 32
     # teams is a known, bounded set, and seeding it means the page never depends on the
     # crawler recognising a control it has not been told about.

@@ -642,17 +642,39 @@ def test_day_today_is_the_index_not_a_hashed_duplicate():
     assert output_path("/?day=day-after").as_posix() == "day-after/index.html"
 
 
-def test_menu_entries_without_a_page_are_not_links():
-    """The remaining future entries stay plain text. Playoffs and MLB trends are now
-    real exported pages; MLS/WNBA league pages still must not become dead links."""
+def test_every_menu_link_points_at_an_exported_page():
+    """The invariant a hardcoded label list could not hold.
+
+    The menu renders on *every* page, so one link to a page the exporter never built is
+    not one dead link but one per page — the NFL archive proved that with 640. Naming
+    which entries are unbuilt goes stale the moment one ships, and did. This resolves
+    every href the menu actually renders and requires the exporter to produce it.
+    """
+    import re
+
+    from django.test import Client
+
+    from web.management.commands.export_static import _SEEDS, output_path, should_crawl
+
+    html = Client().get("/").content.decode()
+    panel = html[html.index('class="nav-menu-panel"'):html.index("</details>")]
+    hrefs = re.findall(r'<a[^>]+href="([^"]+)"', panel)
+    assert hrefs, "the menu rendered no links at all"
+    for href in hrefs:
+        assert should_crawl(href) or href in _SEEDS, f"{href} is linked but not crawlable"
+        assert output_path(href), f"{href} has no export path"
+
+
+def test_unbuilt_menu_entries_are_plain_text():
+    """Whatever is not built yet must not be an anchor — that is what lets the menu
+    double as a roadmap without breaking the export."""
+    import re
     from pathlib import Path
 
     html = Path("web/templates/web/base.html").read_text(encoding="utf-8")
     panel = html[html.index('class="nav-menu-panel"'):html.index("</details>")]
-    assert '<span class="nav-future" title="Not built yet">Standings</span>' in panel
-    assert '<span class="nav-future" title="Not built yet">Hot streaks &amp; trending</span>' in panel
-    assert panel.count('href="{% url \'playoffs\' %}"') == 1
-    assert panel.count('href="{% url \'trending\' %}"') == 1
+    for match in re.finditer(r'<(\w+)[^>]*class="nav-future"', panel):
+        assert match.group(1) != "a", "an unbuilt entry must not be a link"
 
 
 def test_leagues_come_before_the_analysis_pages_in_the_menu():
