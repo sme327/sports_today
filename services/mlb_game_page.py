@@ -22,7 +22,11 @@ from services import mlb_analytics as A
 from services.data_access import load_plate_appearances
 from src.opportunity import score_hit_opportunities
 
-ENGINE_VERSION = "mlb-game-page-v1"
+# Bump whenever the page's *content* changes, not just its computation. The cache is
+# keyed on this, so a page that gains a field while the version stands still keeps
+# serving the old payload — which is exactly what happened when the ballpark note was
+# added and Coors Field went on showing no note through a full publish.
+ENGINE_VERSION = "mlb-game-page-v2"
 
 # Identity vocabulary — lead adjectives read cleanly before "offense"; the second
 # element is a verb phrase for a "that ..." clause.

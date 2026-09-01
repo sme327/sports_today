@@ -667,3 +667,15 @@ def test_leagues_come_before_the_analysis_pages_in_the_menu():
     panel = html[html.index('class="nav-menu-panel"'):html.index("</details>")]
     assert panel.index("MLB") < panel.index("Performance")
     assert panel.index("WNBA") < panel.index("Daily Results")
+
+
+def test_mlb_matchup_engine_version_moved_with_its_content():
+    """The NFL page has had this guard for a while; the MLB page did not, and that is
+    exactly how it broke. matchup_page_cache is keyed on ENGINE_VERSION, so a page that
+    gains a field while the version stands still keeps serving the old payload — the
+    ballpark note went through a full build and publish while Coors Field showed nothing.
+    """
+    from services.mlb_game_page import ENGINE_VERSION
+
+    assert ENGINE_VERSION != "mlb-game-page-v1", (
+        "bump ENGINE_VERSION whenever the rendered page changes, or cached pages go stale")
