@@ -21,6 +21,27 @@ def _fake_import(monkeypatch):
     # Recording game outcomes fetches finished slates, so it must be faked here too —
     # this file's contract is that the pipeline runs with no network at all.
     monkeypatch.setattr("scripts.record_game_outcomes.run", lambda **k: 7)
+    # Collectors added to rebuild() after this file was written. Each is a network call
+    # — the NFL schedule alone is eighteen — and leaving them live took the suite from
+    # ~50s to over four minutes while quietly breaking this file's stated contract that
+    # it runs with no network at all.
+    # NCAAF and the prior-season backfill were never stubbed either. They mostly no-op
+    # (both skip work they have already done), so they were cheap enough to hide — but
+    # "cheap network" is still network, and this file says it makes none.
+    # The web collectors belong here too, not only in the one test that asserts on their
+    # values — a fake that is complete is the thing the no-network guard below can lean
+    # on. Tests that care about specific counts still override these afterwards.
+    monkeypatch.setattr("src.wnba_collector.collect_wnba_season",
+                        lambda **k: SimpleNamespace(games_downloaded=0, player_rows_written=0))
+    monkeypatch.setattr("src.mls_collector.collect",
+                        lambda **k: SimpleNamespace(events_collected=0, standings_rows=0))
+    monkeypatch.setattr("src.ncaaf_collector.collect",
+                        lambda **k: {"teams": 0, "passers": 0, "team_seasons": 0,
+                                     "skipped": 0})
+    monkeypatch.setattr("src.prior_season_collector.have_season", lambda *a, **k: True)
+    monkeypatch.setattr("src.standings_collector.collect", lambda *a, **k: {"MLB": 30})
+    monkeypatch.setattr("src.standings_collector.collect_mls_teams", lambda *a, **k: 30)
+    monkeypatch.setattr("src.nfl_schedule.collect", lambda *a, **k: 272)
     monkeypatch.setattr(
         "services.daily_feed.precompute_days",
         lambda days: [{"date": d.isoformat(), "games": 0, "opportunities": 0,
@@ -164,3 +185,28 @@ def test_rebuild_precomputes_every_slate_day(monkeypatch):
     from datetime import timedelta as _td
     expected = [(_date.today() + _td(days=n)).isoformat() for n in range(P.SLATE_DAYS)]
     assert [feed["date"] for feed in out["daily_feed"]] == expected
+
+
+def test_the_pipeline_tests_really_make_no_network_calls(monkeypatch):
+    """This file's contract, enforced rather than asserted in prose.
+
+    Every collector added to ``rebuild`` has to be stubbed here, and twice now one was
+    not: the NFL season schedule (eighteen requests) and the standings collectors took
+    this file from ~50s to over four minutes of real HTTP while every test still passed.
+    Nothing failed, so nothing said so.
+
+    Blocking the socket makes the omission loud: a future collector wired into rebuild
+    without a fake fails here instead of quietly slowing the suite down.
+    """
+    import socket
+
+    def _blocked(*args, **kwargs):
+        raise AssertionError("the pipeline tests must not open a network connection")
+
+    _fake_import(monkeypatch)
+    monkeypatch.setattr("services.data_store.is_configured", lambda: False)
+    monkeypatch.setattr(socket, "create_connection", _blocked)
+    monkeypatch.setattr(socket.socket, "connect", _blocked)
+
+    out = P.rebuild("feed.xlsx", collect_web=True)
+    assert "daily_feed" in out

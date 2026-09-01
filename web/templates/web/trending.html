@@ -1,14 +1,22 @@
 {% extends "web/base.html" %}
-{% block title %}Trending MLB Players · Sports Today{% endblock %}
+{% block title %}Trending {{ league }} Players · Sports Today{% endblock %}
 {% block content %}
 <section class="analytics-hero trend-hero">
   <div>
     <div class="eyebrow">What has changed lately</div>
-    <h1 class="page-title">Trending MLB players</h1>
+    <h1 class="page-title">Trending {{ league }} players</h1>
     <p class="page-read">Recent form compared with each player's own earlier games—not a leaderboard and not a prediction.</p>
   </div>
   {% if through %}<span class="data-through">Data through {{ through|date:"M j" }}</span>{% endif %}
 </section>
+
+{% if leagues|length > 1 %}
+<section class="filter-row" aria-label="League">
+  <div class="filter-pills">
+    {% for name in leagues %}<a class="filter-pill {% if name == league %}active{% endif %}" href="{% url 'trending' %}?league={{ name }}" aria-label="{{ name }} trending players"{% if name == league %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+  </div>
+</section>
+{% endif %}
 
 {% if has_data %}
   <nav class="trend-jump" aria-label="Trend markets">

@@ -130,7 +130,7 @@ no slate (Performance) render no attribute and the pick UI stays dormant.{% endc
 
           <div class="nav-menu-group"><span aria-hidden="true">🏀</span> WNBA</div>
           <a href="{% url 'standings' %}?league=WNBA" aria-label="WNBA standings">Standings</a>
-          <span class="nav-future" title="Not built yet">Hot streaks &amp; trending</span>
+          <a href="{% url 'trending' %}?league=WNBA" aria-label="WNBA trending players">Trending players</a>
 
           <div class="nav-menu-sep" role="separator"></div>
           <a class="{% if section == 'performance' %}active{% endif %}" href="{% url 'performance' %}"{% if section == 'performance' %} aria-current="page"{% endif %}>Performance</a>

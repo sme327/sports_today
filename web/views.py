@@ -128,10 +128,24 @@ def standings(request):
     return render(request, "web/standings.html", context)
 
 
-def trending(request):
-    from services.mlb_trending import build_context
+# The two leagues that have a trends page. MLB first: it is the deeper data and the
+# default the menu points at.
+_TRENDING_LEAGUES = ("MLB", "WNBA")
 
-    return render(request, "web/trending.html", build_context(timezone.localdate()))
+
+def trending(request):
+    """League-wide form. Both leagues render through one template because
+    services/wnba_trending deliberately mirrors mlb_trending's card contract."""
+    league = (request.GET.get("league") or "MLB").upper()
+    if league not in _TRENDING_LEAGUES:
+        league = "MLB"
+    if league == "WNBA":
+        from services.wnba_trending import build_context
+    else:
+        from services.mlb_trending import build_context
+    context = build_context(timezone.localdate())
+    context["leagues"] = list(_TRENDING_LEAGUES)
+    return render(request, "web/trending.html", context)
 
 
 def playoffs(request):

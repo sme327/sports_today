@@ -111,3 +111,103 @@ def test_the_head_to_head_window_runs_past_the_two_week_view():
     today = date(2026, 9, 1)
     mlb_playoffs.build_context(today, schedule_fetcher=_fetch)
     assert (asked["end"] - today).days > 14
+
+
+# --- WNBA trending --------------------------------------------------------------------
+
+def _wnba_db(tmp_path, rows):
+    import sqlite3
+    db = tmp_path / "w.db"
+    conn = sqlite3.connect(db)
+    conn.execute("""CREATE TABLE wnba_player_game_logs (
+        game_id TEXT, player_id TEXT, game_date TEXT, player_name TEXT, team TEXT,
+        headshot TEXT, minutes REAL, points REAL, rebounds REAL, assists REAL)""")
+    conn.executemany(
+        "INSERT INTO wnba_player_game_logs VALUES (?,?,?,?,?,?,?,?,?,?)", rows)
+    conn.commit()
+    return db
+
+
+def _logs(pid, name, values, *, minutes=28.0, ending="2026-08-31", stat="points",
+          offset=0):
+    """One row per game, dated backwards from ``ending`` so the run is *recent*.
+
+    Dating them from the start of the month instead put the last game weeks before the
+    slate, and the recency filter correctly dropped the player — which is a fine rule
+    and a poor fixture.
+    """
+    from datetime import date as _d
+    from datetime import timedelta as _td
+
+    end = _d.fromisoformat(ending) - _td(days=offset)
+    out = []
+    for i, v in enumerate(values):
+        day = end - _td(days=(len(values) - 1 - i))
+        pts = v if stat == "points" else 0
+        reb = v if stat == "rebounds" else 0
+        ast = v if stat == "assists" else 0
+        out.append((f"g{pid}{day.isoformat()}", pid, f"{day.isoformat()}T00:30Z", name,
+                    "Team", "h.png", minutes, pts, reb, ast))
+    return out
+
+
+def test_wnba_trending_finds_a_real_move(tmp_path):
+    from datetime import date
+
+    from services.wnba_trending import build_context
+
+    rows = _logs("1", "Riser", [8] * 10 + [20] * 5)      # +12 a game
+    ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
+    scoring = next(s for s in ctx["sections"] if s["slug"] == "points")
+    assert scoring["cards"] and scoring["cards"][0]["tone"] == "up"
+    assert "Riser" == scoring["cards"][0]["name"]
+
+
+def test_a_quiet_change_is_not_a_trend(tmp_path):
+    """Thresholds are per market — three assists is a transformation, three points is a
+    quiet night — so a small move must not surface as one."""
+    from datetime import date
+
+    from services.wnba_trending import build_context
+
+    rows = _logs("1", "Steady", [12] * 10 + [13] * 5)     # +1 a game
+    ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
+    assert all(not s["cards"] for s in ctx["sections"])
+
+
+def test_a_did_not_play_row_does_not_manufacture_a_slump(tmp_path):
+    """A logged row with no minutes is a player who never took the floor. Counting it
+    as a zero would invent a collapse out of a healthy scratch."""
+    from datetime import date
+
+    from services.wnba_trending import build_context
+
+    rows = _logs("1", "Rested", [20] * 10, offset=5) + _logs(
+        "1", "Rested", [0] * 5, minutes=0.0)
+    ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
+    assert all(not s["cards"] for s in ctx["sections"])
+
+
+def test_an_inactive_player_drops_off(tmp_path):
+    """A leaderboard of players who stopped playing is a list of injuries."""
+    from datetime import date
+
+    from services.wnba_trending import build_context
+
+    rows = _logs("1", "Gone", [8] * 10 + [20] * 5, ending="2026-06-30")
+    ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
+    assert all(not s["cards"] for s in ctx["sections"])
+
+
+def test_wnba_mirrors_the_mlb_card_contract(tmp_path):
+    """One template serves both pages, so the shapes must not drift apart."""
+    from datetime import date
+
+    from services.wnba_trending import build_context
+
+    ctx = build_context(date(2026, 9, 1),
+                        db_path=_wnba_db(tmp_path, _logs("1", "R", [8] * 10 + [20] * 5)))
+    assert set(ctx) >= {"section", "league", "sections", "through", "has_data"}
+    card = next(s for s in ctx["sections"] if s["cards"])["cards"][0]
+    assert set(card) >= {"market", "icon", "player_id", "name", "team", "headshot",
+                         "headline", "detail", "tone", "value"}
