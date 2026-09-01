@@ -138,3 +138,11 @@ def playoffs(request):
     from services.mlb_playoffs import build_context
 
     return render(request, "web/playoffs.html", build_context(timezone.localdate()))
+
+
+def nfl_schedule(request):
+    """The full NFL season, browsable by week or by team."""
+    from web.nfl_schedule_view import build_context as schedule_context
+
+    return render(request, "web/nfl_schedule.html",
+                  schedule_context(request.GET, timezone.localdate()))

@@ -485,3 +485,18 @@
     if (event.target.closest("a")) menu.open = false;
   });
 })();
+
+/* --- NFL schedule: the team selector navigates ------------------------------------
+   A <select> rather than 32 chips, because a row of team pills would be longer than
+   the schedule it filters. Progressive: without JS the control is inert but the week
+   pills still work, and every team page is reachable by URL. */
+(() => {
+  "use strict";
+  const pick = document.querySelector("[data-team-jump]");
+  if (!pick) return;
+  pick.addEventListener("change", () => {
+    const team = pick.value;
+    window.location.href = team ? `/nfl/schedule/?team=${encodeURIComponent(team)}`
+                                : "/nfl/schedule/";
+  });
+})();

@@ -31,12 +31,39 @@ _RESULT_SEEDS = tuple(
     f"/results/?date={(date.today() - timedelta(days=offset)).isoformat()}"
     for offset in range(1, 8)
 )
+def _nfl_schedule_seeds() -> tuple[str, ...]:
+    """Weeks and teams actually present in the collected schedule.
+
+    Read from the table rather than hard-coded 1..18: before the collector has run, that
+    would seed eighteen pages rendering an empty state and the link audit would be
+    checking pages nobody can reach.
+    """
+    try:
+        from src.nfl_schedule import load, seasons
+    except Exception:
+        return ()
+    years = seasons()
+    if not years:
+        return ()
+    rows = load(years[0])
+    weeks = sorted({int(r["week"]) for r in rows})
+    teams = sorted({r["away_abbr"] for r in rows} | {r["home_abbr"] for r in rows})
+    return (*(f"/nfl/schedule/?week={w}" for w in weeks),
+            *(f"/nfl/schedule/?team={t}" for t in teams if t))
+
+
+_NFL_SCHEDULE_SEEDS = _nfl_schedule_seeds()
+
 _SEEDS = (
     # "day-after" is exported but linked from nothing: the client-side rollover
     # promotes it once the viewer's calendar passes the build date.
     "/", "/?day=tomorrow", "/?day=day-after", "/results/", "/performance/",
     "/standings/", "/trending/", "/playoffs/",
     *(f"/standings/?league={lg}" for lg in ("MLB", "NFL", "NBA", "NHL")),
+    # Both axes of the NFL schedule, enumerated rather than crawled: 18 weeks and 32
+    # teams is a known, bounded set, and seeding it means the page never depends on the
+    # crawler recognising a control it has not been told about.
+    "/nfl/schedule/", *_NFL_SCHEDULE_SEEDS,
     *_RESULT_SEEDS, *_PERFORMANCE_SEEDS, *_PERFORMANCE_MARKET_SEEDS,
 )
 _SKIP_PATHS = ("/health/", "/fragments/", "/static/")
@@ -52,6 +79,11 @@ def should_crawl(url: str) -> bool:
     parts = urlsplit(url)
     if parts.path.startswith(("/game/", "/nfl/game/")):
         return True
+    # The schedule browser is exported with its two known controls. Everything else
+    # under /nfl/ stays out — that bound is what keeps the archive's per-week query
+    # pages from exploding the crawl.
+    if parts.path == "/nfl/schedule/":
+        return set(dict(parse_qsl(parts.query))) <= {"week", "team"}
     if parts.path.startswith("/nfl/"):
         return False
     if not parts.query:

@@ -540,3 +540,47 @@ html[data-slate-stale] .opportunity-section { display: none; }
   .race-head span:last-child::after { content: "Left"; font-size: .62rem; }
   .race-game { grid-template-columns: 4.4rem minmax(0, 1fr); }
 }
+
+/* --- NFL season schedule ---------------------------------------------------------
+   Two axes over one table: browse a week, or follow a team. Tabular numerals and a
+   fixed logo box so 16 rows line up as a column rather than 16 independent rows. */
+.sched-weeks { flex-wrap: wrap; }
+.sched-weeks .filter-pill { min-width: 2.4rem; text-align: center; padding: .38rem .5rem; }
+.sched-team-row { display: flex; align-items: center; gap: .6rem; margin: .2rem 0 1.2rem; }
+.sched-team-label { color: var(--text-3); font-size: .8rem; }
+.sched-team-select {
+  font-family: inherit; font-size: .85rem; color: var(--text-1);
+  background: var(--surface-2); border: 1px solid var(--divider);
+  border-radius: var(--r-pill); padding: .4rem .7rem; max-width: 16rem;
+}
+.sched-team-select:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.sched-group { margin: 1.4rem 0; }
+.sched-day {
+  font-size: .8rem; font-weight: 750; color: var(--text-3); margin: 0 0 .5rem;
+  letter-spacing: .02em;
+}
+.sched-list { border-radius: var(--r-md); background: var(--surface-1); overflow: hidden; }
+.sched-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) 9.5rem minmax(0, 1.2fr);
+  gap: .6rem; align-items: center; padding: .6rem .9rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.sched-row:last-child { border-bottom: 0; }
+.sched-week { color: var(--text-4); font-size: .7rem; font-weight: 750; min-width: 2rem; }
+.sched-side { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+.sched-side img { width: 22px; height: 22px; object-fit: contain; flex: 0 0 22px; }
+.sched-side b { color: var(--text-1); font-weight: 700; font-size: .85rem; }
+.sched-side.home { justify-content: flex-start; }
+.sched-score { color: var(--text-2); font-variant-numeric: tabular-nums; margin-left: .2rem; }
+.sched-at { color: var(--text-4); font-size: .75rem; }
+.sched-when { color: var(--text-2); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.sched-venue { color: var(--text-4); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sched-row.final .sched-when { color: var(--text-4); }
+@media (max-width: 720px) {
+  /* The venue is the first thing to go: on a phone the matchup and the kickoff are
+     what the page is for. */
+  .sched-row { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); row-gap: .2rem; }
+  .sched-when { grid-column: 2 / -1; font-size: .75rem; }
+  .sched-venue { display: none; }
+}

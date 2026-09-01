@@ -156,6 +156,15 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
     except Exception as exc:
         out["standings_error"] = str(exc)
 
+    # The NFL season schedule, so it can be browsed by week or team. Rarely changes —
+    # a flex moves a kickoff, not a matchup — so once per run is ample, and like the
+    # other collectors a failure must not fail the run.
+    try:
+        from src.nfl_schedule import collect as collect_nfl_schedule
+        out["nfl_schedule"] = collect_nfl_schedule(date.today().year)
+    except Exception as exc:
+        out["nfl_schedule_error"] = str(exc)
+
     # How interesting the finished games actually were, so the editorial score has a
     # feedback loop rather than accumulating unchecked. Non-fatal: this is analysis,
     # and a network wobble must not fail the daily rebuild.

@@ -1,0 +1,58 @@
+{% extends "web/base.html" %}
+{% block title %}NFL Schedule · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero">
+  <div>
+    <div class="eyebrow">The whole season, not just today</div>
+    <h1 class="page-title">NFL Schedule{% if season %} · {{ season }}{% endif %}</h1>
+  </div>
+</section>
+
+{% if weeks %}
+<section class="filter-row" aria-label="Week">
+  <div class="filter-pills sched-weeks">
+    {% for w in weeks %}<a class="filter-pill {% if mode == 'week' and w == week %}active{% endif %}" href="{% url 'nfl-schedule' %}?week={{ w }}" aria-label="Week {{ w }}"{% if mode == 'week' and w == week %} aria-current="page"{% endif %}>{{ w }}</a>{% endfor %}
+  </div>
+</section>
+
+{% comment %}A second axis, not a second page: the same 272 games, asked about
+differently. A <select> rather than 32 pills — a row of team chips would be longer than
+the schedule it filters.{% endcomment %}
+<section class="sched-team-row">
+  <label class="sched-team-label" for="team-pick">Or follow one team</label>
+  <select id="team-pick" class="sched-team-select" data-team-jump>
+    <option value="">All teams — browse by week</option>
+    {% for abbr, name in teams %}<option value="{{ abbr }}"{% if abbr == team %} selected{% endif %}>{{ name }}</option>{% endfor %}
+  </select>
+  {% if team %}<a class="text-link" href="{% url 'nfl-schedule' %}">Clear</a>{% endif %}
+</section>
+{% endif %}
+
+{% if groups %}
+  {% for group in groups %}
+  <section class="sched-group">
+    <h2 class="sched-day">{{ group.title }}</h2>
+    <div class="sched-list">
+      {% for g in group.games %}
+      <div class="sched-row{% if g.final %} final{% endif %}">
+        {% if g.show_week %}<span class="sched-week">W{{ g.week }}</span>{% endif %}
+        <span class="sched-side away">
+          <img src="{{ g.away_logo }}" alt="" width="22" height="22" loading="lazy">
+          <b>{{ g.away_abbr }}</b>{% if g.final %}<span class="sched-score">{{ g.away_score }}</span>{% endif %}
+        </span>
+        <span class="sched-at">@</span>
+        <span class="sched-side home">
+          <img src="{{ g.home_logo }}" alt="" width="22" height="22" loading="lazy">
+          <b>{{ g.home_abbr }}</b>{% if g.final %}<span class="sched-score">{{ g.home_score }}</span>{% endif %}
+        </span>
+        <span class="sched-when">{% if g.final %}Final{% else %}{{ g.kickoff }}{% endif %}</span>
+        <span class="sched-venue">{{ g.venue|default:"" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+{% else %}
+  <div class="notice">The season schedule has not been collected yet. It arrives with the next daily run.</div>
+{% endif %}
+{% endblock %}
