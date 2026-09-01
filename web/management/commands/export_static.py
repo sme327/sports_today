@@ -148,6 +148,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--out", type=Path, default=settings.BASE_DIR / "site-dist")
         parser.add_argument("--max-pages", type=int, default=10_000)
+        # A bounded export, for tests that need to assert on *built* HTML without
+        # waiting minutes for the whole site. The standards checks used to read the
+        # checked-in site-dist/ instead, which meant they asserted on the last publish
+        # rather than the current code — and skipped silently when it was absent, so a
+        # fresh clone reported green while checking nothing.
+        parser.add_argument("--seeds", default="",
+                            help="comma-separated URLs to export instead of the full set")
+        parser.add_argument("--no-crawl", action="store_true",
+                            help="export only the seeds; do not follow links out of them")
 
     def handle(self, *args, **options):
         out: Path = options["out"].resolve()
@@ -158,7 +167,9 @@ class Command(BaseCommand):
         out.mkdir(parents=True)
 
         client = Client(HTTP_HOST="localhost")
-        queue = deque(_SEEDS)
+        seeds = tuple(s for s in options["seeds"].split(",") if s) or _SEEDS
+        crawl = not options["no_crawl"]
+        queue = deque(seeds)
         pages: dict[str, str] = {}
         paths: dict[str, Path] = {}
         failures: list[tuple[str, int]] = []
@@ -182,7 +193,7 @@ class Command(BaseCommand):
             # card's link still resolves in the exported HTML.
             if response.status_code in (301, 302, 307, 308):
                 target = canonical_url(response.headers.get("Location", ""), url)
-                if target and should_crawl(target):
+                if crawl and target and should_crawl(target):
                     queue.append(target)
                     redirects[url] = target
                 continue
@@ -194,7 +205,7 @@ class Command(BaseCommand):
             paths[url] = output_path(url)
             for match in _HREF.finditer(html):
                 target = canonical_url(match.group(2), url)
-                if target and should_crawl(target) and target not in pages:
+                if crawl and target and should_crawl(target) and target not in pages:
                     queue.append(target)
 
         for url, html in pages.items():

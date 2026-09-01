@@ -39,3 +39,4 @@ data/mls/*.csv
 data/experiments/
 # Generated Cloudflare Pages bundle
 site-dist/
+.test-export/

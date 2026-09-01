@@ -9,6 +9,39 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-01 — The ingested NFL seasons are data, not a surface
+
+**Decision.** The 2023-2025 Big Data Ball seasons stay in the database and stay out of
+the site. No archive index, no URLs for games played before the current season. The
+tables (`nfl_team_games`, `nfl_player_games`) remain exactly as they are, because that is
+what the deep-dive's analytics read and what any future modelling would use.
+
+**Reason.** The archive page had been unlinked for a while — not by choice, but because
+linking it broke the export: `/nfl/` lists a page per week, none of which the crawler
+builds, so putting it in the header menu produced 640 broken links in one publish. The
+question that came out of fixing that was whether to export seventeen more week pages or
+drop the surface, and the answer is that the old seasons were never wanted on the site.
+They were loaded to have data to model with.
+
+The current footprint is already correct: 51 NFL pages, all of them the season schedule
+browser, and no game pages for prior seasons. This entry exists so that state is
+deliberate rather than an accident of the export bound, and so nobody "fixes" the missing
+link later.
+
+**Tradeoffs.** `views.nfl_archive` and its template stay in the tree and still work
+locally, which is useful for eyeballing the ingested seasons; they are simply never
+exported and never linked. `should_crawl` keeps excluding everything under `/nfl/`
+except the schedule browser, so the bound that prevents the explosion is also the bound
+that enforces this decision — a single rule doing two jobs, worth knowing if either is
+ever changed.
+
+**Future considerations.** In-season NFL games *do* get pages, through the slate: a
+played, feed-covered game redirects to its archive page and every other one gets a
+pregame page. That is this season's games, which is the intent — the exclusion is about
+history, not about the league.
+
+---
+
 ## 2026-09-01 — The season, and the window a race page lives inside
 
 **Decision.** Two league surfaces and the rule that governs when one of them exists.
