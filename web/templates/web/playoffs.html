@@ -3,7 +3,7 @@
 {% block content %}
 <section class="analytics-hero playoff-hero">
   <div>
-    <div class="eyebrow">If the season ended today</div>
+    <div class="eyebrow">{{ eyebrow }}</div>
     <h1 class="page-title">MLB playoff race</h1>
     <p class="page-read">The current six-team field in each league, the nearest chasers, and the games that can move those races.</p>
   </div>
@@ -59,6 +59,6 @@
   {% elif not schedule_available %}<div class="notice">The race is current, but the remaining schedule could not be refreshed for this build.</div>
   {% else %}<div class="notice">No matchup in the next two weeks clears the race-importance threshold.</div>{% endif %}
 </section>
-<p class="quiet-note">This is a standings-based snapshot, not playoff odds. Ties and official postseason tiebreakers are not projected.</p>
+<p class="quiet-note">{{ disclaimer }}</p>
 {% else %}<div class="notice">No current MLB standings are loaded yet. The race will appear after the next daily update.</div>{% endif %}
 {% endblock %}

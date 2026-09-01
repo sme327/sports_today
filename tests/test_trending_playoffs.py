@@ -211,3 +211,73 @@ def test_wnba_mirrors_the_mlb_card_contract(tmp_path):
     card = next(s for s in ctx["sections"] if s["cards"])["cards"][0]
     assert set(card) >= {"market", "icon", "player_id", "name", "team", "headshot",
                          "headline", "detail", "tone", "value"}
+
+
+# --- When the playoff page is live, and when it stops being true ----------------------
+
+def _fake_table(records, league="MLB"):
+    from services.standings import TeamStanding
+    return {str(i): TeamStanding(
+        team_id=str(i), team_name=f"T{i}", division="D", division_rank=1,
+        wins=w, losses=l, ties=0, games_behind=0, streak=None, last_ten=None)
+        for i, (w, l) in enumerate(records)}
+
+
+def test_the_window_opens_on_games_left_not_a_date():
+    """A date breaks on a lockout or a shortened season and has to be re-derived per
+    league. Games left is what actually decides whether a race is legible."""
+    from services import playoff_window as W
+
+    assert W.state("MLB", _fake_table([(60, 50)])) == "early"      # 52 left, July
+    assert W.state("MLB", _fake_table([(80, 52)])) == "live"       # 30 left, late Aug
+    assert W.state("NFL", _fake_table([(7, 3)])) == "early"        # 8 left, week 10
+    assert W.state("NFL", _fake_table([(8, 4)])) == "live"         # 6 left, week 12
+
+
+def test_the_thresholds_differ_because_leverage_does():
+    """MLB opens at ~85% of the season played and the NFL at ~65%. That is leverage per
+    game, not inconsistency: six football games make a two-game deficit close to fatal."""
+    from services import playoff_window as W
+
+    mlb_len, mlb_gate = W.LEAGUE_WINDOWS["MLB"]
+    nfl_len, nfl_gate = W.LEAGUE_WINDOWS["NFL"]
+    assert (mlb_len - mlb_gate) / mlb_len > (nfl_len - nfl_gate) / nfl_len
+
+
+def test_a_finished_season_persists_but_is_worded_as_finished():
+    """The race stays up through the offseason — how it ended is a real record — but it
+    must not still say "if the season ended today" about a season that has."""
+    from services import playoff_window as W
+
+    assert W.state("MLB", _fake_table([(100, 62)])) == "final"
+    eyebrow, disclaimer = W.headline("MLB", "final")
+    assert "finished" in eyebrow.lower()
+    assert "over" in disclaimer.lower()
+    assert "if the season ended today" not in eyebrow.lower()
+
+
+def test_the_new_season_is_the_off_switch():
+    """Standings reset to 0-0 when the next season starts. Last year's race must not sit
+    beside this year's schedule."""
+    from services import playoff_window as W
+
+    assert W.state("MLB", _fake_table([(0, 0), (0, 0)])) == "preseason"
+    assert W.state("MLB", {}) == "preseason"
+
+
+def test_a_team_with_games_in_hand_cannot_hold_the_page_open():
+    """The gate reads the *fewest* games any club has left. Taking the maximum would keep
+    a resolved race live on one rained-out team."""
+    from services import playoff_window as W
+
+    assert W.state("MLB", _fake_table([(100, 62), (95, 60)])) == "live"
+
+
+def test_an_out_of_window_page_renders_nothing_rather_than_a_stale_race():
+    from datetime import date
+
+    from services import mlb_playoffs
+
+    ctx = mlb_playoffs.build_context(
+        date(2026, 5, 1), schedule_fetcher=lambda a, b: [])
+    assert ctx["has_data"] is False and ctx["panels"] == []

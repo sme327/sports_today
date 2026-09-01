@@ -13,7 +13,7 @@ graded prop using only pre-slate data. Ship only if it widens the band spread **
 lifts the top 20%. (batter-hit-v4 failed both and was rejected.)
 All tests run offline (no network); schedule payloads are stubbed/recorded.
 
-## Test suites (831 tests passing)
+## Test suites (837 tests passing)
 
 | File | Covers |
 | --- | --- |

@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
-from services import standings
+from services import playoff_window, standings
 from src.config import DB_PATH
 from src.mlb_api import schedule_range
 
@@ -54,7 +54,9 @@ def _race_rows(table: dict) -> tuple[list[dict], dict[str, dict]]:
 def _team_row(team, *, seed=None, status: str, gap: str) -> dict:
     return {"id": team.team_id, "seed": seed, "name": team.team_name, "logo": team.logo,
             "record": team.record, "status": status, "gap": gap,
-            "remaining": max(0, 162 - team.wins - team.losses), "streak": team.streak or ""}
+            "remaining": playoff_window.games_remaining(
+                "MLB", team.wins, team.losses, team.ties),
+            "streak": team.streak or ""}
 
 
 def _rival_meetings(games: list[dict], status: dict[str, dict]) -> dict[str, int]:
@@ -136,6 +138,18 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH,
                   schedule_fetcher: Callable = schedule_range) -> dict:
     today = as_of or date.today()
     table = standings.for_league("MLB", today, db_path=db_path)
+
+    # Before the window there is no race to describe, and once the next season starts
+    # last year's is not a race either. Both states render nothing rather than a page
+    # that quietly misdates itself.
+    window = playoff_window.state("MLB", table)
+    if window in ("early", "preseason"):
+        return {"section": "playoffs", "league": "MLB", "panels": [], "games": [],
+                "schedule_available": True, "window_end": None, "as_of": today,
+                "has_data": False, "window": window,
+                "eyebrow": playoff_window.headline("MLB", window)[0],
+                "disclaimer": playoff_window.headline("MLB", window)[1]}
+
     panels, status = _race_rows(table)
     end = today + timedelta(days=14)
     # The regular season ends in the first days of October; asking to the end of the
@@ -153,9 +167,12 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH,
         for row in (*panel["field"], *panel["bubble"]):
             row["vs_rivals"] = meetings.get(str(row["id"]))
 
-    window = [g for g in schedule if str(g.get("date") or g.get("game_date") or "")[:10] <= end.isoformat()] \
+    in_window = [g for g in schedule
+                 if str(g.get("date") or g.get("game_date") or "")[:10] <= end.isoformat()] \
         if schedule else []
+    eyebrow, disclaimer = playoff_window.headline("MLB", window)
     return {"section": "playoffs", "league": "MLB", "panels": panels,
-            "games": _important_games(window or schedule, status),
+            "window": window, "eyebrow": eyebrow, "disclaimer": disclaimer,
+            "games": _important_games(in_window or schedule, status),
             "schedule_available": schedule_available,
             "window_end": end, "as_of": today, "has_data": bool(table)}
