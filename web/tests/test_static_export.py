@@ -27,6 +27,13 @@ def test_primary_export_paths_are_readable():
 
 
 def test_crawler_keeps_bounded_performance_controls_and_excludes_nfl_archive():
+    """The NFL archive stays out of the static export until its week pages come with it.
+
+    Exporting the index alone does not work: it links a page per week, so the audit
+    fails on *its* links instead. That is the NFL schedule work, not a seed entry — and
+    until then nothing may link to it, because a header-menu link appears on every page
+    and turns one dead end into hundreds of broken links.
+    """
     assert should_crawl("/performance/?period=30&market=hits&direction=over")
     assert not should_crawl("/performance/?period=30&league=MLB")
     assert not should_crawl("/performance/?period=30&league=MLB&market=hits")
@@ -610,3 +617,14 @@ def test_opportunity_rows_expose_the_game_they_belong_to():
         game_id="824636",
     )
     assert 'data-pick-game-id="824636"' in _pick_attrs(opp)
+
+
+def test_every_page_the_header_menu_links_to_is_exported():
+    """The menu points at these from *every* page, so one unexported target is not one
+    broken link but hundreds — which is exactly what happened when the NFL archive was
+    added to the menu while the crawler still skipped it (640 broken links)."""
+    from web.management.commands.export_static import _SEEDS, should_crawl
+
+    for path in ("/performance/", "/results/", "/standings/"):
+        assert path in _SEEDS, f"{path} is linked from the header menu but never seeded"
+        assert should_crawl(f"https://sports.sme327.com{path}"), f"{path} is not crawlable"
