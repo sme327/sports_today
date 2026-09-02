@@ -25,6 +25,25 @@ Django yet", which was migration scaffolding left standing after the migration.{
   {% elif start_time %}<div class="sh-time"{% if start_utc %} data-start-utc="{{ start_utc }}"{% endif %}>{{ start_time }}</div>{% endif %}
 </section>
 
+{% comment %}The market's read, on the one page that has almost nothing else. It is
+shown in the book's own phrasing and attributed to it, sits *after* our own read so it
+never looks like the basis for it, and states plainly that it is not ours and not a
+prediction of ours. It reaches no score — see web/simple_game._market_line.{% endcomment %}
+{% if market_line %}
+<section class="market-line" aria-label="Market line">
+  <div class="market-line-head">What the market makes of it</div>
+  <div class="market-line-numbers">
+    <span class="market-figure"><b>{{ market_line.detail }}</b><small>spread</small></span>
+    {% if market_line.total %}<span class="market-figure"><b>{{ market_line.total }}</b><small>total</small></span>{% endif %}
+  </div>
+  <p class="market-line-note">
+    {% if market_line.provider %}Posted by {{ market_line.provider }}.{% endif %}
+    Lines move; this is the one shown when the page was built. It is the market's view,
+    not ours, and nothing on this site is scored from it.
+  </p>
+</section>
+{% endif %}
+
 {{ editorial_html|safe }}
 
 <section class="analytics-section">

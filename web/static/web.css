@@ -651,3 +651,20 @@ html[data-slate-stale] .opportunity-section { display: none; }
 @media (max-width: 860px) {
   .division-races { grid-template-columns: 1fr; }
 }
+
+/* --- Market line (NCAAF only) -----------------------------------------------------
+   Deliberately not styled like our own evidence: no orange, no accent rule, a plain
+   surface and a stated source. It is quoted material, and it should read as quoted. */
+.market-line {
+  margin: 1rem 0; padding: .9rem 1rem; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px dashed var(--divider);
+}
+.market-line-head {
+  color: var(--text-4); font-size: .64rem; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase; margin-bottom: .5rem;
+}
+.market-line-numbers { display: flex; gap: 1.6rem; }
+.market-figure { display: flex; flex-direction: column; gap: .1rem; }
+.market-figure b { color: var(--text-1); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.market-figure small { color: var(--text-4); font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; }
+.market-line-note { margin: .6rem 0 0; color: var(--text-3); font-size: .76rem; line-height: 1.45; }

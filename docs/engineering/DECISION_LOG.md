@@ -9,6 +9,54 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-02 — A market line on college football pages, and nowhere else
+
+**Decision.** NCAAF matchup pages show the spread and total from ESPN's scoreboard,
+attributed to the book that posted them. No other league. The number is **displayed and
+never consumed**: it reaches no score, no ranking and no signal, and two tests enforce
+that rather than one.
+
+**Reason.** The odds ban has always been about odds as an *input to our judgment* —
+`services/editorial` is barred from them by a guard on its own source, and that guard
+stays. This is a different act: quoting someone else's number, in their words, on a page
+that has almost nothing of its own. `services/mlb_odds` has ingested historical lines for
+a year, so the project was never odds-free; it was odds-free in its *scoring*, which is
+the part worth protecting.
+
+College football is the one place where this is worth doing. That page is the weakest in
+the product by a distance: before a record exists, two 0-0 teams produce **zero**
+editorial signals, which is why `services/ncaaf_context` had to be written to give the
+opener anything to say at all. And the sport's defining feature is talent disparity —
+the first slate carried IU -40.5 and Alabama -28.5. A forty-point spread answers "is this
+a real game" in one number that three editorial signals only gesture at.
+
+**Tradeoffs.** The obvious risk is that a market number beside our own read looks like
+our endorsement of it, so the presentation is deliberately un-ours: a dashed border
+rather than the accent rule our evidence uses, no orange, ESPN's own phrasing rather
+than a sentence we wrote, placed *after* our read so it cannot look like its basis, and
+a line saying plainly that it is the market's view and that nothing here is scored from
+it. Lines move, and a static export cannot follow them, so the page says the number is
+the one shown when it was built.
+
+The second risk is the precedent. It is scoped to a set of one (`_MARKET_LINE_LEAGUES`)
+and asserted as such. MLB is the case to keep refusing: there a spread would sit beside
+props we score, and a reader would fairly read the pairing as a claim about our numbers.
+
+The guard needed strengthening for this. The existing AST check proves `editorial` never
+*names* odds; it cannot prove it never *uses* them, and a future signal could reach
+`game.meta` without writing the word. A behavioural test now asserts the interest score,
+its signals and their evidence are identical with and without a line present — including
+a forty-point spread, the input most likely to expose a leak.
+
+**Future considerations.** The genuinely valuable use of odds here is not decoration but
+**evaluation**: closing line value is the sharpest available test of whether a pick had
+edge, sharper than lift over base rate. That would use the market to grade ourselves
+rather than to inform ourselves, which is a different question again and does not touch
+this decision. Free multi-book odds are available unauthenticated from Action Network's
+scoreboard endpoint (2026-08-31) if that is ever taken up.
+
+---
+
 ## 2026-09-01 — The ingested NFL seasons are data, not a surface
 
 **Decision.** The 2023-2025 Big Data Ball seasons stay in the database and stay out of

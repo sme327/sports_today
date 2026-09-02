@@ -466,3 +466,53 @@ def test_even_needs_both_sides_good_not_merely_similar():
     kinds = lambda g: {s.kind for s in interest(g, norm).signals}
     assert "even" in kinds(slate[0])
     assert "even" not in kinds(slate[1])
+
+
+# --- the market line is displayed, never consumed (2026-09-02) ------------------------
+
+def test_the_interest_score_is_identical_with_and_without_a_market_line():
+    """The behavioural half of the odds ban.
+
+    NCAAF matchup pages now show a spread and total, because that page has the least to
+    work with in the product and a college spread is the densest fact available about a
+    forty-point mismatch. The AST guard above proves `editorial` never *names* odds; this
+    proves it never *uses* them, which is the property that actually matters — a future
+    signal could reach `game.meta` without writing the word.
+    """
+    import dataclasses
+
+    base = _g("6-1", "5-2", away="East Carolina", home="Alabama")
+    with_line = dataclasses.replace(base, meta={
+        **(base.meta or {}),
+        "market_line": {"detail": "ALA -28.5", "spread": -28.5, "total": 52.5,
+                        "favourite": "ALA", "provider": "Draft Kings"},
+    })
+
+    plain, priced = interest(base), interest(with_line)
+    assert plain.score == priced.score
+    assert [s.kind for s in plain.signals] == [s.kind for s in priced.signals]
+    assert [(s.label, s.detail) for s in plain.signals] == \
+           [(s.label, s.detail) for s in priced.signals]
+    assert [s.evidence for s in plain.signals] == [s.evidence for s in priced.signals]
+
+
+def test_a_wildly_lopsided_line_still_moves_nothing():
+    """A forty-point spread is the strongest statement a market makes. If odds were
+    leaking into the score anywhere, this is the input that would expose it."""
+    import dataclasses
+
+    base = _g("1-0", "1-0", away="North Texas", home="Indiana")
+    lopsided = dataclasses.replace(base, meta={
+        **(base.meta or {}),
+        "market_line": {"detail": "IU -40.5", "spread": -40.5, "total": 55.5,
+                        "favourite": "IU", "provider": "Draft Kings"},
+    })
+    assert interest(base).score == interest(lopsided).score
+
+
+def test_only_college_football_shows_a_line():
+    """Scoped on purpose. On an MLB page a spread would sit beside props we score, and a
+    reader would fairly read it as our endorsement of the market's view."""
+    from web.simple_game import _MARKET_LINE_LEAGUES
+
+    assert _MARKET_LINE_LEAGUES == {"NCAAF"}

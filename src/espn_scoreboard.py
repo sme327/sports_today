@@ -61,6 +61,43 @@ def _int(value: object) -> int | None:
 _DH_GAME = re.compile(r"doubleheader\s*[-–—]\s*game\s*(\d+)", re.I)
 
 
+def market_line(comp: dict) -> dict | None:
+    """The book's own read of a game: spread, total, and who is favoured.
+
+    Captured for **display only**, on the one surface that has almost nothing else to
+    say — a college football matchup between two teams nobody has a record for. It is
+    someone else's number, attributed to the book that set it, and it never enters a
+    score: `services/editorial` is barred from odds by a guard on its own source, and a
+    second test asserts the interest score is byte-identical whether this is present or
+    absent. Displayed, never consumed.
+    """
+    odds = (comp.get("odds") or [None])[0]
+    if not odds:
+        return None
+    spread, total = odds.get("spread"), odds.get("overUnder")
+    if spread is None and total is None:
+        return None
+
+    def _side(key):
+        team = (odds.get(key) or {}).get("team") or {}
+        return team.get("abbreviation") or team.get("displayName")
+
+    favourite = None
+    for key in ("homeTeamOdds", "awayTeamOdds"):
+        if (odds.get(key) or {}).get("favorite"):
+            favourite = _side(key)
+    return {
+        # ESPN's own phrasing ("IU -40.5"), which already names the favourite and is
+        # the least editorialised form of the number.
+        "detail": (odds.get("details") or "").strip() or None,
+        "spread": spread,
+        "total": total,
+        "favourite": favourite,
+        "provider": ((odds.get("provider") or {}).get("name")
+                     or (odds.get("provider") or {}).get("displayName")),
+    }
+
+
 def _doubleheader_game(comp: dict) -> int | None:
     """Which game of a doubleheader this is, from ESPN's own note, or ``None``.
 
@@ -173,6 +210,8 @@ def parse_events(payload: dict) -> list[dict]:
             "away_road_record": venue_record(away, home=False),
             "home_home_record": venue_record(home, home=True),
             "conference_game": bool(comp.get("conferenceCompetition")),
+            # Display-only; see market_line. Nothing that scores or ranks may read this.
+            "market_line": market_line(comp),
         })
     return games
 

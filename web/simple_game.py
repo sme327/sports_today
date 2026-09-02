@@ -37,6 +37,27 @@ _GAPS = ("This league arrives as a schedule only — no play-by-play or season f
          "built from those alone. Injuries, weather and travel are not modelled.")
 
 
+# College football only, as an experiment (decision log 2026-09-02). This page has the
+# least to work with in the whole product — before a record exists, two 0-0 teams produce
+# no editorial signals at all — and a spread is the single most information-dense fact
+# available about a college game, where talent gaps run to forty points.
+#
+# It is shown, never used. The number is attributed to the book that set it, phrased in
+# ESPN's own words rather than ours, and it reaches no score: `services/editorial` is
+# barred from odds by a guard on its source, and a second test asserts the interest score
+# is identical whether the line is present or absent.
+_MARKET_LINE_LEAGUES = {"NCAAF"}
+
+
+def _market_line(game: SlateGame) -> dict | None:
+    if game.league not in _MARKET_LINE_LEAGUES:
+        return None
+    line = (game.meta or {}).get("market_line")
+    if not isinstance(line, dict) or not line.get("detail"):
+        return None
+    return line
+
+
 def simple_game_context(game: SlateGame, slate_date: date, day: str) -> dict:
     adapter = get_adapter(game.league)
     label = adapter.label if adapter else game.league
@@ -93,4 +114,5 @@ def simple_game_context(game: SlateGame, slate_date: date, day: str) -> dict:
         "start_time": format_game_time(game.start_time),
         "start_utc": utc_start_iso(game.start_time),
         "score_line": score_line, "editorial_html": read, "gaps": _GAPS,
+        "market_line": _market_line(game),
     }
