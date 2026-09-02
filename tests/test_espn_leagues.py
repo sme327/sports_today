@@ -204,3 +204,44 @@ def test_ncaaf_week_zero_offers_the_simplified_matchup_dry_run():
                          start_time=datetime(2026, 9, 3, 22, tzinfo=timezone.utc),
                          away_name="A", home_name="B", away_record="0-0", home_record="0-0")
     assert adapter.deep_dive_available(week_one) is False
+
+
+def test_the_market_line_survives_the_adapter():
+    """The parser captured it and the adapter dropped it.
+
+    `_espn_schedule` builds its own `meta` rather than passing the parsed row through, so
+    a new field is only present if it is copied by name. The line was parsed correctly,
+    published, and rendered nowhere — the failure looked like an odds problem and was a
+    plumbing one, one layer above where the field was added.
+    """
+    from datetime import date
+    from unittest.mock import patch
+
+    from leagues.base import get_adapter
+
+    row = {
+        "game_id": "1", "game_date": "2026-09-03T23:00Z", "away": "Colorado",
+        "home": "Georgia Tech", "away_short": "Colorado", "home_short": "Georgia Tech",
+        "market_line": {"detail": "GT -6.5", "spread": -6.5, "total": 51.5,
+                        "favourite": "GT", "provider": "Draft Kings"},
+    }
+    with patch("src.espn_scoreboard.fetch", return_value=[row]):
+        games = get_adapter("NCAAF").fetch_schedule(date(2026, 9, 3))
+
+    assert games[0].meta["market_line"]["detail"] == "GT -6.5"
+    assert games[0].meta["market_line"]["total"] == 51.5
+
+
+def test_a_game_without_a_line_carries_none_rather_than_an_empty_shape():
+    """Most sports and most days have no line. Absent must be absent, so the page can
+    simply not render the section rather than showing an empty one."""
+    from datetime import date
+    from unittest.mock import patch
+
+    from leagues.base import get_adapter
+
+    with patch("src.espn_scoreboard.fetch",
+               return_value=[{"game_id": "1", "game_date": "2026-09-03T23:00Z",
+                              "away": "A", "home": "B"}]):
+        games = get_adapter("NCAAF").fetch_schedule(date(2026, 9, 3))
+    assert games[0].meta["market_line"] is None

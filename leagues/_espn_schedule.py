@@ -139,6 +139,11 @@ class ScheduleOnlyESPN:
                     "venue_state": g.get("venue_state"),
                     "venue_country": g.get("venue_country"),
                     "event_note": g.get("event_note"),
+                    # Display-only, and read by exactly one page (college football's
+                    # matchup view). Nothing that scores or ranks may consult it — a
+                    # behavioural test asserts the editorial score is unchanged whether
+                    # it is present or absent.
+                    "market_line": g.get("market_line"),
                 },
             ))
         return games
