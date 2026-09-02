@@ -18,6 +18,7 @@ from components.editorial import editorial_empty_html, editorial_html
 from components.format import format_game_time, utc_start_iso
 from domain.models import SlateGame
 from leagues.base import get_adapter
+from src.espn_scoreboard import MARKET_LINE_LEAGUES as _MARKET_LINE_LEAGUES
 from services import editorial
 from services.editorial import GameInterest
 
@@ -46,7 +47,7 @@ _GAPS = ("This league arrives as a schedule only — no play-by-play or season f
 # ESPN's own words rather than ours, and it reaches no score: `services/editorial` is
 # barred from odds by a guard on its source, and a second test asserts the interest score
 # is identical whether the line is present or absent.
-_MARKET_LINE_LEAGUES = {"NCAAF"}
+
 
 
 def _market_line(game: SlateGame) -> dict | None:

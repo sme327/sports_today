@@ -668,3 +668,13 @@ html[data-slate-stale] .opportunity-section { display: none; }
 .market-figure b { color: var(--text-1); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .market-figure small { color: var(--text-4); font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; }
 .market-line-note { margin: .6rem 0 0; color: var(--text-3); font-size: .76rem; line-height: 1.45; }
+
+/* Market line on a game card. Quoted, not asserted: no accent colour, a dashed
+   underline to mark it as sourced elsewhere, and tabular numerals so a column of them
+   lines up. Allowed to wrap — a nowrap run in a card once sized the whole phone column
+   and pushed every card off the right edge. */
+.market-chip {
+  color: var(--text-3); font-size: .72rem; font-variant-numeric: tabular-nums;
+  border-bottom: 1px dashed var(--divider); padding-bottom: .05rem;
+}
+@media (max-width: 720px) { .market-chip { font-size: .68rem; } }

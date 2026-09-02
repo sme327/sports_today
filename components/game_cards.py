@@ -7,6 +7,7 @@ from urllib.parse import quote_plus
 
 from components.format import format_game_time, logo_img, utc_start_iso
 from components.navigation import game_href
+from src.espn_scoreboard import MARKET_LINE_LEAGUES
 from domain.models import SlateGame
 from leagues.base import get_adapter
 from services.editorial import LeagueNorm, card_signal
@@ -56,6 +57,32 @@ def _focus_href(day: str, game: SlateGame) -> str:
     return f"?day={quote_plus(day)}&focus={quote_plus(str(game.game_id))}#opps"
 
 
+def _market_chip(game: SlateGame) -> str:
+    """The book's spread and total, on the card.
+
+    Sits in the footer next to our own read rather than replacing it: they answer
+    different questions, and on a college slate in September ours is often empty while
+    this is the only thing anyone can say about the game. Kept to one short run —
+    "MIZ -54.5 · O/U 61.5" — because a long `white-space: nowrap` string in a card once
+    sized the whole phone column and pushed every card off the screen.
+
+    Styled as a quotation, not as evidence: no accent, a stated source in the tooltip,
+    and never counted in any score.
+    """
+    if game.league not in MARKET_LINE_LEAGUES:
+        return ""
+    line = (game.meta or {}).get("market_line") or {}
+    detail = line.get("detail")
+    if not detail:
+        return ""
+    total = line.get("total")
+    text = f"{detail} · O/U {total:g}" if total is not None else detail
+    provider = line.get("provider")
+    title = f"Market line{f' from {provider}' if provider else ''} — not our number"
+    return (f'<span class="market-chip" title="{escape(title, quote=True)}" '
+            f'aria-label="{escape(f"Market line: {text}", quote=True)}">{escape(text)}</span>')
+
+
 def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
             threshold: int, deep_dive: bool, norm: LeagueNorm | None = None) -> str:
     """Footer = a strong-pick filter link (left) + a Matchup link (right). Distinct
@@ -93,9 +120,10 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
     matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}" '
                f'aria-label="{escape(f"Matchup detail for {matchup_name}", quote=True)}">'
                f'Matchup →</a>' if deep_dive else "")
-    if not fire and not matchup:
+    market = _market_chip(game)
+    if not fire and not matchup and not market:
         return ""
-    return f'<div class="game-meta">{fire}{matchup}</div>'
+    return f'<div class="game-meta">{fire}{market}{matchup}</div>'
 
 
 def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90,

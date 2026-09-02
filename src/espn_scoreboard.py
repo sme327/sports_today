@@ -61,6 +61,13 @@ def _int(value: object) -> int | None:
 _DH_GAME = re.compile(r"doubleheader\s*[-–—]\s*game\s*(\d+)", re.I)
 
 
+# Leagues allowed to *display* a market line. A set of one, on purpose: college
+# football's matchup page has the least of its own to say, and a spread is the densest
+# fact available about a forty-point mismatch. On an MLB card it would sit beside props
+# we score and read as our endorsement of the market's view (decision log 2026-09-02).
+MARKET_LINE_LEAGUES = frozenset({"NCAAF"})
+
+
 def market_line(comp: dict) -> dict | None:
     """The book's own read of a game: spread, total, and who is favoured.
 

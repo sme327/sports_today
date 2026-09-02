@@ -256,7 +256,6 @@ def test_a_market_line_earns_a_matchup_page():
     anyone has — so gating it behind games-played hid the line on precisely the slates
     it was added for.
     """
-    import leagues  # noqa: F401
     from domain.models import SlateGame
     from leagues.base import get_adapter
 
@@ -275,7 +274,6 @@ def test_a_market_line_earns_a_matchup_page():
 
 def test_an_empty_line_does_not_earn_a_page():
     """Absent must stay absent: a game with no line and no records still has nothing."""
-    import leagues  # noqa: F401
     from domain.models import SlateGame
     from leagues.base import get_adapter
 
@@ -284,3 +282,43 @@ def test_an_empty_line_does_not_earn_a_page():
                      away_record="0-0", home_record="0-0",
                      meta={"market_line": None})
     assert adapter.deep_dive_available(game) is False
+
+
+def test_the_card_carries_the_market_line():
+    """The slate is where the number is most useful — it is what makes one college game
+    on a page of twenty worth opening."""
+    from components.game_cards import game_card_html
+    from domain.models import SlateGame
+
+    game = SlateGame(league="NCAAF", game_id="1", away_short="Idaho", home_short="Utah",
+                     away_record="0-0", home_record="0-0",
+                     meta={"market_line": {"detail": "UTAH -35.5", "spread": -35.5,
+                                           "total": 57.5, "favourite": "UTAH",
+                                           "provider": "Draft Kings"}})
+    html = game_card_html(game, "today")
+    assert "UTAH -35.5" in html and "O/U 57.5" in html
+    # Sourced, and named for a screen reader, which sees no card around it.
+    assert "Draft Kings" in html
+    assert 'aria-label="Market line: UTAH -35.5' in html
+
+
+def test_only_college_football_cards_show_a_line():
+    """On an MLB card it would sit beside props we score and read as our endorsement."""
+    from components.game_cards import game_card_html
+    from domain.models import SlateGame
+
+    line = {"detail": "NYY -1.5", "spread": -1.5, "total": 8.5,
+            "favourite": "NYY", "provider": "Draft Kings"}
+    game = SlateGame(league="MLB", game_id="1", away_short="Red Sox",
+                     home_short="Yankees", meta={"market_line": line})
+    assert "NYY -1.5" not in game_card_html(game, "today")
+
+
+def test_a_card_without_a_line_is_unchanged():
+    """Most games have none, and the footer must not gain an empty element."""
+    from components.game_cards import game_card_html
+    from domain.models import SlateGame
+
+    game = SlateGame(league="NCAAF", game_id="1", away_short="A", home_short="B",
+                     meta={"market_line": None})
+    assert "market-chip" not in game_card_html(game, "today")
