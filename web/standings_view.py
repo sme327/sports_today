@@ -12,9 +12,9 @@ is description like the rest of the product.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 
-from services import standings
+from services import playoff_window, standings
 
 # The order leagues appear, and what each calls its groups. A league only shows up once
 # it has rows, so an offseason league is absent rather than empty.
@@ -31,7 +31,14 @@ POINTS_LEAGUES = ("MLS",)
 # How far back to look for a game before calling a league out of season. Wide enough
 # to survive an All-Star break or a scheduling gap, short enough that a finished
 # season stops showing within a fortnight.
-_IN_SEASON_DAYS = 14
+# Availability is decided by games *remaining*, not by whether a league played recently.
+# The old recency rule was written to catch the opposite problem — ESPN keys a season by
+# its start year, so asking for 2026 in September returns the NBA's *completed* table —
+# and it did that well while failing a case it was never tested against. The WNBA takes
+# two weeks off for the FIBA window, and on day fifteen that rule would have called the
+# league out of season and dropped its standings days before its playoffs. A break and an
+# offseason are indistinguishable through a "recent games" lens; games left tells them
+# apart, and the same window already gates the race page.
 
 
 def available_leagues(as_of: date | None = None, db_path=None) -> list[str]:
@@ -43,45 +50,16 @@ def available_leagues(as_of: date | None = None, db_path=None) -> list[str]:
     refuses to rank an opening night on nothing.
     """
     kwargs = {"db_path": db_path} if db_path else {}
-    playing = _in_season(as_of, db_path)
     out = []
     for league in LEAGUE_ORDER:
-        if league not in playing:
-            continue
         if league in POINTS_LEAGUES:
             if _mls_context(as_of, db_path):
                 out.append(league)
             continue
         table = standings.for_league(league, as_of, **kwargs)
-        if table and any((t.wins + t.losses + t.ties) > 0 for t in table.values()):
+        if playoff_window.state(league, table) in ("early", "live"):
             out.append(league)
     return out
-
-
-def _in_season(as_of: date | None, db_path=None) -> set[str]:
-    """Leagues that have actually had games on a recent slate.
-
-    "Someone has played" is not enough on its own. ESPN keys a season by its *start*
-    year, so asking for 2026 in September returns the NBA's completed 2025-26 table —
-    a full 82-game season, every record final, presented as though it were current. The
-    schedule already knows which leagues are playing; this asks it rather than trying
-    to infer a season calendar per sport.
-    """
-    import sqlite3
-
-    from src.config import DB_PATH
-
-    end = as_of or date.today()
-    start = (end - timedelta(days=_IN_SEASON_DAYS)).isoformat()
-    try:
-        with sqlite3.connect(db_path or DB_PATH) as conn:
-            rows = conn.execute(
-                "SELECT DISTINCT league FROM schedule_cache "
-                "WHERE game_count > 0 AND slate_date BETWEEN ? AND ?",
-                (start, end.isoformat())).fetchall()
-    except sqlite3.OperationalError:
-        return set(LEAGUE_ORDER)      # no cache to consult: do not hide everything
-    return {r[0] for r in rows}
 
 
 def _mls_context(as_of: date | None, db_path=None) -> list[dict]:

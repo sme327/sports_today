@@ -299,3 +299,58 @@ def test_both_new_league_tables_are_exported():
 
     for league in ("WNBA", "MLS"):
         assert f"/standings/?league={league}" in _SEEDS
+
+
+def test_a_mid_season_break_does_not_hide_a_league(tmp_path):
+    """The WNBA takes two weeks off for the FIBA window.
+
+    Availability used to ask whether a league had played in the last fortnight, which
+    made a break and an offseason indistinguishable — on day fifteen the WNBA would have
+    dropped off the menu days before its playoffs. Games *remaining* tells them apart: a
+    league on a break still has games left, a finished season does not.
+    """
+    import sqlite3
+    from datetime import date
+
+    from src import standings_store
+    from web import standings_view
+
+    db = tmp_path / "s.db"
+    conn = sqlite3.connect(db)
+    standings_store.ensure_tables(conn)
+    base = dict(season=2026, snapshot_date=date.today().isoformat(), team_abbr=None,
+                conference="C", division="C", division_rank=1, win_pct=.7,
+                games_behind=0.0, playoff_seed=None, streak=None, last_ten=None,
+                home_record=None, road_record=None, collected_at="x", ties=0)
+    standings_store.upsert(conn, [
+        # Mid-season, on a break: 40 of 44 played, four still to come.
+        dict(base, league="WNBA", team_id="1", team_name="Lynx", wins=31, losses=9),
+        # A finished season, which must stay hidden — the bug this rule was built for.
+        dict(base, league="NBA", team_id="2", team_name="Celtics", wins=56, losses=26),
+    ])
+    conn.commit()
+
+    # No games on the schedule at all, which is what a break looks like.
+    assert standings_view.available_leagues(db_path=db) == ["WNBA"]
+
+
+def test_a_completed_season_is_still_hidden(tmp_path):
+    """The rule this replaced existed because ESPN keys a season by its start year, so
+    asking for 2026 in September returns the NBA's completed table. That must stay fixed."""
+    import sqlite3
+    from datetime import date
+
+    from src import standings_store
+    from web import standings_view
+
+    db = tmp_path / "s.db"
+    conn = sqlite3.connect(db)
+    standings_store.ensure_tables(conn)
+    standings_store.upsert(conn, [dict(
+        league="NBA", season=2026, snapshot_date=date.today().isoformat(), team_id="2",
+        team_name="Celtics", team_abbr=None, conference="East", division="Atlantic",
+        division_rank=1, wins=56, losses=26, ties=0, win_pct=.683, games_behind=0.0,
+        playoff_seed=1, streak=None, last_ten=None, home_record=None, road_record=None,
+        collected_at="x")])
+    conn.commit()
+    assert standings_view.available_leagues(db_path=db) == []
