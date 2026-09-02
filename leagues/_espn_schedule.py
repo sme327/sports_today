@@ -43,9 +43,20 @@ class ScheduleOnlyESPN:
     supports_deep_dive = True
 
     def deep_dive_available(self, game) -> bool:
+        """Offer a page only when it will have something on it.
+
+        The record gate exists so a card stays compact when there is nothing to say. A
+        market line is something to say, and it arrives exactly when the record gate is
+        at its most restrictive: in week one every college team is 0-0, no editorial
+        signal fires, and the spread is the only fact anyone has. Gating that behind
+        games-played made the line unreachable on the slates it was added for.
+        """
         from services.editorial import MIN_GAMES, parse_record
 
         if game.state in ("live", "final") and game.has_score:
+            return True
+        if (game.meta or {}).get("market_line", {}) and \
+                (game.meta or {}).get("market_line", {}).get("detail"):
             return True
         return any(parse_record(rec).games >= MIN_GAMES
                    for rec in (game.away_record, game.home_record))

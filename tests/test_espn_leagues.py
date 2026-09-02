@@ -245,3 +245,42 @@ def test_a_game_without_a_line_carries_none_rather_than_an_empty_shape():
                               "away": "A", "home": "B"}]):
         games = get_adapter("NCAAF").fetch_schedule(date(2026, 9, 3))
     assert games[0].meta["market_line"] is None
+
+
+def test_a_market_line_earns_a_matchup_page():
+    """The record gate made the line unreachable exactly where it matters.
+
+    A page is offered only when it will have something on it, and the record gate is
+    what keeps a card compact when there is nothing to say. But in week one every
+    college team is 0-0, no editorial signal fires, and the spread is the only fact
+    anyone has — so gating it behind games-played hid the line on precisely the slates
+    it was added for.
+    """
+    import leagues  # noqa: F401
+    from domain.models import SlateGame
+    from leagues.base import get_adapter
+
+    adapter = get_adapter("NCAAF")
+    opener = SlateGame(league="NCAAF", game_id="1", away_short="Idaho",
+                       home_short="Utah", away_record="0-0", home_record="0-0")
+    assert adapter.deep_dive_available(opener) is False
+
+    priced = SlateGame(league="NCAAF", game_id="1", away_short="Idaho",
+                       home_short="Utah", away_record="0-0", home_record="0-0",
+                       meta={"market_line": {"detail": "UTAH -35.5", "spread": -35.5,
+                                             "total": 57.5, "favourite": "UTAH",
+                                             "provider": "Draft Kings"}})
+    assert adapter.deep_dive_available(priced) is True
+
+
+def test_an_empty_line_does_not_earn_a_page():
+    """Absent must stay absent: a game with no line and no records still has nothing."""
+    import leagues  # noqa: F401
+    from domain.models import SlateGame
+    from leagues.base import get_adapter
+
+    adapter = get_adapter("NCAAF")
+    game = SlateGame(league="NCAAF", game_id="1", away_short="A", home_short="B",
+                     away_record="0-0", home_record="0-0",
+                     meta={"market_line": None})
+    assert adapter.deep_dive_available(game) is False
