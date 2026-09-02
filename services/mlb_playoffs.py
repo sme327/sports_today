@@ -20,34 +20,79 @@ def _short_conference(value: str | None) -> str:
 
 
 def _race_rows(table: dict) -> tuple[list[dict], dict[str, dict]]:
+    """Two races per league, kept apart, because they are two different questions.
+
+    Winning a division is a contest against four named clubs and carries an automatic
+    place. The Wild Card is a separate contest among everyone who does not win one. A
+    club can be two games back in its division *and* holding a Wild Card at the same
+    time — one table showing only its Wild Card standing says nothing about the race it
+    is actually in, and the page was doing exactly that.
+
+    So each league gets its division races, then its Wild Card race. A club appears in
+    both when it is genuinely in both.
+    """
     conferences: dict[str, list] = {}
     for team in table.values():
         conferences.setdefault(team.conference or "MLB", []).append(team)
+
     panels, status_by_id = [], {}
     for conference, teams in sorted(conferences.items()):
-        leaders = [t for t in teams if t.division_rank == 1]
-        leaders.sort(key=lambda t: (t.win_pct or 0, t.wins), reverse=True)
-        others = [t for t in teams if t.division_rank != 1]
-        others.sort(key=lambda t: (t.win_pct or 0, t.wins), reverse=True)
+        short = _short_conference(conference)
+
+        # --- the division races -------------------------------------------------
+        divisions: dict[str, list] = {}
+        for team in teams:
+            divisions.setdefault(team.division or short, []).append(team)
+        division_panels, leaders = [], []
+        for name, clubs in sorted(divisions.items()):
+            clubs = sorted(clubs, key=lambda t: (t.win_pct or 0, t.wins), reverse=True)
+            leaders.append(clubs[0])
+            rows = []
+            for place, club in enumerate(clubs, 1):
+                gap = max(0.0, _gb(club, clubs[0]))
+                rows.append(_team_row(
+                    club, seed=place,
+                    status="Leads the division" if place == 1 else f"{gap:g} GB in the division",
+                    gap="—" if place == 1 else f"{gap:g} GB"))
+            division_panels.append({"name": name.replace("American League", "AL")
+                                                .replace("National League", "NL"),
+                                    "teams": rows})
+
+        # --- the Wild Card race, which is everyone who is not leading one --------
+        others = sorted((t for t in teams if t not in leaders),
+                        key=lambda t: (t.win_pct or 0, t.wins), reverse=True)
         cutoff = others[2] if len(others) >= 3 else None
-        projected = leaders + others[:3]
-        rows = []
-        for seed, team in enumerate(projected, 1):
-            label = "Division leader" if team in leaders else f"Wild Card {others.index(team) + 1}"
-            row = _team_row(team, seed=seed, status=label, gap="In position")
-            rows.append(row)
-            status_by_id[team.team_id] = {"conference": conference, "division": team.division,
-                                          "gap": 0.0, "status": label, "in_field": True}
-        bubble = []
+        wc_field, wc_bubble = [], []
+        for i, club in enumerate(others[:3], 1):
+            wc_field.append(_team_row(club, seed=i, status=f"Wild Card {i}",
+                                      gap="In position"))
         if cutoff:
-            for team in others[3:]:
-                gap = max(0.0, _gb(team, cutoff))
+            for club in others[3:]:
+                gap = max(0.0, _gb(club, cutoff))
                 if gap <= 8:
-                    row = _team_row(team, status=f"{gap:g} GB of Wild Card", gap=f"{gap:g} GB")
-                    bubble.append(row)
-                    status_by_id[team.team_id] = {"conference": conference, "division": team.division,
-                                                  "gap": gap, "status": row["status"], "in_field": False}
-        panels.append({"name": _short_conference(conference), "field": rows, "bubble": bubble})
+                    wc_bubble.append(_team_row(club, seed=None,
+                                               status=f"{gap:g} GB of the last Wild Card",
+                                               gap=f"{gap:g} GB"))
+
+        # Status for the "games that matter" ranking: a club is in the field if it leads
+        # a division or holds a Wild Card, and its gap is its distance from whichever
+        # race it is closest in.
+        for club in teams:
+            in_field = club in leaders or club in others[:3]
+            if in_field:
+                gap = 0.0
+            else:
+                div_gap = _gb(club, next(c for c in leaders if c.division == club.division))
+                wc_gap = _gb(club, cutoff) if cutoff else 99.0
+                gap = max(0.0, min(div_gap, wc_gap))
+            status_by_id[club.team_id] = {
+                "conference": conference, "division": club.division,
+                "gap": gap, "status": "In the field" if in_field else f"{gap:g} GB",
+                "in_field": in_field}
+
+        panels.append({"name": f"{short} Wild Card", "field": wc_field, "bubble": wc_bubble,
+                       "decided": False, "note": "", "divisions": division_panels,
+                       "division_title": f"{short} division races"})
     return panels, status_by_id
 
 
@@ -146,7 +191,8 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH,
     if window in ("early", "preseason"):
         return {"section": "playoffs", "league": "MLB", "panels": [], "games": [],
                 "schedule_available": True, "window_end": None, "as_of": today,
-                "has_data": False, "window": window,
+                "has_data": False, "window": window, "show_rivals": True,
+                "format_note": "Three division leaders + three Wild Cards",
                 "eyebrow": playoff_window.headline("MLB", window)[0],
                 "disclaimer": playoff_window.headline("MLB", window)[1]}
 
@@ -173,6 +219,8 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH,
     eyebrow, disclaimer = playoff_window.headline("MLB", window)
     return {"section": "playoffs", "league": "MLB", "panels": panels,
             "window": window, "eyebrow": eyebrow, "disclaimer": disclaimer,
+            "show_rivals": True,
+            "format_note": "Three division leaders + three Wild Cards",
             "games": _important_games(in_window or schedule, status),
             "schedule_available": schedule_available,
             "window_end": end, "as_of": today, "has_data": bool(table)}

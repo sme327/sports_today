@@ -60,6 +60,7 @@ _SEEDS = (
     "/", "/?day=tomorrow", "/?day=day-after", "/results/", "/performance/",
     "/standings/", "/trending/", "/playoffs/",
     *(f"/trending/?league={lg}" for lg in ("MLB", "WNBA")),
+    *(f"/playoffs/?league={lg}" for lg in ("MLB", "WNBA")),
     *(f"/standings/?league={lg}" for lg in
       ("MLB", "WNBA", "MLS", "NFL", "NBA", "NHL")),
     # Both axes of the NFL schedule, enumerated rather than crawled: 18 weeks and 32
@@ -92,7 +93,7 @@ def should_crawl(url: str) -> bool:
         return parts.path != "/nfl/"
     if parts.path == "/":
         return True
-    if parts.path == "/trending/":
+    if parts.path in ("/trending/", "/playoffs/"):
         return set(dict(parse_qsl(parts.query))) <= {"league"}
     if parts.path == "/performance/":
         keys = set(dict(parse_qsl(parts.query)))

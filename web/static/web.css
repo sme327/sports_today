@@ -620,3 +620,34 @@ html[data-slate-stale] .opportunity-section { display: none; }
   .race-row { grid-template-columns: 2.2rem minmax(0, 1fr) 4.1rem; }
   .race-row > :nth-child(4), .race-row > :nth-child(5) { display: none; }
 }
+
+/* "Nobody is chasing" and "everybody is eliminated" look identical as an empty list. */
+.race-decided {
+  padding: .7rem .9rem; color: var(--text-3); font-size: .82rem;
+  border-top: 1px solid var(--hairline);
+}
+
+/* --- Division races --------------------------------------------------------------
+   Three small tables side by side, above the Wild Card. Deliberately lighter than the
+   Wild Card table: a division race is five clubs and one number, and giving it the same
+   weight as the six-seed picture would say they are the same kind of thing. */
+.division-races { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; margin-bottom: 1.6rem; }
+.division-race { border-radius: var(--r-md); background: var(--surface-1); overflow: hidden; }
+.division-name {
+  padding: .5rem .7rem; color: var(--text-4); font-size: .64rem; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase; border-bottom: 1px solid var(--hairline);
+}
+.division-row {
+  display: grid; grid-template-columns: 1.2rem minmax(0, 1fr) 3.6rem 3rem;
+  gap: .4rem; align-items: center; padding: .4rem .7rem; font-size: .78rem;
+  color: var(--text-2);
+}
+.division-row.leader { box-shadow: inset 3px 0 0 var(--brand); }
+.division-place { color: var(--text-4); font-weight: 700; }
+.division-team { display: flex; align-items: center; gap: .35rem; min-width: 0; color: var(--text-1); font-weight: 650; }
+.division-team img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 18px; }
+.division-row .num { font-variant-numeric: tabular-nums; }
+.division-gap { color: var(--text-3); }
+@media (max-width: 860px) {
+  .division-races { grid-template-columns: 1fr; }
+}

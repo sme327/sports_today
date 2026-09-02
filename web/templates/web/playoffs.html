@@ -1,39 +1,74 @@
 {% extends "web/base.html" %}
-{% block title %}MLB Playoff Race · Sports Today{% endblock %}
+{% block title %}{{ league }} Playoff Race · Sports Today{% endblock %}
 {% block content %}
 <section class="analytics-hero playoff-hero">
   <div>
     <div class="eyebrow">{{ eyebrow }}</div>
-    <h1 class="page-title">MLB playoff race</h1>
+    <h1 class="page-title">{{ league }} playoff race</h1>
     <p class="page-read">The current six-team field in each league, the nearest chasers, and the games that can move those races.</p>
   </div>
   <a class="text-link" href="{% url 'standings' %}?league=MLB">Full standings →</a>
 </section>
 
 {% if has_data %}
+{% if leagues|length > 1 %}
+<section class="filter-row" aria-label="League">
+  <div class="filter-pills">
+    {% for name in leagues %}<a class="filter-pill {% if name == league %}active{% endif %}" href="{% url 'playoffs' %}?league={{ name }}" aria-label="{{ name }} playoff race"{% if name == league %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <div class="playoff-leagues">
   {% for panel in panels %}
   <section class="playoff-panel">
-    <div class="section-heading"><div><h2>{{ panel.name }} picture</h2><p>Three division leaders + three Wild Cards</p></div></div>
-    <div class="race-table" role="table" aria-label="{{ panel.name }} playoff picture">
+    {% comment %}Two races, kept apart. Winning a division is a contest against four
+    named clubs with an automatic place at the end of it; the Wild Card is a separate
+    contest among everyone who does not win one. A club can be live in both, and one
+    combined table said nothing about the first.{% endcomment %}
+    {% if panel.divisions %}
+    <div class="section-heading"><div><h2>{{ panel.division_title }}</h2><p>Winning one is an automatic place</p></div></div>
+    <div class="division-races">
+      {% for division in panel.divisions %}
+      <div class="division-race" role="table" aria-label="{{ division.name }}">
+        <div class="division-name">{{ division.name }}</div>
+        {% for team in division.teams %}
+        <div class="division-row{% if forloop.first %} leader{% endif %}" role="row">
+          <span class="division-place">{{ team.seed }}</span>
+          <span class="division-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="18" height="18" loading="lazy">{% endif %}{{ team.name }}</span>
+          <span class="num">{{ team.record }}</span>
+          <span class="num division-gap">{{ team.gap }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="section-heading"><div><h2>{{ panel.name }}</h2><p>{{ format_note }}</p></div></div>
+    <div class="race-table" role="table" aria-label="{{ panel.name }}">
       {% comment %}"Games left" alone does not say who they are against, and 24 games
       against the field is a different September from 24 against the basement. The last
       column is schedule arithmetic — every one of those games is on the calendar today —
       and it forecasts nothing about who wins them.{% endcomment %}
-      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>Record</span><span>Games left</span><span title="Remaining games against the other teams in this conference's field and bubble">vs. race</span></div>
+      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>Record</span><span>Games left</span>{% if show_rivals %}<span title="Remaining games against the other teams in this conference's field and bubble">vs. race</span>{% endif %}</div>
       {% for team in panel.field %}
       <div class="race-row in-field" role="row">
         <b class="race-seed">{{ team.seed }}</b>
         <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
-        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span><span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>{% if show_rivals %}<span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>{% endif %}
       </div>
       {% endfor %}
       {% if panel.bubble %}<div class="race-divider"><span>Chasing the line</span></div>{% endif %}
+      {% comment %}An empty chasing list means one of two opposite things — nobody is
+      close, or everybody left is mathematically out — and showing nothing implies
+      neither.{% endcomment %}
+      {% if panel.decided %}<div class="race-decided">{{ panel.note }}</div>{% endif %}
       {% for team in panel.bubble %}
       <div class="race-row bubble" role="row">
         <b class="race-seed">—</b>
         <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
-        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span><span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>{% if show_rivals %}<span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>{% endif %}
       </div>
       {% endfor %}
     </div>

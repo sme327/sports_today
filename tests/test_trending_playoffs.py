@@ -15,7 +15,14 @@ def _standing(team_id, name, conference, division, rank, wins, losses):
                         win_pct=wins / (wins + losses), conference=conference)
 
 
-def test_playoff_picture_has_six_teams_per_league_and_a_wild_card_line():
+def test_the_division_race_and_the_wild_card_race_are_kept_apart():
+    """They are two different questions and the page used to answer only one.
+
+    Winning a division is a contest against four named clubs that ends in an automatic
+    place. The Wild Card is a separate contest among everyone who does not win one. A
+    combined six-team table showed a club's Wild Card standing and said nothing about
+    the division race it was actually in.
+    """
     teams = {}
     for league in ("American League", "National League"):
         prefix = "A" if league.startswith("American") else "N"
@@ -26,10 +33,47 @@ def test_playoff_picture_has_six_teams_per_league_and_a_wild_card_line():
                                  f"{prefix} Team {division_index}-{rank}", league,
                                  f"{league} {division}", rank, wins, 138 - wins)
                 teams[team.team_id] = team
-    panels, _ = mlb_playoffs._race_rows(teams)
-    assert [len(panel["field"]) for panel in panels] == [6, 6]
-    assert all(panel["field"][0]["status"] == "Division leader" for panel in panels)
-    assert all(panel["field"][3]["status"] == "Wild Card 1" for panel in panels)
+    panels, status = mlb_playoffs._race_rows(teams)
+
+    assert len(panels) == 2
+    for panel in panels:
+        # Three division races, each with every club in it and the leader first.
+        assert len(panel["divisions"]) == 3
+        for division in panel["divisions"]:
+            assert len(division["teams"]) == 5
+            assert division["teams"][0]["status"] == "Leads the division"
+            assert division["teams"][1]["status"].endswith("GB in the division")
+        # The Wild Card race is only clubs that lead no division.
+        assert len(panel["field"]) == 3
+        assert [row["status"] for row in panel["field"]] == [
+            "Wild Card 1", "Wild Card 2", "Wild Card 3"]
+
+    # Division leaders are in the field and are never listed as Wild Cards.
+    leaders = {d["teams"][0]["id"] for p in panels for d in p["divisions"]}
+    wildcards = {r["id"] for p in panels for r in p["field"]}
+    assert leaders and not (leaders & wildcards)
+    assert all(status[tid]["in_field"] for tid in leaders | wildcards)
+
+
+def test_a_club_can_be_live_in_both_races_at_once():
+    """The case that made the combined table wrong: second in its division *and* holding
+    a Wild Card. It has to appear in both, because it is genuinely racing in both."""
+    teams = {}
+    # East: a runaway leader and a strong second.
+    for tid, name, rank, wins in (("E1", "Leader", 1, 95), ("E2", "Chaser", 2, 88)):
+        teams[tid] = _standing(tid, name, "American League", "American League East",
+                               rank, wins, 138 - wins)
+    # Two weaker divisions, so the East runner-up clearly holds a Wild Card.
+    for div, tid, wins in (("Central", "C1", 74), ("West", "W1", 72)):
+        teams[tid] = _standing(tid, f"{div} Leader", "American League",
+                               f"American League {div}", 1, wins, 138 - wins)
+    panels, status = mlb_playoffs._race_rows(teams)
+    east = next(d for d in panels[0]["divisions"] if d["name"].endswith("East"))
+
+    assert [r["id"] for r in east["teams"]] == ["E1", "E2"]
+    assert east["teams"][1]["status"].endswith("GB in the division")
+    assert "E2" in {r["id"] for r in panels[0]["field"]}
+    assert status["E2"]["in_field"] is True
 
 
 def test_important_games_prefer_a_direct_division_race():
@@ -281,3 +325,39 @@ def test_an_out_of_window_page_renders_nothing_rather_than_a_stale_race():
     ctx = mlb_playoffs.build_context(
         date(2026, 5, 1), schedule_fetcher=lambda a, b: [])
     assert ctx["has_data"] is False and ctx["panels"] == []
+
+
+def test_the_wnba_field_is_one_table_of_eight_not_two_conferences():
+    """The WNBA has seeded 1-8 across the whole league since 2016 — no divisions, no
+    conference split, no automatic bids. Forcing it through the MLB shape would invent
+    structure the league does not have."""
+    from services import wnba_playoffs
+
+    teams = {str(i): _standing(str(i), f"Team {i}", "WNBA", "WNBA", i, 30 - i, 10 + i)
+             for i in range(1, 13)}
+    panels, status = wnba_playoffs.race(teams)
+
+    assert len(panels) == 1
+    assert len(panels[0]["field"]) == 8
+    assert [r["seed"] for r in panels[0]["field"]] == list(range(1, 9))
+    assert panels[0]["field"][0]["status"] == "Top-four seed"
+    assert panels[0]["field"][4]["status"] == "In the field"
+    assert sum(1 for s in status.values() if s["in_field"]) == 8
+
+
+def test_an_empty_chasing_list_says_which_kind_of_empty_it_is():
+    """"Nobody is close" and "everybody left is mathematically out" look identical as an
+    empty list. With four games to play and the ninth club eight back, the field is set
+    and the page should say so rather than show a blank section."""
+    from services import wnba_playoffs
+
+    teams = {}
+    for i in range(1, 9):
+        teams[str(i)] = _standing(str(i), f"In {i}", "WNBA", "WNBA", i, 24, 16)
+    # Ninth is far enough back that it cannot catch up in the games that remain.
+    teams["9"] = _standing("9", "Out", "WNBA", "WNBA", 9, 16, 24)
+    panel = wnba_playoffs.race(teams)[0][0]
+
+    assert panel["bubble"] == []
+    assert panel["decided"] is True
+    assert "field is set" in panel["note"]

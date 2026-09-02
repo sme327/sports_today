@@ -148,10 +148,29 @@ def trending(request):
     return render(request, "web/trending.html", context)
 
 
-def playoffs(request):
-    from services.mlb_playoffs import build_context
+# Leagues with a race page. Each has its own builder because the formats differ
+# structurally — MLB seeds six per league from divisions plus wild cards, the WNBA seeds
+# eight across one table — and forcing one through the other would invent structure.
+_PLAYOFF_LEAGUES = ("MLB", "WNBA")
 
-    return render(request, "web/playoffs.html", build_context(timezone.localdate()))
+
+def playoffs(request):
+    league = (request.GET.get("league") or "MLB").upper()
+    if league not in _PLAYOFF_LEAGUES:
+        league = "MLB"
+    if league == "WNBA":
+        from services.wnba_playoffs import build_context
+    else:
+        from services.mlb_playoffs import build_context
+    context = build_context(timezone.localdate())
+    # Only offer a league whose race is actually showable, so the switch never lands on
+    # an empty page.
+    from services import playoff_window, standings
+    context["leagues"] = [
+        lg for lg in _PLAYOFF_LEAGUES
+        if playoff_window.state(lg, standings.for_league(lg)) in ("live", "final")
+    ]
+    return render(request, "web/playoffs.html", context)
 
 
 def nfl_schedule(request):
