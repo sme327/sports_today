@@ -46,41 +46,54 @@ def _score_cell(game: SlateGame, side: str) -> str:
     return f'<span class="team-score{cls}">{val}</span>'
 
 
-def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str) -> str:
+def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str,
+              market: str = "") -> str:
     return (f'<div class="team-row {side}{win_cls}">'
             f'<span class="team-logo-wrap">{logo}</span>'
             f'<span class="team-name">{escape(name)}</span>'
-            f'{_score_cell(game, side)}</div>')
+            f'{market}{_score_cell(game, side)}</div>')
 
 
 def _focus_href(day: str, game: SlateGame) -> str:
     return f"?day={quote_plus(day)}&focus={quote_plus(str(game.game_id))}#opps"
 
 
-def _market_chip(game: SlateGame) -> str:
-    """The book's spread and total, on the card.
+def market_cells(game: SlateGame) -> tuple[str, str, str]:
+    """(away line, home line, total) for the card's right-hand column.
 
-    Sits in the footer next to our own read rather than replacing it: they answer
-    different questions, and on a college slate in September ours is often empty while
-    this is the only thing anyone can say about the game. Kept to one short run —
-    "MIZ -54.5 · O/U 61.5" — because a long `white-space: nowrap` string in a card once
-    sized the whole phone column and pushed every card off the screen.
+    The spread rides on the row of the club it describes — a number beside a team is
+    read as being *about* that team, which is exactly what a spread is — and the total
+    sits on the separator between them, because it belongs to the game rather than to
+    either side. Both in one right-aligned column, faded, so the card reads as a board
+    rather than as an assertion of ours.
 
-    Styled as a quotation, not as evidence: no accent, a stated source in the tooltip,
-    and never counted in any score.
+    Pregame only. Once a game is live or final the score owns that column and a
+    kick-off line beside a live score describes a moment that has passed.
     """
-    if game.league not in MARKET_LINE_LEAGUES:
-        return ""
+    if game.league not in MARKET_LINE_LEAGUES or game.state in ("live", "final"):
+        return "", "", ""
     line = (game.meta or {}).get("market_line") or {}
-    detail = line.get("detail")
-    if not detail:
-        return ""
-    total = line.get("total")
-    text = f"{detail} · O/U {total:g}" if total is not None else detail
+    spread, favourite = line.get("spread"), line.get("favourite")
+    if spread is None or not favourite:
+        return "", "", ""
+
+    def _is(side_abbr, side_short):
+        return favourite in {side_abbr, side_short}
+
+    away = _is(game.away_abbr, game.away_short)
+    home = _is(game.home_abbr, game.home_short)
+    if away == home:                    # matched both or neither: say nothing
+        return "", "", ""
+
     provider = line.get("provider")
-    title = f"Market line{f' from {provider}' if provider else ''} — not our number"
-    return (f'<span class="market-chip" title="{escape(title, quote=True)}" '
-            f'aria-label="{escape(f"Market line: {text}", quote=True)}">{escape(text)}</span>')
+    src = f" ({provider})" if provider else ""
+    cell = (f'<span class="team-line" title="Market spread{src} — not our number" '
+            f'aria-label="Market spread {spread:g}">{spread:g}</span>')
+    total = line.get("total")
+    total_cell = (
+        f'<span class="market-total" title="Market total{src} — not our number" '
+        f'aria-label="Market total {total:g}">{total:g}</span>' if total is not None else "")
+    return (cell if away else "", cell if home else "", total_cell)
 
 
 def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
@@ -120,10 +133,9 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
     matchup = (f'<a class="matchup-link" target="_self" href="{matchup_href}" '
                f'aria-label="{escape(f"Matchup detail for {matchup_name}", quote=True)}">'
                f'Matchup →</a>' if deep_dive else "")
-    market = _market_chip(game)
-    if not fire and not matchup and not market:
+    if not fire and not matchup:
         return ""
-    return f'<div class="game-meta">{fire}{market}{matchup}</div>'
+    return f'<div class="game-meta">{fire}{matchup}</div>'
 
 
 def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90,
@@ -178,6 +190,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
                     if context else "")
     # Marked per league, never across the slate — see editorial.best_per_league.
     best_html = '<span class="bg-chip">Best game</span>' if is_best else ""
+    away_line, home_line, total_line = market_cells(game)
     footer = _footer(game, day, matchup_href, count, threshold, deep_dive, norm)
     # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
     # reader just needs to know the game is happening, so it needn't be as tall.
@@ -190,9 +203,9 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         f'<span class="league-name">{escape(league_label)}</span>{context_html}</span>'
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
-        f'{_team_row(game, "away", away_logo, away, away_cls)}'
-        f'<div class="team-sep">at</div>'
-        f'{_team_row(game, "home", home_logo, home, home_cls)}'
+        f'{_team_row(game, "away", away_logo, away, away_cls, away_line)}'
+        f'<div class="team-sep">at{total_line}</div>'
+        f'{_team_row(game, "home", home_logo, home, home_cls, home_line)}'
         f'</div>'
         f'{footer}'
         f'</div>'

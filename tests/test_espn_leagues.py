@@ -284,41 +284,78 @@ def test_an_empty_line_does_not_earn_a_page():
     assert adapter.deep_dive_available(game) is False
 
 
-def test_the_card_carries_the_market_line():
-    """The slate is where the number is most useful — it is what makes one college game
-    on a page of twenty worth opening."""
-    from components.game_cards import game_card_html
+def test_the_spread_sits_on_the_favourite_and_the_total_between():
+    """A number beside a team is read as being about that team, which is what a spread
+    is. The total belongs to the game rather than either side, so it rides the separator
+    — and both land in the same right-hand column."""
+    from components.game_cards import game_card_html, market_cells
     from domain.models import SlateGame
 
     game = SlateGame(league="NCAAF", game_id="1", away_short="Idaho", home_short="Utah",
-                     away_record="0-0", home_record="0-0",
+                     away_abbr="IDHO", home_abbr="UTAH", state="pre",
                      meta={"market_line": {"detail": "UTAH -35.5", "spread": -35.5,
                                            "total": 57.5, "favourite": "UTAH",
                                            "provider": "Draft Kings"}})
+    away, home, total = market_cells(game)
+    assert away == "" and "-35.5" in home
+    assert "57.5" in total
+
     html = game_card_html(game, "today")
-    assert "UTAH -35.5" in html and "O/U 57.5" in html
-    # Sourced, and named for a screen reader, which sees no card around it.
-    assert "Draft Kings" in html
-    assert 'aria-label="Market line: UTAH -35.5' in html
+    # Slice by the *next section*, not by the next "</div>" — the first one closes the
+    # nested logo element, not the row.
+    sep_at = html.index('class="team-sep"')
+    home_at = html.index('class="team-row home')
+    assert "-35.5" in html[home_at:]
+    assert "-35.5" not in html[:sep_at], "the spread must not land on the away row"
+    assert "57.5" in html[sep_at:home_at], "the total belongs on the separator"
+
+
+def test_the_line_is_withheld_once_a_game_starts():
+    """The score owns that column live, and a kick-off line beside a live score
+    describes a moment that has passed."""
+    from components.game_cards import market_cells
+    from domain.models import SlateGame
+
+    line = {"detail": "UTAH -35.5", "spread": -35.5, "total": 57.5,
+            "favourite": "UTAH", "provider": "Draft Kings"}
+    for state in ("live", "final"):
+        game = SlateGame(league="NCAAF", game_id="1", away_short="Idaho",
+                         home_short="Utah", away_abbr="IDHO", home_abbr="UTAH",
+                         state=state, meta={"market_line": line})
+        assert market_cells(game) == ("", "", "")
+
+
+def test_a_favourite_we_cannot_place_says_nothing():
+    """If the abbreviation matches neither side — or somehow both — putting the spread
+    on a row would assert something about the wrong team."""
+    from components.game_cards import market_cells
+    from domain.models import SlateGame
+
+    game = SlateGame(league="NCAAF", game_id="1", away_short="A", home_short="B",
+                     away_abbr="AAA", home_abbr="BBB", state="pre",
+                     meta={"market_line": {"spread": -7.0, "total": 50.0,
+                                           "favourite": "ZZZ"}})
+    assert market_cells(game) == ("", "", "")
 
 
 def test_only_college_football_cards_show_a_line():
     """On an MLB card it would sit beside props we score and read as our endorsement."""
-    from components.game_cards import game_card_html
+    from components.game_cards import market_cells
     from domain.models import SlateGame
 
-    line = {"detail": "NYY -1.5", "spread": -1.5, "total": 8.5,
-            "favourite": "NYY", "provider": "Draft Kings"}
     game = SlateGame(league="MLB", game_id="1", away_short="Red Sox",
-                     home_short="Yankees", meta={"market_line": line})
-    assert "NYY -1.5" not in game_card_html(game, "today")
+                     home_short="Yankees", away_abbr="BOS", home_abbr="NYY", state="pre",
+                     meta={"market_line": {"spread": -1.5, "total": 8.5,
+                                           "favourite": "NYY"}})
+    assert market_cells(game) == ("", "", "")
 
 
 def test_a_card_without_a_line_is_unchanged():
-    """Most games have none, and the footer must not gain an empty element."""
+    """Most games have none, and the row must not gain an empty element."""
     from components.game_cards import game_card_html
     from domain.models import SlateGame
 
     game = SlateGame(league="NCAAF", game_id="1", away_short="A", home_short="B",
-                     meta={"market_line": None})
-    assert "market-chip" not in game_card_html(game, "today")
+                     state="pre", meta={"market_line": None})
+    html = game_card_html(game, "today")
+    assert "team-line" not in html and "market-total" not in html

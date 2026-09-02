@@ -320,7 +320,13 @@
 }
 /* Quiet "at" separator between the stacked away/home rows, indented to line up
    with the team names (past the logo column). */
+/* The separator now also carries the game's total, right-aligned into the same column
+   as the spreads on the rows above and below it. Grid rather than padding so the number
+   lands in that column instead of wherever the text happens to end. */
 .team-sep {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   padding-left: calc(34px + .6rem);
   color: var(--text-4);
   font-size: .78rem;
@@ -1798,3 +1804,17 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .nfl-rest-note { color: var(--brand-2); font-size: .78rem; font-weight: 600; margin-top: .35rem; padding-left: .2rem; }
 .nfl-season-lbl { color: var(--text-4); font-size: .72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .04em; align-self: center; margin-right: .2rem; }
+
+/* Market spread and total on a card. Faded on purpose: it is the book's number, not a
+   score and not our read, so it sits in the same column as the score without competing
+   with one. Tabular numerals keep the column aligned down a slate of twenty games. */
+.team-line, .market-total {
+  color: var(--text-4);
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.market-total { font-size: .74rem; }
+/* A live or final game shows a score in this column; the pre-game line is withheld
+   there by market_cells, so the two can never collide. */
