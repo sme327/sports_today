@@ -359,3 +359,36 @@ def test_a_card_without_a_line_is_unchanged():
                      state="pre", meta={"market_line": None})
     html = game_card_html(game, "today")
     assert "team-line" not in html and "market-total" not in html
+
+
+def test_a_team_row_leaves_room_for_the_runtime_score_cell():
+    """`.team-row` is a three-column grid and static-site.js appends a `.team-score`
+    child at runtime. Adding the spread as its own cell made four, so the score wrapped
+    into an implicit row and a stray number hung under the card — visible only in a
+    browser, never in the served HTML. The spread rides inside the name cell instead.
+    """
+    import re
+
+    from components.game_cards import game_card_html
+    from domain.models import SlateGame
+
+    game = SlateGame(league="NCAAF", game_id="1", away_short="Idaho", home_short="Utah",
+                     away_abbr="IDHO", home_abbr="UTAH", state="pre",
+                     meta={"market_line": {"detail": "UTAH -35.5", "spread": -35.5,
+                                           "total": 57.5, "favourite": "UTAH"}})
+    html = game_card_html(game, "today")
+    row = re.search(r'<div class="team-row home[^"]*">(.*?)</div>\s*</div>', html, re.S)
+    assert row, "home row not found"
+    # Direct children of the row: the logo wrap and the name. The score cell is added by
+    # the browser, so the markup must stop at two and leave the third column free.
+    depth, children = 0, 0
+    for tag in re.findall(r"<(/?)span", row.group(1)):
+        if tag == "":
+            if depth == 0:
+                children += 1
+            depth += 1
+        else:
+            depth -= 1
+    assert children == 2, f"expected 2 static cells in a team row, found {children}"
+    # And the spread is nested inside the name, not a sibling of it.
+    assert re.search(r'class="team-name">[^<]*<span class="team-line"', row.group(1))

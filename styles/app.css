@@ -320,13 +320,11 @@
 }
 /* Quiet "at" separator between the stacked away/home rows, indented to line up
    with the team names (past the logo column). */
-/* The separator now also carries the game's total, right-aligned into the same column
-   as the spreads on the rows above and below it. Grid rather than padding so the number
-   lands in that column instead of wherever the text happens to end. */
+/* The separator also carries the game's total, following the "at" rather than being
+   pushed to the right-hand column. The spreads sit beside the team names above and
+   below; aligning the total with them would invite reading two different quantities as
+   one column of the same thing. */
 .team-sep {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
   padding-left: calc(34px + .6rem);
   color: var(--text-4);
   font-size: .78rem;
@@ -1810,11 +1808,13 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
    with one. Tabular numerals keep the column aligned down a slate of twenty games. */
 .team-line, .market-total {
   color: var(--text-4);
-  font-size: .8rem;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   letter-spacing: .01em;
 }
-.market-total { font-size: .74rem; }
+/* Beside the team name, so it inherits the row's weight and needs its own smaller,
+   dimmer treatment to stay clearly the book's number rather than part of the name. */
+.team-line { margin-left: .45rem; font-size: .78rem; }
+.market-total { margin-left: .4rem; font-size: .74rem; }
 /* A live or final game shows a score in this column; the pre-game line is withheld
    there by market_cells, so the two can never collide. */

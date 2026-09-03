@@ -48,10 +48,18 @@ def _score_cell(game: SlateGame, side: str) -> str:
 
 def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str,
               market: str = "") -> str:
+    """The market spread rides *inside* the name cell, immediately after the team.
+
+    Not as its own column: `.team-row` is a three-column grid and the live-score script
+    appends a fourth child at runtime, so an extra cell here pushed the score into an
+    implicit row and left a stray number hanging under the card. Sitting with the name
+    also reads better — a spread describes that team, so it belongs beside it rather
+    than in a far-right column the eye reaches last.
+    """
     return (f'<div class="team-row {side}{win_cls}">'
             f'<span class="team-logo-wrap">{logo}</span>'
-            f'<span class="team-name">{escape(name)}</span>'
-            f'{market}{_score_cell(game, side)}</div>')
+            f'<span class="team-name">{escape(name)}{market}</span>'
+            f'{_score_cell(game, side)}</div>')
 
 
 def _focus_href(day: str, game: SlateGame) -> str:
@@ -61,11 +69,11 @@ def _focus_href(day: str, game: SlateGame) -> str:
 def market_cells(game: SlateGame) -> tuple[str, str, str]:
     """(away line, home line, total) for the card's right-hand column.
 
-    The spread rides on the row of the club it describes — a number beside a team is
-    read as being *about* that team, which is exactly what a spread is — and the total
-    sits on the separator between them, because it belongs to the game rather than to
-    either side. Both in one right-aligned column, faded, so the card reads as a board
-    rather than as an assertion of ours.
+    The spread sits beside the club it describes, immediately after the name — a number
+    next to a team is read as being *about* that team, which is exactly what a spread
+    is. The total follows the "at" between them, because it belongs to the game rather
+    than to either side, and deliberately not in the spreads' column: they are different
+    quantities and lining them up would invite reading them as one.
 
     Pregame only. Once a game is live or final the score owns that column and a
     kick-off line beside a live score describes a moment that has passed.
