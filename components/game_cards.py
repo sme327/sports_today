@@ -70,10 +70,13 @@ def market_cells(game: SlateGame) -> tuple[str, str, str]:
     """(away line, home line, total) for the card's right-hand column.
 
     The spread sits beside the club it describes, immediately after the name — a number
-    next to a team is read as being *about* that team, which is exactly what a spread
-    is. The total follows the "at" between them, because it belongs to the game rather
-    than to either side, and deliberately not in the spreads' column: they are different
-    quantities and lining them up would invite reading them as one.
+    next to a team is read as being *about* that team, which is exactly what a spread is.
+
+    The total goes to the card's top line instead, beside the league and the week. It is
+    game-level data of the same kind as those, and on the separator row it had nothing
+    to anchor to: the spread moves with the team name, the score sits in its own column,
+    and a bare "48.5" at a fixed indent related to neither. Labelled "O/U" for the same
+    reason — an unlabelled number floating between two rows says nothing about itself.
 
     Pregame only. Once a game is live or final the score owns that column and a
     kick-off line beside a live score describes a moment that has passed.
@@ -99,8 +102,9 @@ def market_cells(game: SlateGame) -> tuple[str, str, str]:
             f'aria-label="Market spread {spread:g}">{spread:g}</span>')
     total = line.get("total")
     total_cell = (
-        f'<span class="market-total" title="Market total{src} — not our number" '
-        f'aria-label="Market total {total:g}">{total:g}</span>' if total is not None else "")
+        f'<span class="game-total" title="Market total{src} — not our number" '
+        f'aria-label="Market total {total:g}">O/U {total:g}</span>'
+        if total is not None else "")
     return (cell if away else "", cell if home else "", total_cell)
 
 
@@ -208,11 +212,11 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         f'<div class="game-card{state_cls}{compact_cls}" data-live-game="{escape(str(game.game_id))}" '
         f'data-league="{escape(game.league)}" data-away="{escape(away)}" data-home="{escape(home)}">'
         f'<div class="game-top"><span class="game-top-left">{best_html}'
-        f'<span class="league-name">{escape(league_label)}</span>{context_html}</span>'
+        f'<span class="league-name">{escape(league_label)}</span>{context_html}{total_line}</span>'
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls, away_line)}'
-        f'<div class="team-sep"><span class="sep-at">at</span>{total_line}</div>'
+        f'<div class="team-sep">at</div>'
         f'{_team_row(game, "home", home_logo, home, home_cls, home_line)}'
         f'</div>'
         f'{footer}'

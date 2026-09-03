@@ -284,10 +284,10 @@ def test_an_empty_line_does_not_earn_a_page():
     assert adapter.deep_dive_available(game) is False
 
 
-def test_the_spread_sits_on_the_favourite_and_the_total_between():
+def test_the_spread_sits_on_the_favourite_and_the_total_on_the_top_line():
     """A number beside a team is read as being about that team, which is what a spread
-    is. The total belongs to the game rather than either side, so it rides the separator
-    — and both land in the same right-hand column."""
+    is. A total is about the *game*, so it belongs with the league and the week — on the
+    separator it had nothing to anchor to and read as a bare number floating mid-card."""
     from components.game_cards import game_card_html, market_cells
     from domain.models import SlateGame
 
@@ -301,13 +301,16 @@ def test_the_spread_sits_on_the_favourite_and_the_total_between():
     assert "57.5" in total
 
     html = game_card_html(game, "today")
-    # Slice by the *next section*, not by the next "</div>" — the first one closes the
-    # nested logo element, not the row.
     sep_at = html.index('class="team-sep"')
     home_at = html.index('class="team-row home')
     assert "-35.5" in html[home_at:]
     assert "-35.5" not in html[:sep_at], "the spread must not land on the away row"
-    assert "57.5" in html[sep_at:home_at], "the total belongs on the separator"
+
+    # The total is game-level, so it rides the top line with the league and the week —
+    # not the separator, where it had nothing to anchor to and read as a stray number.
+    top = html[html.index('game-top-left'):html.index('class="teams"')]
+    assert "O/U 57.5" in top
+    assert "57.5" not in html[sep_at:home_at]
 
 
 def test_the_line_is_withheld_once_a_game_starts():
@@ -358,7 +361,7 @@ def test_a_card_without_a_line_is_unchanged():
     game = SlateGame(league="NCAAF", game_id="1", away_short="A", home_short="B",
                      state="pre", meta={"market_line": None})
     html = game_card_html(game, "today")
-    assert "team-line" not in html and "market-total" not in html
+    assert "team-line" not in html and "game-total" not in html
 
 
 def test_a_team_row_leaves_room_for_the_runtime_score_cell():

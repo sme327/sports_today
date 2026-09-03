@@ -320,14 +320,11 @@
 }
 /* Quiet "at" separator between the stacked away/home rows, indented to line up
    with the team names (past the logo column). */
-/* The separator also carries the game's total. It sits past where the spreads fall —
-   right of them, not aligned with them — because they are different quantities: a
-   spread is about one team, the total is about the game. Sitting immediately after the
-   "at" made them read as one phrase ("at 51.5"), so the label holds a fixed width and
-   the number starts beyond the team names above and below it. */
+/* Quiet "at" separator between the stacked away/home rows. The game total briefly
+   lived here and had nothing to anchor to — the spread moves with the team name, the
+   score has its own column, and a bare number at a fixed indent related to neither. It
+   sits on the card's top line now, with the league and the week it belongs beside. */
 .team-sep {
-  display: flex;
-  align-items: baseline;
   padding-left: calc(34px + .6rem);
   color: var(--text-4);
   font-size: .78rem;
@@ -1818,10 +1815,13 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 /* Beside the team name, so it inherits the row's weight and needs its own smaller,
    dimmer treatment to stay clearly the book's number rather than part of the name. */
 .team-line { margin-left: .45rem; font-size: .78rem; }
-/* Wide enough to clear a typical team name plus its spread, so the total lands to the
-   right of them rather than beside the "at". */
-.sep-at { min-width: 9.5rem; }
-.market-total { font-size: .74rem; }
-@media (max-width: 720px) { .sep-at { min-width: 7.5rem; } }
+/* The total rides the top line with the league and week — game-level facts together —
+   so it matches the context chip rather than the team rows. Its own separator dot,
+   which works whether or not a competition context sits between it and the league. */
+.game-total {
+  color: var(--text-4); font-size: .72rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.game-total::before { content: "·"; margin-inline: .4rem; opacity: .6; }
 /* A live or final game shows a score in this column; the pre-game line is withheld
    there by market_cells, so the two can never collide. */
