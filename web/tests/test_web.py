@@ -202,3 +202,50 @@ def test_day_index_is_published_for_the_rollover():
         day, slate = parse_day(key, date(2026, 8, 31))
         assert day == key
         assert (slate - date(2026, 8, 31)).days == offset
+
+
+def test_caveats_share_one_heading_instead_of_repeating_it():
+    """Five caveats used to mean five blocks each headed "Worth knowing", which stacked
+    the same label down a phone screen until it was the loudest thing in the section."""
+    from components.editorial import editorial_html
+    from services.editorial import GameInterest, Signal
+
+    detail = GameInterest(
+        score=10,
+        components={},
+        signals=[Signal(kind="record", label="2025 record", detail="A were 6-6.",
+                        evidence=["A were 6-6 in 2025"],
+                        caveats=["First caveat.", "Second caveat."])],
+        caveats=["Third caveat."],
+    )
+    html = editorial_html(detail)
+
+    assert html.count("Worth knowing") == 1
+    assert html.count("<li>") == 3
+    for text in ("First caveat.", "Second caveat.", "Third caveat."):
+        assert text in html
+
+
+def test_going_in_does_not_repeat_a_signal_that_gets_its_own_block():
+    """The lead block joined every signal's evidence, so it restated verbatim what the
+    blocks directly beneath it already said."""
+    from components.editorial import editorial_html
+    from services.editorial import GameInterest, Signal
+
+    shared = "Bethune lost 2025 leading passer Cam'Ron Ransom"
+    detail = GameInterest(
+        score=10,
+        components={},
+        signals=[
+            Signal(kind="record", label="2025 record", detail="Lead.",
+                   evidence=["Bethune were 6-6 in 2025"], caveats=[]),
+            Signal(kind="qb", label="QB turnover", detail=f"{shared} (1,743 yds).",
+                   evidence=[shared], caveats=[]),
+        ],
+        caveats=[],
+    )
+    html = editorial_html(detail)
+
+    # Once, in its own block — not again inside "Going in".
+    assert html.count(shared.replace("'", "&#x27;")) == 1
+    assert "Bethune were 6-6 in 2025" in html

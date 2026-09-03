@@ -25,6 +25,21 @@ def _block(kind: str, heading: str, body: str) -> str:
             f'<div class="op-ev-body">{escape(body)}</div></div>')
 
 
+def _caveat_block(items: list[str]) -> str:
+    """Every caveat in one block, not one block each.
+
+    They all carry the same heading, so rendering them separately stacked five identical
+    "Worth knowing" headings down a phone screen — the repeated label became the loudest
+    thing in the section, and the reader has to scan past it five times to find the five
+    different sentences underneath.
+    """
+    ic = icon("neutral")
+    body = "".join(f"<li>{escape(text)}</li>" for text in items)
+    return ('<div class="op-evidence op-flat">'
+            f'<div class="op-ev-head">{ic}<span>Worth knowing</span></div>'
+            f'<ul class="op-ev-list">{body}</ul></div>')
+
+
 def _chips(detail: GameInterest) -> str:
     chips = "".join(f'<span class="ed-chip">{escape(s.label)}</span>'
                     for s in detail.signals)
@@ -53,6 +68,11 @@ def editorial_html(detail: GameInterest) -> str:
         for item in s.evidence:
             if item not in evidence:
                 evidence.append(item)
+    # A signal that gets its own block below states its own case. Repeating that text
+    # inside "Going in" made the first block a run-on of everything that followed it.
+    detailed = [s.detail for s in rest
+                if s.detail and s.kind not in {"conference", "postseason"}]
+    evidence = [e for e in evidence if not any(e in d for d in detailed)]
     if evidence:
         blocks.append(_block("good", "Going in", " · ".join(evidence)))
     for s in rest:
@@ -61,11 +81,14 @@ def editorial_html(detail: GameInterest) -> str:
 
     # Caveats last but not least — same block treatment as the evidence above.
     seen: set[str] = set()
+    caveats: list[str] = []
     for text in list(lead.caveats) + [c for s in rest for c in s.caveats] + list(detail.caveats):
         if text in seen:
             continue
         seen.add(text)
-        blocks.append(_block("flat", "Worth knowing", text))
+        caveats.append(text)
+    if caveats:
+        blocks.append(_caveat_block(caveats))
 
     body.append(f'<div class="ed-grid">{"".join(blocks)}</div>')
     return (

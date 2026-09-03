@@ -716,6 +716,11 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .op-risk .op-ev-head { color: var(--red); }
 .op-flat .op-ev-head { color: var(--text-3); }        /* no notable risk — calm, neutral */
 .op-ev-body { color: #dee3e9; font-size: .8rem; line-height: 1.42; }   /* brighter body for low-light legibility */
+/* Caveats share one block and one heading, so the list carries the separation the
+   repeated heading used to. */
+.op-ev-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .32rem; }
+.op-ev-list li { position: relative; padding-left: .7rem; color: #dee3e9; font-size: .8rem; line-height: 1.42; }
+.op-ev-list li::before { content: "·"; position: absolute; left: 0; color: var(--text-4); font-weight: 700; }
 
 /* Card chip for a team-level read, in the slot the prop count would occupy. Quieter
    than the 🎯 link beside it: this is context, not a call to action. */
