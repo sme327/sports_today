@@ -524,7 +524,10 @@ html[data-slate-stale] .opportunity-section { display: none; }
 .streak-team { color: var(--text-3); font-size: .74rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Comparisons — a table, because the eye is meant to run down the Change column. */
-.trend-table { border-radius: var(--r-md); background: var(--surface-1); overflow: hidden; }
+.trend-table {
+  border: 1px solid var(--divider); border-radius: var(--r-md);
+  background: var(--surface-1); overflow: hidden;
+}
 .trend-row {
   display: grid; grid-template-columns: minmax(0, 1fr) 8rem 6rem 5rem;
   gap: .6rem; align-items: center; padding: .5rem .9rem;
