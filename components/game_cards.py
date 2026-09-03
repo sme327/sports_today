@@ -212,7 +212,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls, away_line)}'
-        f'<div class="team-sep">at{total_line}</div>'
+        f'<div class="team-sep"><span class="sep-at">at</span>{total_line}</div>'
         f'{_team_row(game, "home", home_logo, home, home_cls, home_line)}'
         f'</div>'
         f'{footer}'

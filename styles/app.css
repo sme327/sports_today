@@ -320,11 +320,14 @@
 }
 /* Quiet "at" separator between the stacked away/home rows, indented to line up
    with the team names (past the logo column). */
-/* The separator also carries the game's total, following the "at" rather than being
-   pushed to the right-hand column. The spreads sit beside the team names above and
-   below; aligning the total with them would invite reading two different quantities as
-   one column of the same thing. */
+/* The separator also carries the game's total. It sits past where the spreads fall —
+   right of them, not aligned with them — because they are different quantities: a
+   spread is about one team, the total is about the game. Sitting immediately after the
+   "at" made them read as one phrase ("at 51.5"), so the label holds a fixed width and
+   the number starts beyond the team names above and below it. */
 .team-sep {
+  display: flex;
+  align-items: baseline;
   padding-left: calc(34px + .6rem);
   color: var(--text-4);
   font-size: .78rem;
@@ -1815,6 +1818,10 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 /* Beside the team name, so it inherits the row's weight and needs its own smaller,
    dimmer treatment to stay clearly the book's number rather than part of the name. */
 .team-line { margin-left: .45rem; font-size: .78rem; }
-.market-total { margin-left: .4rem; font-size: .74rem; }
+/* Wide enough to clear a typical team name plus its spread, so the total lands to the
+   right of them rather than beside the "at". */
+.sep-at { min-width: 9.5rem; }
+.market-total { font-size: .74rem; }
+@media (max-width: 720px) { .sep-at { min-width: 7.5rem; } }
 /* A live or final game shows a score in this column; the pre-game line is withheld
    there by market_cells, so the two can never collide. */
