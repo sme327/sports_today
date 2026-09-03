@@ -53,7 +53,9 @@ def _race_rows(table: dict) -> tuple[list[dict], dict[str, dict]]:
                 rows.append(_team_row(
                     club, seed=place,
                     status="Leads the division" if place == 1 else f"{gap:g} GB in the division",
-                    gap="—" if place == 1 else f"{gap:g} GB"))
+                    # Bare number: the division card states "GB" in its heading, so
+                    # repeating it on five rows only narrows the column it sits in.
+                    gap="—" if place == 1 else f"{gap:g}"))
             division_panels.append({"name": name.replace("American League", "AL")
                                                 .replace("National League", "NL"),
                                     "teams": rows})
@@ -182,10 +184,14 @@ def _important_games(games: list[dict], status: dict[str, dict]) -> list[dict]:
         try:
             start = datetime.fromisoformat(str(game.get("game_date")).replace("Z", "+00:00"))
             day = start.strftime("%a, %b %-d")
+            start_date = start.date().isoformat()
         except (TypeError, ValueError):
             day = str(game.get("game_date") or "")[:10]
+            start_date = day
         ranked.append((score, str(game.get("game_date") or ""), {
-            "game_id": game.get("game_pk"), "day": day,
+            # `day` is for reading; `date` is for deciding whether a matchup page for it
+            # exists, which only the web layer can answer — it owns the slate day slugs.
+            "game_id": game.get("game_pk"), "day": day, "date": start_date,
             "away": game.get("away_short") or game.get("away"),
             "home": game.get("home_short") or game.get("home"),
             "away_logo": game.get("away_logo"), "home_logo": game.get("home_logo"),

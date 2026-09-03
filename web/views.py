@@ -170,7 +170,37 @@ def playoffs(request):
         lg for lg in _PLAYOFF_LEAGUES
         if playoff_window.state(lg, standings.for_league(lg)) in ("live", "final")
     ]
+    _link_matchups(context.get("games") or [], league, timezone.localdate())
     return render(request, "web/playoffs.html", context)
+
+
+def _link_matchups(games: list[dict], league: str, today) -> None:
+    """Point a race game at its matchup page, where one exists.
+
+    A game only has a page if it is on one of the precomputed slate days, so the slate's
+    own schedules are the authority — and the link has to carry the *same* `day` slug the
+    card uses, because the exporter keys a matchup page on its full query string. Guessing
+    the slug would produce a URL that resolves locally and 404s on the published site.
+
+    Most of this list is a week or two out and has no page; those stay plain text rather
+    than becoming links to a page that does not exist.
+    """
+    from datetime import timedelta
+
+    from services import daily_feed
+    from web.today import DAY_OFFSETS
+
+    slug_for: dict[str, str] = {}
+    for slug, offset in DAY_OFFSETS.items():
+        slate = daily_feed.load_cached_schedules(today + timedelta(days=offset))
+        for game in (slate.get(league, ([], None))[0] or []):
+            slug_for.setdefault(str(game.game_id), slug)
+
+    for game in games:
+        slug = slug_for.get(str(game.get("game_id")))
+        game["matchup"] = (
+            f"/game/{league}/{game['game_id']}/?day={slug}" if slug else ""
+        )
 
 
 def nfl_schedule(request):

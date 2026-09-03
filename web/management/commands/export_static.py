@@ -189,6 +189,7 @@ class Command(BaseCommand):
         call_command("collectstatic", interactive=False, verbosity=0, clear=True,
                      ignore_patterns=["*.py", "*.pyc", "__pycache__"])
         assets.forget_manifest()
+        assets.use_manifest(True)
 
         client = Client(HTTP_HOST="localhost")
         seeds = tuple(s for s in options["seeds"].split(",") if s) or _SEEDS

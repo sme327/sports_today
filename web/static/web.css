@@ -604,6 +604,13 @@ html[data-slate-stale] .opportunity-section { display: none; }
 .race-matchup img { width: 24px; height: 24px; object-fit: contain; }
 .race-matchup i { color: var(--text-4); font-size: .68rem; font-style: normal; font-weight: 500; }
 .race-game p { margin: 0; color: var(--text-3); font-size: .72rem; line-height: 1.35; }
+/* Explicit column: the date spans the first two rows of column one, so an auto-placed
+   fourth child lands underneath it instead of under the reason it belongs to. */
+.race-game-link {
+  grid-column: 2; justify-self: start; margin-top: .15rem;
+  color: var(--brand-2); font-size: .72rem; font-weight: 750; text-decoration: none;
+}
+.race-game-link:hover { text-decoration: underline; }
 
 @media (max-width: 820px) {
   .streak-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -695,22 +702,38 @@ html[data-slate-stale] .opportunity-section { display: none; }
    Three small tables side by side, above the Wild Card. Deliberately lighter than the
    Wild Card table: a division race is five clubs and one number, and giving it the same
    weight as the six-seed picture would say they are the same kind of thing. */
-.division-races { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; margin-bottom: 1.6rem; }
+/* Two, not three. The league panels sit side by side, so a fixed three put six of these
+   on one screen line at about 190px each — the name slid under the record and the GB
+   column wrapped its own unit. Two per row inside a panel gives each card room.
+   A third card would otherwise leave a hole beside it, so when there are exactly three
+   the last one spans the row; `:last-child:nth-child(3)` matches only that case, which
+   leaves a four-division league (an NFL conference) correctly alone. */
+.division-races { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .8rem; margin-bottom: 1.6rem; }
+.division-races > :last-child:nth-child(3) { grid-column: 1 / -1; }
 .division-race { border-radius: var(--r-md); background: var(--surface-1); overflow: hidden; }
 .division-name {
   padding: .5rem .7rem; color: var(--text-4); font-size: .64rem; font-weight: 800;
   letter-spacing: .07em; text-transform: uppercase; border-bottom: 1px solid var(--hairline);
 }
 .division-row {
-  display: grid; grid-template-columns: 1.2rem minmax(0, 1fr) 3.6rem 3rem;
+  display: grid; grid-template-columns: 1.1rem minmax(0, 1fr) 3.2rem 2.2rem;
   gap: .4rem; align-items: center; padding: .4rem .7rem; font-size: .78rem;
   color: var(--text-2);
 }
 .division-row.leader { box-shadow: inset 3px 0 0 var(--brand); }
+.division-head {
+  padding-top: .3rem; padding-bottom: .3rem; color: var(--text-4); font-size: .58rem;
+  font-weight: 750; letter-spacing: .05em; text-transform: uppercase;
+  border-bottom: 1px solid var(--hairline);
+}
 .division-place { color: var(--text-4); font-weight: 700; }
 .division-team { display: flex; align-items: center; gap: .35rem; min-width: 0; color: var(--text-1); font-weight: 650; }
 .division-team img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 18px; }
-.division-row .num { font-variant-numeric: tabular-nums; }
+/* The name is the only thing here that can be too long for its column, and a name that
+   overruns does not wrap politely — it slides under the record beside it. */
+.division-team > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.division-row .num { font-variant-numeric: tabular-nums; text-align: right; }
 .division-gap { color: var(--text-3); }
 @media (max-width: 860px) {
   .division-races { grid-template-columns: 1fr; }

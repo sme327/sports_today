@@ -416,3 +416,53 @@ def test_no_chip_outside_the_race_window():
                            away_id="1", home_id="2", away_short="A", home_short="B")
     # A table where everyone is 0-0 reads as preseason, so nothing is consequential.
     assert P.slate_implications([game], date(2026, 4, 1)) == {}
+
+
+def test_a_race_game_links_only_when_a_matchup_page_exists(monkeypatch):
+    """The race list runs two weeks out; matchup pages exist for three days.
+
+    A link has to carry the same `day` slug the slate card uses, because the exporter
+    keys a matchup page on its full query string — a guessed slug resolves locally and
+    404s once published. So the slate's own cached schedules decide both questions:
+    whether to link at all, and which day to name.
+    """
+    from datetime import date
+    from types import SimpleNamespace
+
+    from web.views import _link_matchups
+
+    scheduled = {
+        date(2026, 9, 2): [SimpleNamespace(game_id=111)],
+        date(2026, 9, 3): [SimpleNamespace(game_id=222)],
+        date(2026, 9, 4): [SimpleNamespace(game_id=333)],
+    }
+    monkeypatch.setattr(
+        "services.daily_feed.load_cached_schedules",
+        lambda day: {"MLB": (scheduled.get(day, []), None)},
+    )
+
+    games = [{"game_id": 111}, {"game_id": 222}, {"game_id": 333}, {"game_id": 999}]
+    _link_matchups(games, "MLB", date(2026, 9, 2))
+
+    assert games[0]["matchup"] == "/game/MLB/111/?day=today"
+    assert games[1]["matchup"] == "/game/MLB/222/?day=tomorrow"
+    assert games[2]["matchup"] == "/game/MLB/333/?day=day-after"
+    # Ten days out. No page was ever built for it, so it stays plain text.
+    assert games[3]["matchup"] == ""
+
+
+def test_the_division_gap_carries_no_unit():
+    """The card states "GB" in its heading. Repeating it on all five rows widened the
+    narrowest column on the page until the number wrapped away from its own unit."""
+    teams = {}
+    for rank in range(1, 4):
+        team = _standing(f"E{rank}", f"Team {rank}", "American League",
+                         "American League East", rank, 90 - rank * 3, 48 + rank * 3)
+        teams[team.team_id] = team
+    panels, _ = mlb_playoffs._race_rows(teams)
+    rows = panels[0]["divisions"][0]["teams"]
+
+    assert rows[0]["gap"] == "—"
+    assert all("GB" not in row["gap"] for row in rows[1:])
+    # The verbose form survives where there is room for it.
+    assert rows[1]["status"].endswith("GB in the division")

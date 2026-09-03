@@ -32,10 +32,15 @@
       {% for division in panel.divisions %}
       <div class="division-race" role="table" aria-label="{{ division.name }}">
         <div class="division-name">{{ division.name }}</div>
+        {% comment %}The unit belongs in the heading, not on every row: "15.5 GB" five
+        times over is the same word repeated in the narrowest column on the page.{% endcomment %}
+        <div class="division-row division-head" role="row">
+          <span></span><span>Team</span><span class="num">W-L</span><span class="num">GB</span>
+        </div>
         {% for team in division.teams %}
         <div class="division-row{% if forloop.first %} leader{% endif %}" role="row">
           <span class="division-place">{{ team.seed }}</span>
-          <span class="division-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="18" height="18" loading="lazy">{% endif %}{{ team.name }}</span>
+          <span class="division-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="18" height="18" loading="lazy">{% endif %}<span>{{ team.name }}</span></span>
           <span class="num">{{ team.record }}</span>
           <span class="num division-gap">{{ team.gap }}</span>
         </div>
@@ -84,10 +89,13 @@
   {% if games %}
   <div class="race-games">
     {% for game in games %}
-    <article class="race-game">
+    {% comment %}Only games on a precomputed slate day have a matchup page; the rest of
+    this list is a week or two out, so it stays plain text rather than linking nowhere.{% endcomment %}
+    <article class="race-game{% if game.matchup %} linked{% endif %}">
       <span class="race-game-date">{{ game.day }}</span>
       <div class="race-matchup"><span>{% if game.away_logo %}<img src="{{ game.away_logo }}" alt="" width="28" height="28">{% endif %}{{ game.away }}</span><i>at</i><span>{% if game.home_logo %}<img src="{{ game.home_logo }}" alt="" width="28" height="28">{% endif %}{{ game.home }}</span></div>
       <p>{{ game.why }}</p>
+      {% if game.matchup %}<a class="race-game-link" href="{{ game.matchup }}" aria-label="{{ game.away }} at {{ game.home }} matchup">Matchup →</a>{% endif %}
     </article>
     {% endfor %}
   </div>

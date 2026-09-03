@@ -56,6 +56,22 @@ def _manifest() -> dict:
         return {}
 
 
+_USE_MANIFEST = False
+
+
+def use_manifest(enabled: bool) -> None:
+    """Turn hashed filenames on. The static export calls this; nothing else should.
+
+    Off by default because `runserver`'s static handler serves assets under their
+    *original* names — it knows nothing about collectstatic's hashed copies, so a page
+    linking `/static/web.<hash>.css` renders completely unstyled locally. The export is
+    the only renderer whose output is served from a directory where the hashed files
+    actually exist, so it is the only one that should ask for them.
+    """
+    global _USE_MANIFEST
+    _USE_MANIFEST = enabled
+
+
 def forget_manifest() -> None:
     """Drop the cached manifest — the export runs collectstatic in this same process."""
     _manifest.cache_clear()
@@ -78,7 +94,7 @@ def asset_url(name: str) -> str:
     manifest has been collected — that is the dev server, where staticfiles serves the
     plain names and nothing is cached anywhere.
     """
-    hashed = _manifest().get(name)
+    hashed = _manifest().get(name) if _USE_MANIFEST else None
     return f"{settings.STATIC_URL}{hashed or name}" + (
         "" if hashed else f"?v={stylesheet_version(name)}")
 
