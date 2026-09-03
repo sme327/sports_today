@@ -9,6 +9,40 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-02 — Player Trends is a system of three display types, not a page of sentences
+
+**Decision.** The trends page (now **"MLB / WNBA Player Trends"**) renders sections, and a
+section declares how it wants to look: `streak` (photo, one big number, a unit),
+`comparison` (a table of Player / metric / Change / Before) or `tile` (a photo grid of
+rate-and-delta). Every section — both leagues, four MLB metrics, three WNBA ones — emits
+the same row shape from `services/*_trending._row()`: `primary`, `unit`, `change`,
+`direction`, `baseline`, all **pre-formatted in the service**. The template does no
+arithmetic and no phrasing.
+
+**Reason.** The page was a wall of near-identical sentences: every card repeated its own
+metric name and window ("90% recently vs 27% beforehand") when the section heading above
+it had already said both. Numbers are what the reader is comparing, so the numbers should
+be the thing the eye lands on — `↑ +63pp` next to `27%`, not a sentence containing them.
+Repeating the label once per card is also what made the page long enough to need scrolling
+past content that says nothing new.
+
+**Tradeoffs.** Three display types is more template than one, and a fourth metric that
+suits none of them means adding a branch rather than a section. That is the intended
+shape: the branch is written once and every later metric of that kind is a declaration.
+The cost paid up front was migrating WNBA, which had been on the old card contract and
+rendered **nothing at all** under the shared template until it moved — the failure mode of
+"one template, two producers" when only one producer is updated. A test now asserts both
+leagues emit the same section and row keys, and that between them they exercise all three
+display types.
+
+**Future considerations.** `through` is formatted with Django's `|date`, which renders an
+ISO *string* as an empty span — silently, on one league only. WNBA had been doing exactly
+that. Both services now hand over a `date` and a test holds it. Any new trends producer
+inherits that trap, so it is the first thing to check when a section looks right but its
+dateline is blank.
+
+---
+
 ## 2026-09-02 — A market line on college football pages, and nowhere else
 
 **Decision.** NCAAF matchup pages show the spread and total from ESPN's scoreboard,

@@ -23,11 +23,19 @@ def _pct(value: float) -> str:
     return f"{value:.0%}"
 
 
-def _card(*, market: str, icon: str, player_id: str, name: str, team: str,
-          headline: str, detail: str, tone: str, value: float) -> dict:
-    return {"market": market, "icon": icon, "player_id": player_id, "name": name,
-            "team": team, "headshot": _headshot(player_id), "headline": headline,
-            "detail": detail, "tone": tone, "value": value}
+def _row(*, player_id: str, name: str, team: str, sort: float,
+         primary: str = "", unit: str = "", change: str = "",
+         direction: str = "flat", baseline: str = "") -> dict:
+    """One player's result, as numbers rather than a sentence.
+
+    The section says what the metric is; a row only has to say who and how much. Every
+    field is pre-formatted here so the template does no arithmetic and no phrasing —
+    which is also what lets three different display types share one row shape.
+    """
+    return {"player_id": player_id, "name": name, "team": team,
+            "headshot": _headshot(player_id), "sort": sort,
+            "primary": primary, "unit": unit, "change": change,
+            "direction": direction, "baseline": baseline}
 
 
 def _batter_cards(pa: pd.DataFrame) -> dict[str, list[dict]]:
@@ -64,40 +72,36 @@ def _batter_cards(pa: pd.DataFrame) -> dict[str, list[dict]]:
                 break
             streak += 1
         if streak >= 6:
-            streak_cards.append(_card(
-                market="Active hit streak", icon="🔥", player_id=str(pid), name=name,
-                team=team, headline=f"A hit in {streak} straight games",
-                detail="An active game-by-game streak through his latest appearance",
-                tone="up", value=float(streak)))
+            streak_cards.append(_row(
+                player_id=str(pid), name=name, team=team, sort=float(streak),
+                primary=str(streak), unit="games", direction="up"))
 
         recent_hit = float((recent["hits"] >= 1).mean())
         prior_hit = float((prior["hits"] >= 1).mean())
         hit_delta = recent_hit - prior_hit
         if abs(hit_delta) >= .12:
-            hit_cards.append(_card(
-                market="Batter hits", icon="⚾️", player_id=str(pid), name=name, team=team,
-                headline=(f"A hit in {int((recent['hits'] >= 1).sum())} of his last 10 games"),
-                detail=(f"{_pct(recent_hit)} recently vs {_pct(prior_hit)} beforehand"),
-                tone="up" if hit_delta > 0 else "down", value=abs(hit_delta)))
+            hit_cards.append(_row(
+                player_id=str(pid), name=name, team=team, sort=abs(hit_delta),
+                primary=f"{int((recent['hits'] >= 1).sum())} of 10",
+                change=f"{hit_delta * 100:+.0f}pp",
+                direction="up" if hit_delta > 0 else "down",
+                baseline=_pct(prior_hit)))
 
         recent_k2 = float((recent["strikeouts"] >= 2).mean())
         prior_k2 = float((prior["strikeouts"] >= 2).mean())
         k_delta = recent_k2 - prior_k2
         if abs(k_delta) >= .12:
-            if k_delta < 0:
-                headline = f"2+ strikeouts in only {int((recent['strikeouts'] >= 2).sum())} of his last 10"
-                tone = "up"
-            else:
-                headline = f"2+ strikeouts in {int((recent['strikeouts'] >= 2).sum())} of his last 10"
-                tone = "down"
-            k_cards.append(_card(
-                market="Batter strikeouts", icon="⚾️", player_id=str(pid), name=name,
-                team=team, headline=headline,
-                detail=(f"{_pct(recent_k2)} recently vs {_pct(prior_k2)} beforehand"),
-                tone=tone, value=abs(k_delta)))
-    return {"streaks": sorted(streak_cards, key=lambda c: c["value"], reverse=True)[:4],
-            "hits": sorted(hit_cards, key=lambda c: c["value"], reverse=True)[:6],
-            "batter_k": sorted(k_cards, key=lambda c: c["value"], reverse=True)[:6]}
+            # More strikeouts is a worse result, so the arrow follows the *number* and
+            # the colour follows the outcome — a rise in multi-K games reads "down".
+            k_cards.append(_row(
+                player_id=str(pid), name=name, team=team, sort=abs(k_delta),
+                primary=f"{int((recent['strikeouts'] >= 2).sum())} of 10",
+                change=f"{k_delta * 100:+.0f}pp",
+                direction="down" if k_delta > 0 else "up",
+                baseline=_pct(prior_k2)))
+    by_sort = lambda rows, n: sorted(rows, key=lambda c: c["sort"], reverse=True)[:n]
+    return {"streaks": by_sort(streak_cards, 4), "hits": by_sort(hit_cards, 6),
+            "batter_k": by_sort(k_cards, 6)}
 
 
 def _pitcher_cards(pa: pd.DataFrame) -> list[dict]:
@@ -122,13 +126,12 @@ def _pitcher_cards(pa: pd.DataFrame) -> list[dict]:
             continue
         name = str(group.sort_values("game_date")["pitcher_name"].iloc[-1])
         team = str(group.sort_values("game_date")["pitching_team"].iloc[-1])
-        cards.append(_card(
-            market="Pitcher strikeouts", icon="⚾️", player_id=str(pid), name=name,
-            team=team, headline=f"{recent_avg:.1f} strikeouts per start over his last 5",
-            detail=f"Up from {prior_avg:.1f} in the previous {len(prior)} starts" if delta > 0
-                   else f"Down from {prior_avg:.1f} in the previous {len(prior)} starts",
-            tone="up" if delta > 0 else "down", value=abs(delta)))
-    return sorted(cards, key=lambda c: c["value"], reverse=True)[:6]
+        cards.append(_row(
+            player_id=str(pid), name=name, team=team, sort=abs(delta),
+            primary=f"{recent_avg:.1f}", unit="K/start",
+            change=f"{delta:+.1f}", direction="up" if delta > 0 else "down",
+            baseline=f"{prior_avg:.1f}"))
+    return sorted(cards, key=lambda c: c["sort"], reverse=True)[:6]
 
 
 def build_context(as_of: date | None = None, db_path: Path = DB_PATH) -> dict:
@@ -138,11 +141,24 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH) -> dict:
     pa = load_plate_appearances(as_of=today + timedelta(days=1), db_path=db_path)
     batter = _batter_cards(pa)
     sections = [
-        {"slug": "streaks", "title": "Active hit streaks", "read": "The longest live streaks among players who appeared in the last 10 days.", "cards": batter["streaks"], "comparison": "Consecutive games"},
-        {"slug": "hits", "title": "Batter hits", "read": "Who is reaching the hit column more—or less—often than before.", "cards": batter["hits"]},
-        {"slug": "batter-k", "title": "Batter strikeouts", "read": "Where multi-strikeout games have changed most sharply.", "cards": batter["batter_k"]},
-        {"slug": "pitcher-k", "title": "Pitcher strikeouts", "read": "Recent strikeout pace per start compared with the prior turn through the rotation.", "cards": _pitcher_cards(pa)},
+        {"slug": "streaks", "display": "streak",
+         "title": "Active Hit Streaks", "subtitle": "Longest current hit streaks",
+         "nav": "Active Hit Streaks", "context": "",
+         "columns": (), "rows": batter["streaks"]},
+        {"slug": "hits", "display": "comparison",
+         "title": "Better Hits", "subtitle": "More hits than earlier in the season",
+         "nav": "Better Hits", "context": "Last 10 games vs earlier sample",
+         "columns": ("Hits in last 10", "Change", "Before"), "rows": batter["hits"]},
+        {"slug": "batter-k", "display": "comparison",
+         "title": "Batter Strikeouts", "subtitle": "More multi-K games than earlier",
+         "nav": "More Strikeouts", "context": "Last 10 games vs earlier sample",
+         "columns": ("2+ K games in last 10", "Change", "Before"),
+         "rows": batter["batter_k"]},
+        {"slug": "pitcher-k", "display": "tile",
+         "title": "Pitcher Strikeouts", "subtitle": "Strikeouts per start over last 5",
+         "nav": "Pitcher Strikeouts", "context": "Last 5 starts vs prior 5",
+         "columns": (), "rows": _pitcher_cards(pa)},
     ]
     through = pa["game_date"].max().date() if not pa.empty else None
     return {"section": "trending", "league": "MLB", "sections": sections,
-            "through": through, "has_data": any(s["cards"] for s in sections)}
+            "through": through, "has_data": any(s["rows"] for s in sections)}

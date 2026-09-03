@@ -1,11 +1,15 @@
 {% extends "web/base.html" %}
-{% block title %}Trending {{ league }} Players · Sports Today{% endblock %}
+{% block title %}{{ league }} Player Trends · Sports Today{% endblock %}
 {% block content %}
+{% comment %}The organising rule: the *section* explains the metric, the *row* shows the
+result. Every label, window and unit is stated once in a section header and never
+repeated on a player, which is what lets the same information take roughly half the
+vertical space it used to.{% endcomment %}
 <section class="analytics-hero trend-hero">
   <div>
-    <div class="eyebrow">What has changed lately</div>
-    <h1 class="page-title">Trending {{ league }} players</h1>
-    <p class="page-read">Recent form compared with each player's own earlier games—not a leaderboard and not a prediction.</p>
+    <div class="eyebrow">Trending now</div>
+    <h1 class="page-title">{{ league }} Player Trends</h1>
+    <p class="page-read">Data-driven shifts in performance over recent games.</p>
   </div>
   {% if through %}<span class="data-through">Data through {{ through|date:"M j" }}</span>{% endif %}
 </section>
@@ -13,39 +17,89 @@
 {% if leagues|length > 1 %}
 <section class="filter-row" aria-label="League">
   <div class="filter-pills">
-    {% for name in leagues %}<a class="filter-pill {% if name == league %}active{% endif %}" href="{% url 'trending' %}?league={{ name }}" aria-label="{{ name }} trending players"{% if name == league %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+    {% for name in leagues %}<a class="filter-pill {% if name == league %}active{% endif %}" href="{% url 'trending' %}?league={{ name }}" aria-label="{{ name }} player trends"{% if name == league %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
   </div>
 </section>
 {% endif %}
 
 {% if has_data %}
-  <nav class="trend-jump" aria-label="Trend markets">
-    {% for group in sections %}<a href="#{{ group.slug }}">{{ group.title }}</a>{% endfor %}
+  <nav class="trend-jump" aria-label="Trend metrics">
+    <a class="trend-jump-link active" href="#trends">All Trends</a>
+    {% for section in sections %}{% if section.rows %}<a class="trend-jump-link" href="#{{ section.slug }}">{{ section.nav }}</a>{% endif %}{% endfor %}
   </nav>
-  {% for group in sections %}
-  <section class="trend-section" id="{{ group.slug }}">
-    <div class="section-heading">
-      <div><h2>{{ group.title }}</h2><p>{{ group.read }}</p></div>
-      <span>{% if group.comparison %}{{ group.comparison }}{% else %}Last 10 vs earlier sample{% endif %}</span>
-    </div>
-    {% if group.cards %}
-    <div class="trend-grid">
-      {% for card in group.cards %}
-      <article class="trend-card {{ card.tone }}">
-        <div class="trend-player">
-          <img src="{{ card.headshot }}" alt="" width="64" height="64" loading="lazy">
-          <div><span class="trend-market">{{ card.icon }} {{ card.market }}</span><h3>{{ card.name }}</h3><small>{{ card.team }}</small></div>
+
+  <div id="trends">
+  {% for section in sections %}{% if section.rows %}
+    <section class="trend-section" id="{{ section.slug }}">
+      <div class="trend-head">
+        <div>
+          <h2>{{ section.title }}</h2>
+          <p>{{ section.subtitle }}</p>
         </div>
-        <p class="trend-headline">{{ card.headline }}</p>
-        <p class="trend-detail">{{ card.detail }}</p>
-      </article>
-      {% endfor %}
-    </div>
-    {% else %}<div class="notice">No trend clears the minimum sample and change threshold right now.</div>{% endif %}
-  </section>
-  {% endfor %}
-  <p class="quiet-note">A trend describes a change in recorded results. It does not account for today's opponent, park, lineup spot, injuries, or betting price.</p>
+        {% if section.context %}<span class="trend-window">{{ section.context }}</span>{% endif %}
+      </div>
+
+      {% if section.display == "streak" %}
+        {% comment %}Streaks are ongoing accomplishments rather than comparisons, so they
+        keep photography and a dominant number.{% endcomment %}
+        <div class="streak-grid">
+          {% for row in section.rows %}
+          <div class="streak-card">
+            <img class="streak-face" src="{{ row.headshot }}" alt="" width="52" height="52" loading="lazy">
+            <div class="streak-figure"><b>{{ row.primary }}</b><small>{{ row.unit }}</small></div>
+            <div class="streak-who">
+              <div class="streak-name">{{ row.name }}</div>
+              <div class="streak-team">{{ row.team }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+      {% elif section.display == "tile" %}
+        <div class="tile-grid">
+          {% for row in section.rows %}
+          <div class="trend-tile">
+            <img class="tile-face" src="{{ row.headshot }}" alt="" width="34" height="34" loading="lazy">
+            <div class="tile-figure"><b>{{ row.primary }}</b><small>{{ row.unit }}</small></div>
+            <div class="trend-change {{ row.direction }}">{% if row.direction == "up" %}↑{% else %}↓{% endif %} {{ row.change }}</div>
+            <div class="tile-name">{{ row.name }}</div>
+            <div class="tile-team">{{ row.team }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+      {% else %}
+        <div class="trend-table" role="table" aria-label="{{ section.title }}">
+          <div class="trend-row trend-row-head" role="row">
+            <span role="columnheader">Player</span>
+            <span role="columnheader">{{ section.columns.0 }}</span>
+            <span role="columnheader">Change</span>
+            <span role="columnheader">Before</span>
+          </div>
+          {% for row in section.rows %}
+          <div class="trend-row" role="row">
+            <span class="trend-player" role="cell">
+              <img src="{{ row.headshot }}" alt="" width="26" height="26" loading="lazy">
+              <span><b>{{ row.name }}</b><small>{{ row.team }}</small></span>
+            </span>
+            <span class="num" role="cell" data-label="{{ section.columns.0 }}">{{ row.primary }}</span>
+            {% comment %}Arrow and sign carry the direction as well as the colour, so it
+            survives a colour-vision difference and a greyscale print alike.{% endcomment %}
+            <span class="num trend-change {{ row.direction }}" role="cell" data-label="Change">{% if row.direction == "up" %}↑{% else %}↓{% endif %} {{ row.change }}</span>
+            <span class="num trend-before" role="cell" data-label="Before">{{ row.baseline }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}{% endfor %}
+  </div>
+
+  <p class="trend-note">ⓘ Trends describe changes in recorded results. They don't account
+     for today's opponent, park, lineup spot, injuries, or betting price — and recent form
+     is a weak predictor of the next game, which is why our scoring leans on opportunity
+     far more than on form.</p>
 {% else %}
-  <div class="notice">No MLB player history is loaded yet. Trends will appear after the next data update.</div>
+  <div class="notice">Not enough played games yet to show trends.</div>
 {% endif %}
 {% endblock %}

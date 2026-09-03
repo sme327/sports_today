@@ -1,6 +1,6 @@
 """League-wide WNBA player trends, in the same shape as the MLB trends page.
 
-Mirrors ``services/mlb_trending`` deliberately: the same card contract, so one template
+Mirrors ``services/mlb_trending`` deliberately: the same row contract, so one template
 serves both, and the same discipline — recent form measured against each player's *own*
 earlier games rather than a leaderboard of who is simply best.
 
@@ -41,10 +41,15 @@ _MARKETS = (
 )
 
 
-def _card(*, market, player_id, name, team, headshot, headline, detail, tone, value):
-    return {"market": market, "icon": "🏀", "player_id": str(player_id), "name": name,
-            "team": team, "headshot": headshot, "headline": headline,
-            "detail": detail, "tone": tone, "value": value}
+def _row(*, player_id, name, team, headshot, sort, primary, change, direction, baseline):
+    """The same row shape MLB emits, so one template serves both leagues.
+
+    Adding a metric is a declaration — a title, a window, a display type and rows — not
+    a new component, which is the whole point of the shape being shared.
+    """
+    return {"player_id": str(player_id), "name": name, "team": team,
+            "headshot": headshot, "sort": sort, "primary": primary, "unit": "",
+            "change": change, "direction": direction, "baseline": baseline}
 
 
 def _load(as_of: date, db_path: Path):
@@ -77,7 +82,9 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH) -> dict:
         df = df[pd.to_numeric(df["minutes"], errors="coerce").fillna(0) > 0]
 
     if not df.empty:
-        through = df["d"].max()
+        # A real date, not the ISO string: the template formats this with |date, which
+        # renders a string as nothing at all — silently, and only on this page.
+        through = date.fromisoformat(df["d"].max())
         cutoff = (today - timedelta(days=_ACTIVE_WITHIN_DAYS)).isoformat()
         df = df.sort_values("d")
         by_player = {pid: g for pid, g in df.groupby("player_id")}
@@ -96,20 +103,22 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH) -> dict:
                 delta = recent_avg - prior_avg
                 if abs(delta) < threshold:
                     continue
-                cards.append(_card(
-                    market=market, player_id=pid,
+                cards.append(_row(
+                    player_id=pid,
                     name=str(group["player_name"].iloc[-1]),
                     team=str(group["team"].iloc[-1]),
                     headshot=str(group["headshot"].iloc[-1] or ""),
-                    headline=f"{recent_avg:.1f} {slug} per game over her last {len(recent)}",
-                    detail=(f"Up from {prior_avg:.1f} across the previous {len(prior)}"
-                            if delta > 0 else
-                            f"Down from {prior_avg:.1f} across the previous {len(prior)}"),
-                    tone="up" if delta > 0 else "down", value=abs(delta)))
-            cards.sort(key=lambda c: c["value"], reverse=True)
-            sections.append({"slug": slug, "title": title, "read": read,
-                             "comparison": f"Last {_RECENT} vs earlier games",
-                             "cards": cards[:_LIMIT]})
+                    sort=abs(delta), primary=f"{recent_avg:.1f}",
+                    change=f"{delta:+.1f}",
+                    direction="up" if delta > 0 else "down",
+                    baseline=f"{prior_avg:.1f}"))
+            cards.sort(key=lambda c: c["sort"], reverse=True)
+            sections.append({
+                "slug": slug, "display": "comparison", "title": title,
+                "subtitle": read, "nav": title,
+                "context": f"Last {_RECENT} games vs earlier sample",
+                "columns": (f"{market} per game, last {_RECENT}", "Change", "Before"),
+                "rows": cards[:_LIMIT]})
 
     return {"section": "trending", "league": "WNBA", "sections": sections,
-            "through": through, "has_data": any(s["cards"] for s in sections)}
+            "through": through, "has_data": any(s["rows"] for s in sections)}

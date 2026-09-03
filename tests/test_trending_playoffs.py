@@ -203,8 +203,8 @@ def test_wnba_trending_finds_a_real_move(tmp_path):
     rows = _logs("1", "Riser", [8] * 10 + [20] * 5)      # +12 a game
     ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
     scoring = next(s for s in ctx["sections"] if s["slug"] == "points")
-    assert scoring["cards"] and scoring["cards"][0]["tone"] == "up"
-    assert "Riser" == scoring["cards"][0]["name"]
+    assert scoring["rows"] and scoring["rows"][0]["direction"] == "up"
+    assert scoring["rows"][0]["name"] == "Riser"
 
 
 def test_a_quiet_change_is_not_a_trend(tmp_path):
@@ -216,7 +216,7 @@ def test_a_quiet_change_is_not_a_trend(tmp_path):
 
     rows = _logs("1", "Steady", [12] * 10 + [13] * 5)     # +1 a game
     ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
-    assert all(not s["cards"] for s in ctx["sections"])
+    assert all(not s["rows"] for s in ctx["sections"])
 
 
 def test_a_did_not_play_row_does_not_manufacture_a_slump(tmp_path):
@@ -229,7 +229,7 @@ def test_a_did_not_play_row_does_not_manufacture_a_slump(tmp_path):
     rows = _logs("1", "Rested", [20] * 10, offset=5) + _logs(
         "1", "Rested", [0] * 5, minutes=0.0)
     ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
-    assert all(not s["cards"] for s in ctx["sections"])
+    assert all(not s["rows"] for s in ctx["sections"])
 
 
 def test_an_inactive_player_drops_off(tmp_path):
@@ -240,21 +240,42 @@ def test_an_inactive_player_drops_off(tmp_path):
 
     rows = _logs("1", "Gone", [8] * 10 + [20] * 5, ending="2026-06-30")
     ctx = build_context(date(2026, 9, 1), db_path=_wnba_db(tmp_path, rows))
-    assert all(not s["cards"] for s in ctx["sections"])
+    assert all(not s["rows"] for s in ctx["sections"])
 
 
-def test_wnba_mirrors_the_mlb_card_contract(tmp_path):
-    """One template serves both pages, so the shapes must not drift apart."""
+def test_wnba_mirrors_the_mlb_row_contract(tmp_path):
+    """One template serves both leagues and all three display types, so the shapes must
+    not drift apart: adding a metric should be a declaration, not a new component."""
     from datetime import date
 
+    from services.mlb_trending import build_context as mlb_context
     from services.wnba_trending import build_context
+
+    section_keys = {"slug", "display", "title", "subtitle", "nav", "context",
+                    "columns", "rows"}
+    row_keys = {"player_id", "name", "team", "headshot", "sort", "primary", "unit",
+                "change", "direction", "baseline"}
 
     ctx = build_context(date(2026, 9, 1),
                         db_path=_wnba_db(tmp_path, _logs("1", "R", [8] * 10 + [20] * 5)))
     assert set(ctx) >= {"section", "league", "sections", "through", "has_data"}
-    card = next(s for s in ctx["sections"] if s["cards"])["cards"][0]
-    assert set(card) >= {"market", "icon", "player_id", "name", "team", "headshot",
-                         "headline", "detail", "tone", "value"}
+    for section in ctx["sections"]:
+        assert set(section) >= section_keys
+        assert section["display"] in {"streak", "comparison", "tile"}
+        for row in section["rows"]:
+            assert set(row) >= row_keys
+
+    # MLB declares the same shape, and between them the two leagues exercise every
+    # display type the shared template knows how to render.
+    mlb = mlb_context()
+    for section in mlb["sections"]:
+        assert set(section) >= section_keys
+    assert {s["display"] for s in mlb["sections"]} == {"streak", "comparison", "tile"}
+
+    # `through` is formatted with Django's |date filter, which renders an ISO *string*
+    # as nothing at all — silently, and on one league only. Both must hand over a date.
+    for context in (ctx, mlb):
+        assert context["through"] is None or isinstance(context["through"], date)
 
 
 # --- When the playoff page is live, and when it stops being true ----------------------
