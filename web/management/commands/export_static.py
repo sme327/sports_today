@@ -15,6 +15,8 @@ from django.conf import settings
 from django.core.management import BaseCommand, call_command
 from django.test import Client
 
+from web import assets
+
 _PERFORMANCE_SEEDS = tuple(
     f"/performance/?period={period}&cohort={cohort}&direction={direction}"
     for period in ("7", "30", "90", "season", "all")
@@ -167,6 +169,27 @@ class Command(BaseCommand):
             shutil.rmtree(out)
         out.mkdir(parents=True)
 
+        static_root = settings.BASE_DIR / "staticfiles"
+        # Collect *before* rendering. The pages link assets by their hashed filename,
+        # which is read from the manifest collectstatic writes — so collecting afterwards
+        # would stamp every page with the *previous* run's hashes and publish the new
+        # stylesheet at a URL nothing references. That is this project's most repeated
+        # bug in a new place: something checking a cached artifact instead of current
+        # truth.
+        #
+        # `styles/` is both a Python package and a STATICFILES_DIRS entry, so
+        # collectstatic was copying `styles/__init__.py` into the published site.
+        # Harmless today — a small retired helper — but it means
+        # *any* .py placed there ships publicly. Exclude source rather than trusting that
+        # nobody ever puts a secret-bearing module next to the stylesheet.
+        # `clear` wipes the target first. Without it the hashed filenames accumulate
+        # forever — every stylesheet edit leaves its predecessor behind, and all of them
+        # get copied into the export and uploaded. It had reached 436KB of published CSS
+        # against 107KB actually loaded.
+        call_command("collectstatic", interactive=False, verbosity=0, clear=True,
+                     ignore_patterns=["*.py", "*.pyc", "__pycache__"])
+        assets.forget_manifest()
+
         client = Client(HTTP_HOST="localhost")
         seeds = tuple(s for s in options["seeds"].split(",") if s) or _SEEDS
         crawl = not options["no_crawl"]
@@ -230,19 +253,6 @@ class Command(BaseCommand):
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text(rendered, encoding="utf-8")
 
-        static_root = settings.BASE_DIR / "staticfiles"
-        # `styles/` is both a Python package and a STATICFILES_DIRS entry, so
-        # collectstatic was copying `styles/__init__.py` into the published site.
-        # Harmless today — a small retired helper — but it means
-        # *any* .py placed there ships publicly. Exclude source rather than trusting that
-        # nobody ever puts a secret-bearing module next to the stylesheet.
-        # `clear` wipes the target first. Without it the hashed filenames that
-        # ManifestStaticFilesStorage generates accumulate forever — every stylesheet edit
-        # leaves its predecessor behind, and all of them get copied into the export and
-        # uploaded. It had reached 436KB of published CSS against 107KB actually loaded,
-        # since the pages reference the unhashed names.
-        call_command("collectstatic", interactive=False, verbosity=0, clear=True,
-                     ignore_patterns=["*.py", "*.pyc", "__pycache__"])
         shutil.copytree(static_root, out / "static", dirs_exist_ok=True)
         (out / "_headers").write_text(
             "/static/*\n  Cache-Control: public, max-age=300, must-revalidate\n"

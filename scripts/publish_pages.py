@@ -87,7 +87,9 @@ def verify_live(url: str, timeout: float = 20.0,
     import urllib.request
 
     built = (OUTPUT / "index.html").read_text(encoding="utf-8")
-    want = set(re.findall(r'/static/(\w+\.css\?v=[0-9a-f]{10})', built))
+    # Assets are published under a hashed *filename* (`web.<hash>.css`), so the name the
+    # page references is itself the content check.
+    want = set(re.findall(r'/static/([\w-]+\.[0-9a-f]{12}\.(?:css|js))', built))
     want_stamp = build_stamp(built)
     if not want and not want_stamp:
         print("No content-versioned stylesheets or build stamp in the build; "
@@ -122,6 +124,20 @@ def verify_live(url: str, timeout: float = 20.0,
                           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
             "Cache-Control": "no-cache",
         })
+
+    def _fetch_bytes(asset_url: str) -> bytes | None:
+        """One asset, cache-busted, so this reads the origin rather than the edge."""
+        probe = asset_url + f"?cb={_time.time():.6f}"
+        request = urllib.request.Request(probe, headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Cache-Control": "no-cache",
+        })
+        try:
+            with urllib.request.urlopen(request, timeout=timeout, context=context) as r:
+                return r.read()
+        except (urllib.error.URLError, TimeoutError, OSError):
+            return None
 
     def _fetch() -> str | None:
         """The live page, or None if it could not be reached."""
@@ -158,12 +174,32 @@ def verify_live(url: str, timeout: float = 20.0,
         live = again
         missing, stale_data = _mismatch(live)
 
+    # And the asset the page names has to *be* the asset we built. Matching names is
+    # what this check used to settle for, and it is not the same thing: the version was
+    # in a query string then, so `/static/web.css` was one unchanging path and the edge
+    # could hold the previous deploy's bytes under the new deploy's URL. The reference
+    # matched, the check passed, and every visitor got the old stylesheet for four hours.
+    # Hashed filenames should make that impossible; this proves it rather than assuming.
+    served_wrong = []
+    if not missing:
+        for name in sorted(want):
+            built_asset = OUTPUT / "static" / name
+            if not built_asset.exists():
+                continue
+            body = _fetch_bytes(f"{url.rstrip('/')}/static/{name}")
+            if body is not None and body != built_asset.read_bytes():
+                served_wrong.append(name)
+
     live_stamp = build_stamp(live)
-    if missing or stale_data:
+    if missing or stale_data or served_wrong:
         print(f"\nPUBLISHED, BUT {url} IS SERVING SOMETHING ELSE.", file=sys.stderr)
         if missing:
             print(f"  expected: {', '.join(sorted(want))}", file=sys.stderr)
             print(f"  missing from the live page: {', '.join(missing)}", file=sys.stderr)
+        if served_wrong:
+            print(f"  the page references {', '.join(served_wrong)} and the origin "
+                  f"serves that URL, but the bytes differ from what we built — a stale "
+                  f"cached copy under a current URL.", file=sys.stderr)
         if stale_data:
             print(f"  build stamp: expected {want_stamp}, live page has "
                   f"{live_stamp or 'none'} — the HTML is stale even though the "

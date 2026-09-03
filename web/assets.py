@@ -15,6 +15,7 @@ development does not need a restart.
 from __future__ import annotations
 
 import hashlib
+import json
 from functools import lru_cache
 from pathlib import Path
 
@@ -43,6 +44,43 @@ def _cached_digest(name: str) -> str:
 
 def stylesheet_version(name: str) -> str:
     return _digest(name) if settings.DEBUG else _cached_digest(name)
+
+
+@lru_cache(maxsize=1)
+def _manifest() -> dict:
+    """collectstatic's map of `web.css` -> `web.<hash>.css`, if one has been written."""
+    try:
+        data = json.loads((settings.STATIC_ROOT / "staticfiles.json").read_text())
+        return data.get("paths", {})
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+def forget_manifest() -> None:
+    """Drop the cached manifest — the export runs collectstatic in this same process."""
+    _manifest.cache_clear()
+
+
+def asset_url(name: str) -> str:
+    """The published URL for an asset, hash in the **filename** where one exists.
+
+    `?v=<hash>` was the wrong place for it. The path stays `/static/web.css` across every
+    deploy, so a request landing during the seconds Cloudflare takes to propagate gets the
+    *previous* deploy's bytes — and the edge then caches them under the new version's
+    query string. The custom domain's browser-cache TTL is four hours, so a redesign
+    shipped, verified and deployed served the old stylesheet to every visitor anyway. The
+    publish check could not see it either: it compared the version string the live HTML
+    *referenced* against the built one, and those matched perfectly.
+
+    A hashed filename cannot fail that way. `/static/web.<hash>.css` is a path no earlier
+    deployment ever served, so there is nothing stale for the edge to be holding, and an
+    unchanged file keeps its URL and its cache. Falls back to the query form when no
+    manifest has been collected — that is the dev server, where staticfiles serves the
+    plain names and nothing is cached anywhere.
+    """
+    hashed = _manifest().get(name)
+    return f"{settings.STATIC_URL}{hashed or name}" + (
+        "" if hashed else f"?v={stylesheet_version(name)}")
 
 
 def build_stamp() -> str:
@@ -83,5 +121,8 @@ def asset_versions(request=None) -> dict:
         "v_app": stylesheet_version("app.css"),
         "v_web": stylesheet_version("web.css"),
         "v_js": stylesheet_version("static-site.js"),
+        "a_app": asset_url("app.css"),
+        "a_web": asset_url("web.css"),
+        "a_js": asset_url("static-site.js"),
         "build_stamp": build_stamp(),
     }

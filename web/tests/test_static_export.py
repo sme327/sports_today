@@ -352,15 +352,23 @@ def test_the_slate_labels_most_of_its_controls():
 def test_stylesheet_versions_track_their_own_contents():
     """A header rewrite once landed entirely in web.css while only app.css's hand-typed
     `?v=` string was bumped. The change was committed, pushed and deployed — and invisible,
-    because browsers kept the stylesheet they had cached two days earlier."""
+    because browsers kept the stylesheet they had cached two days earlier.
+
+    The version now lives in the **filename**. `?v=` fixed the identity but not the URL:
+    `/static/web.css` was one path across every deploy, so the edge could cache the old
+    deploy's bytes under the new deploy's query string and serve them for hours."""
     import re
 
     from web.assets import asset_versions, stylesheet_version
 
     html = (_DIST / "index.html").read_text()
-    versions = re.findall(r'\.css\?v=([0-9a-f]{10})\b', html)
+    versions = re.findall(r'/static/[\w-]+\.([0-9a-f]{12})\.css\b', html)
     assert len(versions) >= 2, f"stylesheets must be content-versioned, got {versions!r}"
     assert len(set(versions)) == len(versions), "two stylesheets sharing a version"
+    assert ".css?v=" not in html, "the hash belongs in the path, not the query string"
+    # And every hashed asset the page names was actually published under that name.
+    for name in re.findall(r'/static/([\w-]+\.[0-9a-f]{12}\.(?:css|js))', html):
+        assert (_DIST / "static" / name).exists(), f"{name} referenced but not exported"
     live = asset_versions()
     assert stylesheet_version("web.css") == live["v_web"]
     assert live["v_app"] != live["v_web"]
@@ -405,7 +413,8 @@ def test_the_live_site_is_checked_against_what_was_built(monkeypatch, tmp_path):
 
     monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
     (tmp_path / "index.html").write_text(
-        '<link href="/static/web.css?v=abc1234567"><link href="/static/app.css?v=def8901234">'
+        '<link href="/static/web.abc123456789.css">'
+        '<link href="/static/app.def890123456.css">'
     )
 
     class _Response:
@@ -416,11 +425,11 @@ def test_the_live_site_is_checked_against_what_was_built(monkeypatch, tmp_path):
 
     import urllib.request
     monkeypatch.setattr(urllib.request, "urlopen",
-                        lambda *a, **k: _Response("web.css?v=abc1234567 app.css?v=def8901234"))
+                        lambda *a, **k: _Response("web.abc123456789.css app.def890123456.css"))
     assert publish_pages.verify_live("https://example.test/", retry_delays=()) is True
 
     monkeypatch.setattr(urllib.request, "urlopen",
-                        lambda *a, **k: _Response("web.css?v=0000000000"))
+                        lambda *a, **k: _Response("web.000000000000.css"))
     assert publish_pages.verify_live("https://example.test/", retry_delays=()) is False
 
 
@@ -438,7 +447,7 @@ def test_an_unreachable_site_is_not_reported_as_a_publish_failure(monkeypatch, t
     from scripts import publish_pages
 
     monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
-    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+    (tmp_path / "index.html").write_text('<link href="/static/web.abc123456789.css">')
 
     real = urllib.request.urlopen
     urllib.request.urlopen = lambda *a, **k: (_ for _ in ()).throw(urllib.error.URLError("down"))
@@ -539,8 +548,9 @@ def test_script_url_is_content_hashed_like_the_stylesheets():
 
     from pathlib import Path
     template = Path("web/templates/web/base.html").read_text(encoding="utf-8")
-    assert "static-site.js' %}?v={{ v_js }}" in template
+    assert 'src="{{ a_js }}"' in template
     assert "?v=20260821-2" not in template
+    assert "?v={{ v_js }}" not in template
 
 
 def test_verify_retries_before_calling_a_deploy_stale(monkeypatch, tmp_path):
@@ -550,7 +560,7 @@ def test_verify_retries_before_calling_a_deploy_stale(monkeypatch, tmp_path):
     from scripts import publish_pages
 
     monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
-    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+    (tmp_path / "index.html").write_text('<link href="/static/web.abc123456789.css">')
 
     class _Response:
         def __init__(self, body): self._body = body
@@ -558,7 +568,7 @@ def test_verify_retries_before_calling_a_deploy_stale(monkeypatch, tmp_path):
         def __enter__(self): return self
         def __exit__(self, *_): return False
 
-    bodies = iter(["stale page", "stale page", "web.css?v=abc1234567"])
+    bodies = iter(["stale page", "stale page", "web.abc123456789.css"])
     import urllib.request
     monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: _Response(next(bodies)))
     monkeypatch.setattr("time.sleep", lambda _s: None)
@@ -572,7 +582,7 @@ def test_verify_still_fails_when_the_page_never_catches_up(monkeypatch, tmp_path
     from scripts import publish_pages
 
     monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
-    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+    (tmp_path / "index.html").write_text('<link href="/static/web.abc123456789.css">')
 
     class _Response:
         def read(self): return b"a permanently wrong page"
@@ -592,7 +602,7 @@ def test_each_verify_attempt_busts_the_edge_cache_afresh(monkeypatch, tmp_path):
     from scripts import publish_pages
 
     monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
-    (tmp_path / "index.html").write_text('<link href="/static/web.css?v=abc1234567">')
+    (tmp_path / "index.html").write_text('<link href="/static/web.abc123456789.css">')
 
     seen = []
 
@@ -723,3 +733,49 @@ def test_mlb_matchup_engine_version_moved_with_its_content():
 
     assert ENGINE_VERSION != "mlb-game-page-v1", (
         "bump ENGINE_VERSION whenever the rendered page changes, or cached pages go stale")
+
+
+def test_a_stale_asset_under_a_current_url_fails_the_check(monkeypatch, tmp_path):
+    """The bug this check could not see, and the reason the hash moved into the filename.
+
+    With `?v=<hash>` the *path* was `/static/web.css` on every deploy, so a request during
+    the seconds Cloudflare takes to propagate got the previous deploy's bytes — and the
+    edge cached them under the new version's query string, for the four hours the zone's
+    browser TTL allows. The live page referenced exactly the version we built, so the old
+    check passed while every visitor loaded the wrong stylesheet.
+
+    Matching the *name* is not the same as serving the *file*. Now it fetches it.
+    """
+    import urllib.request
+
+    from scripts import publish_pages
+
+    monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
+    (tmp_path / "index.html").write_text('<link href="/static/web.abc123456789.css">')
+    (tmp_path / "static").mkdir()
+    (tmp_path / "static" / "web.abc123456789.css").write_bytes(b".new{color:red}")
+
+    class _Response:
+        def __init__(self, body): self._body = body
+        def read(self): return self._body
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+
+    def _urlopen(request, *a, **k):
+        url = getattr(request, "full_url", request)
+        if "/static/" in url:
+            return _Response(b".old{color:blue}")      # what the edge is still holding
+        return _Response(b"web.abc123456789.css")      # the page names the right file
+
+    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    assert publish_pages.verify_live("https://example.test/", retry_delays=()) is False
+
+    # Serving what we built is what passes — the name alone never was enough.
+    def _correct(request, *a, **k):
+        url = getattr(request, "full_url", request)
+        if "/static/" in url:
+            return _Response(b".new{color:red}")
+        return _Response(b"web.abc123456789.css")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _correct)
+    assert publish_pages.verify_live("https://example.test/", retry_delays=()) is True

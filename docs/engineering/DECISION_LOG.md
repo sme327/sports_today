@@ -9,6 +9,43 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-02 — The asset hash moved out of the query string and into the filename
+
+**Decision.** Stylesheets and the script are published as `/static/web.<hash>.css` —
+collectstatic's manifest name — instead of `/static/web.css?v=<hash>`. `collectstatic` now
+runs **before** the pages are rendered, because the pages read that manifest. The publish
+check additionally **fetches** each hashed asset and compares its bytes against the file we
+built, rather than only checking that the live HTML names the right version.
+
+**Reason.** `?v=` fixed asset *identity* but not the asset *URL*. The path stayed
+`/static/web.css` across every deploy, so a request arriving during the seconds Cloudflare
+takes to propagate was answered from the previous deployment — and the edge then cached
+those old bytes under the **new** version's query string. The custom domain's browser-cache
+TTL is four hours (a zone setting that overrides the 300s in `_headers`, which the
+`*.pages.dev` origin does honour), so a responsive fix shipped, deployed and confirmed
+served the old stylesheet to every visitor regardless.
+
+The publish check could not see it, and that is the more useful half of this entry. It
+compared the version string the live HTML *referenced* against the built one. Those matched
+perfectly — the HTML was new, only the CSS behind it was old. This is the fourth bug in this
+project of the same shape: something confirming a cached artifact instead of the current
+truth. A check that reads a reference is not checking the thing referenced.
+
+**Tradeoffs.** Two orderings now matter that did not before: collectstatic has to precede
+rendering, and `web.assets.forget_manifest()` has to be called after it, because the export
+runs both in one process and the manifest is cached. Get either wrong and every page is
+stamped with the *previous* run's hashes — the same class of bug, one layer up. The export
+also publishes both the hashed and unhashed copies of each asset; only the hashed ones are
+referenced. Under `runserver` there is no manifest, so `asset_url` falls back to the query
+form, which is correct there: staticfiles serves the plain names and nothing is cached.
+
+**Future considerations.** Hashed filenames are immutable, so `_headers` could give
+`/static/*` a year and `immutable` instead of 300s — worth doing, though the zone's browser
+TTL override means it would only take effect on the `pages.dev` origin until that setting is
+changed in the Cloudflare dashboard.
+
+---
+
 ## 2026-09-02 — Player Trends is a system of three display types, not a page of sentences
 
 **Decision.** The trends page (now **"MLB / WNBA Player Trends"**) renders sections, and a
