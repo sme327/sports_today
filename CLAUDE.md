@@ -54,11 +54,24 @@ Everything else is scheduled from ESPN and so takes ESPN's standings natively. A
 own `mls_standings` table, because "games behind" means nothing where a draw is a
 result.
 
-**The playoff page lives inside a window** (`services/playoff_window.py`), gated on
+**The playoff pages live inside a window** (`services/playoff_window.py`), gated on
 *games remaining* rather than a date — a date breaks on a lockout or a shortened season.
-MLB opens at 30 games left (~Aug 27), the NFL at 7 (week 12). It persists through the
+MLB opens at 30 games left (~Aug 27), the NFL at 7 (week 12). A page persists through the
 offseason showing how the race finished, worded as finished, and disappears when the
-next season's standings reset to 0-0.
+next season's standings reset to 0-0. The same window decides which leagues the
+**standings** list offers, so a mid-season break — the WNBA's two-week FIBA window — no
+longer reads as an offseason.
+
+**Each league's race has its own builder, because the formats differ structurally.**
+MLB (`services/mlb_playoffs.py`) keeps its two races **apart**: winning a division is a
+contest against four named clubs ending in an automatic place, the Wild Card is a
+separate contest among everyone who wins none, and a club appears in both when it is
+genuinely in both — one combined table showed only the second and said nothing about the
+race a club was actually in. The WNBA (`services/wnba_playoffs.py`) is one table seeded
+1-8 across the league, no divisions and no conferences since 2016; running it through
+MLB's shape would invent structure the league does not have. An empty chasing list says
+*which* kind of empty it is, because "nobody is close" and "everyone left is
+mathematically out" look identical otherwise.
 
 **The site rolls itself over at midnight.** The export is static, so "today" is baked
 in at build time; the daily run precomputes **three** days and an inline script in
@@ -174,7 +187,9 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   database and the atomic workbook swap).
   It also collects **current standings** (five leagues plus the MLS name lookup) and
   the **NFL season schedule** (18 weeks, one request each). Both are non-fatal like every
-  other collector: context must never fail a data run.
+  other collector: context must never fail a data run. The NCAAF **market line** rides
+  the ordinary schedule fetch, so it appears only after a refresh — a code change alone
+  will not surface it, which cost a publish to learn.
   Full steps: [Setup](docs/engineering/SETUP.md).
 - **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
   + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there
@@ -269,6 +284,16 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   product decision, enforced by a test), no injuries and no weather. A "Game Interest"
   score ranks a slate for attention — it is **not** a win probability and not
   comparable to a prop's Opportunity Score.
+- **Odds may be displayed; they may never be consumed.** Since 2026-09-02 NCAAF cards
+  and matchup pages quote a market spread and total from ESPN — the spread beside the
+  favourite, the total on the separator, faded and attributed, because that page has the
+  least of its own to say and a forty-point line answers "is this a real game" better
+  than any signal we can build. Nothing scores, ranks or grades from it. `editorial` is
+  barred by an AST guard **and** by a behavioural test asserting its output is identical
+  with and without a line present — the first proves it never names odds, the second
+  that it never uses them, which is the property that matters once the number is within
+  reach. Scoped to a set of one (`src/espn_scoreboard.MARKET_LINE_LEAGUES`): on an MLB
+  card a spread would sit beside props we score and read as our endorsement.
 - **Win percentage isn't comparable across sports.** MLB's spread is ~4× tighter than
   football's, so cross-league ranking normalises each team against its own league and
   refuses the comparison when a league has too few teams on the slate.
