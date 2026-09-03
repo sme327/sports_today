@@ -24,7 +24,7 @@ vertical space it used to.{% endcomment %}
 
 {% if has_data %}
   <nav class="trend-jump" aria-label="Trend metrics">
-    <a class="trend-jump-link active" href="#trends">All Trends</a>
+    <a class="trend-jump-link" href="#trends">All Trends</a>
     {% for section in sections %}{% if section.rows %}<a class="trend-jump-link" href="#{{ section.slug }}">{{ section.nav }}</a>{% endif %}{% endfor %}
   </nav>
 
