@@ -361,3 +361,37 @@ def test_an_empty_chasing_list_says_which_kind_of_empty_it_is():
     assert panel["bubble"] == []
     assert panel["decided"] is True
     assert "field is set" in panel["note"]
+
+
+def test_the_card_chip_is_selective_where_the_list_is_ranked():
+    """The race page admits anything over 7 and then ranks and truncates to eight, so
+    its effective cut is far above its floor. The card has no ranking to hide behind: at
+    7 the chip landed on seven of nine cards, and a mark on almost everything marks
+    nothing."""
+    from services import mlb_playoffs as P
+
+    assert P.CARD_IMPLICATION_SCORE > 7
+
+
+def test_both_surfaces_score_a_game_the_same_way():
+    """A game must not be consequential on the race page and ordinary on the card."""
+    import inspect
+
+    from services import mlb_playoffs as P
+
+    assert "implication(" in inspect.getsource(P._important_games)
+    assert "implication(" in inspect.getsource(P.slate_implications)
+
+
+def test_no_chip_outside_the_race_window():
+    """In April every game is equally not about the playoffs, and a chip saying
+    otherwise would be noise on every card."""
+    from datetime import date
+    from types import SimpleNamespace
+
+    from services import mlb_playoffs as P
+
+    game = SimpleNamespace(league="MLB", state="pre", game_id="1",
+                           away_id="1", home_id="2", away_short="A", home_short="B")
+    # A table where everyone is 0-0 reads as preseason, so nothing is consequential.
+    assert P.slate_implications([game], date(2026, 4, 1)) == {}

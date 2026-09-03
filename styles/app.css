@@ -1825,3 +1825,18 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .game-total::before { content: "·"; margin-inline: .4rem; opacity: .6; }
 /* A live or final game shows a score in this column; the pre-game line is withheld
    there by market_cells, so the two can never collide. */
+
+/* A game the race page counts as consequential. Quieter than "Best game" on purpose:
+   that chip is our editorial pick and this is a structural fact about the standings —
+   an outline rather than a fill, so the two never read as the same kind of claim. */
+.race-chip {
+  padding: .08rem .42rem;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-pill);
+  color: var(--text-3);
+  font-size: .62rem;
+  font-weight: 750;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

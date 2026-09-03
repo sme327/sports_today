@@ -151,7 +151,8 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
 
 
 def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90,
-                   is_best: bool = False, norm: LeagueNorm | None = None) -> str:
+                   is_best: bool = False, norm: LeagueNorm | None = None,
+                   race_why: str = "") -> str:
     adapter = get_adapter(game.league)
     away = game.away_display
     home = game.home_display
@@ -202,6 +203,11 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
                     if context else "")
     # Marked per league, never across the slate — see editorial.best_per_league.
     best_html = '<span class="bg-chip">Best game</span>' if is_best else ""
+    # A game the race page counts as consequential. Deliberately a quiet chip and not a
+    # second "Best game": that one is our editorial pick, this is a structural fact about
+    # the standings, and dressing them alike would blur two different claims.
+    race_html = (f'<span class="race-chip" title="{escape(race_why, quote=True)}">'
+                 f'Playoff race</span>' if race_why else "")
     away_line, home_line, total_line = market_cells(game)
     footer = _footer(game, day, matchup_href, count, threshold, deep_dive, norm)
     # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
@@ -212,7 +218,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         f'<div class="game-card{state_cls}{compact_cls}" data-live-game="{escape(str(game.game_id))}" '
         f'data-league="{escape(game.league)}" data-away="{escape(away)}" data-home="{escape(home)}">'
         f'<div class="game-top"><span class="game-top-left">{best_html}'
-        f'<span class="league-name">{escape(league_label)}</span>{context_html}{total_line}</span>'
+        f'<span class="league-name">{escape(league_label)}</span>{context_html}{total_line}{race_html}</span>'
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
         f'{_team_row(game, "away", away_logo, away, away_cls, away_line)}'
@@ -227,16 +233,19 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
 def schedule_grid_html(games: list[SlateGame], day: str,
                        counts: dict[str, int] | None = None, threshold: int = 90,
                        best_ids: set[str] | None = None,
-                       norms: dict[str, LeagueNorm] | None = None) -> str:
+                       norms: dict[str, LeagueNorm] | None = None,
+                       race: dict[str, str] | None = None) -> str:
     """``norms`` should be built from the **whole** slate, not this group — the grid is
     rendered once per game state, and a league's shape is not a property of who
     happens to be mid-game."""
     counts = counts or {}
     best_ids = best_ids or set()
     norms = norms or {}
+    race = race or {}
     cards = "".join(game_card_html(game, day, counts.get(game.game_id, 0), threshold,
                                    is_best=str(game.game_id) in best_ids,
-                                   norm=norms.get(game.league))
+                                   norm=norms.get(game.league),
+                                   race_why=race.get(str(game.game_id), ""))
                     for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
 

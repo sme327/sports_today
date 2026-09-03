@@ -121,9 +121,17 @@ def build_context(params, local_today: date) -> dict:
     if all_visible and not collapsed:
         best_ids, unjudged = best_per_league(all_visible)
         norms = league_norms(all_visible)
+        # Which of today's games the race page would call consequential. Non-fatal:
+        # a card without the chip is merely quieter, and standings are context.
+        try:
+            from services.mlb_playoffs import slate_implications
+            race = slate_implications(all_visible, slate_date)
+        except Exception:                                    # noqa: BLE001
+            race = {}
         schedule_groups = [
             django_matchup_links(
-                schedule_grid_html(group, day, counts, threshold, set(best_ids.values()), norms)
+                schedule_grid_html(group, day, counts, threshold,
+                                   set(best_ids.values()), norms, race)
             )
             for group in group_games_by_state(all_visible)
             if group

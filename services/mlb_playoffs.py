@@ -135,34 +135,50 @@ def _rival_meetings(games: list[dict], status: dict[str, dict]) -> dict[str, int
     return counts
 
 
+def implication(away: dict | None, home: dict | None,
+                away_name: str | None = None,
+                home_name: str | None = None) -> tuple[float, str]:
+    """How much a game moves a playoff race, and why, from both sides' race status.
+
+    Shared by the playoff page's "games that matter" list and the slate card's chip, so
+    the two can never disagree about which games count. Returns ``(0.0, "")`` when the
+    game touches nobody in the race.
+    """
+    if not away and not home:
+        return 0.0, ""
+    score = 0.0
+    for side in (away, home):
+        if side:
+            score += 7 if side["in_field"] else max(0.0, 7 - side["gap"])
+    same_conf = bool(away and home and away["conference"] == home["conference"])
+    same_div = bool(same_conf and away["division"] == home["division"])
+    if same_conf:
+        score += 3
+    if same_div:
+        score += 4
+    if score < 7:
+        return 0.0, ""
+    if same_div:
+        division = (away["division"] or "").replace("American League", "AL") \
+                                           .replace("National League", "NL")
+        return score, f"Direct {division} race."
+    if same_conf:
+        return score, (f"Both clubs are part of the "
+                       f"{_short_conference(away['conference'])} playoff picture.")
+    side = away or home
+    club = away_name if away else home_name
+    return score, f"{club} is {side['status'].lower()}."
+
+
 def _important_games(games: list[dict], status: dict[str, dict]) -> list[dict]:
     ranked = []
     for game in games:
         if game.get("phase") != "regular" or game.get("state") == "final":
             continue
         away, home = status.get(str(game.get("away_id"))), status.get(str(game.get("home_id")))
-        if not away and not home:
+        score, why = implication(away, home, game.get("away_short"), game.get("home_short"))
+        if not why:
             continue
-        score = 0.0
-        for side in (away, home):
-            if side:
-                score += 7 if side["in_field"] else max(0, 7 - side["gap"])
-        same_conf = bool(away and home and away["conference"] == home["conference"])
-        same_div = bool(same_conf and away["division"] == home["division"])
-        if same_conf:
-            score += 3
-        if same_div:
-            score += 4
-        if score < 7:
-            continue
-        if same_div:
-            why = f"Direct {away['division'].replace('American League', 'AL').replace('National League', 'NL')} race."
-        elif same_conf:
-            why = f"Both clubs are part of the {_short_conference(away['conference'])} playoff picture."
-        else:
-            side = away or home
-            club = game.get("away_short") if away else game.get("home_short")
-            why = f"{club} is {side['status'].lower()}."
         try:
             start = datetime.fromisoformat(str(game.get("game_date")).replace("Z", "+00:00"))
             day = start.strftime("%a, %b %-d")
@@ -224,3 +240,39 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH,
             "games": _important_games(in_window or schedule, status),
             "schedule_available": schedule_available,
             "window_end": end, "as_of": today, "has_data": bool(table)}
+
+
+# The card's bar, which is deliberately far above the list's floor of 7. The race page
+# admits anything over 7 and then *ranks and truncates to eight*, so its effective cut is
+# much higher than its floor — at 7 the chip landed on seven of nine cards, and a mark
+# that appears on almost everything marks nothing. Measured against two real slates, 15
+# keeps the four or five games that are genuinely about the race and drops the ones that
+# merely involve someone in it.
+CARD_IMPLICATION_SCORE = 15.0
+
+
+def slate_implications(games, as_of: date | None = None, db_path: Path = DB_PATH,
+                       min_score: float = CARD_IMPLICATION_SCORE) -> dict[str, str]:
+    """``{game_id: why}`` for slate games that genuinely move a playoff race.
+
+    Scored by the same function as the race page's "games that matter", so a game cannot
+    be consequential on one surface and ordinary on the other — only the bar differs,
+    because the page ranks and this does not.
+
+    Silent outside the race window: in April every game is equally not about the
+    playoffs, and a chip saying otherwise would be noise on every card.
+    """
+    table = standings.for_league("MLB", as_of, db_path=db_path)
+    if playoff_window.state("MLB", table) != "live":
+        return {}
+    _panels, status = _race_rows(table)
+    out: dict[str, str] = {}
+    for game in games:
+        if getattr(game, "league", None) != "MLB" or game.state == "final":
+            continue
+        away = status.get(str(game.away_id))
+        home = status.get(str(game.home_id))
+        score, why = implication(away, home, game.away_short, game.home_short)
+        if why and score >= min_score:
+            out[str(game.game_id)] = why
+    return out
