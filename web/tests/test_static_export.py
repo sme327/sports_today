@@ -779,3 +779,38 @@ def test_a_stale_asset_under_a_current_url_fails_the_check(monkeypatch, tmp_path
 
     monkeypatch.setattr(urllib.request, "urlopen", _correct)
     assert publish_pages.verify_live("https://example.test/", retry_delays=()) is True
+
+
+def test_an_asset_lagging_a_beat_behind_its_page_is_not_a_failure(monkeypatch, tmp_path):
+    """Assets propagate a beat behind the HTML that names them.
+
+    The first real publish after the byte check shipped reported a failure on a deploy
+    that was correct seconds later — exactly what the HTML retry already existed to
+    prevent. A check that fails good deploys teaches the operator to ignore it, so the
+    byte comparison retries on the same backoff.
+    """
+    import urllib.request
+
+    from scripts import publish_pages
+
+    monkeypatch.setattr(publish_pages, "OUTPUT", tmp_path)
+    (tmp_path / "index.html").write_text('<link href="/static/web.abc123456789.css">')
+    (tmp_path / "static").mkdir()
+    (tmp_path / "static" / "web.abc123456789.css").write_bytes(b".new{color:red}")
+
+    class _Response:
+        def __init__(self, body): self._body = body
+        def read(self): return self._body
+        def __enter__(self): return self
+        def __exit__(self, *_): return False
+
+    asset_bodies = iter([b".old{color:blue}", b".new{color:red}", b".new{color:red}"])
+
+    def _urlopen(request, *a, **k):
+        url = getattr(request, "full_url", request)
+        if "/static/" in url:
+            return _Response(next(asset_bodies))
+        return _Response(b"web.abc123456789.css")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    assert publish_pages.verify_live("https://example.test/", retry_delays=(0,)) is True

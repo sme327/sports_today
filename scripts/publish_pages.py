@@ -152,19 +152,44 @@ def verify_live(url: str, timeout: float = 20.0,
                   file=sys.stderr)
             return None
 
-    def _mismatch(live: str) -> tuple[list[str], bool]:
-        return (sorted(a for a in want if a not in live),
-                want_stamp is not None and build_stamp(live) != want_stamp)
+    def _served_wrong() -> list[str]:
+        """Assets the page names whose bytes are not the bytes we built.
+
+        Matching the *name* is what this check used to settle for, and it is not the same
+        thing: the version lived in a query string then, so `/static/web.css` was one
+        unchanging path and the edge could hold the previous deploy's bytes under the new
+        deploy's URL. The reference matched, the check passed, and every visitor got the
+        old stylesheet for four hours. Hashed filenames should make that impossible; this
+        proves it rather than assuming it.
+        """
+        wrong = []
+        for name in sorted(want):
+            built_asset = OUTPUT / "static" / name
+            if not built_asset.exists():
+                continue
+            body = _fetch_bytes(f"{url.rstrip('/')}/static/{name}")
+            if body is not None and body != built_asset.read_bytes():
+                wrong.append(name)
+        return wrong
+
+    def _mismatch(live: str) -> tuple[list[str], bool, list[str]]:
+        missing = sorted(a for a in want if a not in live)
+        stale = want_stamp is not None and build_stamp(live) != want_stamp
+        # Only worth asking once the page itself is the one we published.
+        return missing, stale, ([] if missing else _served_wrong())
 
     live = _fetch()
     if live is None:
         return True
-    missing, stale_data = _mismatch(live)
+    missing, stale_data, served_wrong = _mismatch(live)
     waited = 0.0
     for delay in retry_delays:
-        if not (missing or stale_data):
+        if not (missing or stale_data or served_wrong):
             break
-        # Give the edge time to catch up before calling it a failure.
+        # Give the edge time to catch up before calling it a failure. The assets
+        # propagate a beat behind the HTML that names them, so the byte comparison has to
+        # retry on the same backoff — a check that fails a good deploy teaches the
+        # operator to ignore it, which costs more than the check is worth.
         print(f"  live page not updated yet; re-checking in {delay:.0f}s…", flush=True)
         _time.sleep(delay)
         waited += delay
@@ -172,23 +197,7 @@ def verify_live(url: str, timeout: float = 20.0,
         if again is None:
             return True
         live = again
-        missing, stale_data = _mismatch(live)
-
-    # And the asset the page names has to *be* the asset we built. Matching names is
-    # what this check used to settle for, and it is not the same thing: the version was
-    # in a query string then, so `/static/web.css` was one unchanging path and the edge
-    # could hold the previous deploy's bytes under the new deploy's URL. The reference
-    # matched, the check passed, and every visitor got the old stylesheet for four hours.
-    # Hashed filenames should make that impossible; this proves it rather than assuming.
-    served_wrong = []
-    if not missing:
-        for name in sorted(want):
-            built_asset = OUTPUT / "static" / name
-            if not built_asset.exists():
-                continue
-            body = _fetch_bytes(f"{url.rstrip('/')}/static/{name}")
-            if body is not None and body != built_asset.read_bytes():
-                served_wrong.append(name)
+        missing, stale_data, served_wrong = _mismatch(live)
 
     live_stamp = build_stamp(live)
     if missing or stale_data or served_wrong:
