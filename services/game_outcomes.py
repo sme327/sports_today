@@ -10,6 +10,18 @@ rather than invent a verdict.** Final margin, total score and who won are stored
 whether a 1-0 pitchers' duel beat a 12-10 slugfest is not something a number settles,
 and nothing here pretends otherwise.
 
+**The market line is recorded, never consumed.** Since 2026-09-05 each row can carry the
+spread and total that were posted before kickoff. It is stored so the question "do our
+reads say anything about totals?" can be *measured* — today the honest answer is that
+nobody knows, because we held results with no lines beside them. Nothing scores, ranks or
+grades from these columns, and a test holds that: `editorial` stays barred from odds by
+its own AST and behavioural guards, and this table is downstream of it either way.
+
+**A line has to be captured before kickoff.** ESPN drops odds from a game once it is
+final, so there is nothing to read at grade time — `pregame_lines` recovers the last line
+cached while the game was still scheduled. That is why this could not simply be scraped
+retroactively, and why the 25 games played before the line collector shipped have none.
+
 **Leakage.** ESPN's record for a completed game *includes that game* — the Yankees
 show 66-51 on a day they won and 66-52 the next. Scoring a past slate straight from
 that data would feed the result into the input, and the winner would always look
@@ -43,6 +55,12 @@ class GameOutcome:
     margin: int
     total: int
     winner: str | None      # "away" | "home" | None (tie)
+    # The market's pregame view, for measurement only. None when no line was captured.
+    market_spread: float | None = None
+    market_total: float | None = None
+    market_favourite: str | None = None
+    market_book: str | None = None
+    line_captured_at: str | None = None
 
 
 def pregame_record(summary: str | None, won: bool | None) -> str | None:
@@ -88,14 +106,40 @@ def ensure_table(conn: sqlite3.Connection) -> None:
             margin INTEGER,
             total INTEGER,
             winner TEXT,
+            market_spread REAL,
+            market_total REAL,
+            market_favourite TEXT,
+            market_book TEXT,
+            line_captured_at TEXT,
             PRIMARY KEY (slate_date, league, game_id)
         )""")
+    _add_market_columns(conn)
 
 
-def outcome_for(game: SlateGame, interest_score: int, signals: list[str]) -> GameOutcome | None:
-    """Build a row from a finished game, or None if it is not gradeable."""
+_MARKET_COLUMNS = (("market_spread", "REAL"), ("market_total", "REAL"),
+                   ("market_favourite", "TEXT"), ("market_book", "TEXT"),
+                   ("line_captured_at", "TEXT"))
+
+
+def _add_market_columns(conn: sqlite3.Connection) -> None:
+    """Add the market columns to a table that predates them. Additive and idempotent."""
+    have = {r[1] for r in conn.execute(f"PRAGMA table_info({_TABLE})")}
+    for name, kind in _MARKET_COLUMNS:
+        if name not in have:
+            conn.execute(f"ALTER TABLE {_TABLE} ADD COLUMN {name} {kind}")
+
+
+def outcome_for(game: SlateGame, interest_score: int, signals: list[str],
+                line: dict | None = None) -> GameOutcome | None:
+    """Build a row from a finished game, or None if it is not gradeable.
+
+    ``line`` is the pregame market view from ``pregame_lines``; absent for every league
+    but the ones ``MARKET_LINE_LEAGUES`` collects, and for games played before that
+    collector existed.
+    """
     if game.state != "final" or game.away_score is None or game.home_score is None:
         return None
+    line = line or {}
     return GameOutcome(
         slate_date=str(game.start_time.date()) if game.start_time else "",
         league=game.league, game_id=str(game.game_id),
@@ -105,6 +149,9 @@ def outcome_for(game: SlateGame, interest_score: int, signals: list[str]) -> Gam
         margin=abs(game.away_score - game.home_score),
         total=game.away_score + game.home_score,
         winner=game.winner,
+        market_spread=line.get("spread"), market_total=line.get("total"),
+        market_favourite=line.get("favourite"), market_book=line.get("provider"),
+        line_captured_at=line.get("captured_at"),
     )
 
 
@@ -118,14 +165,88 @@ def record(outcomes: list[GameOutcome], db_path: Path = DB_PATH) -> int:
         ensure_table(conn)
         conn.executemany(
             f"""INSERT INTO {_TABLE} (slate_date, league, game_id, away, home,
-                    interest_score, signals, margin, total, winner)
-                VALUES (?,?,?,?,?,?,?,?,?,?)
+                    interest_score, signals, margin, total, winner,
+                    market_spread, market_total, market_favourite, market_book,
+                    line_captured_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(slate_date, league, game_id) DO UPDATE SET
                     interest_score=excluded.interest_score, signals=excluded.signals,
-                    margin=excluded.margin, total=excluded.total, winner=excluded.winner""",
+                    margin=excluded.margin, total=excluded.total, winner=excluded.winner,
+                    -- A line already recorded is the one captured closest to kickoff;
+                    -- a later re-run reads an empty board and must not erase it.
+                    market_spread=COALESCE(excluded.market_spread, market_spread),
+                    market_total=COALESCE(excluded.market_total, market_total),
+                    market_favourite=COALESCE(excluded.market_favourite, market_favourite),
+                    market_book=COALESCE(excluded.market_book, market_book),
+                    line_captured_at=COALESCE(excluded.line_captured_at, line_captured_at)""",
             [(o.slate_date, o.league, o.game_id, o.away, o.home, o.interest_score,
-              o.signals, o.margin, o.total, o.winner) for o in rows])
+              o.signals, o.margin, o.total, o.winner, o.market_spread, o.market_total,
+              o.market_favourite, o.market_book, o.line_captured_at) for o in rows])
     return len(rows)
+
+
+def pregame_lines(slate_date: str, league: str, db_path: Path = DB_PATH) -> dict[str, dict]:
+    """The last market line cached for each game *before* it kicked off.
+
+    ESPN removes odds from a game once it starts, so by grade time there is nothing left
+    to read — the line has to be recovered from what the daily run cached while the game
+    was still scheduled. Later fetches on the same day legitimately carry fewer lines
+    (the early games have already started), so a game keeps the newest line any fetch
+    saw, not the newest fetch's answer.
+
+    Rows whose cached copy already shows the game as live or final are skipped entirely:
+    their absent odds are a fact about ESPN's board, not about the market.
+    """
+    if not Path(db_path).exists():
+        return {}
+    import json
+
+    out: dict[str, dict] = {}
+    with sqlite3.connect(db_path) as conn:
+        try:
+            rows = conn.execute(
+                "SELECT fetched_at, payload FROM schedule_cache "
+                "WHERE league = ? AND slate_date = ? ORDER BY fetched_at",
+                (league, slate_date)).fetchall()
+        except sqlite3.OperationalError:
+            return {}
+    for fetched_at, payload in rows:
+        try:
+            games = json.loads(payload)
+        except (TypeError, ValueError):
+            continue
+        for g in games if isinstance(games, list) else []:
+            if g.get("state") not in (None, "", "pre"):
+                continue                      # already under way when this was cached
+            line = (g.get("meta") or {}).get("market_line")
+            if not line or line.get("total") is None:
+                continue
+            gid = str(g.get("game_id") or "")
+            if gid:
+                out[gid] = {**line, "captured_at": fetched_at}
+    return out
+
+
+def totals_record(rows: list[dict], league: str | None = None) -> dict:
+    """How the recorded totals landed against the lines we captured.
+
+    The whole point of storing the line: until this can be computed, "should we call an
+    over?" has no evidence behind it either way. Pushes are reported separately rather
+    than folded into one side.
+    """
+    sub = [r for r in rows
+           if (league is None or r["league"] == league)
+           and r.get("market_total") is not None and r.get("total") is not None]
+    over = sum(1 for r in sub if r["total"] > r["market_total"])
+    under = sum(1 for r in sub if r["total"] < r["market_total"])
+    push = len(sub) - over - under
+    decided = over + under
+    return {
+        "n": len(sub), "over": over, "under": under, "push": push,
+        "over_rate": round(100 * over / decided, 1) if decided else None,
+        "mean_error": round(sum(r["total"] - r["market_total"] for r in sub) / len(sub), 1)
+        if sub else None,
+    }
 
 
 def load(db_path: Path = DB_PATH, league: str | None = None) -> list[dict]:

@@ -104,3 +104,100 @@ def test_calibration_is_reported_within_a_league():
     rows = _rows([(70, 1)] * 8 + [(30, 9)] * 8) + _rows([(70, 20)] * 8, league="WNBA")
     assert go.calibration(rows, "MLB")["n"] == 16
     assert go.calibration(rows, "WNBA") == {}          # too few to judge
+
+
+# --- The market line, recorded for measurement and consumed by nothing ----------------
+
+def _cache_row(conn, slate, league, fetched_at, games):
+    import json
+    conn.execute("CREATE TABLE IF NOT EXISTS schedule_cache (league TEXT, slate_date TEXT, "
+                 "fetched_at TEXT, source TEXT, status TEXT, game_count INTEGER, payload TEXT)")
+    conn.execute("INSERT INTO schedule_cache VALUES (?,?,?,?,?,?,?)",
+                 (league, slate, fetched_at, "espn", "ok", len(games), json.dumps(games)))
+
+
+def _game(gid, state="pre", total=52.5, spread=-6.5):
+    line = {"detail": "X -6.5", "spread": spread, "total": total,
+            "favourite": "X", "provider": "Draft Kings"}
+    return {"game_id": gid, "state": state, "meta": {"market_line": line}}
+
+
+def test_a_line_is_recovered_from_before_kickoff(tmp_path):
+    """ESPN drops odds once a game starts, so by grade time there is nothing to read.
+
+    Later fetches on the same day legitimately carry fewer lines — the early games have
+    already kicked off — so a game keeps the newest line *any* fetch saw rather than the
+    newest fetch's answer.
+    """
+    import sqlite3
+
+    from services import game_outcomes as go
+
+    db = tmp_path / "t.db"
+    with sqlite3.connect(db) as conn:
+        _cache_row(conn, "2026-09-05", "NCAAF", "2026-09-04T08:00", [
+            _game("A", total=51.5), _game("B", total=60.5)])
+        _cache_row(conn, "2026-09-05", "NCAAF", "2026-09-05T10:00", [
+            _game("A", total=52.5),                       # line moved; keep this one
+            {"game_id": "B", "state": "in", "meta": {}}])  # already live, odds gone
+        conn.commit()
+
+    lines = go.pregame_lines("2026-09-05", "NCAAF", db_path=db)
+    assert lines["A"]["total"] == 52.5
+    assert lines["A"]["captured_at"] == "2026-09-05T10:00"
+    # B's absent odds are a fact about ESPN's board, not the market — keep the earlier one.
+    assert lines["B"]["total"] == 60.5
+    assert lines["B"]["captured_at"] == "2026-09-04T08:00"
+
+
+def test_a_rerun_never_erases_a_line_already_recorded(tmp_path):
+    """The recorded line is the one captured closest to kickoff. Re-running the recorder
+    after the game reads an empty board, and must leave what is stored alone."""
+    from services import game_outcomes as go
+
+    db = tmp_path / "t.db"
+    base = dict(slate_date="2026-09-05", league="NCAAF", game_id="A", away="X", home="Y",
+                interest_score=0, signals="", margin=7, total=59, winner="home")
+    go.record([go.GameOutcome(**base, market_total=52.5, market_spread=-6.5,
+                              market_book="Draft Kings", line_captured_at="2026-09-05T10:00")],
+              db_path=db)
+    go.record([go.GameOutcome(**base)], db_path=db)      # the post-game re-run
+
+    row = go.load(db_path=db)[0]
+    assert row["market_total"] == 52.5
+    assert row["market_book"] == "Draft Kings"
+
+
+def test_totals_record_separates_pushes_from_sides(tmp_path):
+    from services import game_outcomes as go
+
+    rows = [
+        {"league": "NCAAF", "total": 59, "market_total": 52.5},   # over
+        {"league": "NCAAF", "total": 48, "market_total": 56.5},   # under
+        {"league": "NCAAF", "total": 52, "market_total": 52.0},   # push
+        {"league": "NCAAF", "total": 41, "market_total": None},   # no line captured
+        {"league": "MLB", "total": 9, "market_total": 8.5},       # another league
+    ]
+    r = go.totals_record(rows, "NCAAF")
+    assert (r["n"], r["over"], r["under"], r["push"]) == (3, 1, 1, 1)
+    assert r["over_rate"] == 50.0          # pushes excluded from the rate
+    assert go.totals_record(rows, "MLB")["n"] == 1
+
+
+def test_the_recorded_line_reaches_no_scorer():
+    """Odds may be displayed and recorded; they may never be consumed.
+
+    `editorial` has its own AST and behavioural guards. This is the second door: the
+    columns now sit in a table the calibration reads, so no scoring or editorial module
+    may reference them by name.
+    """
+    from pathlib import Path
+
+    market_columns = ("market_total", "market_spread", "market_favourite", "market_book")
+    for path in [Path("services/editorial.py"), Path("services/ncaaf_context.py"),
+                 *Path("src").glob("*scorer*.py"), *Path("services").glob("*_playoffs.py")]:
+        if not path.exists():
+            continue
+        source = path.read_text(encoding="utf-8")
+        for column in market_columns:
+            assert column not in source, f"{path} references {column}"

@@ -9,6 +9,48 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-05 — The market line is recorded beside the result, and consumed by nothing
+
+**Decision.** `game_outcomes` gains `market_spread`, `market_total`, `market_favourite`,
+`market_book` and `line_captured_at`. They are written at grade time from the line the
+daily run cached **before kickoff**, and read by nothing except a reporting function
+(`totals_record`). No scorer, ranker or editorial signal touches them, and a test asserts
+no scoring module references the column names.
+
+**Reason.** "Should we call an over?" had no evidence behind it in either direction. We
+held 44 finished NCAAF games and zero lines, so there was not a bad over/under record —
+there was no record at all, and no way to tell a real read from a lucky week. Storing the
+line is the whole prerequisite; everything else about totals is unarguable until it exists.
+
+**The line cannot be fetched retroactively, which shaped the design.** ESPN removes odds
+from a game once it starts, so at grade time the board is empty. `pregame_lines` recovers
+the last line cached while the game was still `pre`, scanning every fetch for that slate
+rather than trusting the newest one — a later fetch on game day legitimately carries fewer
+lines, because the early games have already kicked off, and their absent odds are a fact
+about ESPN's board rather than about the market. The upsert `COALESCE`s the market columns
+for the same reason: the nightly re-run reads an empty board and must not erase what was
+captured. Games played before the collector shipped (2026-09-02) have no line and never
+will.
+
+**A second change fell out of it.** The recorder skipped any game whose interest score was
+zero. That was right when this table only calibrated editorial — no read, nothing to
+calibrate — but it silently dropped most of an opening college slate, where two 0-0 teams
+produce no signals. Those are exactly the games the totals question is about, so a game
+with a line is now recorded whether or not we had a read on it. It took the first backfill
+from 5 NCAAF lines to 19 to notice.
+
+**Tradeoffs.** This is a measurement instrument, not a feature, and deliberately invisible:
+nothing on the site changes. It also depends on `schedule_cache` retaining rows longer than
+the 7-day regrade window — it currently keeps everything back to July, but a prune added
+later would silently starve this, so that is the thing to check if lines stop appearing.
+
+**Future considerations.** Nothing should be built on this until it can answer the question
+it was created for. First 19 games: 11-8 to the over, mean result minus line +1.9 — a
+sample far too small to mean anything, and quoted here only so a later reading has a
+starting point. Revisit after a few hundred games, against the [Method](METHOD.md) gates.
+
+---
+
 ## 2026-09-02 — The asset hash moved out of the query string and into the filename
 
 **Decision.** Stylesheets and the script are published as `/static/web.<hash>.css` —

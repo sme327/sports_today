@@ -294,6 +294,12 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   that it never uses them, which is the property that matters once the number is within
   reach. Scoped to a set of one (`src/espn_scoreboard.MARKET_LINE_LEAGUES`): on an MLB
   card a spread would sit beside props we score and read as our endorsement.
+  Since 2026-09-05 the pregame line is also **recorded** on `game_outcomes`
+  (`market_total`, `market_spread`, …) so the question "do we have anything to say about
+  totals?" can be measured rather than argued. Recording is not consuming: a test asserts
+  no scoring or editorial module names those columns. The line must be captured *before*
+  kickoff — ESPN drops odds when a game starts — so it is recovered from `schedule_cache`,
+  never re-fetched (decision log 2026-09-05).
 - **Win percentage isn't comparable across sports.** MLB's spread is ~4× tighter than
   football's, so cross-league ranking normalises each team against its own league and
   refuses the comparison when a league has too few teams on the slate.
