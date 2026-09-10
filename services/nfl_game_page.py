@@ -30,7 +30,10 @@ from src.config import DB_PATH
 # roster changes, a written read, prop leans) and drops spotlights for players the note
 # says are out or gone. The note's own fingerprint is folded into the cache key by the
 # view, so editing the file re-renders without another bump here.
-ENGINE_VERSION = "nfl-matchup-v3"
+# v4 (2026-09-10): the hero and every team column carry the team's mark. The pregame
+# page is cached on this string, so a page shape change without a bump here ships the
+# old HTML — which is exactly what the first publish of the marks did.
+ENGINE_VERSION = "nfl-matchup-v4"
 
 # (label, season-table column, percentile column, higher-is-better)
 _IDENTITY_ROWS = [
