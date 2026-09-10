@@ -315,6 +315,42 @@ confidence = "low"
 why = "2+ in 7 of 10 starts at a price near even. Ten games is the whole sample, which is why this is low."
 
 [[props]]
+team = "Los Angeles Rams"
+player = "Kyren Williams"
+stat = "rushing_att"
+line = 12.5
+direction = "over"
+confidence = "high"
+why = "13+ carries in 14 of 18 in 2025 and never fewer than 12 all season; 14 in both games against San Francisco. The steadiest volume number on either roster, priced at −124."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Christian McCaffrey"
+stat = "rushing_att"
+line = 15.5
+direction = "over"
+confidence = "moderate"
+why = "16+ carries in 12 of 18 in 2025 and 7 of Purdy's 10 starts; 22 and 12 against the Rams. The risk is a game script that has Shanahan throwing to him instead, which is why the receptions over above and this are the same bet twice."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Blake Corum"
+stat = "rushing_att"
+line = 10.5
+direction = "over"
+confidence = "low"
+why = "11+ in only 8 of 18 across 2025, but 5 of the last 6 as his role grew (11.2 a game); about 27 Rams rushes a game leaves 10 to 11 after Williams' 15. Low because the season and the trend disagree and the line sits between them."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+stat = "rushing_att"
+line = 3.5
+direction = "under"
+confidence = "low"
+why = "4+ carries in exactly 5 of 10 starts, median 4, and the attempts under above argues fewer dropbacks and so fewer scrambles. Even money on the under for a coin flip that leans that way."
+
+[[props]]
 team = "San Francisco 49ers"
 player = "George Kittle"
 stat = "receptions"
