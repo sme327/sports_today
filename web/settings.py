@@ -59,7 +59,13 @@ DATABASES = {
 }
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "America/Chicago"
+# The build's "today". The site is static and the roll-over script in base.html can only
+# move a viewer *forward* from the build's date (there is no yesterday page), so the
+# build must sit in the westernmost zone the reader will be in. Pacific is home; a
+# reader in Chicago or New York at 12:30 am is simply "one day ahead" and is redirected
+# to the right slate. Central (set 2026-08-15, from Chicago) put Pacific readers a day
+# ahead from 10 pm every night. Decision log 2026-09-10.
+TIME_ZONE = "America/Los_Angeles"
 USE_I18N = True
 USE_TZ = True
 

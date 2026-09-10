@@ -249,3 +249,13 @@ def test_going_in_does_not_repeat_a_signal_that_gets_its_own_block():
     # Once, in its own block — not again inside "Going in".
     assert html.count(shared.replace("'", "&#x27;")) == 1
     assert "Bethune were 6-6 in 2025" in html
+
+
+def test_the_build_zone_is_the_westernmost_one_a_reader_will_be_in():
+    """The roll-over in base.html can only move a viewer forward from the build's date.
+    A build in Central showed Pacific readers tomorrow's slate from 10 pm every night;
+    a build in Pacific is right at home and one day "behind" a reader in Chicago or New
+    York, which the script corrects. Move this only westward."""
+    from django.conf import settings
+
+    assert settings.TIME_ZONE == "America/Los_Angeles"

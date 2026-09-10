@@ -57,6 +57,26 @@ essentially no edge, and 61% of everything we serve. `batter-hit-v5` is nonethel
 gain (**+6.9**, against **+0.0** for its three predecessors pooled). And `sp_hits` is the
 worst thing on the board at **−11.3** for its current version.
 
+**The rule extends to what the surface *concludes*, not just to what it tabulates**
+(2026-09-09). Putting the base rate in a column fixed the tables and left the page's own
+verdict free to contradict them: the headline figure was a raw 63.1% hit rate against a
+52% base, and "63% accurate" is the reading a viewer takes away. So every generated
+sentence and every classification on Performance is computed from **lift over base, gated
+on sample**, in `services/model_trust.py` — a service, not a renderer, because a claim
+about the model has to be testable without going through HTML. `tests/test_model_trust.py`
+is written as a list of ways the page could flatter the model.
+
+Two consequences worth stating, because both are easy to get wrong again:
+
+- **Sample size must gate the *ordering*, not just the labelling.** `batter_k` runs +41.8
+  over base on 22 served props. Ranked on the number it led the table; badging it "small"
+  and leaving it first does not help, and neither does sorting it last while it remains
+  the biggest, greenest number on screen. It has to sort last *and* render quieted.
+- **A conclusion must be allowed to be negative or absent.** A model page that renders
+  every version bump as an improvement is not a model page — the version column reads
+  "−2.6 pts behind batter-hit-v5" when that is what happened, and a category with nothing
+  to say is dropped rather than padded.
+
 ### 1b. Split by engine version before calling a band broken
 
 The first pass at this reported the 99-100 band at −6.6 and called the top of the scale

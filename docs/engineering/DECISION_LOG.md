@@ -3929,3 +3929,25 @@ same build — worth watching on the next in-game publish.
 **Future.** A "why tonight" line per spotlight and a cap of three per team; a measured
 recent-form descriptor (scoring in the last three against the season) before any wording
 ships; then the per-player volume charts.
+
+
+## 2026-09-10 — The build's "today" is Pacific, because the roll-over only moves forward
+
+**Decision.** `TIME_ZONE = "America/Los_Angeles"`. The static build bakes in a "today";
+the inline roll-over in `base.html` compares that date with the viewer's local date and
+redirects forward to `/tomorrow/` or `/day-after/`. It cannot go back — there is no
+yesterday page — so the build must sit in the westernmost zone a reader will be in.
+
+**Reason.** The zone had been set to Central on 2026-08-15, from Chicago, so that "today"
+meant today there at midnight. That works for Chicago and everywhere east of it, but a
+Pacific reader from 10 pm on was looking at the next day's slate labelled as today, with
+no way back. Home is Seattle; Chicago and New York are handled by the forward roll-over
+(a reader there at 12:30 am is one day ahead of the build and is sent to the right page).
+
+**Tradeoffs.** West of Pacific (Hawaii) the same two-to-three-hour window returns. If that
+matters, the fix is a `/yesterday/` page and a roll-over that can step back, not another
+zone change. Timestamps in the run log, written with `datetime.now()`, are the machine's
+clock and were never affected; Django's `localdate()` (the build date, the precompute
+day) now agrees with it.
+
+**Future.** —

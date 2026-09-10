@@ -53,6 +53,12 @@ Never overstate confidence or hide uncertainty. Evidence is always visible, and
 is missing, stale, or cached, say so plainly (see degraded mode) rather than
 presenting it as fresh. Trust is the product's most valuable feature.
 
+**A rate offered as evidence of skill carries the baseline it beat, at equal weight.**
+"66% accurate" is true of a market whose event happens 61% of the time unprompted, and
+it is the most flattering true sentence available — so it is never said alone. Show the
+number the rate is worth judging against, and show the sample: a percentage without a
+denominator is a claim without evidence.
+
 ## 7. Premium, quiet interactions
 
 Motion communicates quality and should be felt, not noticed: subtle hover lift,

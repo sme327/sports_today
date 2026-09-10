@@ -106,7 +106,10 @@ mathematically out" look identical otherwise.
 in at build time; the daily run precomputes **three** days and an inline script in
 `base.html` redirects the viewer to whichever is actually today, by their clock. It
 buys two roll-overs and then says the slate is out of date rather than showing a day
-that has been played. This exists because the overnight rebuild cannot be scheduled:
+that has been played. The roll-over only moves **forward**, so the build's zone
+(`TIME_ZONE`, Pacific) must be the westernmost one the reader will be in: a reader in
+Chicago at 12:30 am is one day ahead and is redirected, a reader in Hawaii at 11 pm is
+not (decision log 2026-09-10). This exists because the overnight rebuild cannot be scheduled:
 macOS refuses launchd any read access to this project's folder (decision log
 2026-08-31; `scripts/nightly_refresh.sh` is committed but parked).
 

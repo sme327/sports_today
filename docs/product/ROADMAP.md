@@ -101,9 +101,9 @@ cards (Final-score V1). This phase grows carefully.
 - **Result tracking** — did today's opportunities hit? *(shipped: the full scored
   population is recorded and graded hit/miss/void — DNP = void — split into two
   views: **Daily Results** (one slate, shared filter bar, per-market hit rates) and
-  a **Performance** dashboard (calibration by score band, over-time trend, over-vs-
-  under, edge finder by segment, consistency windows, by-month, model-version
-  comparison). See the [Decision Log](../engineering/DECISION_LOG.md).)*
+  a **Performance** dashboard (score calibration by band, over-time trend, over-vs-
+  under, "where the model has edge" by segment, consistency windows, by-month,
+  model-version performance). See the [Decision Log](../engineering/DECISION_LOG.md).)*
   Since 2026-09-09 the two answer **different questions**: Daily Results is "how good was
   the day", Performance is "are the signals predictive, and how much should I trust them".
   Performance states its verdict above the evidence — a generated signal check, a trust
@@ -198,8 +198,8 @@ If it scores poorly, it belongs later — or not at all.
   the learning loop (record → grade → read by band/market) is shipped but only
   becomes informative with weeks of graded slates. This is the current bottleneck,
   not more features.
-- **After Games:** the Performance dashboard (calibration by band, edge finder,
-  version comparison) is shipped, and since 2026-09-09 it reaches its conclusions before
+- **After Games:** the Performance dashboard (score calibration, where the model has
+  edge, model-version performance) is shipped, and since 2026-09-09 it reaches its conclusions before
   showing them — see [Decision Log](../engineering/DECISION_LOG.md). It now needs **ledger
   depth** to sharpen, and the page says so itself: on today's data four markets sit in
   "strong signal", one in "too early to say" at n=22, and the 85–94 score bands are still

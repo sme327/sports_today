@@ -46,6 +46,10 @@
   The comparison is on the *viewer's* local date, not the build machine's: the two are
   routinely in different time zones, and a slate should turn over at the midnight of
   whoever is reading it.
+
+  It only ever moves *forward*. A viewer whose date is behind the build's (west of the
+  build zone, late at night) has no earlier page to go to, so the build's zone must be
+  the westernmost one a reader will be in — that is why settings.TIME_ZONE is Pacific.
   {% endcomment %}<script>
     (() => {
       "use strict";
