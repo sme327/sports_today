@@ -501,14 +501,33 @@ say nothing at all when the data does not support a claim.
 
 ## Components
 
+Listed under the surface that owns them. The two pages share the three rules above; they
+do **not** share parts, and the tiles are the trap — Performance leads with hit rate ·
+lift · sample, Daily Results with record · hit rate · average score. Same shape, different
+claim.
+
+### Performance
+
 | Pattern | What it is | Rule it carries |
 |---|---|---|
 | **Signal check** | 2–3 labelled observations in a brand-edged card | A category is omitted when there is nothing to say; never padded to three |
-| **Summary tiles** | Hit rate · lift vs baseline · sample, three equal tiles | Equal size is the point; the lift tile is the only one allowed a tint |
+| **Period summary tiles** | Hit rate · lift vs baseline · sample, three equal tiles | Equal size is the point; the lift tile is the only one allowed a tint |
 | **Trust board** | Tiered chips, one 3px coloured left edge per tier | Empty tiers are dropped — an empty "Strong signal" reads as a finding |
 | **Calibration bars** | Bar = observed rate, tick = that band's base rate | The visible gap *is* the lift; no line is drawn between bands, because a line asserts a continuity the sample cannot support |
 | **Sparkline** | Unlabelled, unscaled shape beside a table | A shape, not a chart. The table holds every number |
 | **Filter chips** | "Filtered to …", each clearing only itself | Every figure below responds to them, and a reader who has scrolled has no other cue |
+
+### Daily Results
+
+| Pattern | What it is | Rule it carries |
+|---|---|---|
+| **Day scorecard** | Record · hit rate · average score as three large tiles, over a quiet inline strip of graded / void / pending | Three metrics answer "how did we do", the strip answers "on how much". Six equal tiles asked the reader to weigh a void count against a hit rate |
+| **Comparison line** | One line under the scorecard: the day's rate, its delta against the trailing 30 days, then the lift over base beside it | Both scales or neither — the raw delta alone credits the picking for an easy slate. Colour only past 3 points, and only when the window has enough graded props to be a comparison |
+| **Daily read** | 1–3 bullets, each a bolded verdict then the figure behind it | Gated on sample *and* on size; a day with nothing to say says nothing. Never padded to three, never a forecast |
+| **Highest-scored misses** | Up to 3 misses drawn from the day's ten strongest predictions, in a coral-edged card | Never the widest numerical gaps — the question is whether the top of the scale means what it claims, and the sample has to be "the ones we were surest about" |
+| **Audit row** | One prediction per row: result · player · prediction · score · actual, aligned to a heading row | Dense on purpose — these are two hundred rows to scan, not two hundred cards. The market is muted and the posted line carries the row; misses take a little more weight than hits. On phones the headings go and each number labels itself |
+| **List controls** | Result pills with live counts, plus market / sort / view selects | Client-side, and `hidden` until their script runs: the export is bounded to `?date=`, and an inert control is worse than no control. A pill that would select nothing is not offered |
+| **Score note** | A small `i` beside every score and score average | "Opportunity Score, never probability" is a product rule, so it travels with the number rather than living only in the small print |
 
 ---
 

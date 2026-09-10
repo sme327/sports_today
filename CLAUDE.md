@@ -36,6 +36,21 @@ across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
 
+**Daily Results answers "how good was the day", not only "which ones hit"** (decision log
+2026-09-09). Above the full audit list sit a scorecard (record, hit rate, average score,
+with graded/void/pending demoted), one line placing the day against the trailing 30 days,
+a generated **daily read** of one to three observations, and a by-market table with a
+lift-over-base column. **Every verdict on it is read off the base rate, never the hit
+rate** — on 2026-09-08 the slate beat the 30-day average by 8.3 points while its props
+land 57% unprompted against 52% across the window, so most of that gap was the slate and
+the raw delta alone would have said otherwise. The trailing window ends the day *before*
+the date being read, so a day is never part of its own average, and an older date gives the
+answer it gave that morning. **The highest-scored misses are the ones drawn from the day's
+ten strongest predictions**, not the widest numerical gaps: only that version of the list
+says anything about the scale. Filtering, sorting and grouping the list are **client-side** —
+the export is bounded to `?date=`, so the day is rendered once and re-arranged in the
+browser, and the controls stay hidden when the script does not run.
+
 **Performance is a model-validation surface, not a results archive** (that is Daily
 Results). It answers six questions in order — is there signal, where is it strongest, does
 a higher score perform better, is it stable, has the model improved, where does it fail —
