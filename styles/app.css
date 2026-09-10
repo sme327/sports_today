@@ -2009,6 +2009,10 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
   letter-spacing: .02em; margin-bottom: .7rem; }
 .nfl-hero-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; }
 .nfl-hero-team { text-align: center; }
+.nfl-hero-logo { display: block; width: 54px; height: 54px; object-fit: contain; margin: 0 auto .4rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .4)); }
+.nfl-col-logo { width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: .4rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }
 .nfl-hero-name { font-size: 1.32rem; font-weight: 800; letter-spacing: -.02em; color: var(--text-2); }
 .nfl-hero-team.win .nfl-hero-name { color: var(--text-1); }
 .nfl-hero-rec { color: var(--text-4); font-size: .82rem; font-weight: 600; margin-top: .12rem;

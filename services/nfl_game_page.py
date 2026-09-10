@@ -55,6 +55,10 @@ class NFLHero:
     away_score: int | None
     home_score: int | None
     winner: str | None          # "away" | "home" | None
+    # Team marks from the collected NFL schedule (ESPN's own URLs, never constructed);
+    # None when the schedule has not been collected or the team is not in it.
+    away_logo: str | None = None
+    home_logo: str | None = None
 
 
 @dataclass(frozen=True)
@@ -107,6 +111,22 @@ class NFLGamePage:
     # Hand-authored notes for this game (pregame only; None for every game nobody wrote
     # one for). See services/nfl_game_notes.
     notes: GameNotes | None = None
+
+
+def team_logos(db_path: Path = DB_PATH) -> dict[str, str]:
+    """Full team name → logo URL, from the collected ``nfl_schedule`` (every team appears
+    at least once as away or home). Empty when the table is absent — a fresh clone or the
+    synthetic test databases — so a page without marks is a page, not an error."""
+    import sqlite3
+    try:
+        with sqlite3.connect(db_path) as conn:
+            rows = conn.execute(
+                "SELECT away_name, away_logo FROM nfl_schedule WHERE away_logo IS NOT NULL "
+                "UNION SELECT home_name, home_logo FROM nfl_schedule WHERE home_logo IS NOT NULL"
+            ).fetchall()
+    except sqlite3.Error:
+        return {}
+    return {str(name): str(url) for name, url in rows if name and url}
 
 
 def _fmt(value: float, pct: bool = False) -> str:
@@ -258,7 +278,7 @@ def _analysis(away: str, home: str, table: pd.DataFrame
 def build_nfl_game_page(game_id: str, db_path: Path = DB_PATH) -> NFLGamePage | None:
     tg = load_team_games(db_path=db_path)
     pg = load_player_games(db_path=db_path)
-    return _build_nfl_game_page(game_id, tg, pg)
+    return _build_nfl_game_page(game_id, tg, pg, team_logos(db_path))
 
 
 def build_nfl_game_pages(
@@ -267,16 +287,17 @@ def build_nfl_game_pages(
     """Build many archive pages while loading the season tables only once."""
     tg = load_team_games(db_path=db_path)
     pg = load_player_games(db_path=db_path)
+    logos = team_logos(db_path)
     pages = {}
     for game_id in game_ids:
-        page = _build_nfl_game_page(str(game_id), tg, pg)
+        page = _build_nfl_game_page(str(game_id), tg, pg, logos)
         if page is not None:
             pages[str(game_id)] = page
     return pages
 
 
 def _build_nfl_game_page(
-    game_id: str, tg: pd.DataFrame, pg: pd.DataFrame
+    game_id: str, tg: pd.DataFrame, pg: pd.DataFrame, logos: dict[str, str] | None = None
 ) -> NFLGamePage | None:
     if tg.empty:
         return None
@@ -309,7 +330,9 @@ def _build_nfl_game_page(
 
     a_rec = _record(frame, away) if not frame.empty else "0-0"
     h_rec = _record(frame, home) if not frame.empty else "0-0"
-    hero = NFLHero(away, home, game_date, round_label, a_rec, h_rec, a_score, h_score, winner)
+    logos = logos or {}
+    hero = NFLHero(away, home, game_date, round_label, a_rec, h_rec, a_score, h_score, winner,
+                   logos.get(away), logos.get(home))
 
     thesis, identity, battlefields = _analysis(away, home, table)
 
@@ -401,8 +424,9 @@ def build_nfl_pregame_page(away: str, home: str, kickoff: str,
     a_rec, h_rec = _record(frame, away), _record(frame, home)
     if vintage is not None:
         a_rec, h_rec = f"{a_rec} in {vintage}", f"{h_rec} in {vintage}"
+    logos = team_logos(db_path)
     hero = NFLHero(away, home, kickoff, round_label or "Upcoming",
-                   a_rec, h_rec, None, None, None)
+                   a_rec, h_rec, None, None, None, logos.get(away), logos.get(home))
 
     thesis, identity, battlefields = _analysis(away, home, table)
 

@@ -118,8 +118,11 @@ methodology. Three layout patterns keep it from reading as one stream of equal c
 right, thin rules between rows inside one card) and **matchup** (offense → defense). See
 the decision log, 2026-09-09.
 
-1. **Hero** — teams, round label (`Week N` / `Wild Card / Playoffs · Wk N`), records
-   *coming in*, final score, winner. No market line (odds display is scoped to NCAAF).
+1. **Hero** — team marks, teams, round label (`Week N` / `Wild Card / Playoffs · Wk N`),
+   records *coming in*, final score, winner. No market line (odds display is scoped to
+   NCAAF). The marks (and the small one on every team column) come from the collected
+   `nfl_schedule` — ESPN's own logo URLs, never constructed — via `team_logos()`; a
+   database without that table renders the page without them, and without placeholders.
 2. **Tonight's matchup** *(note; editorial)* — the hand-written story of the game: a
    headline, up to four observations with a bold lead and an orange dot, and "the other
    way". Written before any line.

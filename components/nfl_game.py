@@ -52,18 +52,32 @@ def _two_cols(page: NFLGamePage, render_team) -> str:
             f'{render_team(page.hero.home)}</div>')
 
 
-def _col(team: str, items: str, empty: str = "Nothing listed.") -> str:
+def _mark(url: str | None, css: str) -> str:
+    """A team mark, or nothing at all — never an empty placeholder box."""
+    if not url:
+        return ""
+    return f'<img class="{css}" src="{escape(url, quote=True)}" alt="" loading="lazy">'
+
+
+def _logo_for(page: NFLGamePage, team: str) -> str | None:
+    h = page.hero
+    return h.away_logo if team == h.away else h.home_logo if team == h.home else None
+
+
+def _col(page: NFLGamePage, team: str, items: str, empty: str = "Nothing listed.") -> str:
     body = items or f'<div class="nfl-empty">{escape(empty)}</div>'
-    return (f'<div class="nfl-col"><div class="nfl-col-team">{escape(_short_name(team))}</div>'
+    mark = _mark(_logo_for(page, team), "nfl-col-logo")
+    return (f'<div class="nfl-col"><div class="nfl-col-team">{mark}{escape(_short_name(team))}</div>'
             f'<div class="nfl-list">{body}</div></div>')
 
 
 # --- 1. header ------------------------------------------------------------------
 
-def _team_col(name: str, record: str, score: int | None, won: bool) -> str:
+def _team_col(name: str, record: str, score: int | None, won: bool,
+              logo: str | None = None) -> str:
     sc = (f'<span class="nfl-score{" win" if won else ""}">{score}</span>'
           if score is not None else "")
-    return (f'<div class="nfl-hero-team{" win" if won else ""}">'
+    return (f'<div class="nfl-hero-team{" win" if won else ""}">{_mark(logo, "nfl-hero-logo")}'
             f'<div class="nfl-hero-name">{escape(name)}</div>'
             f'<div class="nfl-hero-rec">{escape(record)}</div>{sc}</div>')
 
@@ -76,9 +90,9 @@ def hero_html(h: NFLHero) -> str:
         '<div class="nfl-hero">'
         f'<div class="nfl-hero-round">{escape(h.round_label)} · {escape(h.game_date)}</div>'
         '<div class="nfl-hero-teams">'
-        f'{_team_col(h.away, h.away_record, h.away_score, h.winner == "away")}'
+        f'{_team_col(h.away, h.away_record, h.away_score, h.winner == "away", h.away_logo)}'
         f'<div class="nfl-hero-at">at{result}</div>'
-        f'{_team_col(h.home, h.home_record, h.home_score, h.winner == "home")}'
+        f'{_team_col(h.home, h.home_record, h.home_score, h.winner == "home", h.home_logo)}'
         '</div></div>'
     )
 
@@ -152,7 +166,7 @@ def availability_html(page: NFLGamePage) -> str:
             items += (f'<div class="nfl-avail-gone"><div class="nfl-avail-gone-head">'
                       f'No longer on the roster <span>still in last season\'s numbers</span>'
                       f'</div>{"".join(_item(a) for a in gone)}</div>')
-        return _col(team, items)
+        return _col(page, team, items)
 
     return _section(
         "comparison", "Availability",
@@ -366,7 +380,7 @@ def spotlights_html(page: NFLGamePage) -> str:
 
     def _team(team: str) -> str:
         mine = page.away_spotlights if team == page.hero.away else page.home_spotlights
-        return _col(team, "".join(_spot_item(s) for s in mine), "No qualifying props.")
+        return _col(page, team, "".join(_spot_item(s) for s in mine), "No qualifying props.")
 
     return _section("comparison", "Player spotlights", subtitle, _two_cols(page, _team), footnote)
 
@@ -400,7 +414,7 @@ def _graded_section_html(page: NFLGamePage, section: str, title: str, subtitle: 
         items = "".join(
             _lean_item(rank[id(l)], l.player, l.market, l.direction, l.confidence, l.why)
             for l in leans if l.team == team)
-        return _col(team, items, "None on this side.")
+        return _col(page, team, items, "None on this side.")
 
     return _section(kind, title, subtitle, _two_cols(page, _team), footnote)
 
@@ -426,7 +440,7 @@ def board_html(page: NFLGamePage) -> str:
         items = "".join(
             _lean_item(rank.get(id(l), 0), l.player, l.market, l.direction, l.confidence, l.why)
             for l in ordered if l.team == team)
-        return _col(team, items, "No lines evaluated on this side.")
+        return _col(page, team, items, "No lines evaluated on this side.")
 
     return _section("comparison nfl-sec--leans", "Prop board", subtitle, _two_cols(page, _team),
                     "Why the unders lead: the one matchup effect this project has measured is "
@@ -490,7 +504,7 @@ def preline_html(page: NFLGamePage) -> str:
         items = "".join(
             _lean_item(0, r.player, r.market, r.direction, "", r.why, pre=True)
             for r in n.preline if r.team == team)
-        return _col(team, items, "Nothing written.")
+        return _col(page, team, items, "Nothing written.")
 
     # An appendix: what the read was before the market spoke. Interesting after the
     # report, not during it, so it sits last and closed.
@@ -503,14 +517,15 @@ def preline_html(page: NFLGamePage) -> str:
 
 # --- 9. recent form (engine) ------------------------------------------------------
 
-def _form_col(team: str, f: NFLFormLine | None) -> str:
+def _form_col(page: NFLGamePage, team: str, f: NFLFormLine | None) -> str:
     if f is None:
         return f'<div class="nfl-form-col"><span class="nfl-col-team">{escape(_short_name(team))}</span><span class="nfl-form-dots">—</span></div>'
     results = f.results.split()
     dots = "".join(f'<span class="nfl-fdot {"w" if r == "W" else "l"}">{r}</span>' for r in results)
     wins = sum(1 for r in results if r == "W")
     record = f"{wins}-{len(results) - wins}"
-    return (f'<div class="nfl-form-col"><span class="nfl-col-team">{escape(_short_name(team))}</span>'
+    mark = _mark(_logo_for(page, team), "nfl-col-logo")
+    return (f'<div class="nfl-form-col"><span class="nfl-col-team">{mark}{escape(_short_name(team))}</span>'
             f'<span class="nfl-form-dots">{dots}</span>'
             f'<span class="nfl-form-sub"><b>{record}</b> last {len(results)} · {f.ppg:.1f} for · '
             f'{f.papg:.1f} against</span></div>')
@@ -521,8 +536,8 @@ def form_html(page: NFLGamePage) -> str:
         return ""
     return _section(
         "support", "Recent form", "The last five results, oldest to newest.",
-        f'<div class="nfl-form">{_form_col(page.hero.away, page.away_form)}'
-        f'{_form_col(page.hero.home, page.home_form)}</div>')
+        f'<div class="nfl-form">{_form_col(page, page.hero.away, page.away_form)}'
+        f'{_form_col(page, page.hero.home, page.home_form)}</div>')
 
 
 def schedule_html(page: NFLGamePage) -> str:
@@ -560,7 +575,7 @@ def changes_html(page: NFLGamePage) -> str:
             items += (f'<div class="nfl-chg"><span class="nfl-chg-dir {c.direction}">{c.direction}</span>'
                       f'<span class="nfl-chg-text"><span class="nfl-chg-lead">{escape(lead)}</span>'
                       f'{detail}</span></div>')
-        return _col(team, items)
+        return _col(page, team, items)
 
     return _section(
         "support", "Since last season",

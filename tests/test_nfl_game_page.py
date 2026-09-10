@@ -213,3 +213,32 @@ def test_the_read_and_battlefields_render_as_labelled_ideas(tmp_path):
     for b in page.battlefields:
         assert b.attack_pct is None or 0 <= b.attack_pct <= 100
     assert "Matchup at a glance" in html and "Methodology" in html
+
+
+def test_team_marks_come_from_the_collected_schedule_and_are_optional(tmp_path):
+    """The hero and every team column carry the team's mark when the collected NFL
+    schedule holds one (ESPN's own URL, never constructed); a database without that
+    table renders the page without marks — and without empty placeholders."""
+    import sqlite3
+
+    from components.nfl_game import page_html
+    from services.nfl_game_page import team_logos
+
+    db = _seed(tmp_path)
+    assert team_logos(db) == {}
+    plain = build_nfl_game_page("g4", db_path=db)
+    assert plain.hero.away_logo is None and "nfl-hero-logo" not in page_html(plain)
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TABLE nfl_schedule (season, week, game_id, away_name, away_logo, "
+                     "home_name, home_logo)")
+        conn.execute("INSERT INTO nfl_schedule VALUES (2026, 1, 'e1', 'A', 'https://x/a.png', "
+                     "'B', 'https://x/b.png')")
+    assert team_logos(db) == {"A": "https://x/a.png", "B": "https://x/b.png"}
+    page = build_nfl_game_page("g4", db_path=db)
+    html = page_html(page)
+    assert page.hero.away_logo == "https://x/a.png" and page.hero.home_logo == "https://x/b.png"
+    assert html.count('class="nfl-hero-logo"') == 2
+    assert 'class="nfl-col-logo"' in html
+    # every comparison column opens and closes: the marks did not unbalance the markup
+    assert html.count('<div class="nfl-col">') == html.count('<div class="nfl-list">')
+    assert html.count("<div") == html.count("</div>")
