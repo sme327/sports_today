@@ -124,7 +124,10 @@ def test_grading_vocabulary(tmp_path):
     assert nfl_leans.grade_game("401", parse_summary(_SUMMARY), db) == {"hit": 0, "miss": 0, "void": 0}
 
 
-def test_grade_due_only_touches_games_that_have_kicked_off(tmp_path):
+def test_grade_due_asks_from_the_day_before_the_utc_kickoff_date(tmp_path):
+    """A kickoff of 2025-09-03 is the UTC date: in the US that game is played and
+    finished on the evening of the 2nd. So it is due from the 2nd, not the 1st — and
+    ESPN's final flag, not the date, decides whether anything is graded."""
     from datetime import date
     db = tmp_path / "l.db"
     nfl_leans.record(parse_notes(_NOTE), db)
@@ -132,9 +135,9 @@ def test_grade_due_only_touches_games_that_have_kicked_off(tmp_path):
     def fetch(game_id):
         calls.append(game_id)
         return parse_summary(_SUMMARY)
-    assert nfl_leans.grade_due(db, today=date(2025, 9, 2), fetch=fetch) == {}
+    assert nfl_leans.grade_due(db, today=date(2025, 9, 1), fetch=fetch) == {}
     assert calls == []
-    out = nfl_leans.grade_due(db, today=date(2025, 9, 3), fetch=fetch)
+    out = nfl_leans.grade_due(db, today=date(2025, 9, 2), fetch=fetch)
     assert calls == ["401"] and out["401"]["hit"] == 1
 
 
@@ -160,3 +163,21 @@ def test_missing_table_and_empty_db_are_not_crashes(tmp_path):
     db = tmp_path / "empty.db"
     sqlite3.connect(db).close()
     assert nfl_leans.load(db) == [] and nfl_leans.games_due(db) == []
+
+
+def test_a_failed_fetch_is_reported_per_game_and_does_not_stop_the_rest(tmp_path):
+    from datetime import date
+    db = tmp_path / "l.db"
+    nfl_leans.record(parse_notes(_NOTE), db)
+    def fetch(game_id):
+        raise RuntimeError("403 Forbidden")
+    out = nfl_leans.grade_due(db, today=date(2025, 9, 3), fetch=fetch)
+    assert out == {"401": {"error": "RuntimeError: 403 Forbidden"}}
+    assert all(r["result"] in (None, "pass") for r in nfl_leans.load(db))
+
+
+def test_the_box_score_client_sends_no_browser_user_agent():
+    """ESPN's summary endpoint answered 403 to browser-shaped agents and 200 to the
+    requests default on 2026-09-09; the first grading run died on it."""
+    from src import espn_nfl_boxscore as m
+    assert "User-Agent" not in m._HEADERS

@@ -14,7 +14,11 @@ from typing import Any
 import requests
 
 _SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary"
-_HEADERS = {"User-Agent": "Mozilla/5.0 (sports-today; personal daily companion)"}
+# No custom User-Agent, on purpose. On 2026-09-09 this endpoint answered 403 to every
+# browser-shaped agent tried (including the one src/espn_boxscore sends) and 200 to the
+# requests default — the first grading run failed on exactly that, so the client sends
+# what is known to work and a test pins that no browser agent is reintroduced.
+_HEADERS = {"Accept": "application/json,text/plain,*/*"}
 
 # ESPN category → (label → our stat key). "C/ATT" splits into two stats.
 _MAP: dict[str, dict[str, str]] = {

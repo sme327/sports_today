@@ -38,7 +38,8 @@ Purpose / Audience / Update-when / Related header so ownership is clear.
 | [MLB Game Page](engineering/MLB_GAME_PAGE.md) | The MLB game preview: sections, data sources, formulas, Phase 2 hooks (deeper reference). |
 | [WNBA Game Page](engineering/WNBA_GAME_PAGE.md) | The WNBA matchup preview: sections, basketball analytics, honest gaps. |
 | [MLS Game Page](engineering/MLS_GAME_PAGE.md) | The MLS matchup preview: sections, the real team-data pipeline, analytical definitions, honest gaps. |
-| [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, and the bridge that joins the live slate to it (and when it honestly cannot). |
+| [NFL Game Page](engineering/NFL_GAME_PAGE.md) | The NFL matchup deep-dive: the season-feed pipeline, analytics, player spotlights, the bridge that joins the live slate to it (and when it honestly cannot), the hand-written game notes, and the graded prop-lean ledger. |
+| [NFL Player Volume Charts](engineering/NFL_PLAYER_VOLUME_CHARTS.md) | **Planned, not built**: a matchup → position → one-chart-per-player page for attempts and yards, targets and receptions. |
 | [Method](engineering/METHOD.md) | **How we decide whether a signal is real.** The tests that gate every scoring and editorial change — read before proposing one. |
 | [Prediction Evaluation](engineering/PREDICTION_EVALUATION.md) | Public cohorts, grading truth, model-version discipline, and promotion guardrails. |
 | [CBB](engineering/CBB.md) | College basketball: what the ingested data holds, why it stays team-level, and the phased plan. |

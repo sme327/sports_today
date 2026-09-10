@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections import OrderedDict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from services.nfl_game_notes import (
@@ -137,14 +137,18 @@ def grade_game(game_id: str, boxscore: dict, db_path: Path = DB_PATH) -> dict[st
 
 
 def games_due(db_path: Path = DB_PATH, today: date | None = None) -> list[str]:
-    """Game ids with ungraded rows whose kickoff date has arrived (the grader still
-    checks ESPN's own final flag before touching anything)."""
+    """Game ids with ungraded rows that may have been played. A note's ``kickoff`` is
+    the slate's UTC date, so a night game in the US carries tomorrow's date while it is
+    being played and finished tonight; a game is therefore due from the day *before*
+    its kickoff date. That is deliberately loose — the grader checks ESPN's own final
+    flag before it touches a row, so "due" only decides whether to ask."""
     today = today or date.today()
+    horizon = (today + timedelta(days=1)).isoformat()
     with sqlite3.connect(db_path) as conn:
         ensure_table(conn)
         rows = conn.execute(
             f"SELECT DISTINCT game_id FROM {TABLE} WHERE result IS NULL AND kickoff <= ?",
-            (today.isoformat(),)).fetchall()
+            (horizon,)).fetchall()
     return [r[0] for r in rows]
 
 
@@ -156,7 +160,14 @@ def grade_due(db_path: Path = DB_PATH, today: date | None = None,
         from src.espn_nfl_boxscore import fetch_boxscore as fetch
     out: dict[str, dict] = {}
     for game_id in games_due(db_path, today):
-        out[game_id] = grade_game(game_id, fetch(game_id), db_path)
+        # One game's fetch failing must not stop the others, and must not raise out of
+        # the daily run: it is reported per game and retried on the next run.
+        try:
+            box = fetch(game_id)
+        except Exception as exc:  # noqa: BLE001 - reported, never swallowed silently
+            out[game_id] = {"error": f"{type(exc).__name__}: {exc}"}
+            continue
+        out[game_id] = grade_game(game_id, box, db_path)
     return out
 
 
