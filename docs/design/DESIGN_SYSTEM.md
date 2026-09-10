@@ -199,6 +199,23 @@ Avoid introducing new accent colors.
 
 ---
 
+## The evidence threshold
+
+Green means *positive evidence*, not *a positive number*. On an analysis surface those are
+not the same thing, and treating them as the same is how a diagnostic turns into a
+scoreboard.
+
+So a difference is only tinted once it is large enough to be evidence. On Performance the
+band is **±2 percentage points**: inside it, a figure stays grey no matter which side of
+zero it falls. A `+0.4` rendered green asserts an edge the number cannot carry, and that
+page is read for exactly that distinction.
+
+The same restraint governs the market-pulse heatmap: low saturation, and the cells fade
+with age, because eight equally-lit columns make ordinary variance look like a row of
+findings.
+
+---
+
 # Typography
 
 Typography creates hierarchy.
@@ -442,6 +459,56 @@ The score badge should be immediately recognizable. Evidence should always feel
 at least as prominent as risk. ("Opportunity Score" is the product's term — a
 transparent, inspectable score, **not** a probability. See the glossary in
 [Architecture](../engineering/ARCHITECTURE.md).)
+
+---
+
+# Analysis Surfaces
+
+Daily Results and Performance carry more numbers than any other screen, and the risk is
+that they read as a data dashboard — the thing this product is explicitly not. Three rules
+keep them on the right side of that line.
+
+## Conclusions above evidence
+
+A page of ten tables of equal weight makes the reader assemble the verdict. Instead, each
+surface **states its answer above the table that backs it**, and the page is banded into
+levels separated by space and a small labelled rule:
+
+1. **Conclusions** — the generated read, the headline figures, the verdict
+2. **Primary evidence** — the diagnostics a reader would check the verdict against
+3. **Deep diagnostics** — everything else, headings a step quieter
+
+Space goes *between* the bands. Tables stay dense: the fix for a crowded page is hierarchy,
+not padding.
+
+## The headline is never a raw rate alone
+
+A hit rate is a property of the props served as much as of the picking. Wherever one is
+shown large, **the lift over baseline is shown at the same size, in the same card**, with
+the base rate named underneath. The two are a pair; a layout that makes one a footnote to
+the other is a regression, however good it looks.
+
+Sample size is a headline too, never a footnote. A figure under the minimum sample sorts
+*last*, renders quieted, and carries a badge — sorting alone is not enough, because the
+biggest number on the page still reads as the ranking even when it sits at the bottom.
+
+## Generated sentences look like sentences
+
+The synthesized reads — signal check, "what this means", the calibration conclusion — are
+prose in a card, not a stat tile. They get a brand-coloured left edge to carry headline
+weight, a small uppercase label per observation, and body-sized type. They are allowed to
+say nothing at all when the data does not support a claim.
+
+## Components
+
+| Pattern | What it is | Rule it carries |
+|---|---|---|
+| **Signal check** | 2–3 labelled observations in a brand-edged card | A category is omitted when there is nothing to say; never padded to three |
+| **Summary tiles** | Hit rate · lift vs baseline · sample, three equal tiles | Equal size is the point; the lift tile is the only one allowed a tint |
+| **Trust board** | Tiered chips, one 3px coloured left edge per tier | Empty tiers are dropped — an empty "Strong signal" reads as a finding |
+| **Calibration bars** | Bar = observed rate, tick = that band's base rate | The visible gap *is* the lift; no line is drawn between bands, because a line asserts a continuity the sample cannot support |
+| **Sparkline** | Unlabelled, unscaled shape beside a table | A shape, not a chart. The table holds every number |
+| **Filter chips** | "Filtered to …", each clearing only itself | Every figure below responds to them, and a reader who has scrolled has no other cue |
 
 ---
 

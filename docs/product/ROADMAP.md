@@ -104,6 +104,12 @@ cards (Final-score V1). This phase grows carefully.
   a **Performance** dashboard (calibration by score band, over-time trend, over-vs-
   under, edge finder by segment, consistency windows, by-month, model-version
   comparison). See the [Decision Log](../engineering/DECISION_LOG.md).)*
+  Since 2026-09-09 the two answer **different questions**: Daily Results is "how good was
+  the day", Performance is "are the signals predictive, and how much should I trust them".
+  Performance states its verdict above the evidence — a generated signal check, a trust
+  board tiering every market on lift-over-base plus sample plus trend, and a per-version
+  "did this actually improve?" column that is allowed to say no. Every diagnostic that was
+  there before is still there; the change is interpretation, not data.
 - **Evening recap** — "What mattered tonight."
 - **Signal evaluation** — which analytical signals were actually useful over time.
   *(shipped as the Performance dashboard; used to drive Scoring v2 — see below.)*
@@ -193,9 +199,12 @@ If it scores poorly, it belongs later — or not at all.
   becomes informative with weeks of graded slates. This is the current bottleneck,
   not more features.
 - **After Games:** the Performance dashboard (calibration by band, edge finder,
-  version comparison) is shipped; it now needs **ledger depth** to sharpen — most
-  segment bands are still small-sample. Next: segment-edge annotations on today's
-  picks and a proven-edge confidence tier (Scoring v2 follow-ups).
+  version comparison) is shipped, and since 2026-09-09 it reaches its conclusions before
+  showing them — see [Decision Log](../engineering/DECISION_LOG.md). It now needs **ledger
+  depth** to sharpen, and the page says so itself: on today's data four markets sit in
+  "strong signal", one in "too early to say" at n=22, and the 85–94 score bands are still
+  too thin to call the dip real. Next: segment-edge annotations on today's picks and a
+  proven-edge confidence tier (Scoring v2 follow-ups).
 - **Before Games:** further inputs beyond confirmed lineups (expected plate
   appearances/minutes, matched-starter lines, park/weather/bullpen). MLB batter
   markets (strikeouts, walks) are shipped; total bases was retired and home runs are out of scope
