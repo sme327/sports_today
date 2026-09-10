@@ -1,5 +1,17 @@
 {% extends "web/base.html" %}
 {% block title %}Performance · Sports Today{% endblock %}
+{% comment %}
+Model validation, not a results archive. Daily Results holds individual predictions; this
+page answers six questions in order — is there signal, where is it strongest, does a higher
+score perform better, is it stable, has the model improved, where does it fail — and it
+reaches its conclusions *before* it shows the evidence for them.
+
+Three visual levels, separated by the two `perf-rule` dividers:
+  1  Conclusions      signal check · performance summary · what's working · trust board
+  2  Primary evidence score calibration · where the model has edge · over vs under
+  3  Diagnostics      consistency · market pulse · by month · model versions · methodology
+Tables stay dense; the space goes between the groups, not inside them.
+{% endcomment %}
 {% block content %}
 <section class="analytics-hero">
   <div><div class="eyebrow">Are the signals earning trust?</div><h1 class="page-title">Performance</h1></div>
@@ -8,48 +20,148 @@
 
 <section class="performance-controls">
   <div><span class="filter-label">Cohort</span><div class="filter-pills">{% for option in cohort_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}" {% if option.active %}aria-current="true"{% endif %}>{{ option.label }}</a>{% endfor %}</div></div>
-  <div><span class="filter-label">Period</span><div class="filter-pills">{% for option in period_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}">{{ option.label }}</a>{% endfor %}</div></div>
+  <div><span class="filter-label">Period</span><div class="filter-pills">{% for option in period_options %}<a class="filter-pill {% if option.active %}active{% endif %}" href="{{ option.href }}" {% if option.active %}aria-current="true"{% endif %}>{{ option.label }}</a>{% endfor %}</div></div>
 </section>
 {% include "web/_filters.html" %}
 
+{% comment %}Every figure below responds to these filters, and a reader who has scrolled
+past the pills has no other way to tell a market-filtered page from the whole slate. Each
+chip clears only itself.{% endcomment %}
+{% if active_filter_chips %}
+<div class="active-filters" aria-label="Active filters">
+  <span class="af-lead">Filtered to</span>
+  {% for chip in active_filter_chips %}<a class="af-chip" href="{{ chip.clear }}" aria-label="Clear {{ chip.label }} filter: {{ chip.value }}"><span class="af-key">{{ chip.label }}</span>{{ chip.value }}<span class="af-x" aria-hidden="true">×</span></a>{% endfor %}
+</div>
+{% endif %}
+
 {% if has_rows %}
-  {% if takeaway_html %}{{ takeaway_html|safe }}{% endif %}
+  {# ---------------------------------------------- 1 — conclusions ---------- #}
+  <div class="perf-level perf-level-1">
+    {{ signal_check_html|safe }}
 
-  <section class="analytics-section perf-lead">
-    <h2>What's working</h2>
-    <p class="section-read">Every market's measured edge against how much of it we actually
-    serve, ranked by lift. The tables further down read served predictions only, so a
-    market that is good but never clears the floor is invisible there — and looks the
-    same as one that does not work.</p>
-    {{ market_coverage_html|safe }}
-  </section>
+    <section class="analytics-section perf-summary-section">
+      <h2 class="level-1-head">Performance summary</h2>
+      {{ summary_html|safe }}
+      {% if what_this_means %}<p class="perf-means">{{ what_this_means }}</p>{% endif %}
+      {{ cohort_comparison_html|safe }}
+    </section>
 
-  <div class="perf-scoreboard">
-    {{ summary_html|safe }}
-    {{ cohort_comparison_html|safe }}
-    {{ comparison_html|safe }}
+    <section class="analytics-section perf-lead">
+      <h2 class="level-1-head">What's working</h2>
+      <p class="section-read">Every market ranked by the edge it holds over the rate its own
+      event happens without us — not by how often it converts. The tables further down read
+      served predictions only, so the “all” figure beside each edge is the check that a
+      market which never clears the floor is not mistaken for one that does not work.</p>
+      {{ market_coverage_html|safe }}
+    </section>
+
+    <section class="analytics-section">
+      <h2 class="level-1-head">Trust board</h2>
+      <p class="section-read">The page’s verdict, from edge over baseline, sample size and
+      recent trend together — never from hit rate alone. A tier with nothing in it is not
+      shown.</p>
+      {{ trust_board_html|safe }}
+    </section>
   </div>
 
-  <div class="deep-dive-label">Deeper diagnostics</div>
+  <div class="perf-rule"><span>The evidence</span></div>
 
-  <section class="analytics-section market-pulse-section">
-    <h2>Market pulse</h2>
-    <p class="section-read">Recent slate hit rates compared with each market’s own average. The right edge shows the selected period and the latest three slates versus the prior three.</p>
-    {{ market_trend_html|safe }}
-  </section>
+  {# ---------------------------------------- 2 — primary evidence ----------- #}
+  <div class="perf-level perf-level-2">
+    <section class="analytics-section">
+      <h2>Score calibration</h2>
+      <p class="section-read">The scoring system is worth having only if a higher score
+      means a better outcome. Each band is measured against the base rate of the props it
+      actually holds — the top band is almost purely 1+ hit, so a raw-rate reading of this
+      table would credit it for carrying a common event.</p>
+      {% for read in calibration_reads %}<p class="cal-interp">{{ read }}</p>{% endfor %}
+      {% if calibration_scope %}<p class="quiet-note">{{ calibration_scope }}</p>{% endif %}
+      {{ calibration_bars_html|safe }}
+      {{ calibration_html|safe }}
+    </section>
 
-  <section class="analytics-section"><h2>Does a higher score perform better?</h2><p class="section-read">{{ calibration_read }}</p>{% if calibration_scope %}<p class="quiet-note">{{ calibration_scope }}</p>{% endif %}{{ calibration_html|safe }}</section>
-  <section class="analytics-section"><h2>Over vs Under</h2>{{ over_under_html|safe }}</section>
-  <section class="analytics-section">
-    <h2>Edge finder</h2>
-    {{ edge_html|safe }}
-  </section>
-  <section class="analytics-section"><h2>Consistency</h2>{{ consistency_html|safe }}</section>
-  <section class="analytics-section"><h2>By month</h2>{{ monthly_html|safe }}</section>
-  <section class="analytics-section"><h2>Model versions</h2>{{ version_html|safe }}</section>
+    <section class="analytics-section">
+      <h2>Where the model has edge</h2>
+      <p class="section-read">Segments by {{ edge_grouping|lower }}, ranked by lift over
+      their own base rate. Anything under the minimum sample is separated and labelled
+      rather than ranked alongside — a high percentage on twenty predictions is not a
+      discovered edge.</p>
+      {{ edge_html|safe }}
+    </section>
+
+    <section class="analytics-section">
+      <h2>Over vs Under</h2>
+      {% if direction_read %}<p class="section-read">{{ direction_read }}</p>{% endif %}
+      {{ over_under_html|safe }}
+    </section>
+  </div>
+
+  <div class="perf-rule"><span>Deeper diagnostics</span></div>
+
+  {# ------------------------------------------- 3 — deep diagnostics -------- #}
+  <div class="perf-level perf-level-3">
+    <section class="analytics-section">
+      <h2>Consistency</h2>
+      {% if consistency_read %}<p class="section-read">{{ consistency_read }}</p>{% endif %}
+      {{ consistency_html|safe }}
+    </section>
+
+    <section class="analytics-section market-pulse-section">
+      <h2>Market pulse</h2>
+      <p class="section-read">Each market’s recent slates against its own period average.
+      The trend column is the row’s answer; the grid behind it fades with age.</p>
+      {{ market_trend_html|safe }}
+    </section>
+
+    <section class="analytics-section">
+      <h2>By month</h2>
+      {{ monthly_html|safe }}
+    </section>
+
+    <section class="analytics-section">
+      <h2>Model version performance</h2>
+      {% if version_read %}<p class="section-read">{{ version_read }}</p>{% endif %}
+      {{ version_html|safe }}
+    </section>
+
+    <section class="analytics-section methodology">
+      <h2>Methodology</h2>
+      <dl class="method-list">
+        <dt>Edge over baseline, never a raw hit rate</dt>
+        <dd>Every “vs base” figure is the observed hit rate minus how often that exact prop’s
+        event happens on its own, for the population that could plausibly have been offered
+        it. A batter getting 1+ hit happens ~61% of the time unprompted; a starter striking
+        out 8+ happens ~13% of the time. Against one shared average the rare-event markets
+        look bad no matter how well they are picked.</dd>
+
+        <dt>Opportunity Score is a ranking signal, not a probability</dt>
+        <dd>70 is the publication floor. A 93 is not “93% likely” — it is an estimate of edge
+        over the market’s own base rate. Observed hit rates on this page are outcomes, not
+        forecasts.</dd>
+
+        <dt>Sample size is a headline, not a footnote</dt>
+        <dd>Under {{ min_sample }} graded predictions a segment is separated and marked rather
+        than ranked. Predictions inside one slate are correlated, so a run of good days is
+        less independent evidence than its count suggests.</dd>
+
+        <dt>Cohorts</dt>
+        <dd><b>All qualifying</b> is every published prediction scoring 70+. <b>Featured</b> is
+        the eight carried on Today. <b>Other qualifying</b> is the remainder — the split exists
+        to check that ranking, not just scoring, is doing something.</dd>
+
+        <dt>Calibration reads the current engine only</dt>
+        <dd>A superseded scorer’s calibration is not a fact about the one running today.
+        Pooling engines once made the top band look anti-predictive when it was not. Per-version
+        records stay in the model table above.</dd>
+
+        <dt>What is not here</dt>
+        <dd>No odds are consumed anywhere on this page. Total bases and batter walks are
+        excluded — both were retired for being unservable rather than for being wrong. Voids
+        and pending predictions are excluded from every hit rate.</dd>
+      </dl>
+    </section>
+  </div>
 {% else %}
   <section class="empty-card"><h2>No graded predictions in this period</h2><p>Try a wider period or clear the current filters.</p></section>
 {% endif %}
-
-<div class="opp-disclaimer">All qualifying includes every published prediction scoring 70+. Featured is the main-page eight. Observed hit rates are not probabilities; prediction counts are correlated within the displayed slate count.</div>
 {% endblock %}

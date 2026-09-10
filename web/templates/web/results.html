@@ -17,20 +17,60 @@
 </section>
 
 {% if has_rows %}
+  {% comment %}The top quarter tells the story — scorecard, where it sits against normal,
+  what actually drove it. Everything below is the evidence, in full.{% endcomment %}
   {{ summary_html|safe }}
+  {{ comparison_html|safe }}
+  {{ daily_read_html|safe }}
 
   <section class="analytics-section">
     <h2>By market</h2>
-    <div class="web-market-table">
-      <div class="web-market-row web-market-head"><span>Market</span><span>Record</span><span>Hit rate</span><span>Void</span><span>Pending</span></div>
-      {% for market in market_rows %}
-      <div class="web-market-row"><span>{{ market.label }}</span><span>{{ market.hit }}–{{ market.miss }} <small>n={{ market.decided }}</small></span><span>{{ market.hit_rate_display }}</span><span>{{ market.void }}</span><span>{{ market.pending }}</span></div>
-      {% endfor %}
-    </div>
+    {{ market_html|safe }}
   </section>
 
   <section class="analytics-section" data-results-props data-results-date="{{ selected_date|date:'Y-m-d' }}">
-    <div class="section-row"><h2>Props</h2><span class="section-count">Showing {{ visible_start }}–{{ visible_end }} of {{ prop_count }}</span></div>
+    <div class="section-row"><h2>Props</h2><span class="section-count" data-prop-count>{{ prop_count }} prediction{{ prop_count|pluralize }}</span></div>
+    {{ misses_html|safe }}
+    {% comment %}Hidden until the script that drives them runs: the static export has no
+    server to re-filter against, so with JavaScript off these controls would be four
+    inert dropdowns above a list that never changes. The list itself is complete
+    without them.{% endcomment %}
+    <div class="results-controls" data-results-controls hidden>
+      <div class="rc-group" role="group" aria-label="Filter by result">
+        <span class="rc-label" id="rc-show-label">Show</span>
+        <div class="rc-pills" aria-labelledby="rc-show-label">
+          <button type="button" class="rc-pill active" data-result-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="rc-pill" data-result-filter="hit" aria-pressed="false">Hits<b class="rc-count"></b></button>
+          <button type="button" class="rc-pill" data-result-filter="miss" aria-pressed="false">Misses<b class="rc-count"></b></button>
+          <button type="button" class="rc-pill" data-result-filter="void" aria-pressed="false">Void<b class="rc-count"></b></button>
+          <button type="button" class="rc-pill" data-result-filter="pending" aria-pressed="false">Pending<b class="rc-count"></b></button>
+        </div>
+      </div>
+      <div class="rc-group">
+        <label class="rc-label" for="rc-market">Market</label>
+        <select id="rc-market" class="rc-select" data-market-filter>
+          <option value="all">All markets</option>
+          {% for market in market_filters %}<option value="{{ market.key }}">{{ market.label }} ({{ market.count }})</option>{% endfor %}
+        </select>
+      </div>
+      <div class="rc-group">
+        <label class="rc-label" for="rc-sort">Sort</label>
+        <select id="rc-sort" class="rc-select" data-prop-sort>
+          <option value="score-desc">Score, high to low</option>
+          <option value="score-asc">Score, low to high</option>
+          <option value="miss-first">Misses first</option>
+          <option value="hit-first">Hits first</option>
+          <option value="player">Player A–Z</option>
+        </select>
+      </div>
+      <div class="rc-group">
+        <label class="rc-label" for="rc-view">View</label>
+        <select id="rc-view" class="rc-select" data-prop-view>
+          <option value="flat">All predictions</option>
+          <option value="market">Grouped by market</option>
+        </select>
+      </div>
+    </div>
     {{ prop_html|safe }}
   </section>
 {% elif has_snapshot %}
@@ -39,5 +79,5 @@
   <section class="empty-card"><h2>No prediction snapshot captured</h2><p>The daily ledger has no saved predictions for this date. Historical predictions are not reconstructed later because newer data would introduce hindsight.</p></section>
 {% endif %}
 
-<div class="opp-disclaimer">Results are graded from stored plate appearances and box scores. Voids and pending results are excluded from hit rate. Opportunity Score is a ranking signal, not a probability.</div>
+<div class="opp-disclaimer">Results are graded from stored plate appearances and box scores. Voids and pending results are excluded from hit rate. Opportunity Score is a ranking signal, not a probability — 70 is the publication floor, and a higher score means more estimated edge over the market's own base rate.</div>
 {% endblock %}

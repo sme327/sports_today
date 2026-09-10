@@ -1465,67 +1465,173 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 /* ============================================================================
    R2 — DAILY RESULTS v2 (summary, by-market table, expandable prop list)
    ========================================================================== */
-.daily-summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: .6rem; margin: .4rem 0 .4rem; }
-.ds-tile { padding: .55rem .7rem; border-radius: var(--r-md); background: var(--surface-1);
+/* The day's scorecard. Three metrics carry it — record, hit rate, average score — and
+   the count of what was graded sits under them in a quiet strip. Six equal tiles asked
+   the reader to weigh a void count against a hit rate. */
+.daily-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin: .5rem 0 0; }
+.ds-tile { padding: .7rem .9rem .8rem; border-radius: var(--r-md);
+  background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
   border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
-.ds-label { color: var(--text-4); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-.ds-value { color: var(--text-1); font-size: 1.35rem; font-weight: 820; letter-spacing: -.02em;
-  font-variant-numeric: tabular-nums; margin-top: .1rem; }
+.ds-label { display: flex; align-items: center; color: var(--text-4); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.ds-value { color: var(--text-1); font-size: clamp(1.45rem, 5.4vw, 2rem); font-weight: 820; letter-spacing: -.025em;
+  font-variant-numeric: tabular-nums; margin-top: .15rem; line-height: 1.1; }
 .ds-sub { color: var(--text-4); font-size: .7rem; font-weight: 600; margin-left: .3rem; }
-.ds-status { color: var(--text-3); font-size: .8rem; margin: .1rem 0 1rem; font-variant-numeric: tabular-nums; }
+.ds-secondary { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; margin: .55rem 0 0; }
+.ds-mini { display: inline-flex; align-items: baseline; gap: .35rem; }
+.ds-mini-label { color: var(--text-4); font-size: .63rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.ds-mini b { color: var(--text-2); font-size: .82rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.ds-mini-total { margin-left: auto; }
+/* The score is a ranking signal; "93" must never be read as "93% likely". The note is
+   one sentence, and it is attached wherever a score is shown rather than only in the
+   small print at the foot of the page. */
+.ds-info { display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; margin-left: .4em;
+  border-radius: 50%; background: var(--surface-3); color: var(--text-4);
+  font-size: .82em; font-weight: 800; font-style: normal; text-transform: none; cursor: help; }
+.ds-info:hover, .ds-info:focus-visible { color: var(--text-1); }
+
+/* Today against normal, on both scales: the hit rate a reader asks for, and the lift
+   over base the project judges on. Colour is spent only on a gap worth acting on. */
+.hit-rate-context { margin: .6rem 0 0; color: var(--text-3); font-size: .9rem; line-height: 1.55; }
+.hit-rate-context b { color: var(--text-1); font-weight: 800; font-variant-numeric: tabular-nums; }
+.hrc-dot { margin: 0 .45rem; color: var(--text-4); opacity: .55; }
+.hrc-up { color: var(--green); font-weight: 750; }
+.hrc-down { color: var(--red); font-weight: 750; }
+.hrc-base { color: var(--text-4); }
+
+/* The read: what the day meant, above the tables that prove it. */
+.daily-read { margin-top: 1.7rem; }
+.dr-list { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }
+.dr-list li { position: relative; padding: .7rem .95rem .7rem 1.7rem; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px solid var(--divider); box-shadow: var(--edge-hi);
+  color: var(--text-2); font-size: .92rem; line-height: 1.55; }
+.dr-list li::before { content: ""; position: absolute; left: .85rem; top: 1.2rem;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+.dr-list strong { color: var(--text-1); font-weight: 800; }
 .rz-section-head { color: var(--text-2); font-size: 1rem; font-weight: 800; margin: 1.1rem 0 .5rem; }
 
-/* By-market table (div grid; whole row links to filter the props). */
+/* By-market: record and hit rate answer "what happened", lift answers "was it skill".
+   `sp_hits` unders convert ~78% of the time with nobody picking at all. */
 .mkt-table { display: flex; flex-direction: column; gap: 2px; margin-bottom: .3rem; }
-.mkt-row { display: grid; grid-template-columns: 1.5fr 1.3fr .9fr .55fr .7fr; gap: .8rem; align-items: center;
-  padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
+.mkt-row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.45fr) .8fr .85fr .75fr;
+  gap: .8rem; align-items: baseline;
+  padding: .55rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
   color: var(--text-2) !important; text-decoration: none !important; font-size: .86rem; font-variant-numeric: tabular-nums; }
-.mkt-row:hover { background: var(--surface-2); }
 .mkt-row.selected { background: var(--brand-soft); box-shadow: var(--edge-hi), inset 0 0 0 1px var(--brand-ring); }
-.mkt-head { background: transparent; box-shadow: none; padding: 0 .8rem .1rem; }
-.mkt-h { color: var(--text-4) !important; text-decoration: none !important; font-size: .68rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .05em; }
+.mkt-head { background: transparent; box-shadow: none; padding: 0 .8rem .15rem; }
+.mkt-h { display: flex; align-items: center; color: var(--text-4) !important; text-decoration: none !important; font-size: .64rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .06em; }
 .mkt-h.sortable:hover { color: var(--brand-2) !important; }
 .mkt-name { color: var(--text-1); font-weight: 750; }
 .mkt-rate { color: var(--text-1); font-weight: 700; }
 .mkt-num { color: var(--text-3); }
+.mkt-num small { color: var(--text-4); font-size: .76em; }
+.mkt-lift { font-weight: 700; white-space: nowrap; }
+.mkt-lift.up { color: var(--green); }
+.mkt-lift.down { color: var(--red); }
+.mkt-lift.flat { color: var(--text-3); }
 
-/* Expandable prop rows (native <details>). */
-.prop-list { display: flex; flex-direction: column; gap: 3px; }
+/* The day's highest-scored misses — calibration, not damage. Never the biggest gaps. */
+.confident-misses { margin: 0 0 .8rem; padding: .7rem .95rem .8rem; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px solid var(--divider); border-left: 3px solid var(--red);
+  box-shadow: var(--edge-hi); }
+.cm-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .55rem;
+  color: var(--text-4); font-size: .66rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.cm-sub { color: var(--text-4); font-size: .74rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.cm-list { display: grid; gap: .3rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+.cm-list li { display: grid; grid-template-columns: 2.2rem minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  gap: .75rem; align-items: baseline; font-size: .85rem; color: var(--text-3); }
+.cm-score { color: var(--text-1); font-weight: 800; font-variant-numeric: tabular-nums; }
+.cm-player { color: var(--text-1); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-actual { color: var(--text-2); font-weight: 650; white-space: nowrap; }
+
+/* Filter / sort / group. Hidden until the script runs — the static export has no server
+   to re-filter against, and an inert control is worse than no control. */
+.results-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.3rem;
+  padding: .55rem .8rem; margin: 0 0 .7rem; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
+.rc-group { display: inline-flex; align-items: center; gap: .45rem; min-width: 0; }
+.rc-label { color: var(--text-4); font-size: .66rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.rc-pills { display: inline-flex; flex-wrap: wrap; gap: .25rem; }
+.rc-pill { padding: .22rem .55rem; border: 0; border-radius: var(--r-pill); cursor: pointer;
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--text-2); font: inherit; font-size: .77rem; font-weight: 650; }
+.rc-pill:hover { color: var(--text-1); }
+.rc-pill:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.rc-pill.active { background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand-ring); color: var(--text-1); }
+/* Misses are the diagnostic view, so the one pill that opens it is tinted like the rows
+   it selects — enough to find, not enough to make the page read as a bad day. */
+.rc-pill[data-result-filter="miss"].active { background: rgba(239, 142, 134, .14); box-shadow: inset 0 0 0 1px rgba(239, 142, 134, .34); }
+.rc-count { margin-left: .32rem; color: var(--text-4); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rc-pill.active .rc-count { color: var(--text-2); }
+.rc-select { min-height: 2.05rem; padding: 0 .5rem; border: 1px solid var(--divider); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text-1); font: inherit; font-size: .78rem; }
+.rc-select:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+/* The audit table. One prediction per row, five aligned columns, dense on purpose:
+   these are two hundred rows a reader scans, not two hundred cards. */
+.prop-head, .prop-summary { display: grid;
+  grid-template-columns: 74px minmax(0, 1.6fr) minmax(0, 1.5fr) 3.4rem minmax(0, 1fr); gap: .85rem; }
+.prop-head { padding: 0 .85rem .3rem; color: var(--text-4); font-size: .63rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .06em; }
+.prop-head span:nth-child(4) { display: flex; align-items: center; justify-content: flex-end; }
+.prop-list { display: flex; flex-direction: column; gap: 2px; }
 .prop-item { border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
 .prop-item[open] { box-shadow: var(--edge-hi), var(--shadow-sm); }
 .prop-item.r-hit { border-left: 3px solid var(--green); }
-.prop-item.r-miss { border-left: 3px solid var(--red); }
-.prop-item.r-void { border-left: 3px solid var(--hairline-2); opacity: .82; }
+/* A miss carries a touch more weight than a hit: it is the row worth reading twice. */
+.prop-item.r-miss { border-left: 3px solid var(--red);
+  background: linear-gradient(90deg, rgba(239, 142, 134, .07), rgba(239, 142, 134, 0) 38%), var(--surface-1); }
+.prop-item.r-void { border-left: 3px solid var(--hairline-2); opacity: .78; }
 .prop-item.r-pending { border-left: 3px solid #e0a63a; }
-.prop-summary { display: grid; grid-template-columns: 88px 1.7fr 1.3fr auto auto; gap: .85rem;
-  align-items: center; padding: .55rem .85rem; cursor: pointer; list-style: none; font-size: .86rem; }
+.prop-summary { align-items: center; padding: .42rem .85rem; cursor: pointer; list-style: none; font-size: .85rem; }
 .prop-summary::-webkit-details-marker { display: none; }
 .prop-summary:hover { background: var(--surface-2); border-radius: var(--r-sm); }
-.prop-grade { display: inline-flex; align-items: center; gap: .3rem; font-weight: 800; font-size: .7rem; letter-spacing: .03em; }
+.prop-grade { display: inline-flex; align-items: center; gap: .3rem; font-weight: 800; font-size: .69rem; letter-spacing: .03em; }
 .pg-icon { font-size: .9rem; }
 .prop-grade.r-hit { color: var(--green); }
 .prop-grade.r-miss { color: var(--red); }
 .prop-grade.r-void { color: var(--text-4); }
 .prop-grade.r-pending { color: #e0a63a; }
-.prop-id b { color: var(--text-1); font-weight: 800; }
-.prop-vs { display: block; color: var(--text-4); font-size: .72rem; }
-.prop-mkt { color: var(--text-2); }
-.prop-rec { display: block; color: var(--brand-2); font-size: .76rem; font-weight: 700; }
-.prop-score { color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.prop-actual { color: var(--text-1); font-weight: 650; white-space: nowrap; }
+.prop-id { min-width: 0; }
+.prop-id b { display: block; color: var(--text-1); font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-vs { display: block; color: var(--text-4); font-size: .7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The market used to be orange on every row, which made the loudest thing in the list
+   the column a reader already knows they are looking at. The posted line carries it. */
+.prop-mkt { display: flex; align-items: baseline; gap: .4rem; min-width: 0; color: var(--text-4); font-size: .78rem; }
+/* The market name gives way, the posted line never does: on a phone "SP Hits Allowed
+   Under 5.5" wrapped and made every pitcher row a line taller than a batter row. */
+.pm-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: normal; }
+.prop-rec { flex: 0 0 auto; color: var(--text-1); font-size: .85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.prop-score { color: var(--text-1); font-size: .92rem; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.prop-actual { color: var(--text-2); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prop-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; margin: .9rem 0 .35rem;
+  color: var(--text-2); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.prop-group:first-child { margin-top: 0; }
+.prop-group span { color: var(--text-4); font-size: .72rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .prop-why { padding: .1rem .85rem .7rem 96px; }
 .why-head { color: var(--text-4); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
 .why-list { margin: 0 0 .35rem; padding-left: 1.1rem; color: var(--text-2); font-size: .82rem; line-height: 1.5; }
 .why-risk { color: var(--red); font-size: .82rem; }
 
 @media (max-width: 760px) {
-  .daily-summary { grid-template-columns: repeat(3, 1fr); }
-  .mkt-row { grid-template-columns: 1.4fr 1fr .8fr; }
-  .mkt-row .mkt-num:last-child, .mkt-head .mkt-h:nth-child(4), .mkt-head .mkt-h:nth-child(5),
-  .mkt-row .mkt-num:nth-of-type(1) { display: none; }
+  .ds-value { letter-spacing: -.03em; }
+  .ds-mini-total { margin-left: 0; }
+  .mkt-row { grid-template-columns: minmax(0, 1.15fr) .95fr .7fr .8fr; gap: .5rem; font-size: .82rem; }
+  .mkt-row > :last-child, .mkt-head > :last-child { display: none; }   /* avg score */
+  /* The record cell keeps its sample and drops the void note — the day's void count is
+     already a metric in the scorecard, and wrapping it here cost a whole row. */
+  .mkt-flag { display: none; }
+  .cm-list li { grid-template-columns: 2.1rem minmax(0, 1fr) auto; row-gap: .1rem; column-gap: .5rem; }
+  .cm-rec { grid-column: 2 / -1; color: var(--text-4); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .cm-actual { grid-row: 1; grid-column: 3; }
+  .results-controls { gap: .5rem .9rem; }
+  .prop-head { display: none; }
+  /* The column headings are gone, so each number says what it is. */
+  .prop-score::before { content: "Score "; color: var(--text-4); font-size: .68rem; font-weight: 650; }
+  .prop-actual::before { content: "Actual "; color: var(--text-4); font-size: .68rem; font-weight: 650; }
   .prop-summary { grid-template-columns: auto 1fr auto; grid-template-areas:
-    "grade id score" "grade mkt actual"; row-gap: .2rem; }
+    "grade id score" "grade mkt actual"; row-gap: .15rem; gap: .6rem; }
   .prop-grade { grid-area: grade; align-self: start; }
   .prop-id { grid-area: id; } .prop-mkt { grid-area: mkt; }
   .prop-score { grid-area: score; text-align: right; } .prop-actual { grid-area: actual; text-align: right; }
@@ -1600,17 +1706,35 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .et-row { display: grid; grid-template-columns: 1.7fr .7fr 1fr .7fr 1.4fr; gap: .8rem; align-items: center;
   padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
   font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
+/* Edge finder: segment, lift, rate, n, record, trend. Lift sits second because it is the
+   column the reader should act on, and second is the position that survives the phone. */
+.et-table-6 .et-row { grid-template-columns: 1.5fr 1.5fr .75fr .6fr .75fr 1.25fr; }
+.et-n { color: var(--text-3); }
+.et-row-small { background: transparent; box-shadow: inset 0 0 0 1px var(--hairline); }
+.et-row-small .et-seg, .et-row-small .cal-rate { color: var(--text-3); }
+.et-trend.up { color: var(--green); }
+.et-trend.down { color: var(--red); }
+.et-trend.flat { color: var(--text-3); }
+.cal-diff.flat { color: var(--text-3); }
 .et-head { background: transparent; box-shadow: none; color: var(--text-4); font-size: .68rem;
   font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 0 .8rem .1rem; }
 .et-seg { color: var(--text-1); font-weight: 700; display: inline-flex; align-items: center; gap: .45rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .et-trend { color: var(--text-1); font-weight: 650; }
 .et-prev { color: var(--text-4); font-size: .74rem; font-weight: 500; }
-.et-divider { color: var(--text-4); font-size: .68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .05em; margin: .5rem 0 .2rem .2rem; }
+/* The two groups are titled, not merely divided: "Reliable edges" / "Small-sample
+   signals" say what the split means, where "Below minimum sample" left the reader to
+   infer that a 64% row on 22 props had been discovered. */
+.et-divider { display: flex; align-items: baseline; gap: .5rem; color: var(--text-4);
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; margin: .9rem 0 .3rem .2rem; }
+.et-divider:first-child { margin-top: .2rem; }
+.et-divider small { font-size: .66rem; font-weight: 500; text-transform: none;
+  letter-spacing: 0; color: var(--text-4); opacity: .85; }
+.et-divider-strong { color: var(--text-2); }
 
 .ou-wrap { display: flex; flex-direction: column; gap: .35rem; margin-top: .3rem; }
-.ou-line { display: grid; grid-template-columns: 90px auto auto 1fr; gap: .8rem; align-items: baseline;
+.ou-line { display: grid; grid-template-columns: 90px auto auto minmax(0, 1fr) auto; gap: .8rem; align-items: baseline;
   padding: .55rem .9rem; border-radius: var(--r-md); background: var(--surface-1);
   border: 1px solid var(--divider); box-shadow: var(--edge-hi); font-variant-numeric: tabular-nums; }
 .ou-dir { color: var(--text-3); font-size: .8rem; font-weight: 750; text-transform: uppercase; letter-spacing: .04em; }
@@ -1625,6 +1749,10 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .ou-mhead { background: transparent; box-shadow: none; color: var(--text-4); font-size: .66rem;
   font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 0 .8rem; }
 .ou-mname { color: var(--text-1); font-weight: 700; }
+.ou-mhead small { display: block; font-size: .58rem; font-weight: 500; letter-spacing: 0;
+  text-transform: none; color: var(--text-4); opacity: .8; }
+.ou-lift { font-weight: 750; }
+.ou-liftwrap { text-align: right; }
 
 @media (max-width: 760px) {
   .et-row { grid-template-columns: 1.4fr .8fr 1fr; }
@@ -1640,11 +1768,23 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .cons-rate { color: var(--text-1); font-size: 1.3rem; font-weight: 820; letter-spacing: -.02em;
   font-variant-numeric: tabular-nums; margin: .1rem 0; }
 .cons-rec { color: var(--text-3); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.cons-delta { margin-top: .3rem; padding-top: .3rem; border-top: 1px solid var(--hairline);
+  font-size: .74rem; font-variant-numeric: tabular-nums; }
+.cons-delta .cal-diff { font-weight: 750; }
 @media (max-width: 760px) { .cons-row { grid-template-columns: repeat(2, 1fr); } }
 
-.ver-row { display: grid; grid-template-columns: 1.3fr 1.4fr .8fr 1fr .8fr; gap: .8rem; align-items: center;
+.ver-row { display: grid; grid-template-columns: 1.15fr 1.25fr .7fr .95fr 1.1fr 1.6fr; gap: .8rem; align-items: center;
   padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
   font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
+/* "Did the new model actually improve?" is the last column because it is the answer, and
+   an answer is read after the figures it rests on. It is also the only column allowed to
+   be negative in bold — a model page that renders every update as a win is not one. */
+.ver-current { box-shadow: var(--edge-hi), inset 0 0 0 1px var(--hairline-2); }
+.ver-current .cal-diff { font-weight: 800; }
+@media (max-width: 900px) {
+  .ver-row { grid-template-columns: 1.2fr 1fr 1.2fr 1.5fr; }
+  .ver-row > span:nth-child(2), .ver-row > span:nth-child(3) { display: none; }
+}
 
 /* Model versions are grouped by market family: the live version reads normally, earlier
    versions of the same market collapse into one quieter line beneath it. The label is
@@ -1669,6 +1809,190 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
   font-weight: 750;
 }
 
+/* ============================================================================
+   PERFORMANCE — MODEL VALIDATION SURFACE
+   The page reaches its conclusions before it shows its evidence, and the styling
+   carries that: three levels, separated by space and a labelled rule, with the
+   headline weight spent at the top and the tables below kept dense.
+
+   Colour discipline is the design system's, unchanged. Orange stays selection and
+   opportunity identity; green is supporting evidence and coral is risk, so a lift is
+   allowed a tint only once it is large enough to be evidence — inside ±2 points every
+   figure on this page stays grey. A red/green cell for every number would turn a
+   diagnostic into a scoreboard.
+   ========================================================================== */
+
+/* --- Active filter state ------------------------------------------------- */
+/* The pills show which option is selected; this says what you are looking at, because
+   every figure below responds to it and a reader who has scrolled has no other cue. */
+.active-filters { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem;
+  margin: -.4rem 0 1.1rem; }
+.af-lead { color: var(--text-4); font-size: .7rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .05em; margin-right: .15rem; }
+.af-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .28rem .6rem;
+  border-radius: var(--r-pill); background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px var(--brand-ring); color: var(--text-1);
+  font-size: .78rem; font-weight: 700; text-decoration: none;
+  transition: background var(--dur-fast) var(--ease); }
+.af-chip:hover { background: rgba(244, 122, 36, .22); }
+.af-key { color: var(--brand-2); font-size: .62rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em; }
+.af-x { color: var(--text-4); font-size: .9rem; line-height: 1; }
+.af-chip:hover .af-x { color: var(--text-1); }
+
+/* --- Level rhythm -------------------------------------------------------- */
+/* Space goes between the conceptual groups, not inside them. */
+.perf-level-1 > .analytics-section { margin-top: 1.5rem; }
+.perf-level-2 > .analytics-section:first-child,
+.perf-level-3 > .analytics-section:first-child { margin-top: 1.2rem; }
+.level-1-head { font-size: 1.32rem !important; letter-spacing: -.02em; color: var(--text-1); }
+.perf-level-3 > .analytics-section > h2 { font-size: 1.05rem; color: var(--text-2); }
+
+.perf-rule { display: flex; align-items: center; gap: .8rem; margin: 2.6rem 0 .4rem; }
+.perf-rule::before, .perf-rule::after { content: ""; height: 1px; flex: 1 1 auto;
+  background: var(--divider); }
+.perf-rule::before { flex-grow: 0; width: 0; }
+.perf-rule span { color: var(--text-4); font-size: .68rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .09em; }
+
+/* --- Signal check: the executive summary --------------------------------- */
+/* Two or three labelled observations, not one long sentence. The left brand rule gives
+   it the headline weight the plain surface cards below deliberately don't have. */
+.signal-check { background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
+  border: 1px solid var(--divider); border-left: 3px solid var(--brand);
+  border-radius: var(--r-md); padding: 1rem 1.15rem .9rem; margin: 0 0 1.2rem;
+  box-shadow: var(--edge-hi), var(--shadow-sm); }
+.sc-head { color: var(--text-4); font-size: .68rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .09em; margin-bottom: .7rem; }
+.sc-item { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); gap: .9rem;
+  align-items: baseline; padding: .38rem 0; }
+.sc-item + .sc-item { border-top: 1px solid var(--hairline); }
+.sc-label { color: var(--brand-2); font-size: .66rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .06em; }
+.sc-text { margin: 0; color: var(--text-2); font-size: .95rem; line-height: 1.5; }
+.sc-text strong { color: var(--text-1); font-weight: 750; }
+
+/* --- Performance summary -------------------------------------------------- */
+/* Hit rate and lift over baseline are the same size on purpose. The raw rate is the
+   figure most likely to be read as skill and least likely to be it. */
+.perf-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem;
+  margin: .2rem 0 .1rem; }
+.ps-tile { padding: .85rem 1rem; border-radius: var(--r-md);
+  background: var(--surface-1); border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
+.ps-label { color: var(--text-4); font-size: .66rem; font-weight: 750;
+  text-transform: uppercase; letter-spacing: .05em; }
+.ps-value { color: var(--text-1); font-size: 2rem; font-weight: 850; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; line-height: 1.1; margin: .18rem 0 .1rem; }
+.ps-value.pos { color: var(--green); }
+.ps-value.neg { color: var(--red); }
+.ps-sub { color: var(--text-4); font-size: .76rem; font-variant-numeric: tabular-nums; }
+.ps-meta { color: var(--text-4); font-size: .78rem; margin: .55rem 0 0;
+  font-variant-numeric: tabular-nums; }
+.ps-meta .cal-diff { font-weight: 750; }
+.perf-means { margin: .9rem 0 .2rem; padding-left: .85rem;
+  border-left: 2px solid var(--hairline-2); color: var(--text-2);
+  font-size: .98rem; line-height: 1.55; }
+.perf-summary-section .cohort-comparison { margin: 1rem 0 0; }
+@media (max-width: 640px) { .perf-summary { grid-template-columns: 1fr; } }
+
+/* --- What's working: edge first ------------------------------------------- */
+.mc-edge-cell { display: flex; flex-direction: column; gap: .05rem; }
+.mc-edge { font-size: 1.02rem; font-weight: 820; letter-spacing: -.01em; }
+.mc-edge.pos { color: var(--green); }
+.mc-edge.neg { color: var(--red); }
+.mc-edge.flat { color: var(--text-3); }
+.mc-n, .mc-share { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mc-head span { display: flex; flex-direction: column; gap: .1rem; }
+.mc-head small { font-size: .6rem; font-weight: 500; text-transform: none;
+  letter-spacing: 0; color: var(--text-4); opacity: .8; }
+
+/* --- Trust board ---------------------------------------------------------- */
+/* The verdict, stated before the evidence. Tier colour is a 3px left edge only: a filled
+   card per tier would read as four alert states rather than one ranked judgement. */
+.trust-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .6rem; margin-top: .3rem; }
+.tb-tier { padding: .8rem .9rem; border-radius: var(--r-md); background: var(--surface-1);
+  border: 1px solid var(--divider); border-left: 3px solid var(--hairline-2);
+  box-shadow: var(--edge-hi); }
+.tb-strong { border-left-color: var(--green); }
+.tb-promising { border-left-color: var(--brand); }
+.tb-watch { border-left-color: var(--text-4); }
+.tb-weak { border-left-color: var(--red); }
+.tb-early { border-left-color: var(--hairline-2); }
+.tb-tier-head { color: var(--text-1); font-size: .78rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em; }
+.tb-blurb { color: var(--text-4); font-size: .7rem; line-height: 1.4; margin: .2rem 0 .55rem; }
+.tb-list { list-style: none; margin: 0; padding: 0; display: flex;
+  flex-direction: column; gap: .4rem; }
+.tb-chip { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem;
+  align-items: baseline; padding-top: .4rem; border-top: 1px solid var(--hairline);
+  font-variant-numeric: tabular-nums; }
+.tb-chip:first-child { padding-top: 0; border-top: 0; }
+.tb-market { color: var(--text-1); font-size: .86rem; font-weight: 700; }
+.tb-lift { color: var(--text-2); font-size: .8rem; font-weight: 700; text-align: right; }
+.tb-note { grid-column: 1 / -1; color: var(--text-4); font-size: .68rem; line-height: 1.35; }
+
+/* --- Score calibration: bars with the base rate marked on them ------------ */
+/* The bar is the observed hit rate; the tick is what that band's props convert on their
+   own, so the visible gap IS the lift. A plain hit-rate bar chart would give the longest
+   bar to the band with the easiest events, which is the inference this page prevents. */
+.cal-bars { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .9rem; }
+.cb-row { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr) 3.4rem 4rem;
+  gap: .7rem; align-items: center; padding: .32rem .8rem; border-radius: var(--r-sm);
+  background: var(--surface-1); box-shadow: var(--edge-hi);
+  font-size: .82rem; font-variant-numeric: tabular-nums; }
+.cb-small { opacity: .62; }
+.cb-band { color: var(--text-1); font-weight: 750; }
+.cb-track { position: relative; height: 1.15rem; border-radius: var(--r-xs);
+  background: var(--surface-3); overflow: hidden; }
+.cb-fill { position: absolute; inset: 0 auto 0 0; border-radius: var(--r-xs);
+  background: var(--hairline-2); }
+.cb-fill.pos { background: linear-gradient(90deg, rgba(107,198,143,.30), rgba(107,198,143,.55)); }
+.cb-fill.neg { background: linear-gradient(90deg, rgba(239,142,134,.28), rgba(239,142,134,.50)); }
+.cb-fill.flat { background: rgba(255,255,255,.13); }
+.cb-base { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px;
+  background: var(--text-1); opacity: .75; border-radius: 1px; }
+.cb-rate { color: var(--text-1); font-weight: 750; text-align: right; }
+.cb-n { color: var(--text-4); font-size: .72rem; text-align: right; }
+.mtp-legend .cb-key-fill::before { background: rgba(107,198,143,.55); }
+.mtp-legend .cb-key-base::before { width: 2px; background: var(--text-1); opacity: .75; }
+@media (max-width: 560px) {
+  .cb-row { grid-template-columns: 3.6rem minmax(0, 1fr) 3rem; }
+  .cb-n { display: none; }
+}
+
+/* --- Market pulse: change is the answer, the grid is the texture ---------- */
+/* Older slates fade. Eight equally saturated columns made ordinary variance look like a
+   row of findings, when the question is the shape of the recent run. */
+.mtp-cell { opacity: calc(1 - var(--age, 0) * .085); }
+.mtp-cell.small { opacity: calc((1 - var(--age, 0) * .085) * .55); }
+.mtp-trend { background: rgba(255,255,255,.03); }
+.mtp-trend b { font-size: .84rem; font-weight: 800; color: var(--text-2); }
+.mtp-trend small { color: var(--text-4); font-size: .55rem; }
+.mtp-trend.up b { color: var(--green); }
+.mtp-trend.down b { color: var(--red); }
+.mtp-trend.flat b { color: var(--text-3); }
+
+/* --- By month: a shape, not a chart -------------------------------------- */
+.month-spark { display: flex; align-items: center; gap: .75rem; margin: .1rem 0 .6rem; }
+.spark { overflow: visible; }
+.spark-line { fill: none; stroke: var(--brand-2); stroke-width: 1.6;
+  stroke-linejoin: round; stroke-linecap: round; }
+.spark-zero { stroke: var(--hairline-2); stroke-width: 1; stroke-dasharray: 2 3; }
+.spark-dot { fill: var(--brand); }
+
+/* --- Methodology ---------------------------------------------------------- */
+/* Last, and quiet: it is the page's terms of reference, read once. */
+.methodology .method-list { margin: .3rem 0 0; padding: 1rem 1.15rem;
+  border-radius: var(--r-md); background: var(--surface-1);
+  border: 1px solid var(--divider); box-shadow: var(--edge-hi); }
+.method-list dt { color: var(--text-2); font-size: .82rem; font-weight: 750;
+  margin-top: .95rem; }
+.method-list dt:first-child { margin-top: 0; }
+.method-list dd { margin: .25rem 0 0; color: var(--text-4); font-size: .8rem;
+  line-height: 1.55; }
+.method-list dd b { color: var(--text-3); font-weight: 700; }
+
 /* ---- Refinements (opportunity screen hierarchy) ------------------------- */
 /* Curation subtext beside "Today's N strongest picks" — muted, so the honest total
    is context, not the headline. */
@@ -1677,10 +2001,6 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 /* ============================================================================
    NFL MATCHUP PAGE + SEASON ARCHIVE
    ========================================================================== */
-.nfl-section-head { font-size: .82rem; font-weight: 650; color: var(--text-3); letter-spacing: .02em;
-  text-transform: uppercase; margin: 1.4rem 0 .6rem; }
-.nfl-section-head span { text-transform: none; letter-spacing: 0; color: var(--text-4); font-weight: 500; }
-
 /* Hero */
 .nfl-hero { padding: 1.1rem 1.2rem; border-radius: var(--r-lg);
   background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
@@ -1701,46 +2021,6 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
   color: var(--text-4); margin-top: .2rem; }
 .nfl-note { color: var(--red); font-size: .78rem; font-weight: 500; margin: .6rem 0 0; text-align: center; }
 
-/* Team identity comparison */
-.nfl-id { display: flex; flex-direction: column; gap: .18rem; }
-.nfl-id-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .8rem;
-  padding: .5rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
-.nfl-id-head { background: transparent; box-shadow: none; padding-bottom: .1rem; }
-.nfl-id-head span { color: var(--text-3); font-weight: 700; font-size: .82rem; }
-.nfl-id-head .nfl-id-label { color: var(--text-4); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .68rem; }
-.nfl-id-val { font-size: .92rem; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums;
-  display: inline-flex; align-items: center; gap: .35rem; }
-.nfl-id-row .nfl-id-val:first-child { justify-content: flex-start; }
-.nfl-id-row .nfl-id-val:last-child { justify-content: flex-end; }
-.nfl-id-val.better { color: var(--brand-2); font-weight: 750; }
-.nfl-id-label { text-align: center; color: var(--text-4); font-size: .74rem; font-weight: 500; }
-.nfl-pct { font-size: .62rem; font-weight: 700; padding: .06rem .3rem; border-radius: var(--r-pill);
-  background: var(--surface-3); color: var(--text-4); font-variant-numeric: tabular-nums; }
-.nfl-pct sup { font-size: .5rem; }
-.nfl-pct.hi { color: var(--green); background: rgba(107, 198, 143, .12); }
-.nfl-pct.lo { color: var(--red); background: rgba(239, 142, 134, .12); }
-
-/* Battlefields */
-.nfl-bfs { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-.nfl-bf { padding: .6rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
-.nfl-bf-label { font-size: .8rem; font-weight: 600; color: var(--text-2); margin-bottom: .2rem; }
-.nfl-bf-nums { font-size: .78rem; color: var(--text-4); font-variant-numeric: tabular-nums; }
-.nfl-bf-nums b { color: var(--text-2); font-weight: 700; }
-.nfl-bf-edge { display: inline-block; margin-left: .4rem; font-size: .7rem; font-weight: 700; padding: .05rem .4rem;
-  border-radius: var(--r-pill); }
-.nfl-bf-edge.edge { color: var(--on-brand); background: var(--brand-grad); }
-.nfl-bf-edge.even { color: var(--text-4); background: var(--surface-3); }
-
-/* Recent form */
-.nfl-form { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-.nfl-form-col { padding: .6rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); text-align: center; }
-.nfl-form-dots { display: inline-flex; gap: .3rem; }
-.nfl-fdot { width: 1.4rem; height: 1.4rem; display: grid; place-items: center; border-radius: 50%;
-  font-size: .72rem; font-weight: 750; }
-.nfl-fdot.w { color: var(--green); background: rgba(107, 198, 143, .14); }
-.nfl-fdot.l { color: var(--red); background: rgba(239, 142, 134, .14); }
-.nfl-form-sub { color: var(--text-4); font-size: .72rem; margin-top: .35rem; font-variant-numeric: tabular-nums; }
-
 /* Archive browser */
 .nfl-weeks { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
 .nfl-arc-list { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
@@ -1755,51 +2035,8 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
 .nfl-arc-at { color: var(--text-4); font-size: .72rem; }
 .nfl-arc-score { color: var(--text-3); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nfl-arc-go { color: var(--text-4); font-weight: 700; }
-@media (max-width: 720px) {
-  .nfl-bfs, .nfl-form, .nfl-arc-list { grid-template-columns: 1fr; }
-}
+@media (max-width: 720px) { .nfl-arc-list { grid-template-columns: 1fr; } }
 
-/* NFL player spotlights */
-.nfl-spots { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-.nfl-spot-col { display: flex; flex-direction: column; gap: .4rem; }
-.nfl-spot-team { font-size: .74rem; font-weight: 700; color: var(--text-3); text-transform: uppercase;
-  letter-spacing: .04em; padding-left: .2rem; }
-.nfl-spot { padding: .55rem .75rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
-.nfl-spot-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-.nfl-spot-player { font-size: .88rem; font-weight: 700; color: var(--text-1); }
-.nfl-spot-pos { font-size: .64rem; font-weight: 600; color: var(--text-4); margin-left: .3rem;
-  padding: .05rem .3rem; border-radius: var(--r-pill); background: var(--surface-3); }
-.nfl-spot-mkt { font-size: .82rem; font-weight: 650; color: var(--text-2); margin-top: .2rem; }
-.nfl-spot-sub { font-size: .72rem; color: var(--text-4); margin-top: .1rem; font-variant-numeric: tabular-nums; }
-.nfl-spot-badge { font-size: .72rem; font-weight: 750; padding: .1rem .4rem; border-radius: var(--r-pill);
-  font-variant-numeric: tabular-nums; white-space: nowrap; }
-.nfl-spot-badge.hit { color: var(--green); background: rgba(107, 198, 143, .14); }
-.nfl-spot-badge.miss { color: var(--red); background: rgba(239, 142, 134, .14); }
-
-/* Matchup effect on a spotlight. Only "Tough matchup" is a prediction — it is the one
-   direction the measurement supports — so it is the only chip that carries colour. The
-   flat states are stated non-findings and stay grayscale, so the page never looks like
-   it made a call it did not make. */
-.nfl-spot-mx { margin-top: .4rem; padding-top: .4rem; border-top: 1px solid var(--divider);
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .5rem; }
-.nfl-mx { font-size: .68rem; font-weight: 750; letter-spacing: .01em; padding: .1rem .4rem;
-  border-radius: var(--r-pill); text-transform: uppercase; }
-.nfl-mx.down { color: var(--red); background: rgba(239, 142, 134, .14); }
-.nfl-mx.flat { color: var(--text-4); background: rgba(163, 172, 184, .12); }
-.nfl-mx-swing { font-size: .74rem; font-weight: 700; color: var(--red);
-  font-variant-numeric: tabular-nums; }
-.nfl-spot-mx .nfl-spot-sub { flex-basis: 100%; margin-top: 0; line-height: 1.35; }
-.nfl-mx-note { color: var(--text-4); font-size: .74rem; line-height: 1.45; margin-top: .6rem;
-  padding-top: .55rem; border-top: 1px solid var(--divider); }
-.nfl-mx-note b { color: var(--text-2); font-weight: 700; }
-@media (max-width: 720px) { .nfl-spots { grid-template-columns: 1fr; } }
-
-/* NFL thesis + rest/schedule */
-.nfl-thesis { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
-.nfl-thesis li { position: relative; padding: .55rem .8rem .55rem 1.9rem; border-radius: var(--r-sm);
-  background: var(--surface-1); box-shadow: var(--edge-hi); color: var(--text-2); font-size: .86rem; line-height: 1.4; }
-.nfl-thesis li::before { content: ""; position: absolute; left: .8rem; top: .95rem; width: .42rem; height: .42rem;
-  border-radius: 50%; background: var(--brand); }
 .nfl-rest { display: flex; gap: 1.4rem; padding: .55rem .8rem; border-radius: var(--r-sm);
   background: var(--surface-1); box-shadow: var(--edge-hi); color: var(--text-3); font-size: .84rem;
   font-variant-numeric: tabular-nums; }
@@ -1844,4 +2081,285 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
   letter-spacing: .05em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Prop-lean ledger page (/leans/): a record of every hand-written over/under, graded. */
+.ledger-game { margin-top: .9rem; }
+.ledger-game-head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem;
+  flex-wrap: wrap; margin-bottom: .4rem; }
+.ledger-game-title { font-size: .92rem; font-weight: 700; color: var(--text-1); }
+.ledger-game-sub { color: var(--text-4); font-size: .74rem; font-variant-numeric: tabular-nums; }
+.ledger-rows { display: flex; flex-direction: column; gap: .3rem; }
+.ledger-row { display: grid; grid-template-columns: 2rem 1.4fr 1.6fr auto auto; align-items: center; gap: .6rem;
+  padding: .45rem .7rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi);
+  font-size: .82rem; }
+.ledger-row .rank { color: var(--text-4); font-size: .7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ledger-row .player { color: var(--text-1); font-weight: 700; }
+.ledger-row .player small { display: block; color: var(--text-4); font-weight: 500; font-size: .7rem; }
+.ledger-row .call { color: var(--text-2); font-weight: 600; }
+.ledger-row .actual { color: var(--text-4); font-size: .76rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ledger-why { grid-column: 1 / -1; color: var(--text-4); font-size: .72rem; line-height: 1.4; }
+.ledger-res { font-size: .68rem; font-weight: 750; text-transform: uppercase; letter-spacing: .02em;
+  padding: .1rem .45rem; border-radius: var(--r-pill); white-space: nowrap; }
+.ledger-res.hit { color: var(--green); background: rgba(107, 198, 143, .14); }
+.ledger-res.miss { color: var(--red); background: rgba(239, 142, 134, .14); }
+.ledger-res.void, .ledger-res.pending, .ledger-res.pass { color: var(--text-4); background: var(--surface-3); }
+.ledger-splits { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin-top: .6rem; }
+.ledger-splits.four { grid-template-columns: repeat(4, 1fr); }
+.ledger-split { padding: .6rem .8rem; border-radius: var(--r-sm); background: var(--surface-1); box-shadow: var(--edge-hi); }
+.ledger-split-head { font-size: .7rem; font-weight: 700; color: var(--text-4); text-transform: uppercase;
+  letter-spacing: .04em; margin-bottom: .3rem; }
+.ledger-split-row { display: flex; justify-content: space-between; gap: .5rem; font-size: .8rem; color: var(--text-2);
+  padding: .12rem 0; font-variant-numeric: tabular-nums; }
+.ledger-split-row span:last-child { color: var(--text-3); }
+@media (max-width: 720px) {
+  .ledger-row { grid-template-columns: 2rem 1fr auto; }
+  .ledger-row .call { grid-column: 2 / -1; }
+  .ledger-splits, .ledger-splits.four { grid-template-columns: 1fr; }
+}
+.nfl-sources { color: var(--text-4); font-size: .72rem; line-height: 1.5; margin-top: .6rem; padding-top: .55rem;
+  border-top: 1px solid var(--divider); }
+.nfl-sources a { color: var(--text-3) !important; }
+.nfl-sources a:hover { color: var(--brand-2) !important; }
+@media (max-width: 720px) { .nfl-cols { grid-template-columns: 1fr; } }
+
+
+/* ============================================================================
+   NFL MATCHUP PAGE — hierarchy
+   Three depths of reading and three layout patterns (editorial / comparison /
+   matchup). Sections carry the rhythm: a rule and generous air *between* them,
+   tighter rows *inside* them, so the page stops reading as one stream of equal
+   cards. Orange is rationed to the insights (an observation's dot, an edge, the
+   watch line); green and coral carry direction only; everything else ranks by
+   weight, size and contrast.
+   ========================================================================== */
+.nfl-sec { margin-top: 2.2rem; padding-top: 1.1rem; border-top: 1px solid var(--divider); }
+.nfl-sec-head { margin-bottom: .8rem; }
+.nfl-sec-title { margin: 0; font-size: 1.02rem; font-weight: 800; letter-spacing: .01em;
+  color: var(--text-1); text-transform: uppercase; }
+.nfl-sec-sub { margin: .2rem 0 0; color: var(--text-4); font-size: .8rem; line-height: 1.45; max-width: 68ch; }
+.nfl-sec-sub a { color: var(--text-3) !important; }
+/* Supporting sections sit lower in the hierarchy: a smaller title and less air above. */
+.nfl-sec--support { margin-top: 1.7rem; }
+.nfl-sec--support .nfl-sec-title { font-size: .86rem; color: var(--text-2); }
+.nfl-sec--appendix > summary { list-style: none; cursor: pointer; }
+.nfl-sec--appendix > summary::-webkit-details-marker { display: none; }
+.nfl-sec--appendix > summary .nfl-sec-title::before { content: "▸"; display: inline-block; width: 1.1em;
+  color: var(--text-4); transition: transform var(--dur) var(--ease); }
+.nfl-sec--appendix[open] > summary .nfl-sec-title::before { transform: rotate(90deg); }
+.nfl-sec--appendix[open] > summary { margin-bottom: .8rem; }
+.nfl-note { color: var(--red); font-size: .78rem; font-weight: 500; margin: .6rem 0 0; text-align: center; }
+.nfl-empty { color: var(--text-4); font-size: .78rem; padding: .3rem 0; }
+
+/* Shared row anatomy: name + chips on the top line, then the market/evidence, then
+   the muted why. Thin separators between rows inside one card, not a box per row. */
+.nfl-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; align-items: start; }
+.nfl-col { padding: .55rem .85rem; border-radius: var(--r-sm); background: var(--surface-1);
+  box-shadow: var(--edge-hi); min-width: 0; }
+.nfl-col-team { font-size: .7rem; font-weight: 750; color: var(--text-4); text-transform: uppercase;
+  letter-spacing: .06em; padding: .15rem 0 .35rem; }
+.nfl-list > * + * { border-top: 1px solid var(--divider); }
+.nfl-row-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.nfl-name { font-size: .9rem; font-weight: 750; color: var(--text-1); letter-spacing: -.005em; }
+.nfl-rank { color: var(--text-4); font-size: .68rem; font-weight: 700; margin-right: .4rem;
+  font-variant-numeric: tabular-nums; }
+.nfl-pos { font-size: .62rem; font-weight: 600; color: var(--text-4); margin-left: .35rem;
+  padding: .05rem .3rem; border-radius: var(--r-pill); background: var(--surface-3); vertical-align: middle; }
+.nfl-row-chips { display: inline-flex; align-items: center; gap: .35rem; flex-shrink: 0; }
+.nfl-market-line, .nfl-evidence { font-size: .8rem; color: var(--text-2); font-weight: 600;
+  margin-top: .12rem; font-variant-numeric: tabular-nums; }
+.nfl-why, .nfl-spot-why { display: block; font-size: .74rem; line-height: 1.45; color: var(--text-4);
+  margin-top: .22rem; max-width: 60ch; }
+
+/* Direction is the strongest badge on a row; confidence is the quieter second. */
+.nfl-dir { font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  padding: .14rem .5rem; border-radius: var(--r-pill); white-space: nowrap; }
+.nfl-dir.over { color: var(--green); background: rgba(107, 198, 143, .16); }
+.nfl-dir.under { color: var(--red); background: rgba(239, 142, 134, .16); }
+.nfl-dir.pre, .nfl-dir.avoid, .nfl-dir.pass { color: var(--text-4); background: var(--surface-3); font-weight: 700; }
+.nfl-lean.pass .nfl-name, .nfl-sec--leans .nfl-lean:has(> .nfl-row-top .nfl-dir.pass) .nfl-name {
+  color: var(--text-3); font-weight: 650; }
+.nfl-sec--leans .nfl-lean:has(> .nfl-row-top .nfl-dir.pass) .nfl-why { font-size: .7rem; }
+.nfl-conf { font-size: .6rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: .08rem .4rem; border-radius: var(--r-pill); color: var(--text-4);
+  border: 1px solid var(--divider); background: transparent; }
+.nfl-conf.high { color: var(--text-2); border-color: var(--text-4); }
+.nfl-market { font-size: .68rem; font-weight: 750; color: var(--text-1); background: var(--surface-3);
+  padding: .14rem .5rem; border-radius: var(--r-pill); white-space: nowrap; letter-spacing: .01em; }
+.nfl-lean { padding: .5rem 0; }
+.nfl-sec--leans .nfl-name { font-size: .96rem; }
+.nfl-sec--leans .nfl-col { border-top: 2px solid var(--text-4); }
+.nfl-sec--volume .nfl-col { background: transparent; box-shadow: inset 0 0 0 1px var(--divider); }
+.nfl-sec--volume .nfl-name { font-size: .84rem; font-weight: 650; color: var(--text-2); }
+.nfl-sec--volume .nfl-lean { padding: .38rem 0; }
+.nfl-sec--volume .nfl-market-line { font-size: .78rem; color: var(--text-3); font-weight: 600; }
+.nfl-sec--volume .nfl-why { font-size: .7rem; }
+.nfl-sec--overs .nfl-col { border-left: 3px solid var(--green); }
+.nfl-sec--overs .nfl-col-team { color: var(--green); }
+.nfl-sec--overs .nfl-dir.over { background: rgba(107, 198, 143, .22); }
+.nfl-lean.pre .nfl-name { color: var(--text-3); font-weight: 650; }
+
+/* Editorial card: one column of prose at a reading width. */
+.nfl-sec--editorial .nfl-ed, .nfl-read { padding: .9rem 1.1rem; border-radius: var(--r-lg);
+  background: linear-gradient(165deg, var(--surface-1-top), var(--surface-1));
+  border: 1px solid var(--hairline); box-shadow: var(--edge-hi), var(--shadow-md); }
+.nfl-ed-headline { margin: 0 0 .9rem; font-size: 1rem; font-weight: 700; line-height: 1.45;
+  color: var(--text-2); letter-spacing: -.005em; max-width: 62ch; }
+.nfl-ed-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr;
+  gap: .9rem 1.6rem; }
+.nfl-ed-points li { position: relative; padding-left: 1.2rem; max-width: 46ch; }
+.nfl-ed-points li::before { content: ""; position: absolute; left: 0; top: .42rem; width: .5rem; height: .5rem;
+  border-radius: 50%; background: var(--brand); }
+.nfl-ed-lead { color: var(--text-1); font-weight: 800; font-size: 1.02rem; line-height: 1.3; letter-spacing: -.01em; }
+.nfl-ed-text { margin: .25rem 0 0; font-size: .8rem; line-height: 1.5; color: var(--text-4); }
+.nfl-ed-alt { margin: .8rem 0 0; padding-top: .6rem; border-top: 1px solid var(--divider);
+  font-size: .8rem; line-height: 1.45; color: var(--text-4); max-width: 68ch; }
+.nfl-ed-alt span { color: var(--text-3); font-weight: 700; }
+
+/* The read: three labelled ideas, label small and muted, conclusion large and bright. */
+.nfl-read { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.nfl-read-idea { padding: .7rem .9rem .8rem 1rem; border-radius: var(--r-sm); background: var(--surface-2);
+  border-left: 3px solid var(--text-4); }
+.nfl-read-idea.watch { grid-column: 1 / -1; border-left-color: var(--brand);
+  background: linear-gradient(90deg, rgba(255, 122, 26, .08), transparent 60%), var(--surface-2); }
+.nfl-read-label { font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: .35rem; }
+.nfl-read-idea.watch .nfl-read-label { color: var(--brand-2); }
+.nfl-read-idea.script { grid-column: 1 / -1; border-left-color: var(--text-3); }
+.nfl-read-label span { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text-4); margin-left: .4rem; }
+.nfl-read-idea.script .nfl-read-text { font-size: .98rem; font-weight: 600; color: var(--text-2); max-width: 70ch; }
+.nfl-read-text { margin: 0; font-size: 1.12rem; font-weight: 700; line-height: 1.4; color: var(--text-1);
+  letter-spacing: -.01em; max-width: 44ch; }
+.nfl-read-idea.watch .nfl-read-text { max-width: 70ch; }
+
+/* Matchup at a glance: the identity grid, muted unless a side has a real advantage. */
+.nfl-glance { border-radius: var(--r-lg); background: var(--surface-1); box-shadow: var(--edge-hi);
+  border: 1px solid var(--hairline); padding: .3rem .9rem .6rem; }
+.nfl-glance-joint { font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--text-4); padding: .75rem 0 .45rem; border-top: 1px solid var(--divider); margin-top: .3rem; }
+.nfl-id { display: flex; flex-direction: column; }
+.nfl-glance-say { margin-top: .5rem; font-size: .84rem; line-height: 1.45; color: var(--text-2); max-width: 70ch; }
+.nfl-glance-say span { color: var(--text-1); font-weight: 750; }
+.nfl-id-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .8rem;
+  padding: .42rem 0; border-top: 1px solid var(--divider); }
+.nfl-id-head { border-top: 0; padding: .45rem 0 .3rem; }
+.nfl-id-head span { color: var(--text-4); font-weight: 750; font-size: .7rem; text-transform: uppercase;
+  letter-spacing: .06em; }
+.nfl-id-val { font-size: .92rem; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; gap: .35rem; }
+.nfl-id-row .nfl-id-val:first-child { justify-content: flex-start; }
+.nfl-id-row .nfl-id-val:last-child { justify-content: flex-end; }
+.nfl-id-row.even .nfl-id-val { color: var(--text-4); }
+.nfl-id-val.better { color: var(--text-1); font-weight: 800; }
+.nfl-id-label { text-align: center; color: var(--text-4); font-size: .72rem; font-weight: 500; }
+.nfl-pct { font-size: .6rem; font-weight: 700; padding: .05rem .3rem; border-radius: var(--r-pill);
+  background: var(--surface-3); color: var(--text-4); font-variant-numeric: tabular-nums; }
+.nfl-pct sup { font-size: .48rem; }
+.nfl-pct.hi { color: var(--green); background: rgba(107, 198, 143, .12); }
+.nfl-pct.lo { color: var(--red); background: rgba(239, 142, 134, .12); }
+
+/* Battlefields: two large offense → defense cards. The edge is the section's one orange. */
+.nfl-bfs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.nfl-bf { padding: .6rem .8rem .2rem; border-radius: var(--r-sm); background: var(--surface-2);
+  box-shadow: var(--edge-hi); }
+.nfl-bf-title { font-size: .84rem; font-weight: 800; color: var(--text-1); text-transform: uppercase;
+  letter-spacing: .03em; margin-bottom: .4rem; }
+.nfl-bf-row { display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: center;
+  gap: .5rem .7rem; padding: .55rem 0; border-top: 1px solid var(--divider); }
+.nfl-bf-kind { font-size: .64rem; font-weight: 750; color: var(--text-4); text-transform: uppercase;
+  letter-spacing: .06em; width: 3.6rem; }
+.nfl-bf-who { font-size: .72rem; font-weight: 700; color: var(--text-3); }
+.nfl-bf-who span { color: var(--text-4); font-weight: 500; }
+.nfl-bf-val { font-size: 1.05rem; font-weight: 800; color: var(--text-1); font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: baseline; gap: .3rem; letter-spacing: -.01em; }
+.nfl-bf-val small { font-size: .66rem; font-weight: 600; color: var(--text-4); }
+.nfl-bf-arrow { color: var(--text-4); font-size: 1rem; font-weight: 700; }
+.nfl-bf-edge { font-size: .64rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  padding: .12rem .5rem; border-radius: var(--r-pill); white-space: nowrap; justify-self: end; }
+.nfl-bf-edge.edge { color: var(--on-brand); background: var(--brand-grad); }
+.nfl-bf-edge.even { color: var(--text-4); background: var(--surface-3); }
+
+/* Spotlights: the matchup call, colour only on the one direction that is a prediction. */
+.nfl-name--spot { font-size: 1.04rem; font-weight: 800; }
+.nfl-spot { padding: .65rem 0; }
+.nfl-spot-thesis { margin-top: .15rem; font-size: .88rem; font-weight: 700; color: var(--text-2); }
+.nfl-spot .nfl-evidence { font-size: .76rem; font-weight: 500; color: var(--text-3); margin-top: .1rem; }
+.nfl-spot-mx { margin-top: .3rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .5rem; }
+.nfl-mx { font-size: .64rem; font-weight: 750; letter-spacing: .03em; padding: .1rem .4rem;
+  border-radius: var(--r-pill); text-transform: uppercase; }
+.nfl-mx.down { color: var(--red); background: rgba(239, 142, 134, .14); }
+.nfl-mx.flat { color: var(--text-4); background: rgba(163, 172, 184, .12); }
+.nfl-mx-swing { font-size: .74rem; font-weight: 700; color: var(--red); font-variant-numeric: tabular-nums; }
+.nfl-spot-mx .nfl-spot-why { flex-basis: 100%; margin-top: 0; }
+.nfl-spot-badge { font-size: .7rem; font-weight: 750; padding: .1rem .4rem; border-radius: var(--r-pill);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nfl-spot-badge.hit { color: var(--green); background: rgba(107, 198, 143, .14); }
+.nfl-spot-badge.miss { color: var(--red); background: rgba(239, 142, 134, .14); }
+.nfl-mx-note { color: var(--text-4); font-size: .74rem; line-height: 1.45; margin-top: .7rem; max-width: 72ch; }
+.nfl-mx-note b { color: var(--text-2); font-weight: 700; }
+
+/* Availability: name strongest, status scannable, context small and muted; tight rows. */
+.nfl-avail { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .4rem;
+  padding: .32rem 0; font-size: .82rem; line-height: 1.35; }
+.nfl-avail-name { font-weight: 750; color: var(--text-1); }
+.nfl-status { font-size: .62rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  padding: .08rem .4rem; border-radius: var(--r-pill); white-space: nowrap; }
+.nfl-status.out { color: var(--red); background: rgba(239, 142, 134, .16); }
+.nfl-status.q { color: var(--text-2); background: var(--surface-3); }
+.nfl-status.gone { color: var(--text-4); background: transparent; border: 1px solid var(--divider); }
+.nfl-avail-detail { flex-basis: 100%; color: var(--text-4); font-size: .7rem; }
+.nfl-avail.impact { padding: .42rem 0; }
+.nfl-avail-impact { flex-basis: 100%; color: var(--text-3); font-size: .76rem; line-height: 1.45; max-width: 46ch; }
+.nfl-avail-other { margin-top: .35rem; padding-top: .3rem; border-top: 1px solid var(--divider);
+  display: flex; flex-wrap: wrap; gap: .1rem .9rem; align-items: baseline; }
+.nfl-avail-other-head { flex-basis: 100%; font-size: .6rem; font-weight: 750; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-4); }
+.nfl-avail.minor { padding: .12rem 0; font-size: .76rem; }
+.nfl-avail.minor .nfl-avail-name { font-weight: 600; color: var(--text-3); }
+.nfl-avail-gone { margin-top: .4rem; padding-top: .4rem; border-top: 1px dashed var(--divider); }
+.nfl-avail-gone-head { font-size: .62rem; font-weight: 750; color: var(--text-4); text-transform: uppercase;
+  letter-spacing: .05em; padding-bottom: .1rem; }
+.nfl-avail-gone-head span { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.nfl-avail-gone .nfl-avail-name { color: var(--text-3); font-weight: 650; }
+.nfl-avail-gone .nfl-avail { padding: .22rem 0; }
+
+/* Recent form: one compact strip per team. */
+.nfl-form { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.nfl-form-col { display: flex; align-items: center; gap: .9rem; padding: .8rem .95rem; border-radius: var(--r-sm);
+  background: var(--surface-1); box-shadow: var(--edge-hi); }
+.nfl-form-col .nfl-col-team { padding: 0; }
+.nfl-form-dots { display: inline-flex; gap: .35rem; }
+.nfl-fdot { width: 1.55rem; height: 1.55rem; display: grid; place-items: center; border-radius: 50%;
+  font-size: .74rem; font-weight: 750; }
+.nfl-fdot.w { color: var(--green); background: rgba(107, 198, 143, .14); }
+.nfl-fdot.l { color: var(--red); background: rgba(239, 142, 134, .14); }
+.nfl-form-sub { color: var(--text-3); font-size: .8rem; margin-left: auto; font-variant-numeric: tabular-nums; }
+.nfl-form-sub b { color: var(--text-1); font-weight: 800; }
+
+/* Since last season: the move is the row; the detail is a whisper. */
+.nfl-chg { display: flex; gap: .5rem; align-items: baseline; padding: .34rem 0; font-size: .8rem; line-height: 1.4; }
+.nfl-chg-dir { flex: 0 0 auto; font-size: .58rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em;
+  padding: .08rem .35rem; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-4); }
+.nfl-chg-dir.in { color: var(--green); background: rgba(107, 198, 143, .12); }
+.nfl-chg-text { min-width: 0; }
+.nfl-chg-lead { color: var(--text-1); font-weight: 750; }
+.nfl-chg-detail { display: block; color: var(--text-4); font-size: .72rem; }
+
+/* Methodology and sources: present, separated, quiet. */
+.nfl-method { margin-top: 2.4rem; padding-top: 1rem; border-top: 1px solid var(--divider); }
+.nfl-method-head { font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--text-4); margin-bottom: .3rem; }
+.nfl-method .opp-disclaimer { margin: 0; max-width: 72ch; }
+.nfl-sources { color: var(--text-4); font-size: .7rem; line-height: 1.55; margin: .5rem 0 0; max-width: 72ch; }
+.nfl-sources a { color: var(--text-3) !important; }
+.nfl-sources a:hover { color: var(--brand-2) !important; }
+
+@media (max-width: 720px) {
+  .nfl-cols, .nfl-bfs, .nfl-form, .nfl-read, .nfl-ed-points { grid-template-columns: 1fr; }
+  .nfl-ed-points li { max-width: none; }
+  .nfl-form-col { flex-wrap: wrap; }
+  .nfl-form-sub { margin-left: 0; flex-basis: 100%; }
+  .nfl-bf-row { grid-template-columns: auto 1fr auto 1fr; row-gap: .3rem; }
+  .nfl-bf-edge { grid-column: 1 / -1; justify-self: start; }
+  .nfl-sec { margin-top: 1.8rem; }
 }

@@ -52,13 +52,61 @@ def test_results_show_the_complete_daily_audit_without_dead_pagination(load):
 
 
 @patch("web.analytics.grading.load_graded_range")
+@patch("web.analytics.grading.load_graded_slate")
+def test_results_compare_the_day_with_the_days_before_it(slate, window):
+    """The comparison window ends the day *before* the slate being read.
+
+    A day is ~3% of its own 30-day window; leaving it in pulls the average toward
+    itself, which flatters a good day and cushions a bad one. Reading an older date
+    also has to give the answer it gave on that morning, not one coloured by the
+    fortnight that followed.
+    """
+    slate.return_value = [row(), row(player_id="2", result="miss")]
+    window.return_value = [row(snapshot_date="2026-08-01")]
+    context = results_context(QueryDict("date=2026-08-14"), date(2026, 8, 15))
+    start, end = window.call_args[0][:2]
+    assert end == date(2026, 8, 13), "the day itself is not in its own comparison"
+    assert (end - start).days == 29
+    assert context["comparison_html"].startswith('<div class="hit-rate-context">')
+    assert "<b>50.0%</b> today" in context["comparison_html"]
+
+
+@patch("web.analytics.grading.load_graded_range")
+@patch("web.analytics.grading.load_graded_slate")
+def test_results_carry_the_read_the_market_table_and_the_filter_options(slate, window):
+    slate.return_value = [row(player_id=str(i)) for i in range(25)]
+    window.return_value = []
+    context = results_context(QueryDict("date=2026-08-14"), date(2026, 8, 15))
+    assert "Daily read" in context["daily_read_html"]
+    assert "Batter Hits" in context["market_html"] and "vs base" in context["market_html"]
+    assert context["market_filters"] == [
+        {"key": "hits", "label": "Batter Hits", "count": 25}]
+    assert context["market_rows"][0]["avg_score"] == 90
+
+
+@patch("web.analytics.grading.load_graded_range")
+@patch("web.analytics.grading.load_graded_slate")
+def test_the_highest_scored_misses_need_a_full_top_ten_to_be_a_calibration_claim(slate, window):
+    """Three graded props have no "ten we were most sure about"."""
+    window.return_value = []
+    slate.return_value = [row(player_id=str(i), result="miss") for i in range(3)]
+    assert results_context(QueryDict("date=2026-08-14"), date(2026, 8, 15))["misses_html"] == ""
+    slate.return_value = [
+        row(player_id=str(i), opportunity_score=95 - i,
+            result="miss" if i < 2 else "hit", actual_value=0) for i in range(12)]
+    context = results_context(QueryDict("date=2026-08-14"), date(2026, 8, 15))
+    assert "Highest-scored misses" in context["misses_html"]
+    assert "2 misses among the day's 10 strongest predictions" in context["misses_html"]
+
+
+@patch("web.analytics.grading.load_graded_range")
 def test_performance_context_defaults_to_all_qualifying_predictions(load):
     load.return_value = [row(), row(player_id="2", result="miss", opportunity_score=60)]
     context = performance_context(QueryDict("period=30"), date(2026, 8, 15))
     assert context["has_rows"]
     assert "All qualifying" in context["summary_html"]
     assert "1–0" in context["summary_html"]
-    assert context["calibration_read"]
+    assert context["calibration_reads"]
 
 
 @patch("web.analytics.grading.load_graded_range")

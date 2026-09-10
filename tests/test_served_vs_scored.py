@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from components.results_feed import period_summary_html
+from components.results_feed import performance_summary_html
 from services import grading
 
 
@@ -47,21 +47,42 @@ def test_the_two_populations_are_disjoint_and_complete():
 
 
 def test_headline_names_the_evaluated_cohort_and_independent_slates():
+    """A hit rate with no named population is not a claim anyone can check. The headline
+    has to say *which* predictions it counted and over how many independent slates —
+    prediction counts are correlated within a slate, so 2,723 props over 27 days is far
+    less independent evidence than 2,723 draws."""
     rows = [_row(90, "hit")] * 6 + [_row(90, "miss")] * 4 + [_row(20, "miss")] * 50
     qualifying = grading.tally(grading.split_served(rows)[0])
-    html = period_summary_html(qualifying, 90.0, "Last 30 days",
-                               cohort="All qualifying", slates=4)
+    html = performance_summary_html(
+        qualifying, 0.11, grading.tally([]), None, "previous 30 days",
+        avg_score=90.0, slates=4, period_label="Last 30 days", cohort="All qualifying",
+        base_rate=0.49)
     text = " ".join(re.sub(r"<[^>]+>", " ", html).split())
     assert "60.0%" in text
     assert "All qualifying" in text
     assert "4 slates" in text
 
 
-def test_the_old_single_number_headline_still_works():
-    """Callers that pass no served tally keep the previous rendering."""
-    html = period_summary_html(grading.tally([_row(90, "hit")]), None, "Season")
+def test_the_headline_shows_lift_over_baseline_beside_the_raw_rate():
+    """The reason the old headline was replaced. 60% reads as skill; +11 points over a
+    49% base rate is the claim the page is actually entitled to make, and the two must
+    carry equal weight rather than one being a footnote to the other."""
+    qualifying = grading.tally([_row(90, "hit")] * 6 + [_row(90, "miss")] * 4)
+    html = performance_summary_html(
+        qualifying, 0.11, grading.tally([]), None, "previous 30 days",
+        period_label="Season", cohort="All qualifying", base_rate=0.49)
     text = " ".join(re.sub(r"<[^>]+>", " ", html).split())
-    assert "100.0%" in text and "Predictions" in text
+    assert "60.0%" in text and "+11.0 pts" in text and "vs 49% base" in text
+
+
+def test_a_headline_with_no_measurable_base_says_so_rather_than_showing_a_zero():
+    qualifying = grading.tally([_row(90, "hit")])
+    html = performance_summary_html(
+        qualifying, None, grading.tally([]), None, "previous 30 days",
+        period_label="Season", cohort="All qualifying", base_rate=None)
+    text = " ".join(re.sub(r"<[^>]+>", " ", html).split())
+    assert "no base measured" in text
+    assert "+0.0 pts" not in text
 
 
 def test_served_rate_beats_the_population_on_real_shape():

@@ -9,6 +9,117 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-09 — Daily Results answers "how good was the day", not "which ones hit"
+
+**Decision.** The page keeps every graded prediction and every grading rule, and gains an
+interpretive top quarter: a three-metric scorecard (record, hit rate, average score) with
+graded/void/pending demoted to a quiet strip; a one-line comparison against the trailing 30
+days; a generated **daily read** of one to three observations; a **by-market** table with a
+lift-over-base column; the day's **highest-scored misses**; and client-side filter, sort and
+grouping controls over a denser audit table.
+
+**Reason.** The old page opened with six equally-weighted tiles and then two hundred
+repeating rows. It answered "which predictions hit" and nothing else — the reader had to do
+the interpretation, on a page whose whole purpose is learning from yesterday.
+
+**Every judgement is on lift, never on the raw hit rate.** This is the same rule the
+Performance page had already been given, applied one surface later: a hit rate is a property
+of the props served as much as of the picking. On 2026-09-08 the slate hit 70.7% against a
+62.5% thirty-day average — but its props land 57% unprompted against 52% across the window,
+so most of that +8.3 was the mix. The comparison line therefore carries both numbers and the
+read states the mix whenever the two base rates differ by 5+ points (three points fires most
+days, because a slate's league mix is not a month's).
+
+**The confident-miss list is not the biggest miss.** It is the misses among the day's ten
+highest-scored predictions, because that is the only version of the list that says anything
+about whether the top of the scale means what it claims. The same top-ten sample drives the
+calibration observation, which fires on the gap between the top ten's hit rate and the day's
+own (±18 points; measured over three weeks of ledger the gap sits inside ±13 on a normal
+day). A raw miss count was tried first and flagged four-of-ten as a failure, which at a 65%
+day rate is simply the expectation.
+
+**The controls are client-side, and hidden until their script runs.** The published site is
+static and the crawler is bounded to `?date=` on purpose — every result × market × sort
+combination would be its own exported page. The whole day is rendered once and re-arranged in
+the browser; rows are moved rather than rebuilt, so the device-local shortlist marks and any
+expanded evidence survive. With JavaScript off the controls never appear and the list is
+complete, which is the honest fallback.
+
+**Tradeoffs.** The page now loads a 30-day window per date, so exporting seven dates reads
+the ledger seven times more than before (~2s per page locally, no change to the published
+bytes). The daily read is generated from thresholds that were calibrated on three weeks of
+one September's ledger; they will need revisiting when the mix changes — a winter slate of
+NBA and NHL props is not this one. And "Avg score" is now a headline metric, which is a
+number the score scale only makes comparable across the three migrated markets
+(`batter-hit-v6`, `sp-v4`, `wnba-pra-v4`); it carries the "ranking signal, not a probability"
+note wherever it appears.
+
+**Future considerations.** The read has no memory: it cannot say "third straight day the top
+band has underperformed", which is the observation most likely to be worth acting on. That
+needs a per-day store of the top-ten tally, and is the natural next step.
+
+---
+
+## 2026-09-09 — Performance reaches its conclusions before it shows its evidence
+
+**Decision.** The Performance page is a **model-validation surface**, not a results archive
+(Daily Results holds individual predictions). It now answers six questions in order — is
+there signal, where is it strongest, does a higher score perform better, is it stable, has
+the model improved, where does it fail — and states each answer *above* the table that
+backs it. Three visual levels: conclusions (signal check, performance summary, what's
+working, trust board), primary evidence (score calibration, where the model has edge, over
+vs under), deep diagnostics (consistency, market pulse, by month, model versions,
+methodology). Every filter, calculation, diagnostic table and model-version record that was
+there before is still there.
+
+**The conclusions live in `services/model_trust.py`, not in the renderer.** A claim about
+the model has to be testable without going through HTML, and `tests/test_model_trust.py` is
+written as a list of ways this page could flatter the model: a +41.8-point edge on 22 graded
+props is never "strong signal", a market is tiered on lift and not on conversion, a high hit
+rate over a high base rate is not reported as skill, a non-monotonic score ladder is not
+described as monotonic, and a model version that lost ground is reported as having lost
+ground.
+
+**Reason.** The page held rigorous diagnostics and made the reader assemble the verdict from
+ten tables of near-equal weight. Worse, the biggest number on it was a raw hit rate: 63.1%
+against a base rate of 52%. Raw conversion is the figure most likely to be read as skill and
+least likely to be it — `batter_hit` is 61% of everything served and converts 66% against a
+61% base. So **hit rate and lift over baseline are now the same size**, in the same card,
+and every ranking on the page sorts on lift.
+
+**Sample size gates ordering, not just labelling.** `batter_k` runs +41.8 over base on 22
+served props. Ranked on the number alone it sat above a market with 1,403, which is the
+single easiest way for this surface to mislead — so a market under the minimum sample sorts
+last in "What's working", renders quieted, and lands in the trust board's "Too early to say"
+rather than in "Strong signal". Sorting alone was not enough: it stayed the largest, greenest
+number in the table while sitting at the bottom, which reads as a broken ranking.
+
+**Three smaller things fell out of it.** (1) The unit is **"pts" everywhere** — tables said
+"pp" and generated sentences said "pts", on the one page whose central figure is a
+percentage-point difference. (2) The edge table's trend column was handed an empty dict and
+printed *this* period's rate labelled "30d" — the number the row already showed; it now
+compares against the previous period of equal length, or says "no prior period". (3) The
+model-version table gained **vs previous version**, measured against the version it actually
+replaced rather than all earlier versions pooled — pooling compared `batter-hit-v6` with an
+average including `mlb-1hit-v0.1`, flattering it for a fix made three versions ago.
+
+**Tradeoffs.** The page is longer, and the synthesis is opinionated: thresholds (+10 points
+and n≥100 for "strong", ±2 points for "no measured edge", a 15-point fall to demote) are
+judgement calls, deliberately blunt so a classification never moves on a 0.3-point
+difference. They are constants at the top of `model_trust.py`, not scattered. Coverage is
+still sorted by *served* edge where it was sorted by recorded edge, so the "all predictions"
+figure moved into the same cell rather than its own column — the starvation check needs both
+numbers adjacent, and `is_starved` remains the single definition behind the coverage table,
+the signal-check sentence and the trust board.
+
+**Future considerations.** The calibration bars deliberately draw no line between bands: a
+line asserts a continuous relationship, and across seven bands of very different samples the
+data does not support one. If the 85–94 dip persists past a few hundred more props per band
+it is a real finding about the top of the scale, not a version artifact — `v3_top_band_watch`
+in the decision log is the entry to update, and it stays open on sample size.
+
+---
+
 ## 2026-09-05 — The market line is recorded beside the result, and consumed by nothing
 
 **Decision.** `game_outcomes` gains `market_spread`, `market_total`, `market_favourite`,

@@ -500,3 +500,125 @@
                                 : "/nfl/schedule/";
   });
 })();
+
+/* --- Daily Results: filter, sort and group the audit list ------------------------
+   The published site is static, so a filter cannot be a link: every combination of
+   result × market × sort would need its own exported page, and the crawler is bounded
+   to `?date=` on purpose. The whole day is therefore rendered once and re-arranged
+   here, which also means the list stays complete and readable with JavaScript off —
+   the controls are `hidden` in the markup and only this turns them on.
+
+   Rows are moved, never rebuilt: the shortlist join above has already marked some of
+   them, and re-rendering would drop that (and any expanded "why this score?"). */
+(() => {
+  "use strict";
+  const section = document.querySelector("[data-results-props]");
+  const controls = section && section.querySelector("[data-results-controls]");
+  const list = section && section.querySelector(".prop-list");
+  if (!section || !controls || !list) return;
+
+  const rows = Array.from(list.querySelectorAll(".prop-item"));
+  if (!rows.length) return;
+  const empty = section.querySelector(".prop-empty");
+  const count = section.querySelector("[data-prop-count]");
+  const marketPick = controls.querySelector("[data-market-filter]");
+  const sortPick = controls.querySelector("[data-prop-sort]");
+  const viewPick = controls.querySelector("[data-prop-view]");
+  const pills = Array.from(controls.querySelectorAll("[data-result-filter]"));
+
+  const state = { result: "all", market: "all", sort: "score-desc", view: "flat" };
+  const score = (row) => Number(row.dataset.score || 0);
+  const order = (row) => Number(row.dataset.order || 0);
+  const RESULT_RANK = { miss: 0, hit: 1, void: 2, pending: 3 };
+
+  const SORTS = {
+    // The rendered order is already score-descending, so `order` is the tie-break that
+    // keeps every sort stable and returns "score high → low" to exactly what was served.
+    "score-desc": (a, b) => score(b) - score(a) || order(a) - order(b),
+    "score-asc": (a, b) => score(a) - score(b) || order(a) - order(b),
+    "miss-first": (a, b) => (RESULT_RANK[a.dataset.result] ?? 9) - (RESULT_RANK[b.dataset.result] ?? 9)
+      || score(b) - score(a),
+    "hit-first": (a, b) => ((RESULT_RANK[b.dataset.result] ?? -1) - (RESULT_RANK[a.dataset.result] ?? -1))
+      || score(b) - score(a),
+    player: (a, b) => (a.dataset.player || "").localeCompare(b.dataset.player || "")
+      || score(b) - score(a),
+  };
+
+  // A pill that would select nothing is not offered — a day with no voids should not
+  // have a Void filter sitting there reading as zero.
+  for (const pill of pills) {
+    const key = pill.dataset.resultFilter;
+    if (key === "all") continue;
+    const n = rows.filter((row) => row.dataset.result === key).length;
+    const badge = pill.querySelector(".rc-count");
+    if (badge) badge.textContent = String(n);
+    pill.hidden = n === 0;
+  }
+
+  function apply() {
+    const wanted = rows.filter((row) =>
+      (state.result === "all" || row.dataset.result === state.result) &&
+      (state.market === "all" || row.dataset.market === state.market));
+    wanted.sort(SORTS[state.sort] || SORTS["score-desc"]);
+
+    const frag = document.createDocumentFragment();
+    if (state.view === "market") {
+      // Grouped: markets in the order the chosen sort puts their strongest row, so the
+      // list still opens on whatever the reader asked to see first.
+      const groups = new Map();
+      for (const row of wanted) {
+        const key = row.dataset.marketLabel || "Other";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(row);
+      }
+      for (const [label, group] of groups) {
+        const head = document.createElement("div");
+        head.className = "prop-group";
+        const name = document.createElement("b");
+        name.textContent = label;
+        const meta = document.createElement("span");
+        const hit = group.filter((row) => row.dataset.result === "hit").length;
+        const miss = group.filter((row) => row.dataset.result === "miss").length;
+        meta.textContent = hit + miss ? `${hit}–${miss}` : `${group.length} shown`;
+        head.append(name, meta);
+        frag.append(head);
+        for (const row of group) frag.append(row);
+      }
+    } else {
+      for (const row of wanted) frag.append(row);
+    }
+    list.replaceChildren(frag);
+
+    if (empty) empty.hidden = wanted.length > 0;
+    if (count) {
+      count.textContent = wanted.length === rows.length
+        ? `${rows.length} prediction${rows.length === 1 ? "" : "s"}`
+        : `Showing ${wanted.length} of ${rows.length}`;
+    }
+  }
+
+  for (const pill of pills) {
+    pill.addEventListener("click", () => {
+      state.result = pill.dataset.resultFilter;
+      for (const other of pills) {
+        const on = other === pill;
+        other.classList.toggle("active", on);
+        other.setAttribute("aria-pressed", String(on));
+      }
+      apply();
+    });
+  }
+  if (marketPick) marketPick.addEventListener("change", () => {
+    state.market = marketPick.value;
+    apply();
+  });
+  if (sortPick) sortPick.addEventListener("change", () => {
+    state.sort = sortPick.value;
+    apply();
+  });
+  if (viewPick) viewPick.addEventListener("change", () => {
+    state.view = viewPick.value;
+    apply();
+  });
+  controls.hidden = false;
+})();

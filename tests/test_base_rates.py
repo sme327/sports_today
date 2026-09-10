@@ -84,7 +84,7 @@ def test_the_edge_table_ranks_by_lift_not_by_hit_rate():
     base = {"Batter Hits": 0.607, "WNBA Assists": 0.347}
     html = edge_table_html(seg, 0.62, 10, {}, {}, seg_base=base)
     assert html.index("WNBA Assists") < html.index("Batter Hits")
-    assert "+31.3 pp" in html and "+0.7 pp" in html
+    assert "+31.3 pts" in html and "+0.7 pts" in html
 
 
 def test_the_table_shows_the_base_it_compares_against():
@@ -96,7 +96,7 @@ def test_the_table_shows_the_base_it_compares_against():
 
 def test_a_segment_with_no_measurable_base_shows_nothing_not_a_zero():
     html = edge_table_html({"Mystery": _tally(5, 5, 0.5)}, 0.62, 1, {}, {}, seg_base={})
-    assert "pp" not in html
+    assert "pts" not in html
 
 
 def test_the_old_vs_overall_column_is_gone():
@@ -114,7 +114,7 @@ def test_calibration_bands_are_measured_against_their_own_mix():
 
     bands = {"70–74": _tally(60, 40, 0.60), "99–100": _tally(55, 45, 0.55)}
     html = calibration_table_html(bands, 0.60, {"70–74": 0.53, "99–100": 0.61})
-    assert "+7.0 pp" in html and "-6.0 pp" in html
+    assert "+7.0 pts" in html and "-6.0 pts" in html
     assert "vs base" in html and "vs overall" not in html
 
 
@@ -136,7 +136,7 @@ def test_a_month_is_compared_to_its_own_seasonal_mix():
 
     html = monthly_table_html([("2026-07", _tally(64, 36, 0.64))], 0.60,
                               {"2026-07": 0.60})
-    assert "+4.0 pp" in html and "base 60%" in html
+    assert "+4.0 pts" in html and "base 60%" in html
 
 
 # --- market pulse column order (2026-08-20) ------------------------------------------
@@ -209,7 +209,9 @@ def test_coverage_flags_a_market_that_is_good_but_never_served():
     ], floor=70)
     # The legend explains the word, so assert the flag itself, not the string.
     assert 'class="mc-flag"' in html
-    assert "+16.9 pp" in html
+    # Served edge leads the row; the all-predictions figure it is starved against sits
+    # beside it, and both must survive — the flag is only legible with the pair.
+    assert "+28.2 pts" in html and "all +16.9 pts" in html
 
 
 def test_coverage_does_not_flag_a_well_served_market():
@@ -346,11 +348,24 @@ def test_starved_flag_falls_back_to_pooled_without_a_live_record():
     assert 'class="mc-flag"' in market_coverage_html([retired], floor=70)
 
 
-def test_coverage_table_and_takeaway_share_one_starvation_definition():
-    """They disagreed once by mirroring the threshold in a comment instead of a call."""
+def test_every_surface_shares_one_starvation_definition():
+    """They disagreed once by mirroring the threshold in a comment instead of a call.
+
+    Three surfaces now say whether a market's edge is actually offered — the coverage
+    table, the signal-check sentence and the trust board. Exactly one of them is allowed
+    to decide: `is_starved`. The others read the flag `performance_context` stamps with
+    it, so a threshold change lands everywhere or nowhere.
+    """
     import inspect
 
     from components import results_feed
+    from services import model_trust
+    from web import analytics
 
-    for fn in (results_feed.market_coverage_html, results_feed.takeaway_html):
-        assert "is_starved" in inspect.getsource(fn)
+    assert "is_starved" in inspect.getsource(results_feed.market_coverage_html)
+    assert "is_starved(item)" in inspect.getsource(analytics.performance_context)
+    for fn in (model_trust.classify, model_trust.signal_check):
+        source = inspect.getsource(fn)
+        assert '"starved"' in source or '.get("starved")' in source
+        # The synthesis reads the verdict; it must never re-derive one.
+        assert "_STARVED" not in source
