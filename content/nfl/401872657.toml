@@ -1,0 +1,525 @@
+# Hand-authored game notes — San Francisco 49ers at Los Angeles Rams, Melbourne,
+# 2026-09-10 (5:35 PT; Friday morning at the MCG). Keyed by the ESPN event id. Read by
+# services/nfl_game_notes.py. Description sourced from the official injury reports and
+# the reporting listed at the foot; nothing here is consumed by scoring.
+
+game_id = "401872657"
+away = "San Francisco 49ers"
+home = "Los Angeles Rams"
+kickoff = "2026-09-11"
+authored = "2026-09-09"
+report_date = "2026-09-09"
+
+# --- Availability: impact absences carry an `impact` line; the rest are listed.
+[[availability]]
+team = "Los Angeles Rams"
+player = "Aaron Donald"
+position = "DT"
+status = "Out"
+detail = "did not travel · coach's decision"
+impact = "The un-retired interior rusher sits, so the Rams' new front is Garrett, Turner, Fiske and Ford. Purdy's interior protection has one fewer problem."
+
+[[availability]]
+team = "Los Angeles Rams"
+player = "Jaylen Watson"
+position = "CB"
+status = "Questionable"
+detail = "toe · did not practice Tuesday"
+impact = "The corner opposite McDuffie. If he sits, Emmanuel Forbes or Josh Wallace covers Deebo or Evans, and the 49ers' passing edge (84th percentile against a 41st-percentile pass defence) widens."
+
+[[availability]]
+team = "Los Angeles Rams"
+player = "Myles Garrett"
+position = "DE"
+status = "Questionable"
+detail = "knee · did not practice Tuesday; McVay says he plays"
+impact = "The reigning Defensive Player of the Year against Trent Williams and Colton McKivitz. His snap count decides whether San Francisco's 1.6 sacks a game allowed in 2025 holds."
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "George Kittle"
+position = "TE"
+status = "Questionable"
+detail = "Achilles · off PUP in late August, limited all week"
+impact = "Expected to play on a snap count. He was 5.9 targets a game in 2025; a limited Kittle pushes targets to Evans, Samuel and Jake Tonges."
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Nick Bosa"
+position = "DE"
+status = "Questionable"
+detail = "knee · torn ACL September 2025; will play, snaps limited"
+impact = "A part-time Bosa against Warren McClendon, in his first Week 1 start at right tackle. Stafford was sacked 1.3 times a game in 2025, the fewest on either side."
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Ricky Pearsall"
+position = "WR"
+status = "IR"
+detail = "season-ending PCL surgery"
+impact = "The 2025 number two receiver by targets (5.9 a game in nine games) is gone; Evans and Samuel are the answer."
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Dre Greenlaw"
+position = "LB"
+status = "Questionable"
+detail = "Achilles · limited"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Renardo Green"
+position = "CB"
+status = "Questionable"
+detail = "hamstring · limited"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Alfred Collins"
+position = "DT"
+status = "Out"
+detail = "knee"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Christian Kirk"
+position = "WR"
+status = "IR"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Isaac Guerendo"
+position = "RB"
+status = "IR"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Mykel Williams"
+position = "DE"
+status = "IR"
+
+# Players the 2025 feed still lists on these teams who are no longer on them.
+[[availability]]
+team = "San Francisco 49ers"
+player = "Jauan Jennings"
+position = "WR"
+status = "Departed"
+detail = "signed with Minnesota"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Kendrick Bourne"
+position = "WR"
+status = "Departed"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Brian Robinson"
+position = "RB"
+status = "Departed"
+detail = "signed with Atlanta"
+
+[[availability]]
+team = "San Francisco 49ers"
+player = "Brandon Aiyuk"
+position = "WR"
+status = "Departed"
+detail = "reserve/did not report; the club is seeking a trade"
+
+[[availability]]
+team = "Los Angeles Rams"
+player = "Jared Verse"
+position = "DE"
+status = "Departed"
+detail = "to Cleveland in the Garrett trade"
+
+# --- Since last season
+[[changes]]
+team = "San Francisco 49ers"
+direction = "in"
+text = "WR Mike Evans, signed from Tampa Bay as the number one; WR Deebo Samuel Sr., back on a one-year deal after Pearsall's injury"
+
+[[changes]]
+team = "San Francisco 49ers"
+direction = "in"
+text = "DT Osa Odighizuwa, by trade from Dallas (a 2026 third); LB Dre Greenlaw back from Denver; DC Raheem Morris replaces Robert Saleh (now Tennessee's head coach)"
+
+[[changes]]
+team = "San Francisco 49ers"
+direction = "in"
+text = "WR De'Zhaun Stribling (draft); OC Klay Kubiak calls the offence"
+
+[[changes]]
+team = "San Francisco 49ers"
+direction = "out"
+text = "WR Jauan Jennings (Minnesota), WR Kendrick Bourne, RB Brian Robinson (Atlanta), WR Brandon Aiyuk (did not report)"
+
+[[changes]]
+team = "Los Angeles Rams"
+direction = "in"
+text = "DE Myles Garrett, by trade from Cleveland for Jared Verse, a 2027 first, a 2028 second and a 2029 third"
+
+[[changes]]
+team = "Los Angeles Rams"
+direction = "in"
+text = "CB Trent McDuffie, by trade from Kansas City for four picks including the 29th overall; DT Aaron Donald out of retirement on a one-year deal (not travelling this week)"
+
+[[changes]]
+team = "Los Angeles Rams"
+direction = "in"
+text = "S Kam Curl re-signed, three years; QB Ty Simpson (R1); K Harrison Mevis kept after 12 of 13 and a perfect playoff run"
+
+[[changes]]
+team = "Los Angeles Rams"
+direction = "out"
+text = "DE Jared Verse (Cleveland); RT Rob Havenstein retired after eleven seasons, Warren McClendon starts"
+
+# --- Tonight's matchup: the story of the game, written before any line was posted.
+[shape]
+headline = "The league's best offence, with a rebuilt defence, against a 49ers side that scored 26 twice on it last season and has two new receivers to do it again."
+observations = [
+  { lead = "The Rams' offence is the best profile on the page.", text = "30.7 points a game in 2025, 97th percentile in yards a play and passing yards, 89th in turnover margin. Stafford threw 35.5 times a game for 278; Nacua averaged 10.8 targets and 107 yards. They scored 42 on San Francisco in November." },
+  { lead = "San Francisco already knows how to move the ball on them.", text = "Two meetings in 2025: 342 and 319 passing yards and 26 points each time, a road win in October, both with Mac Jones at quarterback. Their pass offence rated 84th percentile against a Rams pass defence at 41st, and that defence has changed at corner, not at safety." },
+  { lead = "The Rams' bet is that the front changes everything.", text = "Garrett, McDuffie and Donald arrived for exactly this problem. But Donald is not on the plane, Garrett did not practise Tuesday, and Watson, the corner opposite McDuffie, has a toe. The rebuilt front is at partial strength on the first night." },
+  { lead = "San Francisco's own questions are at tight end and in the trenches.", text = "Kittle and Bosa both return from surgery on snap counts; Pearsall, Kirk and Guerendo are out for the season. The 49ers ran 63 plays a game and threw on 56%, with McCaffrey the most-targeted back in the league at 7.6 a game." },
+]
+alternative = "The other shape: Garrett is whole, Watson plays, and the front that was built for this game turns Purdy's 2025 sack rate into a February-style night for the 49ers."
+
+# --- The read's expected script (hand-written).
+[read]
+game_script = "A game with points in it. Both offences threw on more than half their snaps last season and both defences allowed 6.8 yards an attempt; the Rams have the better profile in every ranked column but third down, and the 49ers have the recent evidence of scoring on them. Expect the Rams to lead on possessions that end in points and San Francisco to keep it a one-score game through McCaffrey's touches and a short passing game while Kittle is limited."
+
+# --- Before seeing the lines: directional reads, no number, never graded.
+[[preline]]
+team = "Los Angeles Rams"
+player = "Puka Nacua"
+market = "Receptions and targets"
+direction = "over"
+why = "10.8 targets and 8.2 catches a game in 2025, 12.8 targets over the last six. The volume is the most reliable thing on this page."
+
+[[preline]]
+team = "Los Angeles Rams"
+player = "Kyren Williams"
+market = "Rush attempts"
+direction = "over"
+why = "15.1 carries a game, 14 or more in every one of his last ten. Usage, and the 49ers' run defence rates average by own-baseline."
+
+[[preline]]
+team = "San Francisco 49ers"
+player = "Christian McCaffrey"
+market = "Receptions"
+direction = "over"
+why = "7.6 targets and 6.0 catches a game in 2025, the most of any back. With Pearsall out and Kittle limited, the short game is his."
+
+[[preline]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+market = "Passing yards"
+direction = "over"
+why = "242.9 a game in ten starts, median 270. The 49ers threw for 342 and 319 on this defence in 2025, but with Mac Jones; Purdy did not play either game. The Rams' pass defence rates 27th of 32 by own-baseline, and a soft defence is measured to do nothing, so this rests on his own median."
+
+[[preline]]
+team = "Los Angeles Rams"
+player = "Matthew Stafford"
+market = "Passing yards"
+direction = "over"
+why = "278.4 a game, 39.7 attempts over the last six. The 49ers' pass defence rates 13th toughest (−12 against form), which is the one thing pulling the other way."
+
+[[preline]]
+team = "San Francisco 49ers"
+player = "George Kittle"
+market = "Receptions and yards"
+direction = "under"
+why = "A snap count in his first game back from an Achilles. The 2025 rates (5.9 targets, 52.8 yards) describe a player who played every snap."
+
+[[preline]]
+team = "San Francisco 49ers"
+player = "Mike Evans"
+market = "Receptions"
+direction = "avoid"
+why = "No 49ers history, a new offence, and Deebo arriving late. The number one by contract, unproven by target share here."
+
+# --- Prop board: every posted line, evaluated. Written 2026-09-09 against DraftKings'
+# lines after they were posted. Over / under / pass; pass is the default. The "why"
+# states the 2025 rate against the posted number. 8 calls, 19 passes.
+[[props]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+stat = "passing_att"
+line = 33.5
+direction = "under"
+confidence = "high"
+why = "34+ attempts in 3 of his 10 starts in 2025, 1 of the last 6; median 32. The offence ran through McCaffrey's touches even when it threw."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Kyren Williams"
+stat = "rushing_yds"
+line = 55.5
+direction = "over"
+confidence = "high"
+why = "56+ in 15 of 18 in 2025 and 6 of the last 6, median 71, on 15 carries a game. The 49ers' run defence rates average by own-baseline (no suppression measured), and even money is the price."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Matthew Stafford"
+stat = "passing_td"
+line = 1.5
+direction = "over"
+confidence = "moderate"
+why = "2+ in 16 of 18 in 2025, 6 of the last 6, and 3 and 4 in the two games against San Francisco. Priced at −150, so the edge is the gap between 60% implied and 89% observed."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Puka Nacua"
+stat = "receptions"
+line = 7.5
+direction = "over"
+confidence = "moderate"
+why = "8+ catches in 9 of 17 in 2025 and 4 of the last 6, median 8, on 10.8 targets a game; 10 and 5 against San Francisco. Plus money for a coin flip on the record."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Christian McCaffrey"
+stat = "receptions"
+line = 4.5
+direction = "over"
+confidence = "moderate"
+why = "5+ in 14 of 18 in 2025 and 8 in both Rams games. The risk is that Purdy's return cut his targets (3 of the last 6); the offset is Pearsall out and Kittle on a snap count, established above."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Tyler Higbee"
+stat = "receptions"
+line = 1.5
+direction = "over"
+confidence = "low"
+why = "2+ in 8 of 10 games he played in 2025, 5 of the last 6. Low because the tight end room is three deep and he rested Tuesday."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Terrance Ferguson"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "low"
+why = "1.0 catch a game on 2.3 targets as a rookie, third tight end. The −170 over says the book expects a bigger year-two role; the record does not yet."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+stat = "passing_td"
+line = 1.5
+direction = "over"
+confidence = "low"
+why = "2+ in 7 of 10 starts at a price near even. Ten games is the whole sample, which is why this is low."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "George Kittle"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 10 of 12 last season and 7 of 8 with Purdy starting, against a snap count in his first game back from an Achilles. The number sits exactly between the two facts."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Deebo Samuel Sr."
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 13 of 16 in Washington, but he arrived here after Pearsall's injury and the role is unproven; the −150 already prices the history."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Mike Evans"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 5 of 8 games in an injured 2025 in Tampa; no history in this offence."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "De'Zhaun Stribling"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "A rookie with no NFL record."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Demarcus Robinson"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "2+ in 9 of 15 last season at +155, which looks like value, but that was as the third receiver; he is the fourth or fifth now."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Kyle Juszczyk"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "Exactly 8 of 16 games with 2+. A coin flip at +160 is tempting and still a coin flip."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Davante Adams"
+stat = "receptions"
+line = 4.5
+direction = "pass"
+why = "5+ in 7 of 15, 2 of the last 6; the line sits on his median at a flat price."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Colby Parkinson"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 8 of 15, 4 of the last 6, but the Higbee call above takes the same targets."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Kyren Williams"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "2+ in 12 of 18; the −160 prices it."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+stat = "passing_comp"
+line = 21.5
+direction = "pass"
+why = "22+ in 6 of 10, on his exact average; the attempts under above is the cleaner version of this."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+stat = "passing_yds"
+line = 244.5
+direction = "pass"
+why = "245+ in 6 of 10, median 270, but the sample is ten games and the soft Rams pass defence is measured to do nothing for a passer."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Brock Purdy"
+stat = "rushing_yds"
+line = 18.5
+direction = "pass"
+why = "19+ in 4 of 10, 4 of the last 6. Split evidence, and −130 on the over."
+
+[[props]]
+team = "San Francisco 49ers"
+player = "Christian McCaffrey"
+stat = "rushing_yds"
+line = 59.5
+direction = "pass"
+why = "60+ in 8 of 18, and 57 and 30 against the Rams. The line is on his median."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Matthew Stafford"
+stat = "passing_att"
+line = 34.5
+direction = "pass"
+why = "35+ in 9 of 18 overall but 5 of the last 6, and 47 and 36 against San Francisco. The trend argues over; the season says coin flip; −120 on the under says the book sees the trend too."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Matthew Stafford"
+stat = "passing_comp"
+line = 23.5
+direction = "pass"
+why = "24+ in 9 of 18; on his median."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Matthew Stafford"
+stat = "passing_yds"
+line = 265.5
+direction = "pass"
+why = "266+ in 11 of 18 and 389 and 280 against San Francisco, but the 49ers' pass defence is measured to cost a passer about 12 yards, and 278 minus 12 is the line."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Matthew Stafford"
+stat = "rushing_yds"
+line = 0.5
+direction = "pass"
+why = "Positive rushing yards in 6 of 18; the −165 under prices it."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Blake Corum"
+stat = "rushing_yds"
+line = 45.5
+direction = "pass"
+why = "46+ in 8 of 18, 4 of the last 6; on his average."
+
+[[props]]
+team = "Los Angeles Rams"
+player = "Puka Nacua"
+stat = "rushing_yds"
+line = 2.5
+direction = "pass"
+why = "A jet-sweep line: 3+ in 7 of 17, median 0."
+
+
+# --- What would change the read
+[[falsifiers]]
+condition = "Garrett plays a full complement of snaps and Purdy is sacked twice before halftime"
+consequence = "The 49ers' passing edge is a 2025 fact about a defence that no longer exists; downgrade the Purdy and Evans/Samuel side of the page."
+
+[[falsifiers]]
+condition = "Watson is inactive"
+consequence = "The Rams are covering Evans and Samuel with Forbes and Wallace; the 49ers' passing thesis strengthens and the Rams' defensive advantage in the grid is overstated."
+
+[[falsifiers]]
+condition = "Kittle plays more than about two thirds of the snaps"
+consequence = "The target redistribution to McCaffrey and Tonges did not happen; the McCaffrey receptions read weakens."
+
+[[falsifiers]]
+condition = "The Rams run more than they throw in the first half"
+consequence = "McVay is protecting a lead or a limited front; Stafford's volume reads go under and Williams' carries go over."
+
+[[sources]]
+title = "Rams injury report and Garrett, Donald, Watson status (Yahoo, Sept 8)"
+url = "https://sports.yahoo.com/articles/myles-garrett-more-rams-injury-235544988.html"
+
+[[sources]]
+title = "Shanahan on Bosa and Kittle for Week 1 (Yardbarker, Sept 9)"
+url = "https://www.yardbarker.com/nfl/articles/kyle_shanahan_reveals_49ers_final_plans_for_nick_bosa_george_kittle_in_week_1_vs_rams/s1_17759_44281755"
+
+[[sources]]
+title = "49ers vs Rams injury report: nine limited (49ers Webzone)"
+url = "https://www.49erswebzone.com/articles/203128-injury-report-players-limited-practice/"
+
+[[sources]]
+title = "ESPN: Aiyuk, Samuel and Pearsall"
+url = "https://www.espn.com/nfl/story/_/id/49516913/san-francisco-49ers-brandon-aiyuk-commanders-deebo-samuel-ricky-pearsall-fantasy"
+
+[[sources]]
+title = "49ers.com: position-by-position roster breakdown"
+url = "https://www.49ers.com/news/position-by-position-breakdown-of-the-49ers-2026-initial-roster"
+
+[[sources]]
+title = "NFL.com: Browns trade Garrett to the Rams for Verse and picks"
+url = "https://www.nfl.com/news/nfl-network-browns-trading-myles-garrett-to-rams-jared-verse"
+
+[[sources]]
+title = "NFL.com: McDuffie, Garrett and Donald in Los Angeles"
+url = "https://www.nfl.com/news/rams-trent-mcduffie-never-imagined-playing-with-myles-garrett-aaron-donald"
+
+[[sources]]
+title = "CBS: Havenstein retires"
+url = "https://www.cbssports.com/nfl/news/rob-havenstein-retires-rams/"
+
+[[sources]]
+title = "ESPN: the Raheem Morris defence"
+url = "https://www.espn.com/nfl/story/_/id/49575344/san-francisco-49ers-raheem-morris-defense-2026"
+
+[[sources]]
+title = "49ers.com: season opener in Melbourne"
+url = "https://www.49ers.com/news/49ers-to-open-2026-season-vs-rams-in-melbourne-on-sept-10"

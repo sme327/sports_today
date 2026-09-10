@@ -16,6 +16,7 @@ import pandas as pd
 
 from services import nfl_analytics as A
 from services import nfl_matchup
+from services.nfl_game_notes import NOTES_DIR, GameNotes, load_notes
 from services.nfl_matchup import MatchupCall
 from services.nfl_repository import load_player_games, load_team_games
 from src import nfl_opportunity
@@ -25,7 +26,11 @@ from src.config import DB_PATH
 # cache key is built from this string, so a page's *content* changing without a bump here
 # means every cached page keeps serving the old HTML — which is exactly what happened
 # while this was still v1.
-ENGINE_VERSION = "nfl-matchup-v2"
+# v3 (2026-09-09): a pregame page can carry hand-authored game notes (availability,
+# roster changes, a written read, prop leans) and drops spotlights for players the note
+# says are out or gone. The note's own fingerprint is folded into the cache key by the
+# view, so editing the file re-renders without another bump here.
+ENGINE_VERSION = "nfl-matchup-v3"
 
 # (label, season-table column, percentile column, higher-is-better)
 _IDENTITY_ROWS = [
@@ -99,6 +104,9 @@ class NFLGamePage:
     away_spotlights: tuple[NFLSpotlight, ...]
     home_spotlights: tuple[NFLSpotlight, ...]
     note: str                   # honest small-sample / season-opener language
+    # Hand-authored notes for this game (pregame only; None for every game nobody wrote
+    # one for). See services/nfl_game_notes.
+    notes: GameNotes | None = None
 
 
 def _fmt(value: float, pct: bool = False) -> str:
@@ -328,7 +336,8 @@ def _build_nfl_game_page(
 
 def build_nfl_pregame_page(away: str, home: str, kickoff: str,
                            round_label: str = "", slate_season: int | None = None,
-                           db_path: Path = DB_PATH) -> NFLGamePage | None:
+                           db_path: Path = DB_PATH, event_id: str | None = None,
+                           notes_dir: Path = NOTES_DIR) -> NFLGamePage | None:
     """A matchup page for a game the feed does not hold yet — i.e. **before kickoff**.
 
     The feed only ever contains played games (zero rows without finals), so an upcoming
@@ -349,7 +358,13 @@ def build_nfl_pregame_page(away: str, home: str, kickoff: str,
     ``away``/``home`` must be the feed's canonical long names (the bridge's
     ``canonical_team`` provides them). Returns ``None`` when either team is unknown
     to the feed or the feed is empty.
+
+    ``event_id`` is the slate's (ESPN) id. When a hand-authored note exists for it
+    (``content/nfl/<event_id>.toml``) the page carries it, and players the note marks
+    out or departed are removed *before* the spotlights are picked, so the next man up
+    is shown instead of last season's roster.
     """
+    notes = load_notes(event_id, notes_dir)
     tg = load_team_games(db_path=db_path)
     pg = load_player_games(db_path=db_path)
     if tg.empty or not away or not home or away == home:
@@ -410,6 +425,14 @@ def build_nfl_pregame_page(away: str, home: str, kickoff: str,
         season_val = vintage if vintage is not None else slate_season
         if season_val is not None:
             pg = pg[pg["season"] == season_val]
+    if notes is not None and not pg.empty:
+        # Matched on the feed's printed name: the note is hand-written against the
+        # page, and the feed carries no id another source shares. Only the picking
+        # frame is filtered; the defence ratings keep every game that was played.
+        for team in (away, home):
+            gone = notes.sidelined(team)
+            if gone:
+                pg = pg[~((pg["team"] == team) & pg["player"].isin(gone))]
     # game_id "" is deliberately unmatchable: pregame, so there is no "this game" row
     # and every spotlight renders with no result badge.
     away_spot = _spotlights(pg, "", kickoff, away, home, pg_all)
@@ -418,7 +441,7 @@ def build_nfl_pregame_page(away: str, home: str, kickoff: str,
     return NFLGamePage(hero, thesis, a_rest, h_rest, rest_note,
                        identity, battlefields,
                        _form(frame, away), _form(frame, home),
-                       away_spot, home_spot, note)
+                       away_spot, home_spot, note, notes)
 
 
 def list_seasons(db_path: Path = DB_PATH) -> list[int]:

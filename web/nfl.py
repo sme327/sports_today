@@ -171,8 +171,14 @@ def pregame_context(slate_game, slate_date: date) -> dict | None:
         round_label = f"Week {week}" if week else "Upcoming"
     kickoff = (slate_game.start_time.date() if slate_game.start_time else slate_date)
 
-    cache_id = f"pre-{slate_game.game_id}"
-    key = f"django:nfl-pregame:{ENGINE_VERSION}:{slate_date.isoformat()}:{slate_game.game_id}"
+    # A hand-authored note is part of the page, so its fingerprint is part of the key:
+    # editing the file must re-render, and a cached page from before the note was
+    # written must not keep serving without it.
+    from services.nfl_game_notes import load_notes
+    notes = load_notes(slate_game.game_id)
+    stamp = f"-n{notes.fingerprint}" if notes is not None else ""
+    cache_id = f"pre-{slate_game.game_id}{stamp}"
+    key = f"django:nfl-pregame:{ENGINE_VERSION}:{slate_date.isoformat()}:{cache_id}"
     page = cache.get(key)
     cache_source = "memory" if page is not None else None
     if page is None:
@@ -182,7 +188,7 @@ def pregame_context(slate_game, slate_date: date) -> dict | None:
             cache_source = "database"
     if page is None:
         page = build_nfl_pregame_page(away, home, kickoff.isoformat(), round_label,
-                                      slate_game.season)
+                                      slate_game.season, event_id=slate_game.game_id)
         if page is None:
             return None
         matchup_cache.store("NFL", cache_id, slate_date, ENGINE_VERSION, page)

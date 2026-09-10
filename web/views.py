@@ -32,6 +32,14 @@ def performance(request):
     )
 
 
+def leans(request):
+    """The prop-lean ledger: every hand-written over/under, recorded and graded."""
+    from services import nfl_leans
+    rows = nfl_leans.load()
+    context = {"section": "leans", "has_rows": bool(rows), **nfl_leans.summarize(rows)}
+    return render(request, "web/leans.html", context)
+
+
 def nfl_archive(request):
     return render(request, "web/nfl_archive.html", archive_context(request.GET))
 

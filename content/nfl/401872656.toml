@@ -1,0 +1,485 @@
+# Hand-authored game notes — New England Patriots at Seattle Seahawks, 2026-09-09.
+# Keyed by the ESPN event id (the slate's id). Read by services/nfl_game_notes.py.
+# Everything here is description sourced from the official injury report and the
+# reporting listed in the sources at the foot; nothing in it is consumed by scoring.
+# See content/nfl/README.md.
+
+game_id = "401872656"
+away = "New England Patriots"
+home = "Seattle Seahawks"
+kickoff = "2026-09-10"
+authored = "2026-09-09"
+report_date = "2026-09-08"     # the final official injury report this reflects
+
+# --- Availability: the official Week 1 report (final Tuesday designations), plus
+# ESPN's game-day listing where it moved a player. Status vocabulary: Out, Questionable,
+# PUP, Departed. Anything other than Questionable removes the player from spotlights.
+[[availability]]
+team = "New England Patriots"
+player = "TreVeyon Henderson"
+position = "RB"
+status = "Out"
+detail = "ankle · did not practice all week"
+
+[[availability]]
+team = "New England Patriots"
+player = "Ben Brown"
+position = "C"
+status = "Out"
+detail = "knee · backup centre, did not travel"
+
+[[availability]]
+team = "New England Patriots"
+player = "Harold Landry III"
+position = "LB"
+status = "PUP"
+detail = "physically unable to perform list"
+
+[[availability]]
+team = "Seattle Seahawks"
+player = "Ty Okada"
+position = "S"
+status = "Out"
+detail = "hamstring · starting safety"
+
+[[availability]]
+team = "Seattle Seahawks"
+player = "Tory Horton"
+position = "WR"
+status = "Out"
+detail = "hamstring · questionable Tuesday, out on ESPN's game-day list"
+
+[[availability]]
+team = "Seattle Seahawks"
+player = "Nick Emmanwori"
+position = "S"
+status = "Questionable"
+detail = "ankle · the nickel, limited all week after July surgery"
+
+[[availability]]
+team = "Seattle Seahawks"
+player = "Zach Charbonnet"
+position = "RB"
+status = "PUP"
+detail = "reserve/PUP · out at least four weeks"
+
+# Players the 2025 feed still lists on these teams who are no longer on them. Without
+# this the engine's spotlights would show last season's roster.
+[[availability]]
+team = "Seattle Seahawks"
+player = "Kenneth Walker III"
+position = "RB"
+status = "Departed"
+detail = "signed with Kansas City · 27 carries for 135 in the Super Bowl"
+
+[[availability]]
+team = "New England Patriots"
+player = "Stefon Diggs"
+position = "WR"
+status = "Departed"
+detail = "released before a $6M guarantee"
+
+[[availability]]
+team = "New England Patriots"
+player = "Kayshon Boutte"
+position = "WR"
+status = "Departed"
+detail = "traded to Houston"
+
+# --- Since last season: what changed, in and out, per team.
+[[changes]]
+team = "New England Patriots"
+direction = "in"
+text = "WR A.J. Brown, by trade from Philadelphia (a 2028 first and a 2027 fifth)"
+
+[[changes]]
+team = "New England Patriots"
+direction = "in"
+text = "WR Romeo Doubs, four years, $68M"
+
+[[changes]]
+team = "New England Patriots"
+direction = "in"
+text = "G Alijah Vera-Tucker at left guard; Jared Wilson moves to centre"
+
+[[changes]]
+team = "New England Patriots"
+direction = "in"
+text = "Edge Dre'Mont Jones, S Kevin Byard, FB Reggie Gilliam; R1 OT Caleb Lomu, R2 edge Gabe Jacas"
+
+[[changes]]
+team = "New England Patriots"
+direction = "out"
+text = "WR Stefon Diggs (released), WR Kayshon Boutte (traded), C Garrett Bradbury (traded)"
+
+[[changes]]
+team = "New England Patriots"
+direction = "out"
+text = "Edge K'Lavon Chaisson, 7.5 sacks in 2025 plus three in the playoffs, left in free agency"
+
+[[changes]]
+team = "Seattle Seahawks"
+direction = "in"
+text = "RB Jadarian Price (R1) as the lead back, with no preseason snaps; RB Emanuel Wilson"
+
+[[changes]]
+team = "Seattle Seahawks"
+direction = "in"
+text = "OC Brian Fleury replaces Klint Kubiak, in a system described as similar"
+
+[[changes]]
+team = "Seattle Seahawks"
+direction = "in"
+text = "Edge Dante Fowler Jr.; R2 S Bud Clark, R3 CB Julian Neal; all eleven offensive linemen return"
+
+[[changes]]
+team = "Seattle Seahawks"
+direction = "out"
+text = "RB Kenneth Walker III (Kansas City), the Super Bowl MVP"
+
+[[changes]]
+team = "Seattle Seahawks"
+direction = "out"
+text = "Edge Boye Mafe, S Coby Bryant, CB Riq Woolen"
+
+# --- Tonight's shape: a human read for this game, written before any market line was
+# consulted. Description of the two rosters and the February template, not a forecast.
+[shape]
+headline = "A run-leaning, field-position game between two elite defences, with both backfields missing their explosive back."
+observations = [
+  { lead = "Defence and the run won it for Seattle in February.", text = "29-13 with six sacks of Maye, three takeaways, 32 rushes for 141 yards and 33 minutes of possession. Darnold threw for 5.3 yards an attempt; the offence was not the reason." },
+  { lead = "Both teams want to run, into top-seven run defences.", text = "The Patriots threw on 52% of snaps in 2025 and the Seahawks on 50%, and by the engine's own-baseline rating each run defence is among the seven toughest in the league." },
+  { lead = "Darnold faces the tougher pass defence.", text = "New England's rates 8th toughest of 32, costing a passer about 21 yards against his own form. Seattle's rates average: its low raw yards allowed came from facing 35 attempts a game from trailing offences. Darnold's last three starts of 2025 went 147, 198 and 202." },
+  { lead = "New England rebuilt the interior and the receiver room.", text = "The line was rebuilt after the six-sack night, and Brown and Doubs are a real upgrade on Diggs, a part-time player by December. Seattle's rookie lead back has never taken an NFL snap." },
+]
+alternative = "The other shape: Brown and Doubs against a secondary missing its nickel and a starting safety, Maye over 280 yards, and a total in the high 40s."
+
+# --- Pre-line read: the directional leans written before any line was posted. No
+# number, so nothing here is graded; kept as a record of the read before the market spoke.
+[[preline]]
+team = "Seattle Seahawks"
+player = "Sam Darnold"
+market = "Passing yards"
+direction = "under"
+why = "238 a game, cleared 225 in six of his last ten; the measured effect of a tough pass defence is about −21 yards and New England's is the 8th toughest."
+
+[[preline]]
+team = "New England Patriots"
+player = "Rhamondre Stevenson"
+market = "Rush attempts and receptions"
+direction = "over"
+why = "Henderson out, Kiner ten days in the building, and he is the pass protector Vrabel trusts against Seattle's blitz. The posted 3.5 receptions turned out to be above his usage, which is why the graded call below went the other way."
+
+[[preline]]
+team = "New England Patriots"
+player = "Rhamondre Stevenson"
+market = "Rushing yards"
+direction = "avoid"
+why = "Seattle is the 4th toughest run defence by own-baseline rating. Take the volume, not the yardage."
+
+[[preline]]
+team = "New England Patriots"
+player = "Drake Maye"
+market = "Rushing yards"
+direction = "over"
+why = "28.7 a game in 2025 and 37 in the Super Bowl. The posted 26.5 sat exactly on his 2025 median, so it was not carried into the graded list."
+
+[[preline]]
+team = "New England Patriots"
+player = "A.J. Brown"
+market = "Receptions"
+direction = "over"
+why = "8 targets a game in Philadelphia's run-first offence, now the clear number one. Play the volume, not the defence."
+
+[[preline]]
+team = "Seattle Seahawks"
+player = "Jaxon Smith-Njigba"
+market = "Receptions"
+direction = "over"
+why = "9.6 targets and 7 catches a game in 2025; Gonzalez held him to 4 for 27 in February, so the yardage is the volatile half."
+
+[[preline]]
+team = "Seattle Seahawks"
+player = "Jadarian Price"
+market = "Rush attempts"
+direction = "over"
+why = "Walker and Charbonnet combined for about 24 carries a game; Price takes the largest share. No attempts line was posted, and yards for a rookie with no preseason snaps is the market to leave alone."
+
+[[preline]]
+team = "New England Patriots"
+player = "Hunter Henry"
+market = "Anytime touchdown"
+direction = "over"
+why = "Eight scores in 2025 as the red-zone target; that role did not leave with Diggs. Not a stat the ledger can grade."
+
+[[preline]]
+team = "Seattle Seahawks"
+player = "Sam Darnold"
+market = "Interceptions"
+direction = "over"
+why = "14 in 17 games in 2025; Seattle averaged 1.65 giveaways a game against New England's 1.0. No line was posted."
+
+[[preline]]
+team = "New England Patriots"
+player = "Mack Hollins"
+market = "Receptions and receiving yards"
+direction = "under"
+why = "The number one in February with 78 yards; the fourth receiver now. No line was posted."
+
+[[preline]]
+team = "Seattle Seahawks"
+player = "Cooper Kupp / AJ Barner"
+market = "Receptions"
+direction = "over"
+why = "Where the ball went when Smith-Njigba was taken away in February. Against the posted numbers Kupp's 2025 rate did not support it and the graded call went under; Barner is in the overs."
+
+[[preline]]
+team = "Seattle Seahawks"
+player = "Jason Myers"
+market = "Field goals made"
+direction = "over"
+why = "Two top-three scoring defences, and five field goals in this matchup last time. Not a stat the ledger can grade."
+
+# --- Prop leans, ranked most to least confident. Each names a stat, the posted line and
+# a side, so the ledger can grade it from the box score (services/nfl_leans). The
+# "why" states the 2025 rate against the posted number and the measured matchup effect
+# where one exists. Written 2026-09-09 against DraftKings' lines after they were posted.
+[[leans]]
+team = "Seattle Seahawks"
+player = "Rashid Shaheed"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "high"
+why = "3+ catches in 2 of his 9 games as a Seahawk; 1.7 a game. Horton being out adds snaps, not a 3-catch role."
+
+[[leans]]
+team = "New England Patriots"
+player = "Rhamondre Stevenson"
+stat = "receptions"
+line = 3.5
+direction = "under"
+confidence = "high"
+why = "4+ catches in 2 of 15 games in 2025, and 0 to 3 in the four games he carried 12+ times. Henderson out raises his carries; the number is above anything his usage supports."
+
+[[leans]]
+team = "Seattle Seahawks"
+player = "Sam Darnold"
+stat = "passing_att"
+line = 30.5
+direction = "under"
+confidence = "high"
+why = "31+ attempts in 6 of 17 in 2025; median 27. Seattle ran 32 times and threw 38 in February only because the game asked for it late."
+
+[[leans]]
+team = "Seattle Seahawks"
+player = "Sam Darnold"
+stat = "passing_comp"
+line = 20.5
+direction = "under"
+confidence = "high"
+why = "21+ completions in 6 of 17; 19.0 a game. Same call as the attempts."
+
+[[leans]]
+team = "New England Patriots"
+player = "Drake Maye"
+stat = "passing_att"
+line = 32.5
+direction = "under"
+confidence = "moderate"
+why = "33+ in 5 of 18 in 2025. The 43 in February came from trailing all night, and Henderson's absence pushes work to Stevenson on the ground."
+
+[[leans]]
+team = "Seattle Seahawks"
+player = "Sam Darnold"
+stat = "rushing_yds"
+line = 5.5
+direction = "under"
+confidence = "moderate"
+why = "6+ rushing yards in 6 of 17; median 2. He ran for 5 in February."
+
+[[leans]]
+team = "Seattle Seahawks"
+player = "Sam Darnold"
+stat = "passing_yds"
+line = 228.5
+direction = "under"
+confidence = "moderate"
+why = "238 a game in 2025, but the measured effect of a tough pass defence is about −21 yards and New England's is the 8th toughest of 32; his last four starts went 147, 198, 202, 202. The market has already moved to 228.5, so the edge is partly priced."
+
+[[leans]]
+team = "Seattle Seahawks"
+player = "Cooper Kupp"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "moderate"
+why = "3+ catches in 7 of 16 in 2025. The risk is Horton's absence and February, when Kupp caught 6 on 12 targets with Smith-Njigba taken away."
+
+[[leans]]
+team = "New England Patriots"
+player = "Rhamondre Stevenson"
+stat = "rushing_yds"
+line = 58.5
+direction = "under"
+confidence = "low"
+why = "59+ in 2 of 15 in 2025 and in 1 of his 4 lead-back games. Seattle is the 4th toughest run defence by own-baseline rating (−7 to −11 yards against form). The lead role is new, which is why this is low."
+
+# --- Volume board: every posted attempts, completions and receptions line not already
+# called above, so the whole set is graded every week. Usage reads; the matchup does not
+# move volume. Ranked most to least confident.
+[[volume]]
+team = "New England Patriots"
+player = "DeMario Douglas"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "moderate"
+why = "3+ catches in 5 of 17 in 2025; 1.9 a game and 1.3 over the last six. February's 5 on 7 targets is the exception, and Brown and Doubs now sit above him."
+
+[[volume]]
+team = "Seattle Seahawks"
+player = "Elijah Arroyo"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "moderate"
+why = "2+ catches in 4 of 13 as a rookie; 1.2 a game on 2 targets. The −230 price already says so; the call is the record, not a value claim."
+
+[[volume]]
+team = "New England Patriots"
+player = "Drake Maye"
+stat = "passing_comp"
+line = 20.5
+direction = "under"
+confidence = "low"
+why = "21+ completions in 8 of 18 in 2025, 20.6 a game. Follows the attempts under above; if he throws 33 times this is wrong too."
+
+[[volume]]
+team = "New England Patriots"
+player = "Hunter Henry"
+stat = "receptions"
+line = 3.5
+direction = "under"
+confidence = "low"
+why = "4+ catches in exactly 9 of 18 in 2025 with Diggs a part-time player. Brown and Doubs arrive; the red-zone role stays but the volume should not."
+
+[[volume]]
+team = "Seattle Seahawks"
+player = "Jadarian Price"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "low"
+why = "A rookie with no NFL snaps, and Holani has the passing downs by the coaches' own account. Walker caught 1.8 a game as the lead back."
+
+[[volume]]
+team = "Seattle Seahawks"
+player = "George Holani"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "low"
+why = "2+ catches in 1 of 4 games last season, but in a spot role; the passing-down job is new. Charbonnet caught 1.3 a game in it. The weakest call on the board."
+
+# --- Looking for overs: the posted lines where last season's rate beats the price.
+# Usage arguments only (a matchup never argues for an over). Graded like the leans,
+# kept apart in the ledger. Ranked most to least confident.
+[[overs]]
+team = "Seattle Seahawks"
+player = "Jaxon Smith-Njigba"
+stat = "receptions"
+line = 6.5
+direction = "over"
+confidence = "moderate"
+why = "7+ catches in 12 of 17 in 2025, median 8, on 9.6 targets a game. Christian Gonzalez held him to 4 on 10 targets in February, which is the whole risk."
+
+[[overs]]
+team = "New England Patriots"
+player = "Drake Maye"
+stat = "passing_td"
+line = 1.5
+direction = "over"
+confidence = "moderate"
+why = "2+ touchdown passes in 11 of 18 in 2025 and 2 in February, against a price that implies well under half."
+
+[[overs]]
+team = "New England Patriots"
+player = "Drake Maye"
+stat = "passing_yds"
+line = 251.5
+direction = "over"
+confidence = "low"
+why = "252+ in 13 of 18 in 2025 and 295 in February. Seattle allowed 5.9 yards an attempt, and this pulls against the Maye attempts under in the leans, so it is low: one of the two is wrong."
+
+[[overs]]
+team = "Seattle Seahawks"
+player = "AJ Barner"
+stat = "receptions"
+line = 2.5
+direction = "over"
+confidence = "low"
+why = "3+ catches in 10 of 17 in 2025 and 4 in February, against a −165 price that implies about the same. Fair, not cheap."
+
+[[overs]]
+team = "New England Patriots"
+player = "A.J. Brown"
+stat = "receptions"
+line = 5.5
+direction = "over"
+confidence = "low"
+why = "6+ catches in 7 of 16 in Philadelphia's run-first offence on 8 targets a game. The over rests on the bigger role in New England, which is an argument, not a record."
+
+[[overs]]
+team = "New England Patriots"
+player = "Romeo Doubs"
+stat = "receptions"
+line = 3.5
+direction = "over"
+confidence = "low"
+why = "4+ catches in 8 of 17 in Green Bay. The +110 price implies about that. Only here because the second receiver in a Diggs-less room should see more than a Packers fourth option did."
+
+[[overs]]
+team = "Seattle Seahawks"
+player = "George Holani"
+stat = "rushing_yds"
+line = 18.5
+direction = "over"
+confidence = "low"
+why = "18.2 a game on 5.5 carries in a spot role last season; Charbonnet's 11.5 carries a game are now split between him and a rookie. Four games of history, so low."
+
+[[sources]]
+title = "Seahawks.com: Week 1 injury report"
+url = "https://www.seahawks.com/news/2026-week-1-injury-report-seahawks-vs-patriots"
+
+[[sources]]
+title = "Patriots.com: Henderson ruled out"
+url = "https://www.patriots.com/news/injury-report-analysis-patriots-rb-treveyon-henderson-ankle-ruled-out-for-season-opener-vs-seahawks"
+
+[[sources]]
+title = "Patriots.com: Larison elevated, inactives"
+url = "https://www.patriots.com/news/inactives-analysis-patriots-elevate-rb-lan-larison-from-practice-squad-with-treveyon-henderson-inactive-for-season-opener-vs-seahawks"
+
+[[sources]]
+title = "Pro Football Rumors: Patriots offseason in review"
+url = "https://www.profootballrumors.com/2026/09/offseason-in-review-new-england-patriots-8"
+
+[[sources]]
+title = "ESPN: Seahawks better, worse or the same in 2026"
+url = "https://www.espn.com/nfl/story/_/id/49318373/seattle-seahawks-2026-depth-chart-better-worse-same"
+
+[[sources]]
+title = "ESPN: the Seahawks' running back plan"
+url = "https://www.espn.com/nfl/story/_/id/48243366/seattle-seahawks-running-back-plans-replace-ken-walker-zach-charbonnet-emanuel-wilson"
+
+[[sources]]
+title = "SI: how Seattle plans to use its backs in Week 1"
+url = "https://www.si.com/nfl/seahawks/onsi/seattle-seahawks-running-back-plan-week-1-vs-patriots"
+
+[[sources]]
+title = "Athlon: Patriots free agent report"
+url = "https://athlonsports.com/nfl/new-england-patriots/patriots-free-agents-romeo-doubs-kevin-byard-training-camp-2026"
+
+[[sources]]
+title = "ESPN box score, Super Bowl LX"
+url = "https://www.espn.com/nfl/boxscore/_/gameId/401772988"

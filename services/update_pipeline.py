@@ -168,6 +168,16 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
     except Exception as exc:
         out["nfl_schedule_error"] = str(exc)
 
+    # The hand-written NFL prop leans: record any note on disk, grade any game that has
+    # kicked off and is final on ESPN. A lean that is never graded is an opinion; this is
+    # what turns it into a record. Non-fatal like every collector.
+    try:
+        from services import nfl_leans
+        out["nfl_leans"] = {"recorded": nfl_leans.record_all(),
+                            "graded": nfl_leans.grade_due()}
+    except Exception as exc:
+        out["nfl_leans_error"] = str(exc)
+
     # How interesting the finished games actually were, so the editorial score has a
     # feedback loop rather than accumulating unchecked. Non-fatal: this is analysis,
     # and a network wobble must not fail the daily rebuild.

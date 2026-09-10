@@ -69,6 +69,9 @@ _SEEDS = (
     # teams is a known, bounded set, and seeding it means the page never depends on the
     # crawler recognising a control it has not been told about.
     "/nfl/schedule/", *_NFL_SCHEDULE_SEEDS,
+    # The prop-lean ledger is in the header menu, so it must exist on every build —
+    # including a build with an empty ledger, which renders its empty state.
+    "/leans/",
     *_RESULT_SEEDS, *_PERFORMANCE_SEEDS, *_PERFORMANCE_MARKET_SEEDS,
 )
 _SKIP_PATHS = ("/health/", "/fragments/", "/static/")

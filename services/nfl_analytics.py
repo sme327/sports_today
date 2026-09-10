@@ -104,6 +104,11 @@ class Battlefield:
     attack: float       # attacking team's per-game production
     defense: float      # defending team's per-game allowance
     edge: str           # which side is favored, in words
+    # League percentiles the edge was decided from (higher = better for that side), so
+    # a page can show the rank beside the raw yards. Additive; None before a season has
+    # enough teams to rank.
+    attack_pct: int | None = None
+    defense_pct: int | None = None
 
 
 def _edge(off_pct, def_pct, attacker: str, defender: str) -> str:
@@ -123,15 +128,20 @@ def battlefields(table: pd.DataFrame, team_a: str, team_b: str,
         return ()
     a, b = table.loc[team_a], table.loc[team_b]
     out: list[Battlefield] = []
+    def _pct(v):
+        return int(v) if v is not None and pd.notna(v) else None
+
     for atk, dfn, atk_disp, dfn_disp in ((a, b, a_disp, b_disp), (b, a, b_disp, a_disp)):
         out.append(Battlefield(
             f"{atk_disp} pass offense vs {dfn_disp} pass defense",
             round(atk["pass_yds"], 1), round(dfn["pass_yds_allowed"], 1),
-            _edge(atk.get("pass_off_pct"), dfn.get("pass_def_pct"), atk_disp, dfn_disp)))
+            _edge(atk.get("pass_off_pct"), dfn.get("pass_def_pct"), atk_disp, dfn_disp),
+            _pct(atk.get("pass_off_pct")), _pct(dfn.get("pass_def_pct"))))
         out.append(Battlefield(
             f"{atk_disp} rush offense vs {dfn_disp} rush defense",
             round(atk["rush_yds"], 1), round(dfn["rush_yds_allowed"], 1),
-            _edge(atk.get("rush_off_pct"), dfn.get("rush_def_pct"), atk_disp, dfn_disp)))
+            _edge(atk.get("rush_off_pct"), dfn.get("rush_def_pct"), atk_disp, dfn_disp),
+            _pct(atk.get("rush_off_pct")), _pct(dfn.get("rush_def_pct"))))
     return tuple(out)
 
 

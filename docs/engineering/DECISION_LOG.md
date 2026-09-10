@@ -3794,3 +3794,138 @@ patterns scannable without claiming that every market shares the same natural ba
 **Tradeoffs.** Slate cells are descriptive, not independent confidence estimates.
 Samples under five are faded, and direction requires at least ten decisions in both
 three-slate windows; otherwise the UI says the sample is still building.
+
+## 2026-09-09 — Hand-authored game notes on the NFL pregame page
+
+**Decision.** A pregame NFL page may carry a per-game note (`content/nfl/<espn_event_id>.toml`,
+read by `services/nfl_game_notes.py`): the official injury report with its date, roster
+moves since last season, a written read of tonight's shape, and prop leans ranked by the
+author. Players the note marks Out / PUP / IR / Departed are removed **before** the engine
+picks its spotlights. The note's fingerprint is part of the cache key. Nothing in it is
+consumed by scoring, no market line appears, and the footer says injuries are hand-entered
+and not modeled.
+
+**Reason.** The week-1 page is built from the previous season's feed, and a feed cannot see
+an offseason. On the Super Bowl rematch it spotlighted Kenneth Walker (now in Kansas City),
+Stefon Diggs (released) and TreVeyon Henderson (ruled out that morning) — three of six
+spotlights were players who would not be on the field. Shipping the roster pipe properly
+(ESPN injuries and rosters in the daily run) was not a same-day job; a dated, sourced note
+was, and it is the honest version of what the page could say today.
+
+**Tradeoffs.** Hand-entered means one game at a time and a person on the hook for the date
+and the sources. Player matching is on the feed's printed name, the one thing the project
+otherwise refuses to join on — accepted because the note is written *against* the page and
+a typo fails the build rather than the join. The read is opinion, labelled as such; the
+product's editorial rule (records, not forecasts) is kept by wording and by keeping every
+lean out of the engine.
+
+**Future.** Collect ESPN's injury report and current roster in the daily run to fill
+Availability for every NFL game and retire the Departed list; then the note shrinks to the
+two sections only a person can write. The same shape would serve any league whose page is
+built from a season feed.
+
+## 2026-09-09 — Graded prop leans: only calls made against a posted line, in a ledger
+
+**Decision.** A note's calls are three lists, labelled and kept apart: a **pre-line read**
+(direction only, written before any line, never graded), **prop leans** (stat, posted line,
+side, confidence, ranked) and **looking for overs** (the same, overs only, at the foot of
+the page). The two numbered lists are recorded into `nfl_lean_ledger` when the note is
+recorded and graded from ESPN's box score once the game is final; `/leans/` shows the
+record by section, confidence, side, stat and game. An absent player voids, a whole-number
+push voids, nothing is graded before ESPN's final flag, nothing is re-graded.
+
+**Reason.** The first version of the page carried the pre-line leans, and the owner asked
+that every over or under it labelled be graded. That exposed the problem: "Stevenson
+receptions, over" had no number, and the posted 3.5 reversed it. Grading a call that was
+made before the number existed, against the number, would credit or debit the wrong thing.
+So the graded record is one kind of thing only — a call against a real line, made after the
+line was posted — and the pre-line read stays on the page as what it is.
+
+A third list, the **volume board**, takes every other posted attempts, completions and
+receptions line so the whole set is called and graded weekly; the ledger reports all volume
+calls together across the three lists.
+
+**Tradeoffs.** The overs block is honest about resting on usage alone, since the one
+measured matchup effect argues only for unders; that is why it sits apart and last. Grading
+by box-score name is the same name-join the notes already accept. Weekly grading is the
+daily run's job, so a week with no run is a week ungraded — `python -m scripts.nfl_leans
+grade` is the manual path.
+
+**Future.** Once a few weeks accumulate, the by-confidence split is the first thing to read:
+if "high" does not beat "low", the tiers are decoration. A closing-line column would let a
+pre-line read be scored against the market's move rather than the box score.
+
+## 2026-09-09 — The NFL matchup page reads at three depths
+
+**Decision.** Reorder and re-weight the NFL pregame page for progressive disclosure —
+header → tonight's matchup → availability → the read → matchup at a glance → player
+spotlights → prop leans → volume board → looking for overs → pre-line read → recent form →
+since last season → methodology — with three layout patterns instead of one: an
+**editorial** card (full width, prose at a reading width, orange dots on at most four
+observations), a **comparison** (away left, home right, thin rules between rows inside one
+card), and a **matchup** (offense → defense, two large cards saying whose ball it is, with
+the percentiles the edge was decided from). Section headings gained a subtitle saying what
+the section tells you; air went *between* sections and came *out of* repeated rows.
+Direction (over / under) is the strongest badge on a prop row and confidence the quieter
+second. The identity grid mutes an even row and brightens the advantaged side in white
+rather than orange, so orange is left for insights. Nothing was removed and no number
+changed; `Battlefield` gained the two percentiles it already used, additively.
+
+**Reason.** The page had grown by accretion into one stream of equal cards — availability,
+roster moves, the read, the numbers, the props — where every box asked for the same
+attention and the reader had to compare every number by hand. The owner's brief: tell me
+what matters, then why, then let me dig.
+
+**Tradeoffs.** "New England wins if" is a frame over the engine's own sentence ("elite
+offense (28 pts/g) beats Seahawks' elite defense"), and the engine's edge rule is now more
+visible: it compares an offence's percentile with a defence's *inverse*, so an 88th-percentile
+offence against a 94th-percentile defence still reads "Edge Patriots". That is the existing
+calculation, now legible, and a candidate for its own review — not changed here. A market
+spread and total were asked for beside the header and deliberately **not** added: odds
+display is scoped to NCAAF (2026-09-02) because on a page that scores props a line reads as
+our endorsement; reversing that is a product decision to take on its own.
+
+**Second pass, same day.** Tonight's matchup became four mini-headlines with the
+explanation muted beneath, in two columns; The read got three anchored panels with the
+conclusion a size larger and the watch panel carrying the orange; the glance grid and the
+battlefield cards were joined into one dashboard; spotlights read name → thesis → evidence →
+explanation; the three prop sections got three treatments (primary, quiet-quantitative,
+green-accented); the pre-line read moved to an appendix as a closed `<details>`; recent form
+got room and its record; the report container widened to 1320px with prose still capped in
+`ch`. Length was deliberately not chased: the first screen orients, the rest is allowed to
+be dense.
+
+**Future.** A visual check was done from the rendered structure, not a screenshot; the
+first real look on a phone should confirm the battlefield rows wrap as intended.
+
+## 2026-09-10 — Fewer observations, more conclusions: the note's content architecture
+
+**Decision.** A game note is three products with one job each — a matchup preview, a prop
+analysis, a roster dossier — and each section answers one question: Tonight's matchup
+(*what's the story?*, a chain of argument in four led observations), Availability (*which
+absences change it?*, impact lines first, the rest collapsed), The read (*how does each
+side win?*, plus a hand-written **expected game script**), Matchup at a glance (*what does
+the data say?*, with one generated **What it says** sentence), Player spotlights (*who
+matters unusually tonight?*), a single **Prop board** with over / under / **pass** and
+"N calls of M evaluated" in the heading, Recent form, Since last season, **What would
+change the read** (the falsifiers, written before kickoff), and **Before seeing the lines**
+(the pre-line record, renamed for why it matters, closed by default). A thesis is stated
+once and referenced after. "Where the market disagrees" was proposed and **declined**: it
+needs the line on the page, and odds display stays scoped to NCAAF.
+
+**Reason.** The first note (2026-09-09) established the same conclusions in five places
+and produced twenty-two opinions on twenty-two lines. Seventeen opinions are content; three
+calls out of seventeen evaluated is analysis. A pass has to be common for the calls to mean
+anything, so the ledger records a pass as evaluated and never grades it.
+
+**Tradeoffs.** The expected game script is a person's commitment, labelled as such; a
+generated one would be a forecast and the editorial rule (records, not forecasts) stands.
+The generated "what it says" line is description only. The 2026-09-09 note keeps its three
+older lists because those calls were recorded before kickoff and a record is not edited.
+Also observed: a publish run during a live game took 2h12m end to end against a few
+minutes otherwise, and its wrangler upload then failed once and succeeded on a retry of the
+same build — worth watching on the next in-game publish.
+
+**Future.** A "why tonight" line per spotlight and a cap of three per team; a measured
+recent-form descriptor (scoring in the last three against the season) before any wording
+ships; then the per-player volume charts.

@@ -111,23 +111,54 @@ The strictest in the app, because the outcome is sitting in the same table.
 
 ## Sections
 
+The page is built for three depths of reading (ten seconds, a minute, longer) and runs
+game → thesis → personnel → strategy → numbers → players → props → supporting detail →
+methodology. Three layout patterns keep it from reading as one stream of equal cards:
+**editorial** (full width, prose at a reading width), **comparison** (away left, home
+right, thin rules between rows inside one card) and **matchup** (offense → defense). See
+the decision log, 2026-09-09.
+
 1. **Hero** — teams, round label (`Week N` / `Wild Card / Playoffs · Wk N`), records
-   *coming in*, final score, winner.
-2. **The read** (`_thesis`) — a synthesized, factual matchup thesis: each team's
-   offense tiered by league percentile against the other's defense, plus a `Watch:`
-   line for the clearest rush/pass mismatch (offense percentile minus inverted defense
-   percentile ≥ 30) and a turnover-battle note (margin gap ≥ 0.6). Empty at season open.
-   Tiers: elite ≥ 85, strong ≥ 65, middling ≥ 35, else weak.
-3. **Rest & schedule** — `rest_days` per team from game dates; flags a short week
-   (≤ 4 days), off a bye (≥ 13), or a rest edge (≥ 3 days' difference).
-4. **Team identity** — seven rows (points, points allowed, yards/play, rush yards,
-   pass yards, 3rd-down %, turnover margin) with league percentile chips and a
-   better-side call.
-5. **Battlefields** — each team's pass and rush offense against the other's
-   corresponding defense. Edge when the percentile gap ≥ 20, else Even.
-6. **Recent form** — last 5 results (oldest → newest) with points for/against.
-7. **Player spotlights** — per team, each key player's leakage-safe prop plus a ✓/✗
-   against what they actually did. No result shown when the player did not appear.
+   *coming in*, final score, winner. No market line (odds display is scoped to NCAAF).
+2. **Tonight's matchup** *(note; editorial)* — the hand-written story of the game: a
+   headline, up to four observations with a bold lead and an orange dot, and "the other
+   way". Written before any line.
+3. **Availability** *(note; comparison)* — Out → Doubtful → Questionable → PUP, name
+   strongest, status badge, context muted; departures under their own rule.
+4. **The read** (`_thesis`; editorial) — the engine's synthesized, factual thesis rendered
+   as three labelled ideas: *X wins if* (each team's offense tiered by league percentile
+   against the other's defense — the sentence is the engine's, "vs" read as "beats" under
+   the label), and *Watch* for the clearest rush/pass mismatch (offense percentile minus
+   inverted defense percentile ≥ 30) and a turnover-battle note (margin gap ≥ 0.6). Empty
+   at season open. Tiers: elite ≥ 85, strong ≥ 65, middling ≥ 35, else weak.
+5. **Matchup at a glance** *(matchup)* — **team identity**: seven rows (points, points
+   allowed, yards/play, rush yards, pass yards, 3rd-down %, turnover margin) with league
+   percentile chips; an even row is muted and the advantaged side is brighter. Then the
+   **battlefields** as two cards, "When X has the ball", each with the pass and rush
+   offense against the other's defense, the percentiles the edge came from, and the edge
+   (percentile gap ≥ 20, else Even) — the section's one orange.
+6. **Player spotlights** *(comparison)* — per team, each key player's leakage-safe prop as
+   a badge beside the name, the evidence line, the measured matchup call, and on a played
+   game a ✓/✗ against what they actually did.
+7. **Prop board** *(note; comparison)* — every posted line evaluated, over / under /
+   pass, calls ranked ahead of passes, "N calls out of M evaluated" in the subtitle. One
+   row anatomy: name, direction (strongest badge), confidence (quieter), the market, the
+   why in muted prose. (The 2026-09-09 note keeps its three older lists — Prop leans,
+   Volume board, Looking for overs — because those calls were recorded before kickoff.)
+8. **Recent form** *(support)* — last 5 results (oldest → newest) with the record and
+   points for/against, one strip per team.
+9. **Rest & schedule** *(support; in season only)* — `rest_days` per team from game
+   dates; flags a short week (≤ 4 days), off a bye (≥ 13), or a rest edge (≥ 3 days).
+10. **Since last season** *(note; support)* — who moved, the player emphasized and the
+    detail a whisper.
+11. **What would change the read** *(note; editorial)* — the falsifiers, then
+    **Before seeing the lines** *(note; appendix)* — the directional reads from before any
+    line, flat chips, never graded; a `<details>` closed by default.
+12. **Methodology** — the disclaimer and the note's sources, separated and quiet.
+
+The report container is wider than the rest of the site (1320px against 1160px, via
+`.site-shell:has(> .nfl-report)` in `web/static/web.css`): comparisons, the glance grid and
+the two-column prop lists take the width; every run of prose keeps a `ch`-based cap.
 
 Honest notes: "Season opener — no prior-form data yet" at 0 prior games, "Early-season
 sample — form is thin" below 4.
@@ -226,9 +257,87 @@ an average defence. Only the negative chip carries colour.
   game, history from every game he has played. Grouping on team split traded players into
   fragments and cost 459 of them their track record at week 3 of 2025.
 
+## Game notes (hand-authored, per game)
+
+`services/nfl_game_notes.py` reads `content/nfl/<espn_event_id>.toml` — a dated, sourced
+note a person wrote for **one game** — and the pregame page carries it as four sections:
+**Availability** (the official injury report, with its date), **Since last season** (who
+moved, in and out), **Tonight's shape** (a written read, stated as a read) and **Prop leans**
+(ranked most to least confident, stated as not scored), with the sources at the foot.
+
+Why it exists: on 2026-09-09 the week-1 page spotlighted a Seahawks running back who had
+signed with Kansas City, a Patriots receiver who had been released, and a rookie ruled out
+that morning — the 2025 feed cannot see an offseason. The honest fix for the day was a note
+that says who is out or gone, so the engine stops spotlighting them, and carries what a
+person had to say about the game.
+
+Rules the code enforces:
+
+- **A sidelined player is removed before the pick, not after.** `Out`, `PUP`, `IR`,
+  `Departed` and `Suspended` drop the player from the picking frame, so `key_players`
+  chooses the next man up (Stevenson replaced Henderson). `Questionable` is shown and
+  does nothing else — dropping him would be a prediction about the report. Matching is on
+  the feed's printed name, because a hand-written note has no id another source shares.
+- **The note is part of the page's identity.** Its content fingerprint is folded into the
+  matchup cache key (`web/nfl.py`), so editing the file re-renders without an engine bump.
+- **A malformed note fails loudly** (an unknown status or lean direction raises), because
+  a typo would otherwise silently keep spotlighting the player it meant to remove.
+- **The disclaimer changes.** With a note, injuries are on the page — hand-entered, dated,
+  and in none of the numbers — and the footer says exactly that instead of "not modeled".
+- **No market lines.** Leans are the author's read written before a line was consulted.
+  Odds are displayed nowhere on an NFL page (they sit beside props we score) and consumed
+  nowhere (decision log 2026-09-02).
+
+### Three kinds of call, kept apart
+
+The note holds three lists that look alike and are not, and the page labels each:
+
+| Section | Written | Has a number? | Graded? |
+|---|---|---|---|
+| **Before seeing the lines** | before any line was posted | no | **no** — an anti-bias record of the read before the market spoke |
+| **Prop board** *(notes from 2026-09-10)* | every posted line, over / under / **pass** | yes: stat, line, side, confidence (none for a pass) | calls yes; a pass is recorded as evaluated, never graded, so the page can say "3 calls of 17 evaluated" |
+| Prop leans / Volume board / Looking for overs *(the 2026-09-09 note only)* | against the posted lines | yes | yes |
+
+The split exists because a directional read with no number ("Stevenson receptions, over")
+is not a prediction anyone can score, and one of them reversed the moment a line appeared
+(3.5 was above anything his usage supported). Grading only what was called against a real
+number, after the number existed, is what makes the record honest. The overs are their own
+block because the project's one measured matchup effect argues only for unders; an over
+has to rest on usage, and the reader should see that it does.
+
+Two more hand-written pieces sit inside the page's structure: `[read] game_script`, the
+expected shape of the game, rendered as a fourth panel under The read and labelled as a
+read; and `[[falsifiers]]`, **What would change the read**, an editorial card near the
+foot listing the conditions that would falsify the page, written before kickoff so the
+game can be watched against them. Availability entries with an `impact` line rank above
+the rest, which collapse to name and status under "Also on the report". The glance grid
+carries one generated sentence, **What it says** — who leads on more ranked rows and where
+the widest percentile gap is — description only, computed in the component.
+
+### The ledger (`/leans/`)
+
+`services/nfl_leans.py` records every graded call into `nfl_lean_ledger` when the note is
+recorded (idempotent; a re-record after an edit keeps the grade) and settles it from ESPN's
+box score (`src/espn_nfl_boxscore.py`) once ESPN marks the game final. Vocabulary is the
+prop ledger's: hit / miss / void, a player absent from the box score is a **void** (he did
+not play, and a zero would grade an under as a hit), a whole-number push is a void. Both
+halves run in the daily rebuild, non-fatally, and by hand as `python -m scripts.nfl_leans`.
+The page shows the record overall and split by section, confidence, side and stat, then
+every call by game with its actual — and prints no hit rate until something is decided.
+**Volume plays** (attempts, completions, receptions, wherever the call was made) get their
+own running tile, because the owner's hunch is that usage is where the edge lives, and the
+rule in `content/nfl/README.md` is that every posted attempts and receptions line gets a
+call every week so that record is complete rather than a selection. The natural next
+surface is the per-player volume chart, planned in
+[NFL Player Volume Charts](NFL_PLAYER_VOLUME_CHARTS.md).
+
+This is a seam, not the destination: the obvious pipe is ESPN's injury report and current
+roster collected in the daily run, which would fill Availability for every game and retire
+the Departed list. Until then a note is written the day of the game.
+
 ## Not shown (honest gaps)
 
-No injuries, weather, travel, snap counts, personnel groupings, EPA/DVOA/success rate,
+Injuries and roster changes only where a hand-authored note exists (above). No weather, travel, snap counts, personnel groupings, EPA/DVOA/success rate,
 or drive-level context. No possession-adjusted efficiency — `yards_per_play` is the
 stand-in and is labeled as such. No live or current-season data: the archive is only as
 current as the last ingested feed.

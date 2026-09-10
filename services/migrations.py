@@ -11,7 +11,7 @@ import sqlite3
 from pathlib import Path
 
 from src.config import DB_PATH
-from services import daily_feed, matchup_cache, schedule_cache, snapshots
+from services import daily_feed, matchup_cache, nfl_leans, schedule_cache, snapshots
 from src import mls_store
 
 SCHEMA_VERSION = 2
@@ -39,6 +39,7 @@ def ensure_schema(db_path: Path = DB_PATH) -> None:
         daily_feed.ensure_table(conn)
         matchup_cache.ensure_table(conn)
         mls_store.ensure_tables(conn)
+        nfl_leans.ensure_table(conn)
 
         current = conn.execute(
             "SELECT version FROM schema_version WHERE id = 1").fetchone()

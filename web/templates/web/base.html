@@ -124,6 +124,7 @@ no slate (Performance) render no attribute and the pick UI stays dormant.{% endc
 
           <div class="nav-menu-group"><span aria-hidden="true">🏈</span> NFL</div>
           <a class="{% if section == 'nfl-schedule' %}active{% endif %}" href="{% url 'nfl-schedule' %}"{% if section == 'nfl-schedule' %} aria-current="page"{% endif %}>Schedule</a>
+          <a class="{% if section == 'leans' %}active{% endif %}" href="{% url 'leans' %}"{% if section == 'leans' %} aria-current="page"{% endif %}>Prop leans ledger</a>
 
           <div class="nav-menu-group"><span aria-hidden="true">⚽️</span> MLS</div>
           <a href="{% url 'standings' %}?league=MLS" aria-label="MLS standings">Standings</a>

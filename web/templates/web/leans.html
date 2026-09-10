@@ -1,0 +1,73 @@
+{% extends "web/base.html" %}
+{% block title %}Prop leans ledger · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero">
+  <div>
+    <div class="eyebrow">NFL · hand-written calls, graded</div>
+    <h1 class="page-title">Prop leans ledger</h1>
+    <p class="page-read">Every over or under a person wrote on a matchup page, recorded when the page was published and graded from the box score once the game was final. Hit rates here are descriptive: a dozen leans is a diary, not a sample, and nothing on this page is an Opportunity Score.</p>
+  </div>
+  <a class="text-link" href="{% url 'performance' %}">Engine performance →</a>
+</section>
+
+{% if has_rows %}
+<section class="analytics-section">
+  <div class="daily-summary">
+    <div class="ds-tile"><div class="ds-label">Record</div><div class="ds-value">{{ overall.hit }}–{{ overall.miss }}</div></div>
+    <div class="ds-tile"><div class="ds-label">Hit rate</div><div class="ds-value">{% if overall.hit_rate is not None %}{{ overall.hit_rate|floatformat:0 }}%{% else %}—{% endif %}<span class="ds-sub">n={{ overall.decided }}</span></div></div>
+    <div class="ds-tile"><div class="ds-label">Called / evaluated</div><div class="ds-value">{{ overall.called }}<span class="ds-sub">of {{ overall.evaluated }}</span></div></div>
+    <div class="ds-tile"><div class="ds-label">Voids</div><div class="ds-value">{{ overall.void }}</div></div>
+    <div class="ds-tile"><div class="ds-label">Pending</div><div class="ds-value">{{ overall.pending }}</div></div>
+    <div class="ds-tile"><div class="ds-label">Volume plays</div><div class="ds-value">{{ volume.hit }}–{{ volume.miss }}<span class="ds-sub">{% if volume.hit_rate is not None %}{{ volume.hit_rate|floatformat:0 }}%{% else %}{{ volume.pending }} pending{% endif %}</span></div></div>
+  </div>
+  {% comment %}"Volume plays" is every attempts / completions / receptions call across all
+  three sections: usage is a coaching decision the matchup does not touch, and the owner's
+  hunch is that this is the hotspot. It is a running record, not a claim.{% endcomment %}
+  {% comment %}Hit rate is a share of decided calls: voids and pending rows are out of the
+  denominator, and the template says "—" rather than 0% while nothing is decided.{% endcomment %}
+  <div class="ledger-splits four">
+    <div class="ledger-split"><div class="ledger-split-head">By section</div>
+      {% for name, t in by_section.items %}<div class="ledger-split-row"><span>{% if name == 'overs' %}Looking for overs{% elif name == 'volume' %}Volume board{% elif name == 'props' %}Prop board{% else %}Prop leans{% endif %}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
+    </div>
+    <div class="ledger-split"><div class="ledger-split-head">By confidence</div>
+      {% for name, t in by_confidence.items %}<div class="ledger-split-row"><span>{{ name|capfirst }}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
+    </div>
+    <div class="ledger-split"><div class="ledger-split-head">By side</div>
+      {% for name, t in by_direction.items %}<div class="ledger-split-row"><span>{{ name|capfirst }}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
+    </div>
+    <div class="ledger-split"><div class="ledger-split-head">By stat</div>
+      {% for name, t in by_stat.items %}<div class="ledger-split-row"><span>{{ name|capfirst }}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="analytics-section">
+  <h2>By game</h2>
+  {% for game in games %}
+  <div class="ledger-game">
+    <div class="ledger-game-head">
+      <span class="ledger-game-title">{{ game.away }} at {{ game.home }}</span>
+      <span class="ledger-game-sub">{{ game.kickoff }} · {{ game.tally.hit }}–{{ game.tally.miss }}{% if game.tally.void %} · {{ game.tally.void }} void{% endif %}{% if game.tally.pending %} · {{ game.tally.pending }} pending{% endif %}</span>
+    </div>
+    <div class="ledger-rows">
+      {% for r in game.rows %}
+      <div class="ledger-row">
+        <span class="rank">#{{ r.rank }}</span>
+        <span class="player">{{ r.player }}<small>{{ r.team }} · {{ r.confidence }}{% if r.section == 'overs' %} · looking for overs{% elif r.section == 'volume' %} · volume board{% elif r.section == 'props' %} · prop board{% endif %}</small></span>
+        <span class="call">{% if r.direction == 'pass' %}Pass · {% else %}{{ r.direction|capfirst }} {% endif %}{{ r.line|floatformat:"-1" }} {{ r.stat_label }}</span>
+        <span class="actual">{% if r.result == 'pass' %}no call{% elif r.result == 'void' and r.actual is None %}did not play{% elif r.actual is not None %}actual {{ r.actual|floatformat:"-1" }}{% else %}pending{% endif %}</span>
+        <span class="ledger-res {{ r.result|default:'pending' }}">{{ r.result|default:'pending' }}</span>
+        <span class="ledger-why">{{ r.why }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% else %}
+<section class="analytics-section">
+  <p class="page-read">No leans recorded yet. A lean is written into a game's note (<code>content/nfl/</code>), recorded by the daily run, and graded here once the game is final.</p>
+</section>
+{% endif %}
+<div class="opp-disclaimer">A lean is a person's call against a posted line, not an engine output. Grades come from ESPN's box score; a player missing from it is a void, never a zero. Pushes on whole-number lines are voids.</div>
+{% endblock %}

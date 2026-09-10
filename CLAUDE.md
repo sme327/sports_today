@@ -36,6 +36,20 @@ across a **Daily Results** view and a **Performance** dashboard — see
 [Roadmap → After Games](docs/product/ROADMAP.md) and the
 [Decision Log](docs/engineering/DECISION_LOG.md).
 
+**Performance is a model-validation surface, not a results archive** (that is Daily
+Results). It answers six questions in order — is there signal, where is it strongest, does
+a higher score perform better, is it stable, has the model improved, where does it fail —
+and states each answer *above* the evidence for it, in three levels: conclusions, primary
+evidence, deep diagnostics. **Hit rate and lift over baseline are the same size** on it,
+because raw conversion is the figure most likely to be read as skill and least likely to be
+it (`batter_hit` converts 66% against a 61% base). Every ranking sorts on lift, and **sample
+size gates the ordering, not just the labelling**: `batter_k` runs +41.8 over base on 22
+served props and therefore sorts *last* and reads "too early to say", never "strong signal".
+The conclusions themselves — trust tiers, the calibration read, "is there signal?" — live in
+`services/model_trust.py` as pure functions, so each is testable as a claim rather than as
+markup; `tests/test_model_trust.py` is written as a list of ways the page could flatter the
+model. Percentage-point differences are **"pts" everywhere** on it (decision log 2026-09-09).
+
 **The slate is not the whole site any more.** Beside today's games there are now
 league surfaces, reached from one header menu (leagues first, Performance and Daily
 Results at the bottom): **Standings** for MLB, WNBA, MLS, NFL, NBA and NHL;
@@ -93,6 +107,21 @@ they exist, else the latest full season with the vintage named on the page ("12-
 2026-08-21). NFL **does** score props onto the slate now (five over-only markets, since
 2026-08-18), and goes quiet when the ingested feed is more than six weeks stale — which
 is every preseason day. See [NFL Game Page](docs/engineering/NFL_GAME_PAGE.md).
+
+**An NFL pregame page can carry a hand-written note** (`content/nfl/<espn_event_id>.toml`,
+`services/nfl_game_notes.py`, since 2026-09-09): the official injury report with its date, who
+moved since last season, a written read, and prop leans ranked by the author. It exists because
+the week-1 page is built from the previous season's feed, which spotlighted three players who
+would not be on the field. A player the note marks out or gone leaves the spotlights before the
+pick; a typo in a status fails the build; nothing in it is scored and no line is shown. Its
+sections each answer one question (decision log 2026-09-10): the story, the absences that
+change it (impact lines first), each side's case plus a hand-written expected game script,
+one generated "what it says" line under the metrics, a single **prop board** with over /
+under / **pass** ("N calls of M evaluated"), what would change the read, and **before seeing
+the lines** (no number, never graded). Calls go to the **lean ledger** (`services/nfl_leans.py`,
+page `/leans/`), graded from ESPN's box score once the game is final, by the daily run or
+`python -m scripts.nfl_leans`; a pass is recorded as evaluated and never graded. The roster/injury pipe
+that would replace the hand entry is the next step, not this one.
 
 **The NFL matchup effect is one-sided, and the page says so.** Measured over three ingested
 seasons: a tough defence reliably suppresses passing (−15 to −22 yards) and, weakly,

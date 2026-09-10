@@ -62,3 +62,33 @@ def test_an_upcoming_nfl_game_renders_a_pregame_page(find, _feed, pregame, rende
     assert response.status_code == 200
     assert pregame.called
     assert render.call_args[0][2]["pregame"] is True
+
+
+@patch("services.nfl_leans.load")
+def test_the_lean_ledger_page_renders_its_empty_and_full_states(load):
+    load.return_value = []
+    response = Client().get("/leans/")
+    assert response.status_code == 200
+    assert b"No leans recorded yet" in response.content
+    load.return_value = [{
+        "game_id": "401", "kickoff": "2026-09-10", "away": "A", "home": "B", "team": "A",
+        "player": "Quincy Quarterback", "stat": "passing_yds", "stat_label": "passing yards",
+        "line": 240.5, "direction": "under", "section": "leans", "rank": 1,
+        "confidence": "high", "why": "Tough pass defence.", "authored": "2026-09-09",
+        "fingerprint": "abc", "recorded_at": "x", "actual": 212.0, "result": "hit",
+        "graded_at": "y"}]
+    response = Client().get("/leans/")
+    body = response.content.decode()
+    assert "Under 240.5 passing yards" in body and "actual 212" in body
+    assert 'ledger-res hit' in body and "1–0" in body
+
+
+def test_the_lean_ledger_is_in_the_menu_and_the_export():
+    """A menu link to a page the exporter never built is one dead link per page."""
+    from pathlib import Path
+
+    from web.management.commands.export_static import _SEEDS, should_crawl
+
+    assert "/leans/" in _SEEDS and should_crawl("/leans/")
+    html = Path("web/templates/web/base.html").read_text(encoding="utf-8")
+    assert "{% url 'leans' %}" in html

@@ -198,3 +198,18 @@ def test_pregame_page_refuses_unknown_teams(tmp_path):
     db = _seed_seasoned(tmp_path)
     assert build_nfl_pregame_page("Nobody", "B", "2026-09-09", db_path=db) is None
     assert build_nfl_pregame_page("A", "A", "2026-09-09", db_path=db) is None
+
+
+def test_the_read_and_battlefields_render_as_labelled_ideas(tmp_path):
+    """The engine's three sentences become each side's case and a watch line; the two
+    battlefield cards say whose ball it is and carry the percentiles the edge came from."""
+    from components.nfl_game import page_html
+
+    db = _seed(tmp_path)
+    page = build_nfl_game_page("g4", db_path=db)
+    html = page_html(page)
+    assert "A wins if" in html and "B wins if" in html
+    assert "When A has the ball" in html and "When B has the ball" in html
+    for b in page.battlefields:
+        assert b.attack_pct is None or 0 <= b.attack_pct <= 100
+    assert "Matchup at a glance" in html and "Methodology" in html

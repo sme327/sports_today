@@ -64,6 +64,15 @@ The user is planning their day. This is where the opportunity engine lives.
   evidence, bench-cap, honest not-posted state; probable pitchers & handedness).*
   Still ahead: expected plate appearances / minutes, park & weather, bullpen/rest,
   matched-starter season lines; for MLS, match-event timing then confirmed lineups.
+- **NFL hand-written game notes + lean ledger** — a dated, sourced note on a matchup
+  page (availability, roster moves, a pre-line read, and calls against the posted lines)
+  with every numbered call recorded and graded from the box score. *(shipped 2026-09-09
+  for one game; every posted attempts and receptions line is called weekly — see
+  [NFL Game Page](../engineering/NFL_GAME_PAGE.md))*
+- **NFL player volume charts** — pick a matchup, then a position, and see one small
+  chart per player: attempts and yards for QBs, targets and receptions for pass-catchers,
+  this season then last, shaded. *(planned for the week after Week 1:
+  [NFL Player Volume Charts](../engineering/NFL_PLAYER_VOLUME_CHARTS.md))*
 - **Watchability score, best matchup, closest games.**
 
 ### 🏟️ During Games — "What's happening right now that matters?"

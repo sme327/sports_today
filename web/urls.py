@@ -10,6 +10,7 @@ urlpatterns = [
     path("trending/", views.trending, name="trending"),
     path("playoffs/", views.playoffs, name="playoffs"),
     path("nfl/schedule/", views.nfl_schedule, name="nfl-schedule"),
+    path("leans/", views.leans, name="leans"),
     path("nfl/", views.nfl_archive, name="nfl-archive"),
     path("nfl/game/<str:game_id>/", views.nfl_matchup, name="nfl-matchup"),
     path("game/<str:league>/<str:game_id>/", views.game, name="game"),
