@@ -105,6 +105,7 @@ class PropLean:
     confidence: str             # "high" | "moderate" | "low"
     why: str
     section: str = "leans"      # one of LEAN_SECTIONS
+    position: str = ""          # optional; the ledger fills it from the feed when blank
 
     @property
     def market(self) -> str:
@@ -229,7 +230,7 @@ def parse_notes(raw: bytes, where: str = "game notes") -> GameNotes:
             raise ValueError(f"{w}: 'line' must be the posted number, e.g. 2.5") from None
         leans.append(PropLean(_require(l, "team", w), _require(l, "player", w),
                               stat, line, direction, confidence, _require(l, "why", w),
-                              section))
+                              section, str(l.get("position", "")).strip().upper()))
     falsifiers = tuple(
         Falsifier(_require(f, "condition", f"{where} falsifiers[{i}]"),
                   _require(f, "consequence", f"{where} falsifiers[{i}]"))

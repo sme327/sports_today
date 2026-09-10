@@ -48,6 +48,25 @@ def ensure_table(conn: sqlite3.Connection) -> None:
             PRIMARY KEY (game_id, player, stat, line, direction)
         )
     """)
+    # Added 2026-09-10 so the record can be read by position. Additive, like every
+    # migration here: an existing ledger gains the column and keeps its rows.
+    cols = {r[1] for r in conn.execute(f"PRAGMA table_info({TABLE})")}
+    if "position" not in cols:
+        conn.execute(f"ALTER TABLE {TABLE} ADD COLUMN position TEXT NOT NULL DEFAULT ''")
+
+
+def _feed_positions(conn: sqlite3.Connection, names: set[str]) -> dict[str, str]:
+    """Player name → position from the most recent feed row, for the players named.
+    Empty where the feed has never seen the player (a rookie) or has no table."""
+    if not names:
+        return {}
+    try:
+        rows = conn.execute(
+            "SELECT player, position FROM nfl_player_games WHERE player IN (%s) "
+            "ORDER BY game_date" % ",".join("?" * len(names)), tuple(names)).fetchall()
+    except sqlite3.Error:
+        return {}
+    return {str(p): str(pos or "").upper() for p, pos in rows}
 
 
 def _now() -> str:
@@ -60,10 +79,12 @@ def record(notes: GameNotes, db_path: Path = DB_PATH) -> int:
     number of rows written."""
     with sqlite3.connect(db_path) as conn:
         ensure_table(conn)
+        feed_pos = _feed_positions(conn, {l.player for l in notes.leans if not l.position})
         n = 0
         ranks: dict[str, int] = {}
         for lean in notes.leans:
             ranks[lean.section] = rank = ranks.get(lean.section, 0) + 1
+            position = lean.position or feed_pos.get(lean.player, "")
             # A pass is an evaluated line with no call: recorded so "3 leans of 17
             # evaluated" can be said, with its result "pass" from the start so the
             # grader never touches it.
@@ -71,17 +92,17 @@ def record(notes: GameNotes, db_path: Path = DB_PATH) -> int:
             conn.execute(f"""
                 INSERT INTO {TABLE} (game_id, kickoff, away, home, team, player, stat, line,
                     direction, section, rank, confidence, why, authored, fingerprint,
-                    recorded_at, result)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    recorded_at, result, position)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(game_id, player, stat, line, direction) DO UPDATE SET
                     section = excluded.section, rank = excluded.rank,
                     confidence = excluded.confidence, why = excluded.why,
                     authored = excluded.authored, fingerprint = excluded.fingerprint,
-                    kickoff = excluded.kickoff
+                    kickoff = excluded.kickoff, position = excluded.position
             """, (notes.game_id, notes.kickoff, notes.away, notes.home, lean.team,
                   lean.player, lean.stat, lean.line, lean.direction, lean.section, rank,
                   lean.confidence, lean.why, notes.authored, notes.fingerprint, _now(),
-                  result))
+                  result, position))
             n += 1
         conn.commit()
     return n
@@ -233,7 +254,15 @@ def summarize(rows: list[dict]) -> dict:
         # a pass has no confidence tier, so it is not a row in this split
         "by_confidence": by("confidence", ["high", "moderate", "low"], skip_pass=True),
         "by_direction": by("direction", ["under", "over", "pass"]),
-        "by_stat": OrderedDict((LEAN_STATS.get(k, k), v) for k, v in by("stat").items()),
+        # The two splits the owner reads first: how did receptions go, how did pass
+        # attempts go, how did the running backs go. Calls only — a pass is not a
+        # result — and ordered by how many were decided.
+        "by_stat": OrderedDict(sorted(
+            ((LEAN_STATS.get(k, k), v) for k, v in by("stat", skip_pass=True).items()),
+            key=lambda kv: (-kv[1]["decided"], -kv[1]["called"]))),
+        "by_position": OrderedDict(sorted(
+            ((k or "unknown", v) for k, v in by("position", skip_pass=True).items()),
+            key=lambda kv: (-kv[1]["decided"], -kv[1]["called"]))),
         "games": list(games.values()),
     }
 

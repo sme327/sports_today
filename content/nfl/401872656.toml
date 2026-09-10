@@ -367,6 +367,7 @@ why = "4+ catches in exactly 9 of 18 in 2025 with Diggs a part-time player. Brow
 [[volume]]
 team = "Seattle Seahawks"
 player = "Jadarian Price"
+position = "RB"
 stat = "receptions"
 line = 1.5
 direction = "under"

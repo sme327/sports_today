@@ -59,6 +59,16 @@ stat = "passing_td"
 line = 1.5
 direction = "pass"
 why = "No edge either way."
+
+[[props]]
+team = "A"
+player = "Rex Rookie"
+stat = "receptions"
+line = 1.5
+direction = "over"
+confidence = "low"
+position = "rb"
+why = "Not in the feed; the note names the position."
 """
 
 _SUMMARY = {
@@ -89,10 +99,10 @@ def test_parse_summary_reduces_the_box_score_to_gradeable_stats():
 def test_record_is_idempotent_and_keeps_a_grade(tmp_path):
     db = tmp_path / "l.db"
     notes = parse_notes(_NOTE)
-    assert nfl_leans.record(notes, db) == 5
-    assert nfl_leans.record(notes, db) == 5
+    assert nfl_leans.record(notes, db) == 6
+    assert nfl_leans.record(notes, db) == 6
     rows = nfl_leans.load(db)
-    assert len(rows) == 5
+    assert len(rows) == 6
     # a pass is recorded as evaluated with result "pass" from the start; the rest pend
     assert [r["result"] for r in rows if r["direction"] == "pass"] == ["pass"]
     assert all(r["result"] is None for r in rows if r["direction"] != "pass")
@@ -113,7 +123,7 @@ def test_grading_vocabulary(tmp_path):
     assert nfl_leans.grade_game("401", {"final": False, "players": {}}, db) == {"skipped_not_final": 1}
     assert all(r["result"] in (None, "pass") for r in nfl_leans.load(db))
     tally = nfl_leans.grade_game("401", parse_summary(_SUMMARY), db)
-    assert tally == {"hit": 1, "miss": 1, "void": 2}
+    assert tally == {"hit": 1, "miss": 1, "void": 3}     # Gone Guy and Rex Rookie absent, one push
     by = {(r["player"], r["stat"]): r for r in nfl_leans.load(db)}
     assert by[("Quincy Quarterback", "passing_yds")]["result"] == "hit"      # 212 < 240.5
     assert by[("Rex Runner", "receptions")]["result"] == "miss"             # 3 > 2.5
@@ -145,17 +155,60 @@ def test_summary_splits_and_never_prints_a_bare_zero(tmp_path):
     db = tmp_path / "l.db"
     nfl_leans.record(parse_notes(_NOTE), db)
     s = nfl_leans.summarize(nfl_leans.load(db))
-    assert s["overall"]["pending"] == 4 and s["overall"]["hit_rate"] is None
-    assert s["overall"]["evaluated"] == 5 and s["overall"]["called"] == 4 and s["overall"]["pass"] == 1
+    assert s["overall"]["pending"] == 5 and s["overall"]["hit_rate"] is None
+    assert s["overall"]["evaluated"] == 6 and s["overall"]["called"] == 5 and s["overall"]["pass"] == 1
     assert list(s["by_section"]) == ["props", "leans", "overs"]
     assert list(s["by_confidence"]) == ["high", "moderate", "low"]
     nfl_leans.grade_game("401", parse_summary(_SUMMARY), db)
     s = nfl_leans.summarize(nfl_leans.load(db))
     assert s["overall"]["hit_rate"] == 0.5 and s["overall"]["decided"] == 2
     # volume plays cut across sections: the receptions miss and the attempts push
-    assert s["volume"]["miss"] == 1 and s["volume"]["void"] == 1 and s["volume"]["hit"] == 0
+    # the receptions miss, the attempts push, and the rookie's receptions voided
+    assert s["volume"]["miss"] == 1 and s["volume"]["void"] == 2 and s["volume"]["hit"] == 0
     assert s["by_direction"]["under"]["hit"] == 1 and s["by_stat"]["receptions"]["miss"] == 1
-    assert s["games"][0]["tally"]["void"] == 2
+    assert s["games"][0]["tally"]["void"] == 3
+
+
+def test_positions_come_from_the_feed_or_the_note_and_split_the_record(tmp_path):
+    """The ledger never asked the note for a position: it reads the feed's most recent
+    row for the player, and takes the note's word for a rookie the feed has never seen.
+    The by-position and by-prop-type splits count calls only, never passes."""
+    import pandas as pd
+    db = tmp_path / "l.db"
+    with sqlite3.connect(db) as conn:
+        pd.DataFrame([
+            {"game_date": "2025-09-01", "player": "Quincy Quarterback", "position": "QB"},
+            {"game_date": "2025-09-01", "player": "Rex Runner", "position": "WR"},
+            {"game_date": "2025-09-08", "player": "Rex Runner", "position": "RB"},   # latest wins
+        ]).to_sql("nfl_player_games", conn, index=False)
+    nfl_leans.record(parse_notes(_NOTE), db)
+    pos = {(r["player"], r["stat"]): r["position"] for r in nfl_leans.load(db)}
+    assert pos[("Quincy Quarterback", "passing_yds")] == "QB"
+    assert pos[("Rex Runner", "receptions")] == "RB"
+    assert pos[("Rex Rookie", "receptions")] == "RB"          # from the note
+    assert pos[("Gone Guy", "rushing_yds")] == ""             # nobody knows
+    nfl_leans.grade_game("401", parse_summary(_SUMMARY), db)
+    s = nfl_leans.summarize(nfl_leans.load(db))
+    assert "pass" not in {r for t in s["by_stat"].values() for r in [t["pass"]] if r}
+    assert s["by_position"]["QB"]["hit"] == 1                  # passing yards hit
+    assert s["by_position"]["RB"]["miss"] == 1                 # Rex Runner's receptions
+    assert "unknown" in s["by_position"]                       # Gone Guy
+    assert list(s["by_stat"])[0] in ("passing yards", "receptions")   # most decided first
+    assert all(t["pass"] == 0 for t in s["by_stat"].values())
+
+
+def test_an_older_ledger_gains_the_position_column(tmp_path):
+    db = tmp_path / "old.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TABLE nfl_lean_ledger (game_id TEXT, kickoff TEXT, away TEXT, home TEXT, "
+                     "team TEXT, player TEXT, stat TEXT, line REAL, direction TEXT, section TEXT, "
+                     "rank INTEGER, confidence TEXT, why TEXT, authored TEXT, fingerprint TEXT, "
+                     "recorded_at TEXT, actual REAL, result TEXT, graded_at TEXT, "
+                     "PRIMARY KEY (game_id, player, stat, line, direction))")
+        conn.execute("INSERT INTO nfl_lean_ledger VALUES ('g','2025-09-03','A','B','A','P','receptions',"
+                     "2.5,'under','leans',1,'high','w','2025-09-03','f','t',NULL,NULL,NULL)")
+    rows = nfl_leans.load(db)
+    assert rows[0]["position"] == "" and len(rows) == 1
 
 
 def test_missing_table_and_empty_db_are_not_crashes(tmp_path):

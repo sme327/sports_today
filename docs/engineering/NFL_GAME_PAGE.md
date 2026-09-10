@@ -325,8 +325,13 @@ box score (`src/espn_nfl_boxscore.py`) once ESPN marks the game final. Vocabular
 prop ledger's: hit / miss / void, a player absent from the box score is a **void** (he did
 not play, and a zero would grade an under as a hit), a whole-number push is a void. Both
 halves run in the daily rebuild, non-fatally, and by hand as `python -m scripts.nfl_leans`.
-The page shows the record overall and split by section, confidence, side and stat, then
-every call by game with its actual — and prints no hit rate until something is decided.
+The page shows the record overall, two tables — **by prop type** and **by position**,
+calls only, most decided first, with record, hit rate, voids and pending — then the
+smaller splits by section, confidence and side, then every call by game with its actual.
+It prints no hit rate until something is decided. Position is filled at record time from
+the feed's most recent row for the player (`position` on the ledger, added 2026-09-10 as
+an additive migration); a rookie the feed has never seen shows as *unknown* until the
+note names one (`position = "RB"` on the call).
 **Volume plays** (attempts, completions, receptions, wherever the call was made) get their
 own running tile, because the owner's hunch is that usage is where the edge lives, and the
 rule in `content/nfl/README.md` is that every posted attempts and receptions line gets a

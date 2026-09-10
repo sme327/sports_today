@@ -341,6 +341,7 @@ why = "4+ in 5 of 8 games in an injured 2025 in Tampa; no history in this offenc
 [[props]]
 team = "San Francisco 49ers"
 player = "De'Zhaun Stribling"
+position = "WR"
 stat = "receptions"
 line = 3.5
 direction = "pass"

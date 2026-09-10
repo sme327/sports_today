@@ -25,7 +25,23 @@
   hunch is that this is the hotspot. It is a running record, not a claim.{% endcomment %}
   {% comment %}Hit rate is a share of decided calls: voids and pending rows are out of the
   denominator, and the template says "—" rather than 0% while nothing is decided.{% endcomment %}
-  <div class="ledger-splits four">
+  <div class="ledger-tables">
+    <div class="ledger-table">
+      <div class="ledger-table-head">By prop type <span>calls only, most decided first</span></div>
+      <div class="web-market-table">
+        <div class="web-market-row web-market-head"><span>Prop</span><span>Record</span><span>Hit rate</span><span>Void</span><span>Pending</span></div>
+        {% for name, t in by_stat.items %}<div class="web-market-row"><span>{{ name|capfirst }}</span><span>{{ t.hit }}–{{ t.miss }} <small>n={{ t.decided }}</small></span><span>{% if t.hit_rate is not None %}{{ t.hit_rate|floatformat:0 }}%{% else %}—{% endif %}</span><span>{{ t.void }}</span><span>{{ t.pending }}</span></div>{% endfor %}
+      </div>
+    </div>
+    <div class="ledger-table">
+      <div class="ledger-table-head">By position <span>from the feed; a rookie shows as unknown until the note names one</span></div>
+      <div class="web-market-table">
+        <div class="web-market-row web-market-head"><span>Position</span><span>Record</span><span>Hit rate</span><span>Void</span><span>Pending</span></div>
+        {% for name, t in by_position.items %}<div class="web-market-row"><span>{{ name }}</span><span>{{ t.hit }}–{{ t.miss }} <small>n={{ t.decided }}</small></span><span>{% if t.hit_rate is not None %}{{ t.hit_rate|floatformat:0 }}%{% else %}—{% endif %}</span><span>{{ t.void }}</span><span>{{ t.pending }}</span></div>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="ledger-splits">
     <div class="ledger-split"><div class="ledger-split-head">By section</div>
       {% for name, t in by_section.items %}<div class="ledger-split-row"><span>{% if name == 'overs' %}Looking for overs{% elif name == 'volume' %}Volume board{% elif name == 'props' %}Prop board{% else %}Prop leans{% endif %}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
     </div>
@@ -34,9 +50,6 @@
     </div>
     <div class="ledger-split"><div class="ledger-split-head">By side</div>
       {% for name, t in by_direction.items %}<div class="ledger-split-row"><span>{{ name|capfirst }}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
-    </div>
-    <div class="ledger-split"><div class="ledger-split-head">By stat</div>
-      {% for name, t in by_stat.items %}<div class="ledger-split-row"><span>{{ name|capfirst }}</span><span>{{ t.hit }}–{{ t.miss }}{% if t.void %} · {{ t.void }} void{% endif %}{% if t.pending %} · {{ t.pending }} pending{% endif %}</span></div>{% endfor %}
     </div>
   </div>
 </section>
@@ -53,7 +66,7 @@
       {% for r in game.rows %}
       <div class="ledger-row">
         <span class="rank">#{{ r.rank }}</span>
-        <span class="player">{{ r.player }}<small>{{ r.team }} · {{ r.confidence }}{% if r.section == 'overs' %} · looking for overs{% elif r.section == 'volume' %} · volume board{% elif r.section == 'props' %} · prop board{% endif %}</small></span>
+        <span class="player">{{ r.player }}<small>{% if r.position %}{{ r.position }} · {% endif %}{{ r.team }} · {{ r.confidence }}{% if r.section == 'overs' %} · looking for overs{% elif r.section == 'volume' %} · volume board{% elif r.section == 'props' %} · prop board{% endif %}</small></span>
         <span class="call">{% if r.direction == 'pass' %}Pass · {% else %}{{ r.direction|capfirst }} {% endif %}{{ r.line|floatformat:"-1" }} {{ r.stat_label }}</span>
         <span class="actual">{% if r.result == 'pass' %}no call{% elif r.result == 'void' and r.actual is None %}did not play{% elif r.actual is not None %}actual {{ r.actual|floatformat:"-1" }}{% else %}pending{% endif %}</span>
         <span class="ledger-res {{ r.result|default:'pending' }}">{{ r.result|default:'pending' }}</span>

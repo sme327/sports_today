@@ -13,7 +13,7 @@ Sections, in the order the page shows them:
 | `[[changes]]` | Who moved since last season, `direction = "in"` / `"out"` | — |
 | `[shape]` | `headline`, `observations` (up to four `{ lead, text }` pairs, the bold lead first), `alternative`: the written read, before any line. Older notes may use plain `lines` | — |
 | `[read]` | `game_script`: the expected shape of the game, hand-written, shown under The read and labelled as a read | — |
-| `[[props]]` | **The prop board** (new notes): every posted line, `direction` over / under / **pass**; a pass carries no `confidence`. The page says "N calls out of M evaluated"; make pass common | **Calls yes**; a pass is recorded as evaluated, never graded |
+| `[[props]]` | **The prop board** (new notes): every posted line, `direction` over / under / **pass**; a pass carries no `confidence`. The page says "N calls out of M evaluated"; make pass common. Optional `position` for a player the feed has never seen (a rookie); otherwise the ledger fills it from the feed | **Calls yes**; a pass is recorded as evaluated, never graded |
 | `[[falsifiers]]` | `condition` / `consequence`: what would change the read, written before kickoff as things to watch | — |
 | `[[preline]]` | Directional reads written **before a line was posted**: `market` free text, `direction` over / under / avoid | **No** — no number |
 | `[[leans]]` | *(older notes)* Calls against posted lines, ranked: `stat`, `line`, `direction` over / under, `confidence` high / moderate / low, `why` | **Yes** |

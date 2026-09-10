@@ -73,7 +73,7 @@ def test_the_lean_ledger_page_renders_its_empty_and_full_states(load):
     load.return_value = [{
         "game_id": "401", "kickoff": "2026-09-10", "away": "A", "home": "B", "team": "A",
         "player": "Quincy Quarterback", "stat": "passing_yds", "stat_label": "passing yards",
-        "line": 240.5, "direction": "under", "section": "leans", "rank": 1,
+        "line": 240.5, "direction": "under", "section": "leans", "rank": 1, "position": "QB",
         "confidence": "high", "why": "Tough pass defence.", "authored": "2026-09-09",
         "fingerprint": "abc", "recorded_at": "x", "actual": 212.0, "result": "hit",
         "graded_at": "y"}]
@@ -81,6 +81,7 @@ def test_the_lean_ledger_page_renders_its_empty_and_full_states(load):
     body = response.content.decode()
     assert "Under 240.5 passing yards" in body and "actual 212" in body
     assert 'ledger-res hit' in body and "1–0" in body
+    assert "By prop type" in body and "By position" in body and "Passing yards" in body
 
 
 def test_the_lean_ledger_is_in_the_menu_and_the_export():
