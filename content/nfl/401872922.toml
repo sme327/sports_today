@@ -1,0 +1,181 @@
+# Hand-authored game notes — Cleveland Browns at Jacksonville Jaguars, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872922"
+away = "Cleveland Browns"
+home = "Jacksonville Jaguars"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Cleveland Browns"
+player = "Teven Jenkins"
+position = "G"
+status = "Out"
+detail = "Back"
+impact = "Starting guard; out."
+
+[[availability]]
+team = "Cleveland Browns"
+player = "Jeremiah Owusu-Koramoah"
+position = "LB"
+status = "Out"
+detail = "Neck"
+impact = "Starting linebacker; out with a neck injury."
+
+[[availability]]
+team = "Cleveland Browns"
+player = "Dillon Gabriel"
+position = "QB"
+status = "IR"
+detail = "Back"
+impact = "A 2025 starter; on injured reserve."
+
+[[availability]]
+team = "Cleveland Browns"
+player = "Kendrick Green"
+position = "G"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Cleveland Browns"
+player = "Kalia Davis"
+position = "DT"
+status = "IR"
+detail = "Quadriceps"
+
+[[availability]]
+team = "Cleveland Browns"
+player = "David Njoku"
+position = "TE"
+status = "Departed"
+detail = "signed with the Chargers"
+
+[[availability]]
+team = "Cleveland Browns"
+player = "Jerome Ford"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Jacksonville Jaguars"
+player = "LeQuint Allen Jr."
+position = "RB"
+status = "Questionable"
+detail = "Hip"
+impact = "One of three backs sharing Etienne's carries; questionable."
+
+[[availability]]
+team = "Jacksonville Jaguars"
+player = "Sam Mustipher"
+position = "C"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Jacksonville Jaguars"
+player = "Patrick Mekari"
+position = "G"
+status = "IR"
+detail = "Back · Surgery"
+
+[[availability]]
+team = "Jacksonville Jaguars"
+player = "Zach Durfee"
+position = "DE"
+status = "IR"
+detail = "Upper Body"
+
+[[availability]]
+team = "Jacksonville Jaguars"
+player = "Parker Hughes"
+position = "LB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Jacksonville Jaguars"
+player = "Travis Etienne"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Cleveland Browns"
+direction = "in"
+text = "WR Justin Jefferson from Vikings; RB Jaleel McLaughlin from Broncos"
+
+[[changes]]
+team = "Cleveland Browns"
+direction = "out"
+text = "TE David Njoku; RB Jerome Ford"
+
+[[changes]]
+team = "Jacksonville Jaguars"
+direction = "in"
+text = "QB Quinn Ewers from Dolphins; RB Chris Rodriguez Jr. from Commanders"
+
+[[changes]]
+team = "Jacksonville Jaguars"
+direction = "out"
+text = "RB Travis Etienne"
+
+[shape]
+headline = "Trevor Lawrence and a 13-5 Jaguars offence against the pass defence that suppressed passers more than any other in the league, on a Browns team that could not score."
+observations = [
+  { lead = "Cleveland's pass defence is the most suppressive by own-baseline.", text = "Passers lost about 51 yards against their form facing the Browns in 2025, first of 32. Lawrence threw 37.7 times a game for 237; this measurement is the one thing on the page that argues for Cleveland." },
+  { lead = "Cleveland's offence is the worst profile on the slate.", text = "16.4 points a game (6th percentile), 4.3 yards a play (3rd), 185 passing yards (6th). Shedeur Sanders threw 29 times a game in his starts; Joe Flacco is gone and Dillon Gabriel is on injured reserve. Deshaun Watson is on the roster. Todd Monken coaches." },
+  { lead = "Jacksonville's backfield is rebuilt.", text = "Travis Etienne (18.2 carries) and Tank Bigsby are gone; Bhayshul Tuten, Chris Rodriguez (9.7 a game in Washington) and LeQuint Allen (questionable, hip) share it. Lawrence's targets are spread five wide: Washington, Meyers, Hunter, Thomas, Strange." },
+  { lead = "The Jaguars' run defence allowed the fewest yards in the league.", text = "85 rushing yards a game, 100th percentile, 6th-toughest by own-baseline. Quinshon Judkins carried 19 times a game for the Browns and this is his hardest matchup of the season on paper." },
+]
+alternative = "The other shape: the Browns' pass defence holds Lawrence to 200 and Judkins grinds a 20-17 game, the way a 5-12 team with a top defence steals one in September heat (89°F)."
+
+[read]
+game_script = "Low-scoring, and the Jaguars win it with field position rather than explosion. The most suppressive pass defence in the league meets the worst offence in the league; expect Jacksonville to run more than a 13-5 passing team normally would and Cleveland's total to stay under 20."
+
+[[preline]]
+team = "Jacksonville Jaguars"
+player = "Trevor Lawrence"
+market = "Passing yards"
+direction = "under"
+why = "Cleveland's pass defence cost passers 51 yards against form, the largest suppression in the league. Lawrence averaged 237; the measurement says under 200."
+
+[[preline]]
+team = "Cleveland Browns"
+player = "Quinshon Judkins"
+market = "Rushing yards"
+direction = "under"
+why = "19 carries a game into a run defence that allowed 85 yards a game and rates 6th toughest; the carries hold, the yards do not."
+
+[[preline]]
+team = "Jacksonville Jaguars"
+player = "Bhayshul Tuten"
+market = "Rush attempts"
+direction = "avoid"
+why = "Etienne's 18 carries are gone and three backs share them; the split is unknown."
+
+[[preline]]
+team = "Cleveland Browns"
+player = "Harold Fannin Jr."
+market = "Receptions"
+direction = "over"
+why = "7.1 targets a game as a rookie, the Browns' most-targeted player, with Njoku gone to the Chargers."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Lawrence has 150 passing yards by halftime"
+consequence = "The Browns' measured suppression did not survive the offseason; drop the Lawrence under."
+
+[[falsifiers]]
+condition = "Cleveland scores on two of its first three drives"
+consequence = "The offence is not last season's; the low-total script is wrong."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872922"

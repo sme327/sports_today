@@ -1,0 +1,207 @@
+# Hand-authored game notes — Green Bay Packers at Minnesota Vikings, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872927"
+away = "Green Bay Packers"
+home = "Minnesota Vikings"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Aaron Banks"
+position = "G"
+status = "Questionable"
+detail = "Knee · Tendinitis"
+impact = "Starting guard; questionable."
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Zach Bako-Bewele"
+position = "OT"
+status = "Questionable"
+detail = "Knee · Surgery"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Warren Brinson"
+position = "DT"
+status = "Out"
+detail = "Calf"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Josh Jacobs"
+position = "RB"
+status = "Out"
+detail = "Personal"
+impact = "The lead back at 18.8 carries a game; out."
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Ty'Ron Hopper"
+position = "LB"
+status = "Questionable"
+detail = "Achilles"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Malik Willis"
+position = "QB"
+status = "Departed"
+detail = "signed with Miami"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Clayton Tune"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Emanuel Wilson"
+position = "RB"
+status = "Departed"
+detail = "signed with Seattle"
+
+[[availability]]
+team = "Green Bay Packers"
+player = "Romeo Doubs"
+position = "WR"
+status = "Departed"
+detail = "signed with New England"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Ben Yurosek"
+position = "TE"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Michael Jurgens"
+position = "C"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Tyler Batty"
+position = "LB"
+status = "IR"
+detail = "Knee - ACL · Surgery"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Jeshaun Jones"
+position = "WR"
+status = "Suspended"
+detail = "Suspension"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Jamal Adams"
+position = "LB"
+status = "IR"
+detail = "Quadriceps"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Aaron Jones"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Ty Chandler"
+position = "RB"
+status = "Departed"
+detail = "on injured reserve with New Orleans"
+
+[[availability]]
+team = "Minnesota Vikings"
+player = "Zavier Scott"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Green Bay Packers"
+direction = "in"
+text = "QB Tyrod Taylor from Jets"
+
+[[changes]]
+team = "Green Bay Packers"
+direction = "out"
+text = "QB Malik Willis; QB Clayton Tune; RB Emanuel Wilson; WR Romeo Doubs"
+
+[[changes]]
+team = "Minnesota Vikings"
+direction = "in"
+text = "QB Kyler Murray from Cardinals; WR Jauan Jennings from 49ers"
+
+[[changes]]
+team = "Minnesota Vikings"
+direction = "out"
+text = "RB Aaron Jones; RB Ty Chandler; RB Zavier Scott"
+
+[shape]
+headline = "A division game with a quarterback question in Minnesota, and a Packers side without Josh Jacobs and Micah Parsons on a five-game losing streak against a Vikings team on five straight wins."
+observations = [
+  { lead = "Minnesota has three quarterbacks who started in 2025 and Kyler Murray.", text = "Carson Wentz threw 36 times a game, J.J. McCarthy 28, and Kyler Murray arrived from Arizona with 38 attempts a game. The feed cannot say who starts; the depth chart will. Justin Jefferson drew 8.4 targets a game whoever threw." },
+  { lead = "Green Bay is without Jacobs and Parsons.", text = "Josh Jacobs (18.8 carries a game) is out for personal reasons and Micah Parsons is out; Emanuel Wilson has gone to Seattle, so the backfield is Kaleb Johnson, arrived from Pittsburgh with 3 carries a game. Romeo Doubs is in New England." },
+  { lead = "The Vikings' pass defence allowed the fewest yards on the slate; by own-baseline it is 14th.", text = "178 passing yards allowed a game (97th percentile), but the measured suppression is 11.5 yards, middle of the league. Jordan Love threw 33 times a game for 227." },
+  { lead = "Minnesota's backfield lost Aaron Jones and Ty Chandler.", text = "Jordan Mason (10.9 carries) is the back the feed knows. The Vikings' run defence rates 27th by own-baseline, the seam a Packers offence without Jacobs cannot obviously use." },
+]
+alternative = "The other shape: whoever starts for Minnesota is sharp, Jefferson has one of his days against a Packers pass defence rated average, and the Vikings' streak reaches six behind a run defence that does not matter because Green Bay has nobody to run."
+
+[read]
+game_script = "Whoever throws for Minnesota decides the shape; the numbers say a Packers passing game of Love to Watson, Reed and Kraft against a defence that measures average, and a Vikings offence that scored 20 a game with three passers. Expect a one-score game and a total that depends on the quarterback announcement."
+
+[[preline]]
+team = "Green Bay Packers"
+player = "Jordan Love"
+market = "Pass attempts"
+direction = "over"
+why = "33 a game already; without Jacobs the Packers have no run game to lean on."
+
+[[preline]]
+team = "Minnesota Vikings"
+player = "Justin Jefferson"
+market = "Receptions"
+direction = "over"
+why = "8.4 targets a game across three quarterbacks; the volume survived every change last season."
+
+[[preline]]
+team = "Green Bay Packers"
+player = "Kaleb Johnson"
+market = "Rush attempts"
+direction = "avoid"
+why = "Jacobs' 18.8 carries are on the table and the feed has three a game for the man who inherits them."
+
+[[preline]]
+team = "Minnesota Vikings"
+player = "Jordan Mason"
+market = "Rush attempts"
+direction = "over"
+why = "10.9 a game as the second back; Jones and Chandler are gone and the Packers' run defence rates 22nd."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Minnesota starts Murray and he runs 5 times in the first half"
+consequence = "The Vikings are a mobile-quarterback offence now; every Vikings read built on the 2025 passers is off."
+
+[[falsifiers]]
+condition = "Green Bay's backs have 12 carries by halftime"
+consequence = "The Packers have a run game without Jacobs after all; drop the Love attempts over."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872927"

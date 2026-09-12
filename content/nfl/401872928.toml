@@ -1,0 +1,215 @@
+# Hand-authored game notes — Miami Dolphins at Las Vegas Raiders, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872928"
+away = "Miami Dolphins"
+home = "Las Vegas Raiders"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Trey Moore"
+position = "LB"
+status = "IR"
+detail = "Ankle · Surgery"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Kenneth Grant"
+position = "DT"
+status = "IR"
+detail = "Leg"
+impact = "Starting defensive tackle; on injured reserve."
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Storm Duck"
+position = "CB"
+status = "Out"
+detail = "Knee"
+impact = "Starting corner; out."
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Darrell Baker Jr."
+position = "CB"
+status = "Out"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Cole Turner"
+position = "TE"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Tua Tagovailoa"
+position = "QB"
+status = "Departed"
+detail = "signed with Atlanta (out this week)"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Quinn Ewers"
+position = "QB"
+status = "Departed"
+detail = "signed with Jacksonville"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Tyreek Hill"
+position = "WR"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Jaylen Waddle"
+position = "WR"
+status = "Departed"
+detail = "signed with Denver"
+
+[[availability]]
+team = "Miami Dolphins"
+player = "Darren Waller"
+position = "TE"
+status = "Departed"
+detail = "signed with Carolina"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Brock Bowers"
+position = "TE"
+status = "Out"
+detail = "Knee - Meniscus · Surgery"
+impact = "The Raiders' most-targeted player, 7.3 a game; out after meniscus surgery."
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Dont'e Thornton Jr."
+position = "WR"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Carter Runyon"
+position = "TE"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Keyron Crawford"
+position = "DE"
+status = "IR"
+detail = "Ankle"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Chigozie Anusiem"
+position = "CB"
+status = "IR"
+detail = "Knee"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Geno Smith"
+position = "QB"
+status = "Departed"
+detail = "signed with the Jets"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Kenny Pickett"
+position = "QB"
+status = "Departed"
+detail = "signed with Carolina"
+
+[[availability]]
+team = "Las Vegas Raiders"
+player = "Albert Okwuegbunam"
+position = "TE"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Miami Dolphins"
+direction = "in"
+text = "QB Brady Cook from Jets; QB Malik Willis from Packers"
+
+[[changes]]
+team = "Miami Dolphins"
+direction = "out"
+text = "QB Tua Tagovailoa; QB Quinn Ewers; WR Tyreek Hill; WR Jaylen Waddle; TE Darren Waller"
+
+[[changes]]
+team = "Las Vegas Raiders"
+direction = "in"
+text = "QB Kirk Cousins from Falcons; WR Ronnie Bell from Saints"
+
+[[changes]]
+team = "Las Vegas Raiders"
+direction = "out"
+text = "QB Geno Smith; QB Kenny Pickett; TE Albert Okwuegbunam"
+
+[shape]
+headline = "Two rebuilt offences: Miami with three new quarterbacks and none of last season's receivers, Las Vegas with Kirk Cousins and without Brock Bowers."
+observations = [
+  { lead = "Miami's passing game is new from the quarterback out.", text = "Tua Tagovailoa (Atlanta), Quinn Ewers (Jacksonville), Tyreek Hill, Jaylen Waddle (Denver) and Darren Waller (Carolina) are all gone. Brady Cook (33 attempts a game with the Jets), Kyle McCord and Malik Willis are the quarterbacks on the roster; the feed cannot say who starts. Jeff Hafley coaches the Dolphins." },
+  { lead = "De'Von Achane is the one constant.", text = "20.2 touches a game and 96 rushing yards over his last ten, in a run game at the 66th percentile, against a Raiders run defence rated average by own-baseline (23rd)." },
+  { lead = "The Raiders' offence was the worst in the league and is now Cousins'.", text = "14.2 points a game (3rd percentile), 77.5 rushing yards (3rd). Kirk Cousins arrived from Atlanta with 28 attempts a game; Geno Smith went to the Jets, Jakobi Meyers to Jacksonville. Ashton Jeanty carried 19.9 times a game. Klint Kubiak calls the offence as head coach." },
+  { lead = "Brock Bowers is out.", text = "Meniscus surgery removes the Raiders' most-targeted player (7.3 a game). Tre Tucker (6.1) and Michael Mayer are what remains; the Raiders' pass defence rates 11th by own-baseline (−15), the better half of their defence." },
+]
+alternative = "The other shape: Cousins and Jeanty are enough against a Miami defence that allowed 25 a game and rated soft against the pass, and the Raiders' home opener is the higher-scoring, more competent side of an ugly game."
+
+[read]
+game_script = "Ugly and low. Two offences that scored 20 and 14 a game, both rebuilt, neither with a settled passing game; the running backs, Achane and Jeanty, are the only players whose roles are certain. Expect the total to sit low and the first team to string two scoring drives together to win."
+
+[[preline]]
+team = "Miami Dolphins"
+player = "De'Von Achane"
+market = "Rush attempts"
+direction = "over"
+why = "20.2 touches a game and every other skill player on the roster is new; the offence runs through him by default."
+
+[[preline]]
+team = "Las Vegas Raiders"
+player = "Ashton Jeanty"
+market = "Rush attempts"
+direction = "over"
+why = "19.9 carries a game in a 3rd-percentile run game; Cousins' arrival changes the passing, not the workload."
+
+[[preline]]
+team = "Las Vegas Raiders"
+player = "Kirk Cousins"
+market = "Passing yards"
+direction = "avoid"
+why = "28 attempts a game in Atlanta, no Bowers, a receiver room of Tucker and Mayer; no basis for a number either way."
+
+[[preline]]
+team = "Las Vegas Raiders"
+player = "Tre Tucker"
+market = "Receptions"
+direction = "over"
+why = "6.1 targets a game already; with Bowers and Meyers gone he is the last target the feed recognises."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Miami's starting quarterback throws 20 times in the first half"
+consequence = "The Dolphins are throwing with a new passer rather than running Achane; the volume read on Achane weakens."
+
+[[falsifiers]]
+condition = "Jeanty has fewer than 8 carries by halftime"
+consequence = "Kubiak's offence is Cousins-first; drop the Jeanty volume read."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872928"

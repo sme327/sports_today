@@ -1,0 +1,209 @@
+# Hand-authored game notes — Atlanta Falcons at Pittsburgh Steelers, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872658"
+away = "Atlanta Falcons"
+home = "Pittsburgh Steelers"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Cameron Williams"
+position = "OL"
+status = "Out"
+detail = "Ankle"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Za'Darius Smith"
+position = "DE"
+status = "Questionable"
+detail = "Shoulder"
+impact = "Edge rusher, questionable."
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Billy Bowman Jr."
+position = "CB"
+status = "Out"
+detail = "Achilles · Surgery"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Michael Penix Jr."
+position = "QB"
+status = "Out"
+detail = "Knee - ACL · Surgery"
+impact = "The starting quarterback, out for the season after ACL surgery."
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Tua Tagovailoa"
+position = "QB"
+status = "Out"
+detail = "Oblique · Strain"
+impact = "Signed to replace Penix, out with an oblique strain; Cooper Rush starts."
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Kirk Cousins"
+position = "QB"
+status = "Departed"
+detail = "signed with Las Vegas"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Tyler Allgeier"
+position = "RB"
+status = "Departed"
+detail = "signed with Arizona"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Kyle Pitts"
+position = "TE"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Darnell Mooney"
+position = "WR"
+status = "Departed"
+detail = "signed with the Giants"
+
+[[availability]]
+team = "Atlanta Falcons"
+player = "Nate Carter"
+position = "RB"
+status = "Departed"
+detail = "not on the current roster"
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "Joey Porter Jr."
+position = "CB"
+status = "Questionable"
+detail = "Back"
+impact = "Starting corner, questionable with a back injury, against London."
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "DeShon Elliott"
+position = "S"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "Jack Driscoll"
+position = "OT"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "Donte Kent"
+position = "CB"
+status = "Out"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "Logan Lee"
+position = "DT"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "Kenneth Gainwell"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Pittsburgh Steelers"
+player = "Calvin Austin III"
+position = "WR"
+status = "Departed"
+detail = "on injured reserve with the Giants"
+
+[[changes]]
+team = "Atlanta Falcons"
+direction = "in"
+text = "QB Tua Tagovailoa from Dolphins; QB Cooper Rush from Ravens; WR Olamide Zaccheaus from Bears"
+
+[[changes]]
+team = "Atlanta Falcons"
+direction = "out"
+text = "QB Kirk Cousins; RB Tyler Allgeier; TE Kyle Pitts; WR Darnell Mooney; RB Nate Carter"
+
+[[changes]]
+team = "Pittsburgh Steelers"
+direction = "in"
+text = "RB Rico Dowdle from Panthers"
+
+[[changes]]
+team = "Pittsburgh Steelers"
+direction = "out"
+text = "RB Kenneth Gainwell; WR Calvin Austin III"
+
+[shape]
+headline = "Atlanta on its third quarterback of the summer with Penix and Tagovailoa both out, against a Steelers defence that rated soft both ways by own-baseline, which we measure to mean nothing."
+observations = [
+  { lead = "Cooper Rush starts for the Falcons.", text = "Michael Penix Jr. is out after ACL surgery and Tua Tagovailoa, signed from Miami, is out with an oblique strain. Rush threw 14 times a game in relief in Baltimore last season. Kevin Stefanski coaches Atlanta." },
+  { lead = "Bijan Robinson is the plan.", text = "22.9 touches a game in 2025, 93 rushing yards a game over his last ten, Tyler Allgeier now in Arizona. The Falcons' run game rated 78th percentile; the Steelers' run defence gave up about 8 yards against form, 29th of 32." },
+  { lead = "Pittsburgh's defence rated soft by own-baseline on both sides.", text = "28th against the pass (+17), 29th against the run. The project's measurement is that a soft defence does not lift a player above his form, so this is not a reason to expect a Falcons explosion; it is a reason not to expect suppression." },
+  { lead = "Rodgers, in his second Pittsburgh season, with a rebuilt supporting cast.", text = "32.5 attempts a game; Rico Dowdle arrived from Carolina with 16.3 carries a game to pair with Jaylen Warren, and Metcalf (6.6 targets) is the number one after MVS, Austin and Jonnu Smith left. Mike McCarthy coaches the Steelers." },
+]
+alternative = "The other shape: Rush is fine, London and Bijan carry a simple plan against a defence that rated soft, and a rainy Pittsburgh afternoon (24% precipitation) keeps both totals low regardless."
+
+[read]
+game_script = "Grind. A third-string quarterback and rain argue for Atlanta running Bijan into a 29th-ranked run defence and asking little of Rush; Pittsburgh's defence can afford that. Rodgers against an average Falcons pass defence (21st) decides whether the Steelers pull away."
+
+[[preline]]
+team = "Atlanta Falcons"
+player = "Bijan Robinson"
+market = "Rush attempts"
+direction = "over"
+why = "22.9 touches a game, Allgeier gone, a backup quarterback and rain. Every arrow points at volume."
+
+[[preline]]
+team = "Atlanta Falcons"
+player = "Cooper Rush"
+market = "Passing yards"
+direction = "under"
+why = "14 attempts a game in relief last season; the Falcons will not ask a third-string quarterback to throw 35 times in the rain."
+
+[[preline]]
+team = "Pittsburgh Steelers"
+player = "Jaylen Warren"
+market = "Rush attempts"
+direction = "avoid"
+why = "Rico Dowdle (16.3 a game in Carolina) arrived to split the work; the share is unknown until we see it."
+
+[[preline]]
+team = "Atlanta Falcons"
+player = "Drake London"
+market = "Receptions"
+direction = "over"
+why = "9.3 targets a game, and with Pitts and Mooney gone the share only concentrates. The passer is the risk, not the role."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Rush throws 20 times in the first half"
+consequence = "Atlanta is behind early and the ground-game script has failed; the Bijan carries read is exposed."
+
+[[falsifiers]]
+condition = "Dowdle takes the first two series at running back"
+consequence = "Pittsburgh's backfield is Dowdle-first, not a split; Warren's numbers are the ones at risk."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872658"

@@ -1,0 +1,182 @@
+# Hand-authored game notes — Baltimore Ravens at Indianapolis Colts, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872659"
+away = "Baltimore Ravens"
+home = "Indianapolis Colts"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Devontez Walker"
+position = "WR"
+status = "Questionable"
+detail = "Groin"
+impact = "Depth receiver; questionable."
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Teddye Buchanan"
+position = "LB"
+status = "Out"
+detail = "Knee - ACL · Surgery"
+impact = "Starting inside linebacker; out for the season."
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Nnamdi Madubuike"
+position = "DT"
+status = "Out"
+detail = "Neck · Surgery"
+impact = "The Ravens' interior pass rusher; out after neck surgery."
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Bilhal Kone"
+position = "CB"
+status = "IR"
+detail = "Lower Body"
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Adam Randall"
+position = "RB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Cooper Rush"
+position = "QB"
+status = "Departed"
+detail = "signed with Atlanta"
+
+[[availability]]
+team = "Baltimore Ravens"
+player = "Keaton Mitchell"
+position = "RB"
+status = "Departed"
+detail = "signed with the Chargers"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "Austin Ajiake"
+position = "LB"
+status = "Questionable"
+detail = "Hamstring"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "Carson Towt"
+position = "TE"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "Sean McKeon"
+position = "TE"
+status = "Questionable"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "D.J. Montgomery"
+position = "WR"
+status = "IR"
+detail = "Abdomen"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "Will Mallory"
+position = "TE"
+status = "IR"
+detail = "Thumb"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "Philip Rivers"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Indianapolis Colts"
+player = "Michael Pittman"
+position = "WR"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Baltimore Ravens"
+direction = "out"
+text = "QB Cooper Rush; RB Keaton Mitchell"
+
+[[changes]]
+team = "Indianapolis Colts"
+direction = "in"
+text = "WR Keenan Allen from Chargers"
+
+[[changes]]
+team = "Indianapolis Colts"
+direction = "out"
+text = "QB Philip Rivers; WR Michael Pittman"
+
+[shape]
+headline = "The best rushing offence in the league against a Colts run defence in the top fifth, while Jonathan Taylor runs into the third-toughest run defence by own-baseline."
+observations = [
+  { lead = "Baltimore ran for 157 yards a game, 100th percentile.", text = "Derrick Henry carried 19.4 times a game and averaged 108 yards over his last ten. Lamar Jackson's passing volume was low, 28 attempts a game with Tyler Huntley starting five games, and the pass offence rated 16th percentile." },
+  { lead = "Jonathan Taylor faces the wrong defence for a 22-carry back.", text = "The Ravens' run defence cost backs about 11 yards against their form by own-baseline, third-toughest of 32. Taylor's 88.8 yards a game over his last ten was built against softer fronts." },
+  { lead = "Both teams changed at quarterback in different ways.", text = "Daniel Jones is the Colts' starter (33 attempts a game) after Philip Rivers' 2025 stint; Keenan Allen arrived with 7.2 targets a game to replace Michael Pittman. Baltimore is coached by Jesse Minter." },
+  { lead = "Madubuike is out, and the Colts' pass defence rates 29th.", text = "Nnamdi Madubuike (neck) leaves the Ravens' interior; the Colts gave up about 18 yards against form to passers, 29th by own-baseline, though Baltimore's pass offence was 16th percentile and may not exploit it." },
+]
+alternative = "The other shape: Lamar Jackson's 2025 volume was a Huntley artefact, the Colts' pass defence is as soft as it rates, and Zay Flowers (72.5 yards a game) has the day while Henry is held to the low 80s."
+
+[read]
+game_script = "A Ravens run game against a Colts defence that can hold it (81st percentile against the run) is the whole game. Expect Baltimore to carry 30 times, Indianapolis to throw more than it wants to against a pass defence that measures average, and Taylor's yards to lag his carries."
+
+[[preline]]
+team = "Baltimore Ravens"
+player = "Derrick Henry"
+market = "Rush attempts"
+direction = "over"
+why = "19.4 a game in the league's best rushing offence; a Ravens lead means more of them."
+
+[[preline]]
+team = "Indianapolis Colts"
+player = "Jonathan Taylor"
+market = "Rushing yards"
+direction = "under"
+why = "Baltimore's run defence is the third-toughest by own-baseline (−11 against form); his carries are safe and his yardage is the risk."
+
+[[preline]]
+team = "Indianapolis Colts"
+player = "Daniel Jones"
+market = "Pass attempts"
+direction = "over"
+why = "33 a game already; the Ravens' pass defence rates soft (26th) which we measure to do nothing, but a Colts team chasing the Ravens' run game throws."
+
+[[preline]]
+team = "Baltimore Ravens"
+player = "Zay Flowers"
+market = "Receptions"
+direction = "over"
+why = "7.5 targets a game, the only Ravens target above 5; Isaiah Likely has gone to the Giants."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Henry has fewer than 8 carries by halftime"
+consequence = "Baltimore is behind or passing on purpose; the run-game script is wrong."
+
+[[falsifiers]]
+condition = "Taylor clears 50 yards in the first half"
+consequence = "The Ravens' run defence is not what it measured, likely the Madubuike absence; drop the Taylor under."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872659"

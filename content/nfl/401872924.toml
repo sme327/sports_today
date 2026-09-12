@@ -1,0 +1,214 @@
+# Hand-authored game notes — New York Jets at Tennessee Titans, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872924"
+away = "New York Jets"
+home = "Tennessee Titans"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "New York Jets"
+player = "D'Angelo Ponds"
+position = "CB"
+status = "Doubtful"
+detail = "Calf · Strain"
+
+[[availability]]
+team = "New York Jets"
+player = "Kene Nwangwu"
+position = "RB"
+status = "Doubtful"
+detail = "Back"
+
+[[availability]]
+team = "New York Jets"
+player = "Tim Patrick"
+position = "WR"
+status = "Out"
+detail = "Groin"
+impact = "A veteran target in a thin receiver room; out."
+
+[[availability]]
+team = "New York Jets"
+player = "Joseph Ossai"
+position = "DE"
+status = "Out"
+detail = "Foot · Plantar Fasciitis"
+
+[[availability]]
+team = "New York Jets"
+player = "VJ Payne"
+position = "S"
+status = "IR"
+detail = "Undisclosed · Bruise"
+
+[[availability]]
+team = "New York Jets"
+player = "Brady Cook"
+position = "QB"
+status = "Departed"
+detail = "signed with Miami"
+
+[[availability]]
+team = "New York Jets"
+player = "Justin Fields"
+position = "QB"
+status = "Departed"
+detail = "signed with Kansas City"
+
+[[availability]]
+team = "New York Jets"
+player = "Tyrod Taylor"
+position = "QB"
+status = "Departed"
+detail = "signed with Green Bay"
+
+[[availability]]
+team = "New York Jets"
+player = "Khalil Herbert"
+position = "RB"
+status = "Departed"
+detail = "not on the current roster"
+
+[[availability]]
+team = "New York Jets"
+player = "John Metchie III"
+position = "WR"
+status = "Departed"
+detail = "not on the current roster"
+
+[[availability]]
+team = "New York Jets"
+player = "Josh Reynolds"
+position = "WR"
+status = "Departed"
+detail = "not on the current roster"
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Cedric Gray"
+position = "LB"
+status = "Out"
+detail = "Concussion · Concussion"
+impact = "Starting linebacker; out with a concussion."
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Milo Eifler"
+position = "LB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Kendell Brooks"
+position = "S"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Andre James"
+position = "C"
+status = "Questionable"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Tanoh Kpassagnon"
+position = "DE"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Brandon Allen"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Tennessee Titans"
+player = "Chig Okonkwo"
+position = "TE"
+status = "Departed"
+detail = "signed with Washington"
+
+[[changes]]
+team = "New York Jets"
+direction = "in"
+text = "QB Geno Smith from Raiders"
+
+[[changes]]
+team = "New York Jets"
+direction = "out"
+text = "QB Brady Cook; QB Justin Fields; QB Tyrod Taylor; RB Khalil Herbert; WR John Metchie III; WR Josh Reynolds"
+
+[[changes]]
+team = "Tennessee Titans"
+direction = "in"
+text = "QB Mitchell Trubisky from Bills; RB Michael Carter from Cardinals; WR Wan'Dale Robinson from Giants"
+
+[[changes]]
+team = "Tennessee Titans"
+direction = "out"
+text = "QB Brandon Allen; TE Chig Okonkwo"
+
+[shape]
+headline = "Two 3-14 teams with new quarterbacks, both carrying pass defences that rate top-seven by own-baseline in front of offences that could not throw last season."
+observations = [
+  { lead = "Neither team could throw in 2025, and both defences suppress passing.", text = "The Jets averaged 164 passing yards a game (3rd percentile), the Titans 191 (12th). By own-baseline the Jets' pass defence cost passers 22 yards against form (7th toughest) and the Titans' 27 (6th). Everything about this game points at the run." },
+  { lead = "Geno Smith is the Jets' quarterback now.", text = "32.6 attempts a game in Las Vegas last season. Justin Fields went to Kansas City and Brady Cook to Miami. Breece Hall carried 18.2 times a game behind a run game at the 70th percentile." },
+  { lead = "Tennessee's second year under Cam Ward, with Robert Saleh coaching.", text = "Ward threw 34 times a game; Tony Pollard carried 16.6. Wan'Dale Robinson arrived from the Giants with 8.9 targets a game, more than any Titans receiver had. Chig Okonkwo is gone." },
+  { lead = "The Titans' run defence is the weak seam.", text = "25th of 32 by own-baseline, 115 yards allowed a game; Hall's 65 yards a game over his last ten meets it. The Jets' run defence rates average." },
+]
+alternative = "The other shape: Geno Smith's arrival is the difference, the Jets throw on a Titans secondary that lost bodies to injured reserve, and Garrett Wilson has the day the numbers do not promise."
+
+[read]
+game_script = "Low-scoring and run-first. Both offences scored 17 a game last season and both face a pass defence that measures as genuinely suppressive. Expect Hall and Pollard to carry the game, the first turnover to matter more than usual, and the total to be the lowest on the Sunday slate."
+
+[[preline]]
+team = "New York Jets"
+player = "Breece Hall"
+market = "Rush attempts"
+direction = "over"
+why = "18.2 carries a game into a run defence rated 25th of 32; the Jets' identity is the run (70th percentile) and their new passer is 34."
+
+[[preline]]
+team = "Tennessee Titans"
+player = "Cam Ward"
+market = "Passing yards"
+direction = "under"
+why = "191 a game as a team in 2025 against a Jets pass defence costing passers 22 yards against form. The measurement and the profile agree."
+
+[[preline]]
+team = "New York Jets"
+player = "Geno Smith"
+market = "Passing yards"
+direction = "under"
+why = "Tennessee's pass defence is the 6th toughest by own-baseline (−27); a new offence in its first game does not usually beat that."
+
+[[preline]]
+team = "Tennessee Titans"
+player = "Tony Pollard"
+market = "Rush attempts"
+direction = "over"
+why = "16.6 a game with Spears at 9.4; a run-first script favours the lead back on both sides."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Either quarterback throws 20 times in the first half"
+consequence = "The run-first script is wrong for that side; revisit the volume reads."
+
+[[falsifiers]]
+condition = "Wan'Dale Robinson draws 6 or more targets by halftime"
+consequence = "Tennessee has imported a target hog and the Titans passing under weakens."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872924"

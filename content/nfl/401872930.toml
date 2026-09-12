@@ -1,0 +1,208 @@
+# Hand-authored game notes — Dallas Cowboys at New York Giants, 2026-09-14. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872930"
+away = "Dallas Cowboys"
+home = "New York Giants"
+kickoff = "2026-09-14"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Malik Davis"
+position = "RB"
+status = "Out"
+detail = "Hip"
+impact = "Depth back; out."
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Tyler Smith"
+position = "G"
+status = "IR"
+detail = "Thumb · Surgery"
+impact = "Starting guard; on injured reserve after thumb surgery."
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Devin Moore"
+position = "CB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Matt Hennessy"
+position = "C"
+status = "IR"
+detail = "Neck · Surgery"
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "DJ Rogers"
+position = "TE"
+status = "IR"
+detail = "Knee"
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Jaydon Blue"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Miles Sanders"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Dallas Cowboys"
+player = "Phil Mafah"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "New York Giants"
+player = "Malik Nabers"
+position = "WR"
+status = "Questionable"
+detail = "Knee - ACL · Surgery"
+impact = "The Giants' number one (8.8 targets); questionable in his return from ACL surgery."
+
+[[availability]]
+team = "New York Giants"
+player = "Roy Robertson-Harris"
+position = "DT"
+status = "IR"
+detail = "Achilles · Surgery"
+
+[[availability]]
+team = "New York Giants"
+player = "Korie Black"
+position = "CB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "New York Giants"
+player = "Calvin Austin III"
+position = "WR"
+status = "IR"
+detail = "Knee"
+
+[[availability]]
+team = "New York Giants"
+player = "Jarrick Bernard-Converse"
+position = "CB"
+status = "IR"
+detail = "Knee"
+
+[[availability]]
+team = "New York Giants"
+player = "Russell Wilson"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "New York Giants"
+player = "Wan'Dale Robinson"
+position = "WR"
+status = "Departed"
+detail = "signed with Tennessee"
+
+[[availability]]
+team = "New York Giants"
+player = "Darius Slayton"
+position = "WR"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Dallas Cowboys"
+direction = "in"
+text = "RB Emari Demercado from Cardinals"
+
+[[changes]]
+team = "Dallas Cowboys"
+direction = "out"
+text = "RB Jaydon Blue; RB Miles Sanders; RB Phil Mafah"
+
+[[changes]]
+team = "New York Giants"
+direction = "in"
+text = "RB Najee Harris from Chargers; WR Darnell Mooney from Falcons; WR Calvin Austin III from Steelers; WR Braxton Berrios from Texans"
+
+[[changes]]
+team = "New York Giants"
+direction = "out"
+text = "QB Russell Wilson; WR Wan'Dale Robinson; WR Darius Slayton"
+
+[shape]
+headline = "The best passing offence in the league against a Giants pass defence that rates average, on a Dallas defence that allowed the third-most points and rated 31st against the pass, with Malik Nabers questionable off an ACL."
+observations = [
+  { lead = "Dallas threw for 279 yards a game, 100th percentile.", text = "Prescott attempted 38.4 a game for 267; CeeDee Lamb drew 9.1 targets and George Pickens 8.1 and each cleared his bar in 7 of 10. Javonte Williams carried 18.9 times; Blue, Sanders and Mafah are gone, Emari Demercado arrived." },
+  { lead = "The Cowboys' defence gave up 30.1 points a game.", text = "3rd percentile, and passers gained about 27 yards on their form against it, 31st of 32 by own-baseline. Jaxson Dart threw 30 times a game as a rookie." },
+  { lead = "Nabers is questionable in his return from ACL surgery.", text = "8.8 targets a game when he played. Wan'Dale Robinson (8.9) has gone to Tennessee, so the Giants' targets are Nabers if he plays, Darnell Mooney and Isaiah Likely, both new. John Harbaugh coaches the Giants." },
+  { lead = "The Giants' backfield is Skattebo, Tracy and now Najee Harris.", text = "Skattebo 16.6 touches, Tracy 14.9, Harris arrived from the Chargers. The Cowboys' run defence rates average (15th), the Giants' rush defence 6th percentile in yards allowed." },
+]
+alternative = "The other shape: Harbaugh's Giants run Skattebo and Harris at a 6th-percentile Dallas run defence, keep Prescott on the sideline, and a 4-13 team makes the opener a 24-21 game instead of the shootout the profiles promise."
+
+[read]
+game_script = "A shootout that Dallas controls. The best passing offence on the slate against an average pass defence, and a Giants passer facing a defence measured 31st against the pass: both quarterbacks throw, and the Cowboys' receivers are the safest volume on the Sunday night card. Expect the total to be the highest of the day."
+
+[[preline]]
+team = "Dallas Cowboys"
+player = "Dak Prescott"
+market = "Pass attempts"
+direction = "over"
+why = "38.4 a game, the most on the slate, against a defence rated average; nothing suppresses it."
+
+[[preline]]
+team = "Dallas Cowboys"
+player = "CeeDee Lamb"
+market = "Receptions"
+direction = "over"
+why = "9.1 targets a game; matchup does not move receivers and Prescott's volume does not move down."
+
+[[preline]]
+team = "New York Giants"
+player = "Jaxson Dart"
+market = "Passing yards"
+direction = "over"
+why = "30 attempts a game into a pass defence rated 31st by own-baseline (+27 against form). A soft defence is measured to do nothing; the read rests on his own volume against the least resistance on the slate."
+
+[[preline]]
+team = "New York Giants"
+player = "Malik Nabers"
+market = "Receptions"
+direction = "avoid"
+why = "Questionable off an ACL; 8.8 targets a game when healthy, unknowable until the designation."
+
+[[preline]]
+team = "Dallas Cowboys"
+player = "Javonte Williams"
+market = "Rush attempts"
+direction = "over"
+why = "18.9 a game with the other three 2025 backs gone; a Dallas lead adds carries."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Nabers is active and draws 5 targets in the first half"
+consequence = "The Giants have their number one and the passing game is the 2025 version, not the thinned one."
+
+[[falsifiers]]
+condition = "Prescott has fewer than 15 attempts by halftime"
+consequence = "Dallas is running with a lead earlier than the profile implies; the Lamb and Pickens volume reads soften."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872930"

@@ -1,0 +1,202 @@
+# Hand-authored game notes — Washington Commanders at Philadelphia Eagles, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872929"
+away = "Washington Commanders"
+home = "Philadelphia Eagles"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Jer'Zhan Newton"
+position = "DT"
+status = "IR"
+detail = "Pectoral · Surgery"
+impact = "Starting defensive tackle; on injured reserve."
+
+[[availability]]
+team = "Washington Commanders"
+player = "Laremy Tunsil"
+position = "OT"
+status = "IR"
+detail = "Triceps · Surgery"
+impact = "The left tackle; on injured reserve after triceps surgery."
+
+[[availability]]
+team = "Washington Commanders"
+player = "Deatrich Wise Jr."
+position = "DE"
+status = "Out"
+detail = "Quadriceps"
+impact = "Rotational edge; out."
+
+[[availability]]
+team = "Washington Commanders"
+player = "Trey Amos"
+position = "CB"
+status = "IR"
+detail = "Ankle · Sprain"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Jeremy McNichols"
+position = "RB"
+status = "IR"
+detail = "Quadriceps"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Josh Johnson"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Austin Ekeler"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Chris Rodriguez Jr."
+position = "RB"
+status = "Departed"
+detail = "signed with Jacksonville"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Deebo Samuel Sr."
+position = "WR"
+status = "Departed"
+detail = "signed with San Francisco"
+
+[[availability]]
+team = "Washington Commanders"
+player = "Zach Ertz"
+position = "TE"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Philadelphia Eagles"
+player = "Jonathan Greenard"
+position = "LB"
+status = "Out"
+detail = "Pectoral · Surgery"
+impact = "Starting edge rusher; out after pectoral surgery."
+
+[[availability]]
+team = "Philadelphia Eagles"
+player = "Eli Stowers"
+position = "TE"
+status = "Questionable"
+detail = "Hamstring"
+
+[[availability]]
+team = "Philadelphia Eagles"
+player = "Andre' Sam"
+position = "S"
+status = "IR"
+detail = "Foot"
+
+[[availability]]
+team = "Philadelphia Eagles"
+player = "Jakorian Bennett"
+position = "CB"
+status = "IR"
+detail = "Knee"
+
+[[availability]]
+team = "Philadelphia Eagles"
+player = "Grant Calcaterra"
+position = "TE"
+status = "IR"
+detail = "Back"
+
+[[availability]]
+team = "Philadelphia Eagles"
+player = "A.J. Brown"
+position = "WR"
+status = "Departed"
+detail = "traded to New England"
+
+[[changes]]
+team = "Washington Commanders"
+direction = "in"
+text = "RB Rachaad White from Buccaneers; WR Stefon Diggs from Patriots; TE Chig Okonkwo from Titans"
+
+[[changes]]
+team = "Washington Commanders"
+direction = "out"
+text = "QB Josh Johnson; RB Austin Ekeler; RB Chris Rodriguez Jr.; WR Deebo Samuel Sr.; TE Zach Ertz"
+
+[[changes]]
+team = "Philadelphia Eagles"
+direction = "in"
+text = "QB Andy Dalton from Panthers; RB Jaydon Blue from Cowboys; RB Dameon Pierce from Chiefs"
+
+[[changes]]
+team = "Philadelphia Eagles"
+direction = "out"
+text = "WR A.J. Brown"
+
+[shape]
+headline = "Saquon Barkley against the run defence rated second-softest by own-baseline, an Eagles side without A.J. Brown, and Jayden Daniels' passing volume against a top-ten pass defence."
+observations = [
+  { lead = "Washington's run defence is the seam.", text = "141.5 rushing yards allowed a game (9th percentile), and backs gained about 10 yards on their form against it, 31st of 32 by own-baseline. Barkley carried 21.3 times a game and averaged 88 yards over his last ten." },
+  { lead = "The Eagles are without A.J. Brown.", text = "Traded to New England. DeVonta Smith (6.9 targets) and Dallas Goedert (5.6) are the targets; Dontayvion Wicks and Elijah Moore arrived. Hurts threw 35 times a game; Jonathan Greenard is out on the Eagles' edge." },
+  { lead = "Daniels threw for 180 a game over his last seven.", text = "35 attempts a game with the yards not following, and the Eagles' pass defence cost passers about 20 yards against form (9th toughest). Laremy Tunsil, the left tackle, is on injured reserve. Stefon Diggs and Chig Okonkwo arrived; Deebo Samuel and Zach Ertz left." },
+  { lead = "Washington's backfield turned over.", text = "Ekeler and Chris Rodriguez are gone; Jacory Croskey-Merritt (11.1 carries) and Rachaad White, arrived from Tampa Bay with 10.4 a game, share it. The Commanders' run game rated 91st percentile." },
+]
+alternative = "The other shape: Daniels' legs and Diggs' arrival turn the Commanders' 91st-percentile run game into a control offence, and an Eagles passing game without Brown cannot punish a defence that rated 19th percentile in points allowed."
+
+[read]
+game_script = "Philadelphia runs. Barkley into the second-softest run defence by own-baseline, an Eagles passing game that is thinner without Brown, and a Commanders passer measured to struggle against this defence point the same way. Expect the Eagles to carry 30 times and Washington's points to come from the ground and Daniels' legs."
+
+[[preline]]
+team = "Philadelphia Eagles"
+player = "Saquon Barkley"
+market = "Rush attempts"
+direction = "over"
+why = "21.3 a game into a run defence rated 31st of 32 by own-baseline, with Brown gone from the passing game."
+
+[[preline]]
+team = "Washington Commanders"
+player = "Jayden Daniels"
+market = "Passing yards"
+direction = "under"
+why = "180 a game over his last seven, against a pass defence costing passers 20 yards against form, with Tunsil on injured reserve."
+
+[[preline]]
+team = "Washington Commanders"
+player = "Terry McLaurin"
+market = "Receptions"
+direction = "over"
+why = "6.0 targets a game and Deebo's 7.2 have left; Diggs arrived, but McLaurin is the incumbent."
+
+[[preline]]
+team = "Philadelphia Eagles"
+player = "DeVonta Smith"
+market = "Receptions"
+direction = "over"
+why = "6.9 targets a game before Brown's 8.0 left the room; nobody else on the roster had more than Goedert's 5.6."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Barkley has fewer than 9 carries by halftime"
+consequence = "Philadelphia is behind or throwing; the run script is wrong."
+
+[[falsifiers]]
+condition = "Daniels clears 130 passing yards by halftime"
+consequence = "The Eagles' measured suppression is not holding against a healthier Daniels; drop the under."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872929"

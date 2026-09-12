@@ -1,0 +1,218 @@
+# Hand-authored game notes — Arizona Cardinals at Los Angeles Chargers, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872926"
+away = "Arizona Cardinals"
+home = "Los Angeles Chargers"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Isaiah Adams"
+position = "G"
+status = "Out"
+detail = "Knee"
+impact = "Starting guard; out."
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Garrett Williams"
+position = "CB"
+status = "Out"
+detail = "Achilles · Surgery"
+impact = "Starting corner; out after Achilles surgery."
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Dadrion Taylor-Demerson"
+position = "S"
+status = "Out"
+detail = "Ribs"
+impact = "Starting safety; out."
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Jeremiyah Love"
+position = "RB"
+status = "Questionable"
+detail = "Ankle · Sprain"
+impact = "Rookie back in a room without Conner and Benson; questionable."
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Kaleb Proctor"
+position = "DT"
+status = "IR"
+detail = "Knee - Meniscus · Surgery"
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Kyler Murray"
+position = "QB"
+status = "Departed"
+detail = "signed with Minnesota"
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Michael Carter"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Arizona Cardinals"
+player = "Emari Demercado"
+position = "RB"
+status = "Departed"
+detail = "signed with Dallas"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Deane Leonard"
+position = "CB"
+status = "Out"
+detail = "Abdomen"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Tuli Tuipulotu"
+position = "LB"
+status = "Questionable"
+detail = "Hip"
+impact = "Edge rusher; questionable."
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Isaiah World"
+position = "OT"
+status = "Out"
+detail = "Knee"
+impact = "Rookie tackle; out."
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Denzel Perryman"
+position = "LB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Scott Matlock"
+position = "FB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Jaret Patterson"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Keenan Allen"
+position = "WR"
+status = "Departed"
+detail = "signed with Indianapolis"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Najee Harris"
+position = "RB"
+status = "Departed"
+detail = "signed with the Giants"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Oronde Gadsden II"
+position = "TE"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Los Angeles Chargers"
+player = "Hassan Haskins"
+position = "RB"
+status = "Departed"
+detail = "on New England's practice squad"
+
+[[changes]]
+team = "Arizona Cardinals"
+direction = "in"
+text = "RB Tyler Allgeier from Falcons"
+
+[[changes]]
+team = "Arizona Cardinals"
+direction = "out"
+text = "QB Kyler Murray; RB Michael Carter; RB Emari Demercado"
+
+[[changes]]
+team = "Los Angeles Chargers"
+direction = "in"
+text = "RB Keaton Mitchell from Ravens; TE David Njoku from Browns"
+
+[[changes]]
+team = "Los Angeles Chargers"
+direction = "out"
+text = "RB Jaret Patterson; WR Keenan Allen; RB Najee Harris; TE Oronde Gadsden II; RB Hassan Haskins"
+
+[shape]
+headline = "Jacoby Brissett's 37 attempts a game into the fourth-toughest pass defence by own-baseline, with both of Arizona's top backs on injured reserve and Kyler Murray in Minnesota."
+observations = [
+  { lead = "Arizona's offence is Brissett throwing to McBride, Wilson and Harrison.", text = "Brissett threw 37.4 times a game for 277 in his starts; Trey McBride drew 9.9 targets, Michael Wilson 7.4, Marvin Harrison Jr. 6.1. Kyler Murray is in Minnesota. Mike LaFleur coaches the Cardinals." },
+  { lead = "The Chargers' defence is the fourth-toughest against the pass and fifth against the run.", text = "Passers lost about 34 yards against form facing Los Angeles; backs lost 9. The Chargers allowed 19.8 points a game (78th percentile). Jim Harbaugh coaches the Chargers." },
+  { lead = "Arizona has no run game and no healthy lead back.", text = "93 rushing yards a game (6th percentile); James Conner and Trey Benson are on injured reserve, Jeremiyah Love is questionable, Tyler Allgeier arrived from Atlanta with 9.4 carries a game and Bam Knight had 11.3." },
+  { lead = "Herbert's yards fell to 197 a game over his last ten.", text = "37 attempts a game, so the volume held; Keenan Allen (7.2 targets) has gone to Indianapolis and David Njoku arrived. Omarion Hampton (16.0) and Kimani Vidal (14.7) share the carries." },
+]
+alternative = "The other shape: Brissett's volume beats the measurement the way it beat an average defence all last season, McBride has a 10-target day, and the Cardinals' 88th-percentile passing game keeps a 3-14 team in a game the Chargers' offence (21 a game) cannot run away from."
+
+[read]
+game_script = "Chargers control. A defence measured in the top five both ways against an offence with one healthy dimension is a field-position game the home side wins on possessions. Expect Brissett to throw 40 times for fewer yards than that implies, and Hampton and Vidal to close it out."
+
+[[preline]]
+team = "Arizona Cardinals"
+player = "Jacoby Brissett"
+market = "Passing yards"
+direction = "under"
+why = "277 a game against a pass defence costing passers 34 yards against form, fourth-toughest, and the only measured struggle call on his page."
+
+[[preline]]
+team = "Arizona Cardinals"
+player = "Trey McBride"
+market = "Receptions"
+direction = "over"
+why = "9.9 targets a game; the matchup does not move receivers and Arizona has nothing else to do but throw."
+
+[[preline]]
+team = "Los Angeles Chargers"
+player = "Omarion Hampton"
+market = "Rush attempts"
+direction = "over"
+why = "16.0 a game with Vidal at 14.7, against a Cardinals run defence rated 26th; a lead means more."
+
+[[preline]]
+team = "Arizona Cardinals"
+player = "Tyler Allgeier"
+market = "Rush attempts"
+direction = "avoid"
+why = "Conner and Benson on IR, Love questionable, Allgeier and Knight unranked; the share is unknown."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Brissett has 170 passing yards by halftime"
+consequence = "The Chargers' pass defence is not what it measured; drop the under and the field-position script."
+
+[[falsifiers]]
+condition = "Herbert throws 25 times in the first half"
+consequence = "Los Angeles is chasing, not controlling; the Hampton read weakens."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872926"

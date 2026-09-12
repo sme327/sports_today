@@ -1,0 +1,212 @@
+# Hand-authored game notes — New Orleans Saints at Detroit Lions, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872923"
+away = "New Orleans Saints"
+home = "Detroit Lions"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Audric Estime"
+position = "RB"
+status = "Out"
+detail = "Thigh"
+impact = "Second back by usage (11.8); out."
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Oscar Delp"
+position = "TE"
+status = "Out"
+detail = "Hamstring"
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Alvin Kamara"
+position = "RB"
+status = "Questionable"
+detail = "Knee - MCL · Sprain"
+impact = "The lead back at 15.5 touches a game; with Estimé out and Neal gone, the Saints' run game is Kendre Miller if he sits."
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Cameron Jordan"
+position = "DE"
+status = "Out"
+detail = "Hamstring"
+impact = "The veteran edge; out."
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Lorenzo Styles Jr."
+position = "S"
+status = "IR"
+detail = "Calf"
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Audric Estimé"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Devin Neal"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Taysom Hill"
+position = "TE"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "New Orleans Saints"
+player = "Ronnie Bell"
+position = "WR"
+status = "Departed"
+detail = "not on the current roster"
+
+[[availability]]
+team = "Detroit Lions"
+player = "Christian Izien"
+position = "S"
+status = "Questionable"
+detail = "Groin"
+
+[[availability]]
+team = "Detroit Lions"
+player = "Cade Mays"
+position = "C"
+status = "IR"
+detail = "Wrist · Fracture"
+
+[[availability]]
+team = "Detroit Lions"
+player = "Payton Turner"
+position = "DE"
+status = "IR"
+detail = "Back"
+
+[[availability]]
+team = "Detroit Lions"
+player = "Isiah Pacheco"
+position = "RB"
+status = "IR"
+detail = "Back"
+
+[[availability]]
+team = "Detroit Lions"
+player = "Giovanni Manu"
+position = "OT"
+status = "Out"
+detail = "Knee"
+
+[[availability]]
+team = "Detroit Lions"
+player = "David Montgomery"
+position = "RB"
+status = "Departed"
+detail = "signed with Houston"
+
+[[availability]]
+team = "Detroit Lions"
+player = "Shane Zylstra"
+position = "TE"
+status = "Departed"
+detail = "not on the current roster"
+
+[[changes]]
+team = "New Orleans Saints"
+direction = "in"
+text = "RB Ty Chandler from Vikings"
+
+[[changes]]
+team = "New Orleans Saints"
+direction = "out"
+text = "RB Audric Estimé; RB Devin Neal; TE Taysom Hill; WR Ronnie Bell"
+
+[[changes]]
+team = "Detroit Lions"
+direction = "in"
+text = "RB Isiah Pacheco from Chiefs; QB Joshua Dobbs from Patriots"
+
+[[changes]]
+team = "Detroit Lions"
+direction = "out"
+text = "RB David Montgomery; TE Shane Zylstra"
+
+[shape]
+headline = "The Lions' elite offence against a Saints defence that is average, while the Lions' own secondary is missing both starting safeties on a pass defence already rated 30th."
+observations = [
+  { lead = "Detroit's offence is the second-best profile on the Sunday slate.", text = "28.3 points a game (94th percentile), 6.0 yards a play (94th), 269 passing yards a game (94th). Goff threw 35 times for 293 a game over his last ten; St. Brown drew 10.3 targets, Jameson Williams cleared 60 yards in 8 of 10." },
+  { lead = "The Lions are without Brian Branch and Kerby Joseph.", text = "Both starting safeties are out, on a pass defence that already gave up about 26 yards against form by own-baseline (30th of 32). The Saints' passing game, 69th percentile, is the one part of their offence that rated above average." },
+  { lead = "New Orleans is thin at running back and unsettled at quarterback.", text = "Kamara is questionable with an MCL sprain, Audric Estimé is out and Devin Neal is gone; Kendre Miller is the healthy back. Tyler Shough (238 a game) and Spencer Rattler both started in 2025 and Zach Wilson arrived." },
+  { lead = "Gibbs has the Detroit backfield to himself.", text = "David Montgomery signed with Houston and Isiah Pacheco, brought in to replace him, is on injured reserve. Gibbs carried 19.8 times a game already; Montgomery's 11 touches have nowhere else to go." },
+]
+alternative = "The other shape: Kamara plays, Shough finds Olave against a safety-less secondary, and the Saints keep it within a score into the fourth quarter on possession rather than points."
+
+[read]
+game_script = "Detroit scores. The question is whether New Orleans can throw enough to stay attached, and the answer depends on a Lions secondary missing both safeties. Expect Gibbs to carry a heavier load than his 2025 average and the Saints to throw more than a 6-11 team would like to."
+
+[[preline]]
+team = "Detroit Lions"
+player = "Jahmyr Gibbs"
+market = "Rush attempts"
+direction = "over"
+why = "19.8 carries a game with Montgomery taking 11 more; Montgomery is in Houston and Pacheco is on IR."
+
+[[preline]]
+team = "Detroit Lions"
+player = "Jared Goff"
+market = "Passing yards"
+direction = "over"
+why = "293 a game over his last ten against a Saints pass defence that rates average (22nd, +0.6). No suppression measured."
+
+[[preline]]
+team = "New Orleans Saints"
+player = "Chris Olave"
+market = "Receptions"
+direction = "over"
+why = "9.9 targets a game, the only Saints receiver above 6, against a secondary without Branch and Joseph."
+
+[[preline]]
+team = "New Orleans Saints"
+player = "Alvin Kamara"
+market = "Rush attempts"
+direction = "avoid"
+why = "Questionable with an MCL sprain; the number depends on the designation and on Estimé being out."
+
+[[preline]]
+team = "Detroit Lions"
+player = "Amon-Ra St. Brown"
+market = "Receptions"
+direction = "over"
+why = "10.3 targets a game; the Saints pass defence does nothing to receivers by measure, and nothing does."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Kamara is active and takes his first-series carries"
+consequence = "The Saints have a run game and a clock, and the Detroit-runs-away script slows."
+
+[[falsifiers]]
+condition = "The Lions' replacement safeties hold Olave under 40 yards in the first half"
+consequence = "The secondary thesis is overstated; downgrade the Saints passing reads."
+
+[[falsifiers]]
+condition = "Gibbs has fewer than 10 carries by halftime"
+consequence = "Detroit is throwing with a lead or splitting carries with a back the feed has not seen; the Gibbs volume read is wrong."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872923"

@@ -1,0 +1,185 @@
+# Hand-authored game notes — Tampa Bay Buccaneers at Cincinnati Bengals, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872925"
+away = "Tampa Bay Buccaneers"
+home = "Cincinnati Bengals"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Christian Rozeboom"
+position = "LB"
+status = "Questionable"
+detail = "Foot"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Justin Skule"
+position = "OT"
+status = "Doubtful"
+detail = "Oblique"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Jalen McMillan"
+position = "WR"
+status = "Doubtful"
+detail = "Knee · Soreness"
+impact = "The third receiver's targets go to Egbuka, Godwin and Otton; Mayfield's distribution narrows."
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Sean Tucker"
+position = "RB"
+status = "Doubtful"
+detail = "Hamstring"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Josh Hayes"
+position = "CB"
+status = "IR"
+detail = "Knee · Surgery"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Rachaad White"
+position = "RB"
+status = "Departed"
+detail = "signed with Washington"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Mike Evans"
+position = "WR"
+status = "Departed"
+detail = "signed with San Francisco"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Teddy Bridgewater"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Tampa Bay Buccaneers"
+player = "Sterling Shepard"
+position = "WR"
+status = "Departed"
+detail = "not on the current roster"
+
+[[availability]]
+team = "Cincinnati Bengals"
+player = "Shemar Stewart"
+position = "DE"
+status = "Doubtful"
+detail = "Knee"
+impact = "The edge rusher; without him the Bengals' rush relies on Trey Hendrickson's side alone."
+
+[[availability]]
+team = "Cincinnati Bengals"
+player = "Brian Parker II"
+position = "OT"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Cincinnati Bengals"
+player = "Ja'Sir Taylor"
+position = "CB"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Cincinnati Bengals"
+player = "Jake Browning"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Tampa Bay Buccaneers"
+direction = "out"
+text = "RB Rachaad White; WR Mike Evans; QB Teddy Bridgewater; WR Sterling Shepard"
+
+[[changes]]
+team = "Cincinnati Bengals"
+direction = "in"
+text = "QB Josh Johnson from Commanders"
+
+[[changes]]
+team = "Cincinnati Bengals"
+direction = "out"
+text = "QB Jake Browning"
+
+[shape]
+headline = "A healthy Burrow against the pass defence that gave up the most against form in the league last season, and a Bengals run defence that invites Bucky Irving."
+observations = [
+  { lead = "Burrow is back, and Tampa Bay's pass defence rates last of 32.", text = "By the engine's own-baseline measure passers gained about 30 yards on their form against the Buccaneers in 2025, the worst mark in the league. Burrow threw for 226 a game in the eight games he played; Flacco and Browning covered the rest of a 6-11 season." },
+  { lead = "Cincinnati's run defence is the softer half of a weak unit.", text = "The Bengals allowed 28.9 points a game (9th percentile) and 147 rushing yards (3rd). Irving carried 20.8 times a game as the lead back; Rachaad White has left for Washington, so the backfield is his." },
+  { lead = "Tampa Bay's receiver room is rebuilt around Egbuka and Godwin.", text = "Mike Evans is in San Francisco and Jalen McMillan is doubtful with a knee, so Mayfield's 35 attempts a game go to Emeka Egbuka (7.6 targets), Chris Godwin and Cade Otton." },
+  { lead = "Ja'Marr Chase's volume does not depend on who is throwing.", text = "10.8 targets a game across three quarterbacks in 2025, 94 yards a game over his last ten. Tee Higgins was 6.5 targets. Chase Brown carried 18.8 times behind them." },
+]
+alternative = "The other shape: Tampa Bay's run defence, second-toughest by own-baseline, holds Chase Brown down and the Bengals' pass rush without Shemar Stewart (doubtful) never gets to Mayfield; it becomes Irving against a 3rd-percentile run defence all afternoon."
+
+[read]
+game_script = "Points. Both defences gave up 24 to 29 a game and the two things each offence does best run into the other's weakness: Burrow into a pass defence rated last by own-baseline, Irving into a run defence in the bottom five. Expect the Bengals to throw first and Tampa Bay to run first, and the total to be the market that moves."
+
+[[preline]]
+team = "Cincinnati Bengals"
+player = "Joe Burrow"
+market = "Passing yards"
+direction = "over"
+why = "226 a game in his eight 2025 starts against a pass defence that rates 32nd of 32 by own-baseline (+30 against form). The single largest measured matchup on the Sunday slate."
+
+[[preline]]
+team = "Cincinnati Bengals"
+player = "Ja'Marr Chase"
+market = "Receptions and targets"
+direction = "over"
+why = "10.8 targets a game with three different passers; with Burrow the ceiling is higher, not the floor."
+
+[[preline]]
+team = "Tampa Bay Buccaneers"
+player = "Bucky Irving"
+market = "Rush attempts"
+direction = "over"
+why = "20.8 carries a game as the lead back, White gone, against a run defence at the 3rd percentile."
+
+[[preline]]
+team = "Cincinnati Bengals"
+player = "Chase Brown"
+market = "Rushing yards"
+direction = "under"
+why = "Tampa Bay's run defence is the second-toughest by own-baseline (−12.6 against form). Brown's carries are safe; his yards are the risk."
+
+[[preline]]
+team = "Tampa Bay Buccaneers"
+player = "Baker Mayfield"
+market = "Passing yards"
+direction = "avoid"
+why = "35 attempts a game but a receiver room missing Evans and probably McMillan; the volume is there and the targets are unproven."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Cincinnati is throwing under 55% of the time in the first half"
+consequence = "Zac Taylor is protecting a rebuilt line rather than attacking the worst pass defence on paper; the Burrow and Chase reads soften."
+
+[[falsifiers]]
+condition = "Irving has fewer than 8 carries by halftime"
+consequence = "Tampa Bay is behind and throwing, and the run-into-a-soft-front thesis is a game-script casualty."
+
+[[falsifiers]]
+condition = "Shemar Stewart is active and playing full snaps"
+consequence = "The Bengals' pass rush is whole and Mayfield's clean-pocket assumption weakens."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872925"

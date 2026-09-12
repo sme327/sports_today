@@ -1,0 +1,195 @@
+# Hand-authored game notes — Chicago Bears at Carolina Panthers, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872661"
+away = "Chicago Bears"
+home = "Carolina Panthers"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Chicago Bears"
+player = "Xavier Woods"
+position = "S"
+status = "Questionable"
+detail = "Groin"
+
+[[availability]]
+team = "Chicago Bears"
+player = "Tyson Bagent"
+position = "QB"
+status = "Questionable"
+detail = "Back"
+
+[[availability]]
+team = "Chicago Bears"
+player = "Rome Odunze"
+position = "WR"
+status = "Questionable"
+detail = "Calf"
+impact = "The Bears' most-targeted receiver (7.4); questionable with a calf."
+
+[[availability]]
+team = "Chicago Bears"
+player = "Ozzy Trapilo"
+position = "OT"
+status = "Questionable"
+detail = "Knee · Surgery"
+
+[[availability]]
+team = "Chicago Bears"
+player = "Kyler Gordon"
+position = "CB"
+status = "Out"
+detail = "Calf"
+impact = "Starting nickel corner; out."
+
+[[availability]]
+team = "Chicago Bears"
+player = "DJ Moore"
+position = "WR"
+status = "Departed"
+detail = "signed with Buffalo"
+
+[[availability]]
+team = "Chicago Bears"
+player = "Olamide Zaccheaus"
+position = "WR"
+status = "Departed"
+detail = "signed with Atlanta"
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Patrick Jones II"
+position = "LB"
+status = "Out"
+detail = "Back"
+impact = "Edge rusher; out."
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Trevor Etienne"
+position = "RB"
+status = "IR"
+detail = "Ankle"
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Brady Christensen"
+position = "G"
+status = "IR"
+detail = "Hamstring"
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Bam Martin-Scott"
+position = "LB"
+status = "IR"
+detail = "Hamstring"
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Taylor Moton"
+position = "OT"
+status = "Out"
+detail = "Illness"
+impact = "Starting right tackle; out."
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Rico Dowdle"
+position = "RB"
+status = "Departed"
+detail = "signed with Pittsburgh"
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Andy Dalton"
+position = "QB"
+status = "Departed"
+detail = "signed with Philadelphia"
+
+[[availability]]
+team = "Carolina Panthers"
+player = "Hunter Renfrow"
+position = "WR"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Chicago Bears"
+direction = "in"
+text = "RB Zavier Scott from Vikings"
+
+[[changes]]
+team = "Chicago Bears"
+direction = "out"
+text = "WR DJ Moore; WR Olamide Zaccheaus"
+
+[[changes]]
+team = "Carolina Panthers"
+direction = "in"
+text = "QB Kenny Pickett from Raiders; WR DeVonta Smith from Eagles; TE Darren Waller from Dolphins; WR John Metchie III from Jets"
+
+[[changes]]
+team = "Carolina Panthers"
+direction = "out"
+text = "RB Rico Dowdle; QB Andy Dalton; WR Hunter Renfrow"
+
+[shape]
+headline = "A 12-6 Bears team with the league's best turnover margin runs into a Carolina pass defence that rated second-most suppressive by own-baseline, while the Panthers are missing both starting tackles."
+observations = [
+  { lead = "Chicago's profile is strong everywhere the Panthers' is weak.", text = "26.2 points (75th percentile), 141 rushing yards (94th), 242 passing (78th), and a +1.1 turnover margin, the best in the league. Carolina scored 19 a game (19th) and its offence rated below the 40th percentile in every column." },
+  { lead = "Carolina's pass defence is the real obstacle.", text = "Passers lost about 48 yards against their form facing the Panthers in 2025, second-toughest of 32 by own-baseline. Caleb Williams threw 38.8 times a game for 239; this is the largest measured suppression on the Sunday slate." },
+  { lead = "The Panthers are without both starting tackles.", text = "Ikem Ekwonu and Taylor Moton are out, and Tershawn Wharton is out on the interior. Bryce Young threw 33.8 times a game behind a line that is now two backups wide." },
+  { lead = "Both backfields changed hands.", text = "Rico Dowdle (16.3 carries a game) left Carolina for Pittsburgh, leaving Chuba Hubbard; D'Andre Swift (16.8) and Kyle Monangai (11.7) split Chicago's. DJ Moore is in Buffalo and Rome Odunze is questionable with a calf." },
+]
+alternative = "The other shape: Carolina's pass defence does what it did all last season to Williams, the Bears lean on Swift and Monangai against a 24th-ranked run defence, and the game is decided by the turnover margin the Bears led the league in."
+
+[read]
+game_script = "Chicago controls it on the ground and with turnovers rather than through the air. The measured suppression against Williams is large enough to plan around: expect the Bears to run more than their 2025 split and Young to be under pressure from a Chicago rush facing two backup tackles."
+
+[[preline]]
+team = "Chicago Bears"
+player = "Caleb Williams"
+market = "Passing yards"
+direction = "under"
+why = "The Panthers' pass defence cost passers 48 yards against form, second-toughest by own-baseline. Williams averaged 239; the measurement says about 190."
+
+[[preline]]
+team = "Chicago Bears"
+player = "D'Andre Swift"
+market = "Rush attempts"
+direction = "over"
+why = "16.8 a game in a 94th-percentile run game, into a 24th-ranked run defence, on a day the passing game is measured to struggle."
+
+[[preline]]
+team = "Carolina Panthers"
+player = "Bryce Young"
+market = "Passing yards"
+direction = "under"
+why = "Two backup tackles and a Bears pass rush; the Bears' pass defence rates average, but protection is not."
+
+[[preline]]
+team = "Carolina Panthers"
+player = "Chuba Hubbard"
+market = "Rush attempts"
+direction = "over"
+why = "11.9 carries a game as the second back; Dowdle's 16.3 are gone to Pittsburgh."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Williams has 150 passing yards by halftime"
+consequence = "Carolina's pass defence is not what it measured, likely the offseason turnover; drop the Williams under."
+
+[[falsifiers]]
+condition = "Young is sacked fewer than twice in the first half"
+consequence = "The backup tackles are holding and the Panthers passing under weakens."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872661"

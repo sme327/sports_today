@@ -1,0 +1,223 @@
+# Hand-authored game notes — Denver Broncos at Kansas City Chiefs, 2026-09-15. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872931"
+away = "Denver Broncos"
+home = "Kansas City Chiefs"
+kickoff = "2026-09-15"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Denver Broncos"
+player = "Jonathon Cooper"
+position = "LB"
+status = "Out"
+detail = "Undisclosed"
+impact = "Starting edge rusher; out."
+
+[[availability]]
+team = "Denver Broncos"
+player = "Nick Gargiulo"
+position = "G"
+status = "Out"
+detail = "Knee - ACL · Surgery"
+
+[[availability]]
+team = "Denver Broncos"
+player = "Frank Crum"
+position = "OT"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Denver Broncos"
+player = "Caleb Lohner"
+position = "TE"
+status = "IR"
+detail = "Lower Body · Surgery"
+
+[[availability]]
+team = "Denver Broncos"
+player = "Levelle Bailey"
+position = "LB"
+status = "IR"
+detail = "Leg · Fracture"
+
+[[availability]]
+team = "Denver Broncos"
+player = "Jaleel McLaughlin"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Chris Jones"
+position = "DT"
+status = "Questionable"
+detail = "Calf"
+impact = "The Chiefs' interior pass rusher; questionable with a calf."
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Josh Simmons"
+position = "OT"
+status = "Questionable"
+detail = "Back"
+impact = "Starting left tackle; questionable."
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Chamarri Conner"
+position = "S"
+status = "Questionable"
+detail = "Knee"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Omarr Norman-Lott"
+position = "DT"
+status = "Out"
+detail = "Knee - ACL · Surgery"
+impact = "Defensive tackle; out after ACL surgery."
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Jimmy Holiday"
+position = "WR"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Chris Oladokun"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Shane Buechele"
+position = "QB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Isiah Pacheco"
+position = "RB"
+status = "Departed"
+detail = "on injured reserve with Detroit"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Kareem Hunt"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Dameon Pierce"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Gardner Minshew"
+position = "QB"
+status = "Departed"
+detail = "signed with Arizona"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Marquise Brown"
+position = "WR"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Kansas City Chiefs"
+player = "Clyde Edwards-Helaire"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[changes]]
+team = "Denver Broncos"
+direction = "in"
+text = "WR Jaylen Waddle from Dolphins"
+
+[[changes]]
+team = "Denver Broncos"
+direction = "out"
+text = "RB Jaleel McLaughlin"
+
+[[changes]]
+team = "Kansas City Chiefs"
+direction = "in"
+text = "QB Justin Fields from Jets; RB Kenneth Walker III from Seahawks"
+
+[[changes]]
+team = "Kansas City Chiefs"
+direction = "out"
+text = "QB Chris Oladokun; QB Shane Buechele; RB Isiah Pacheco; RB Kareem Hunt; RB Dameon Pierce; QB Gardner Minshew; WR Marquise Brown; RB Clyde Edwards-Helaire"
+
+[shape]
+headline = "The 14-3 Broncos, with the league's third-best scoring defence, at a Chiefs team that went 6-11 and has rebuilt its backfield around Kenneth Walker, with Chris Jones questionable."
+observations = [
+  { lead = "Denver's defence allowed 18.3 points a game; Kansas City's 19.3.", text = "Both rank in the top 12 percent. By own-baseline the Chiefs' pass defence is 10th toughest (−19) and the Broncos' run defence 9th; both run defences are top ten. Neither offence rated above the 60th percentile." },
+  { lead = "Kansas City's backfield is new.", text = "Pacheco and Hunt (11 carries each) are gone; Kenneth Walker arrived from Seattle with 15.1 carries a game, the Super Bowl MVP, and Justin Fields arrived from the Jets behind Mahomes. Mahomes threw 40.5 times a game for 265; Rashee Rice drew 10.4 targets." },
+  { lead = "Bo Nix threw 41 times a game and carries a measured struggle call.", text = "237 yards a game against a Chiefs pass defence costing passers 19 against form. Jaylen Waddle arrived from Miami with 6.4 targets to join Sutton (7.3) and Franklin (6.4); J.K. Dobbins (16.7) and RJ Harvey (12.1) split the carries." },
+  { lead = "Chris Jones and Josh Simmons are questionable.", text = "The Chiefs' best interior rusher and their left tackle are both on the report, on a night with gusts forecast near 24 mph at Arrowhead." },
+]
+alternative = "The other shape: Mahomes at home in September with Walker and Rice, against a Broncos pass defence rated 25th by own-baseline, and the 6-11 season reads as an injury story rather than a decline; Kansas City scores 27 and Denver's offence cannot answer."
+
+[read]
+game_script = "A defensive game with a low total, decided by whichever quarterback avoids the turnover. Nix is measured to struggle against this pass defence; Mahomes faces a Broncos pass defence that rates soft, which we measure to do nothing. Expect Walker to get 15 carries in his Chiefs debut and the wind to matter to both kickers."
+
+[[preline]]
+team = "Denver Broncos"
+player = "Bo Nix"
+market = "Passing yards"
+direction = "under"
+why = "237 a game against a pass defence costing passers 19 yards against form, tenth-toughest; the only measured struggle call on his page."
+
+[[preline]]
+team = "Kansas City Chiefs"
+player = "Kenneth Walker III"
+market = "Rush attempts"
+direction = "over"
+why = "15.1 a game in Seattle with Pacheco and Hunt gone from Kansas City; the workload has no competitor the feed knows."
+
+[[preline]]
+team = "Kansas City Chiefs"
+player = "Rashee Rice"
+market = "Receptions"
+direction = "over"
+why = "10.4 targets a game, the most on either roster; a matchup does not move receivers."
+
+[[preline]]
+team = "Denver Broncos"
+player = "J.K. Dobbins"
+market = "Rush attempts"
+direction = "avoid"
+why = "16.7 a game but Harvey took 12.1 and the split against an 8th-ranked run defence is the question, not the total."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Chris Jones is inactive"
+consequence = "The Chiefs' interior rush is missing its anchor and the Nix under is on thinner ground."
+
+[[falsifiers]]
+condition = "Walker has fewer than 7 carries by halftime"
+consequence = "Kansas City is throwing 45 times again; drop the Walker read."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872931"

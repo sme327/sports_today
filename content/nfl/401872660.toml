@@ -1,0 +1,203 @@
+# Hand-authored game notes — Buffalo Bills at Houston Texans, 2026-09-13. Keyed by the ESPN event
+# id. Availability is ESPN's current report (Thursday practice designations; final
+# designations arrive Friday), departures and arrivals are the 2025 feed against the
+# current roster, and everything editorial is written from the engine's numbers.
+
+game_id = "401872660"
+away = "Buffalo Bills"
+home = "Houston Texans"
+kickoff = "2026-09-13"
+authored = "2026-09-11"
+report_date = "2026-09-11"
+
+[[availability]]
+team = "Buffalo Bills"
+player = "Ty Johnson"
+position = "RB"
+status = "Questionable"
+detail = "Hamstring"
+impact = "One of the two backs left to replace Cook; questionable."
+
+[[availability]]
+team = "Buffalo Bills"
+player = "T.J. Sanders"
+position = "DT"
+status = "Questionable"
+detail = "Knee"
+
+[[availability]]
+team = "Buffalo Bills"
+player = "Jordan Hancock"
+position = "CB"
+status = "Questionable"
+detail = "Quadriceps"
+
+[[availability]]
+team = "Buffalo Bills"
+player = "Jedrick Wills Jr."
+position = "OT"
+status = "Questionable"
+detail = "Back"
+
+[[availability]]
+team = "Buffalo Bills"
+player = "Tyrell Shavers"
+position = "WR"
+status = "Out"
+detail = "Knee - ACL · Surgery"
+impact = "Depth receiver; out for the season."
+
+[[availability]]
+team = "Buffalo Bills"
+player = "James Cook"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Buffalo Bills"
+player = "Mitchell Trubisky"
+position = "QB"
+status = "Departed"
+detail = "signed with Tennessee"
+
+[[availability]]
+team = "Houston Texans"
+player = "Kayden McDonald"
+position = "DT"
+status = "IR"
+detail = "Ankle"
+
+[[availability]]
+team = "Houston Texans"
+player = "Jayden Higgins"
+position = "WR"
+status = "IR"
+detail = "Knee - ACL · Surgery"
+impact = "Rookie receiver; on injured reserve after ACL surgery."
+
+[[availability]]
+team = "Houston Texans"
+player = "Tank Dell"
+position = "WR"
+status = "IR"
+detail = "Knee - ACL + MCL · Surgery"
+impact = "Number two receiver; on injured reserve after ACL and MCL surgery."
+
+[[availability]]
+team = "Houston Texans"
+player = "Sam Hagen"
+position = "G"
+status = "IR"
+detail = "Undisclosed"
+
+[[availability]]
+team = "Houston Texans"
+player = "Braden Smith"
+position = "OT"
+status = "IR"
+detail = "Foot · Plantar Fasciitis"
+impact = "Starting tackle; on injured reserve."
+
+[[availability]]
+team = "Houston Texans"
+player = "Nick Chubb"
+position = "RB"
+status = "Departed"
+detail = "not on the roster"
+
+[[availability]]
+team = "Houston Texans"
+player = "Christian Kirk"
+position = "WR"
+status = "Departed"
+detail = "on injured reserve with San Francisco"
+
+[[availability]]
+team = "Houston Texans"
+player = "Braxton Berrios"
+position = "WR"
+status = "Departed"
+detail = "not on the current roster"
+
+[[changes]]
+team = "Buffalo Bills"
+direction = "in"
+text = "QB Shane Buechele from Chiefs; WR DJ Moore from Bears"
+
+[[changes]]
+team = "Buffalo Bills"
+direction = "out"
+text = "RB James Cook; QB Mitchell Trubisky"
+
+[[changes]]
+team = "Houston Texans"
+direction = "in"
+text = "RB David Montgomery from Lions"
+
+[[changes]]
+team = "Houston Texans"
+direction = "out"
+text = "RB Nick Chubb; WR Christian Kirk; WR Braxton Berrios"
+
+[shape]
+headline = "Two 13-5 teams, and the Texans' defence measures elite against both the pass and the run while the Bills have lost the back who carried their 97th-percentile run game."
+observations = [
+  { lead = "Houston's defence is the best measured unit on the slate.", text = "16.7 points allowed a game (100th percentile), the toughest run defence by own-baseline (−14 against form) and the third-toughest pass defence (−37). Josh Allen and James Cook both carry a measured struggle call against it." },
+  { lead = "James Cook is gone, and with him 20 carries a game.", text = "Buffalo ran for 155 yards a game (97th percentile) with Cook at 20.4 carries; he is not on the roster. Ray Davis (5.5) and Ty Johnson (questionable, hamstring) are the backs the feed knows. DJ Moore arrived from Chicago with 6.1 targets a game. Joe Brady coaches the Bills." },
+  { lead = "Buffalo's run defence is the softest by own-baseline; its pass defence is fifth-toughest.", text = "Backs gained about 10 yards on their form against Buffalo (32nd of 32); passers lost 33 (5th). Houston's backfield is Woody Marks (14.8 carries), Jawhar Jordan and David Montgomery, arrived from Detroit with 11 carries a game." },
+  { lead = "Stroud into the Bills' pass defence is the mirror of Allen into Houston's.", text = "Stroud threw 33.6 times a game for 221; Nico Collins drew 8.1 targets. Tank Dell and Jayden Higgins are on injured reserve, so the Houston passing game is Collins and Dalton Schultz." },
+]
+alternative = "The other shape: Allen's 36 attempts a game find Shakir, Moore and Kincaid against a Texans pass rush that has to respect his legs, Buffalo's 28 points a game holds up, and Houston's run game is the one that cannot keep pace in 90-degree heat."
+
+[read]
+game_script = "Low-scoring and decided on the ground. Both quarterbacks face a pass defence measured in the top five, and the one clear seam is Houston's backs against the worst run defence by own-baseline. Expect the Texans to run more than 30 times and the Bills to miss Cook most on third-and-short."
+
+[[preline]]
+team = "Houston Texans"
+player = "Woody Marks"
+market = "Rush attempts"
+direction = "over"
+why = "14.8 a game as the lead back into a run defence rated last by own-baseline; Montgomery's arrival is the risk to the share."
+
+[[preline]]
+team = "Buffalo Bills"
+player = "Josh Allen"
+market = "Passing yards"
+direction = "under"
+why = "234 a game over his last nine against the third-toughest pass defence (−37 against form) and the only measured struggle call on his page."
+
+[[preline]]
+team = "Houston Texans"
+player = "C.J. Stroud"
+market = "Passing yards"
+direction = "under"
+why = "221 a game against the fifth-toughest pass defence (−33); Dell and Higgins on IR narrow his targets to Collins and Schultz."
+
+[[preline]]
+team = "Houston Texans"
+player = "Nico Collins"
+market = "Receptions"
+direction = "over"
+why = "8.1 targets a game, and the only healthy target above 6.1 on the roster."
+
+[[preline]]
+team = "Buffalo Bills"
+player = "Ray Davis"
+market = "Rush attempts"
+direction = "avoid"
+why = "Cook's 20 carries have no named heir; Davis and Ty Johnson (questionable) split an unknown share."
+
+# --- Prop board: filled in when the posted lines arrive.
+
+[[falsifiers]]
+condition = "Allen clears 150 passing yards by halftime"
+consequence = "Houston's measured pass suppression did not survive the offseason; drop the Allen under."
+
+[[falsifiers]]
+condition = "Houston's backs have fewer than 12 combined carries by halftime"
+consequence = "The Texans are throwing into the Bills' fifth-ranked pass defence instead of running at the 32nd-ranked run defence; the script is wrong."
+
+[[sources]]
+title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
+url = "https://www.espn.com/nfl/game/_/gameId/401872660"
