@@ -130,13 +130,6 @@ detail = "signed with the Giants"
 
 [[availability]]
 team = "Los Angeles Chargers"
-player = "Oronde Gadsden II"
-position = "TE"
-status = "Departed"
-detail = "not on the roster"
-
-[[availability]]
-team = "Los Angeles Chargers"
 player = "Hassan Haskins"
 position = "RB"
 status = "Departed"
@@ -160,7 +153,7 @@ text = "RB Keaton Mitchell from Ravens; TE David Njoku from Browns"
 [[changes]]
 team = "Los Angeles Chargers"
 direction = "out"
-text = "RB Jaret Patterson; WR Keenan Allen; RB Najee Harris; TE Oronde Gadsden II; RB Hassan Haskins"
+text = "RB Jaret Patterson; WR Keenan Allen; RB Najee Harris; RB Hassan Haskins"
 
 [shape]
 headline = "Jacoby Brissett's 37 attempts a game into the fourth-toughest pass defence by own-baseline, with both of Arizona's top backs on injured reserve and Kyler Murray in Minnesota."

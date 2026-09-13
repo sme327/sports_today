@@ -16,7 +16,7 @@ player = "Ty Johnson"
 position = "RB"
 status = "Questionable"
 detail = "Hamstring"
-impact = "One of the two backs left to replace Cook; questionable."
+impact = "The third back behind Cook and Ray Davis; questionable."
 
 [[availability]]
 team = "Buffalo Bills"
@@ -46,13 +46,6 @@ position = "WR"
 status = "Out"
 detail = "Knee - ACL · Surgery"
 impact = "Depth receiver; out for the season."
-
-[[availability]]
-team = "Buffalo Bills"
-player = "James Cook"
-position = "RB"
-status = "Departed"
-detail = "not on the roster"
 
 [[availability]]
 team = "Buffalo Bills"
@@ -128,7 +121,7 @@ text = "QB Shane Buechele from Chiefs; WR DJ Moore from Bears"
 [[changes]]
 team = "Buffalo Bills"
 direction = "out"
-text = "RB James Cook; QB Mitchell Trubisky"
+text = "QB Mitchell Trubisky"
 
 [[changes]]
 team = "Houston Texans"
@@ -141,10 +134,10 @@ direction = "out"
 text = "RB Nick Chubb; WR Christian Kirk; WR Braxton Berrios"
 
 [shape]
-headline = "Two 13-5 teams, and the Texans' defence measures elite against both the pass and the run while the Bills have lost the back who carried their 97th-percentile run game."
+headline = "Two 13-5 teams, and the Texans' defence measures elite against both the pass and the run — the toughest run defence in the league against the Bills' 97th-percentile run game."
 observations = [
   { lead = "Houston's defence is the best measured unit on the slate.", text = "16.7 points allowed a game (100th percentile), the toughest run defence by own-baseline (−14 against form) and the third-toughest pass defence (−37). Josh Allen and James Cook both carry a measured struggle call against it." },
-  { lead = "James Cook is gone, and with him 20 carries a game.", text = "Buffalo ran for 155 yards a game (97th percentile) with Cook at 20.4 carries; he is not on the roster. Ray Davis (5.5) and Ty Johnson (questionable, hamstring) are the backs the feed knows. DJ Moore arrived from Chicago with 6.1 targets a game. Joe Brady coaches the Bills." },
+  { lead = "Buffalo's run game meets the defence built to stop it.", text = "The Bills ran for 155 yards a game (97th percentile) behind James Cook's 18 carries; Houston's run defence is the toughest in the league by own-baseline, costing a back about 14 yards against his own form. DJ Moore arrived from Chicago with 6.1 targets a game. Joe Brady coaches the Bills." },
   { lead = "Buffalo's run defence is the softest by own-baseline; its pass defence is fifth-toughest.", text = "Backs gained about 10 yards on their form against Buffalo (32nd of 32); passers lost 33 (5th). Houston's backfield is Woody Marks (14.8 carries), Jawhar Jordan and David Montgomery, arrived from Detroit with 11 carries a game." },
   { lead = "Stroud into the Bills' pass defence is the mirror of Allen into Houston's.", text = "Stroud threw 33.6 times a game for 221; Nico Collins drew 8.1 targets. Tank Dell and Jayden Higgins are on injured reserve, so the Houston passing game is Collins and Dalton Schultz." },
 ]
@@ -183,10 +176,10 @@ why = "8.1 targets a game, and the only healthy target above 6.1 on the roster."
 
 [[preline]]
 team = "Buffalo Bills"
-player = "Ray Davis"
-market = "Rush attempts"
-direction = "avoid"
-why = "Cook's 20 carries have no named heir; Davis and Ty Johnson (questionable) split an unknown share."
+player = "James Cook"
+market = "Rushing yards"
+direction = "under"
+why = "92.6 a game in 2025, but Houston's run defence is the toughest in the league by own-baseline (-14.3 against a back's own form). The carries are safe; the yards are the question."
 
 # --- Prop board: filled in when the posted lines arrive.
 

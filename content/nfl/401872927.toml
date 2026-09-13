@@ -112,13 +112,6 @@ detail = "Quadriceps"
 
 [[availability]]
 team = "Minnesota Vikings"
-player = "Aaron Jones"
-position = "RB"
-status = "Departed"
-detail = "not on the roster"
-
-[[availability]]
-team = "Minnesota Vikings"
 player = "Ty Chandler"
 position = "RB"
 status = "Departed"
@@ -149,7 +142,7 @@ text = "QB Kyler Murray from Cardinals; WR Jauan Jennings from 49ers"
 [[changes]]
 team = "Minnesota Vikings"
 direction = "out"
-text = "RB Aaron Jones; RB Ty Chandler; RB Zavier Scott"
+text = "RB Ty Chandler; RB Zavier Scott"
 
 [shape]
 headline = "A division game with a quarterback question in Minnesota, and a Packers side without Josh Jacobs and Micah Parsons on a five-game losing streak against a Vikings team on five straight wins."
@@ -157,7 +150,7 @@ observations = [
   { lead = "Minnesota has three quarterbacks who started in 2025 and Kyler Murray.", text = "Carson Wentz threw 36 times a game, J.J. McCarthy 28, and Kyler Murray arrived from Arizona with 38 attempts a game. The feed cannot say who starts; the depth chart will. Justin Jefferson drew 8.4 targets a game whoever threw." },
   { lead = "Green Bay is without Jacobs and Parsons.", text = "Josh Jacobs (18.8 carries a game) is out for personal reasons and Micah Parsons is out; Emanuel Wilson has gone to Seattle, so the backfield is Kaleb Johnson, arrived from Pittsburgh with 3 carries a game. Romeo Doubs is in New England." },
   { lead = "The Vikings' pass defence allowed the fewest yards on the slate; by own-baseline it is 14th.", text = "178 passing yards allowed a game (97th percentile), but the measured suppression is 11.5 yards, middle of the league. Jordan Love threw 33 times a game for 227." },
-  { lead = "Minnesota's backfield lost Aaron Jones and Ty Chandler.", text = "Jordan Mason (10.9 carries) is the back the feed knows. The Vikings' run defence rates 27th by own-baseline, the seam a Packers offence without Jacobs cannot obviously use." },
+  { lead = "Minnesota's backfield is Aaron Jones and Jordan Mason.", text = "Jones carried 14.4 times a game and Mason 10.9; Ty Chandler and Zavier Scott are gone, so the two of them have the work. The Vikings' run defence rates 27th by own-baseline, the seam a Packers offence without Jacobs cannot obviously use." },
 ]
 alternative = "The other shape: whoever starts for Minnesota is sharp, Jefferson has one of his days against a Packers pass defence rated average, and the Vikings' streak reaches six behind a run defence that does not matter because Green Bay has nobody to run."
 
@@ -190,7 +183,7 @@ team = "Minnesota Vikings"
 player = "Jordan Mason"
 market = "Rush attempts"
 direction = "over"
-why = "10.9 a game as the second back; Jones and Chandler are gone and the Packers' run defence rates 22nd."
+why = "10.9 carries a game beside Jones's 14.4, with Chandler and Scott gone, against a Packers run defence that rates 22nd."
 
 # --- Prop board: filled in when the posted lines arrive.
 
