@@ -138,7 +138,7 @@ one generated "what it says" line under the metrics, a single **prop board** wit
 under / **pass** ("N calls of M evaluated"), what would change the read, and **before seeing
 the lines** (no number, never graded). Calls go to the **lean ledger** (`services/nfl_leans.py`,
 page `/leans/`), graded from ESPN's box score once the game is final, by the daily run or
-`python -m scripts.nfl_leans`; a pass is recorded as evaluated and never graded. **Two traps, both paid for on 2026-09-13**: the ESPN/feed name join breaks on suffixes (four players were wrongly called departed, two notes built editorial on it), so check roster moves suffix-insensitively before publishing; and a defence rating *soft* is never a reason to call an over, which is the inversion of the measured finding. The roster/injury pipe
+`python -m scripts.nfl_leans`; a pass is recorded as evaluated and never graded. **Two traps, both paid for on 2026-09-13**: the ESPN/feed name join breaks on suffixes (four players were wrongly called departed, two notes built editorial on it), so check roster moves suffix-insensitively before publishing; and a defence rating *soft* is never a reason to call an over, which is the inversion of the measured finding. **To write one**: `python -m scripts.nfl_dossier <espn_event_id>` gathers the facts and runs the name check; the method, the ±8-point pass threshold and the pre-publish checklist are in `content/nfl/README.md`, and price arithmetic is `src/odds.py`. The roster/injury pipe
 that would replace the hand entry is the next step, not this one.
 
 **The NFL matchup effect is one-sided, and the page says so.** Measured over three ingested

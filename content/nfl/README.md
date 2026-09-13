@@ -57,6 +57,62 @@ Rules:
   Falcons-Steelers board came from the other one. Boards are recorded into the ledger by
   fingerprint, so a concurrent rewrite of the same file is the thing to avoid; check
   `git log -- content/nfl/<id>.toml` before editing a note you did not write.
+## How to write one
+
+```bash
+python -m scripts.nfl_dossier                    # every game, and what each already has
+python -m scripts.nfl_dossier <espn_event_id>    # one game's facts, including the name check
+python -m scripts.nfl_dossier <id> --line "Ja'Marr Chase" receptions 7.5 105 -135
+```
+
+The dossier prints the engine's read, the measured defence ratings, the live injury
+report, the roster check, each side's usage, and — for any `--line` you pass — the rate
+against the posted number beside the price's break-even. It does not write anything. The
+judgement is yours; this is the method behind it.
+
+**Deciding one line.** Four numbers, in this order:
+
+1. **The record.** How often has the player cleared *this* number, in the baseline season
+   only? The dossier prints it as `43% (6/14)` with the last six beside it. Pooling
+   seasons is not allowed: a 2023 game does not describe today's role.
+2. **The price.** What win rate does it demand? `src/odds.implied_probability` converts
+   it; −135 is 57%, +150 is 40%. Where both sides are posted, `no_vig` removes the book's
+   hold and is the fairer comparison.
+3. **The gap.** Record minus break-even. **Pass when it is inside ±8 points** — that is
+   noise on a ten-to-seventeen game sample, and the market has information the feed does
+   not. Make pass the common answer; a board of seventeen opinions is content, three calls
+   out of seventeen evaluated is analysis.
+4. **The matchup, but only where it is measured.** A defence rated *tough* suppresses, and
+   the dossier prints the yardage. A defence rated *soft* does **nothing** — never cite it
+   as a reason to go over. Receivers and usage are not moved at all. If the gap survives
+   the measured effect, the call stands.
+
+**Then check the role.** A rate is about a player who no longer exists if he changed teams,
+lost a starter ahead of him, or is a rookie. Role change beats every number above: pass,
+or say in the `why` that the rate describes a role he no longer has.
+
+**Confidence.** `high` = a large gap on a full season with a stable role. `moderate` = a
+real gap with one live risk. `low` = the gap is real but the sample is thin, the role is
+new, or two of your own calls contradict each other. Say which in the `why`.
+
+**Writing the `why`.** One or two sentences: the rate against the posted number, then the
+single thing that could break it. Reference a thesis established above rather than
+re-explaining it.
+
+**Baseline season.** The dossier names it and so should you. Until this season has games
+the baseline is last season and every `why` should say the year; once 2026 games exist the
+dossier switches, and citing 2025 rates after that is a stale note, not a conservative one.
+
+### Before publishing, run these
+
+1. `python -m scripts.nfl_dossier <id>` — read **ROSTER CHECK** and fix any departed,
+   arrived or NAME MISMATCH line before writing a word of editorial.
+2. `python -m pytest tests/test_nfl_game_notes.py -q` — a typo in a status, direction,
+   stat, confidence or line fails here, not on the page.
+3. `python -m scripts.nfl_leans record` — **before kickoff**. A call recorded after the
+   game starts is not a prediction; the ledger's whole value is the timestamp.
+4. `python -m scripts.publish_pages` — and check the note's own page, not just the build.
+
 - **Record and grade**: `python -m scripts.nfl_leans record` after writing or editing
   (idempotent; a grade already applied is kept), `grade` once the game is final. The
   daily run does both.
