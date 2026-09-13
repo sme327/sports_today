@@ -40,6 +40,23 @@ Rules:
 - **Say a thing once.** A thesis established in Tonight's matchup is referenced by a prop
   row, not re-explained: "secondary issue established above; pressure is the limiter;
   volume makes the over playable." Each section adds something, or it is cut.
+- **Check departures and arrivals with a suffix-insensitive match.** ESPN and the vendor
+  feed disagree about suffixes and punctuation, so an exact-name roster diff lies. On
+  2026-09-13 it reported James Cook III, Aaron Jones Sr., Travis Etienne Jr. and Oronde
+  Gadsden as departed while all four were on their rosters, and two notes had editorial
+  built on the absence. Normalise (lowercase, strip `jr/sr/ii/iii/iv/v` and `.`/`'`)
+  before comparing, in both directions — a missed *arrival* is how Etienne, the Saints'
+  lead back, went unmentioned. Kenny/Kenneth Gainwell is the same failure without a
+  suffix, so the check catches most of it and not all of it.
+- **A soft defence is never a reason to go over.** The measured finding is that a tough
+  defence suppresses and a soft one does nothing (see the NFL page doc). A note wrote
+  "Burrow over, Tampa Bay's pass defence rates 32nd" and that was wrong; the board called
+  the under and said so on the page. Cite a soft rating only to say that nothing is
+  suppressing the player, never as a lift.
+- **One author per game.** Two sessions wrote into this directory on 2026-09-13 and the
+  Falcons-Steelers board came from the other one. Boards are recorded into the ledger by
+  fingerprint, so a concurrent rewrite of the same file is the thing to avoid; check
+  `git log -- content/nfl/<id>.toml` before editing a note you did not write.
 - **Record and grade**: `python -m scripts.nfl_leans record` after writing or editing
   (idempotent; a grade already applied is kept), `grade` once the game is final. The
   daily run does both.

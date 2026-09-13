@@ -3951,3 +3951,32 @@ clock and were never affected; Django's `localdate()` (the build date, the preco
 day) now agrees with it.
 
 **Future.** —
+
+## 2026-09-13 — Name suffixes break the roster diff, and a soft defence is not a lift
+
+**Decision.** Before publishing a game note, check its `Departed` entries *and* the
+opposing direction (arrivals) with a **suffix-insensitive** name match: lowercase, strip
+`jr` / `sr` / `ii` / `iii` / `iv` / `v` and `.` / `'`, then compare. Never cite a defence
+that rates *soft* as a reason to call an over.
+
+**Reason.** Both rules were bought with published errors on the same day. The exact-name
+diff behind the Week 1 notes reported James Cook III (Bills), Aaron Jones Sr. (Vikings),
+Travis Etienne Jr. (Saints) and Oronde Gadsden (Chargers) as departed while all four were
+on their rosters; the Bills and Vikings notes had a headline and an observation built on
+the absence, and Etienne is the Saints' lead back with Kamara out, which the note missed
+entirely. Separately, the Buccaneers-Bengals note argued Burrow over on passing yards
+because Tampa Bay's pass defence rates 32nd — the exact inversion of this project's own
+measured finding (a tough defence suppresses, a soft one does nothing). The board called
+the under and the page states the correction rather than quietly rewriting the read.
+
+**Tradeoffs.** The normalised match still misses Kenny/Kenneth Gainwell, a nickname rather
+than a suffix, so it reduces the failure without closing it. The durable fix is an id-based
+join — ESPN athlete ids on a `players` dimension — which is the same work the availability
+collector needs; until then the check is a pre-publish step, not a guarantee.
+
+**Also recorded.** Two sessions wrote into `content/nfl/` on this date and the
+Falcons-Steelers board came from the other one. One author per game; check the file's git
+log before editing a note you did not write.
+
+**Future.** Build the ESPN-id `players` dimension with the injury/roster collector, and
+have the note generator fail loudly when a name resolves to two candidates.
