@@ -29,9 +29,9 @@ detail = "Hamstring"
 team = "New Orleans Saints"
 player = "Alvin Kamara"
 position = "RB"
-status = "Questionable"
+status = "Out"
 detail = "Knee - MCL · Sprain"
-impact = "The lead back at 15.5 touches a game; with Estimé out and Neal gone, the Saints' run game is Kendre Miller if he sits."
+impact = "The lead back of 2025 at 15.5 touches a game, now out — which hands the job to Travis Etienne, signed from Jacksonville, where he carried 15 times a game."
 
 [[availability]]
 team = "New Orleans Saints"
@@ -128,6 +128,11 @@ detail = "not on the current roster"
 [[changes]]
 team = "New Orleans Saints"
 direction = "in"
+text = "RB Travis Etienne from Jacksonville, 15 carries and 3.2 targets a game"
+
+[[changes]]
+team = "New Orleans Saints"
+direction = "in"
 text = "RB Ty Chandler from Vikings"
 
 [[changes]]
@@ -150,7 +155,7 @@ headline = "The Lions' elite offence against a Saints defence that is average, w
 observations = [
   { lead = "Detroit's offence is the second-best profile on the Sunday slate.", text = "28.3 points a game (94th percentile), 6.0 yards a play (94th), 269 passing yards a game (94th). Goff threw 35 times for 293 a game over his last ten; St. Brown drew 10.3 targets, Jameson Williams cleared 60 yards in 8 of 10." },
   { lead = "The Lions are without Brian Branch and Kerby Joseph.", text = "Both starting safeties are out, on a pass defence that already gave up about 26 yards against form by own-baseline (30th of 32). The Saints' passing game, 69th percentile, is the one part of their offence that rated above average." },
-  { lead = "New Orleans is thin at running back and unsettled at quarterback.", text = "Kamara is questionable with an MCL sprain, Audric Estimé is out and Devin Neal is gone; Kendre Miller is the healthy back. Tyler Shough (238 a game) and Spencer Rattler both started in 2025 and Zach Wilson arrived." },
+  { lead = "Travis Etienne is the Saints' back now, and Kamara is out.", text = "Etienne arrived from Jacksonville, where he carried 15 times a game for 65 yards; Kamara is out with an MCL sprain and Estimé is on injured reserve. Tyler Shough (217 a game across 11 starts) and Spencer Rattler both started in 2025." },
   { lead = "Gibbs has the Detroit backfield to himself.", text = "David Montgomery signed with Houston and Isiah Pacheco, brought in to replace him, is on injured reserve. Gibbs carried 19.8 times a game already; Montgomery's 11 touches have nowhere else to go." },
 ]
 alternative = "The other shape: Kamara plays, Shough finds Olave against a safety-less secondary, and the Saints keep it within a score into the fourth quarter on possession rather than points."
@@ -181,10 +186,10 @@ why = "9.9 targets a game, the only Saints receiver above 6, against a secondary
 
 [[preline]]
 team = "New Orleans Saints"
-player = "Alvin Kamara"
+player = "Travis Etienne"
 market = "Rush attempts"
-direction = "avoid"
-why = "Questionable with an MCL sprain; the number depends on the designation and on Estimé being out."
+direction = "over"
+why = "15 carries a game in Jacksonville, and he inherits a backfield where Kamara is out and Estimé is on injured reserve."
 
 [[preline]]
 team = "Detroit Lions"
@@ -196,8 +201,8 @@ why = "10.3 targets a game; the Saints pass defence does nothing to receivers by
 # --- Prop board: filled in when the posted lines arrive.
 
 [[falsifiers]]
-condition = "Kamara is active and takes his first-series carries"
-consequence = "The Saints have a run game and a clock, and the Detroit-runs-away script slows."
+condition = "Etienne carries 15 times or more"
+consequence = "New Orleans has the run game and the clock its 2025 profile lacked, and the Detroit-runs-away script slows."
 
 [[falsifiers]]
 condition = "The Lions' replacement safeties hold Olave under 40 yards in the first half"
