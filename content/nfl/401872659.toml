@@ -167,7 +167,217 @@ market = "Receptions"
 direction = "over"
 why = "7.5 targets a game, the only Ravens target above 5; Isaiah Likely has gone to the Giants."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: every posted line, evaluated 2026-09-13 against DraftKings' numbers.
+# The four Lamar Jackson unders are close to one bet made four times: they all rest on a
+# Baltimore offence that threw 23 times a game in 2025 and ran for 157. The measured
+# matchup facts are Baltimore's run defence (3rd toughest, -11.3 against form) and two
+# pass defences that rate soft, which this project measures to mean nothing.
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Lamar Jackson"
+stat = "passing_comp"
+line = 18.5
+direction = "under"
+confidence = "high"
+why = "19+ completions in 3 of 13 starts, 14.8 a game, median 14, and 12.5 over his last six."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Lamar Jackson"
+stat = "passing_att"
+line = 27.5
+direction = "under"
+confidence = "high"
+why = "28+ attempts in 4 of 13, 23.2 a game, median 23. Baltimore ran for 157 yards a game, the most in the league."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Lamar Jackson"
+stat = "rushing_yds"
+line = 39.5
+direction = "under"
+confidence = "high"
+why = "40+ in 3 of 13, 26.8 a game, median 26, and 20.5 over his last six. Correlated with the two above; all three assume the same offence."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Mark Andrews"
+stat = "receptions"
+line = 3.5
+direction = "under"
+confidence = "high"
+why = "4+ in 5 of 17, 2.8 a game, median 2, on an offence that throws 23 times. The over is priced at -150 against an observed 29%."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Josh Downs"
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "moderate"
+why = "5+ in 5 of 16, 3.6 a game, and 1 of his last 6, with Keenan Allen arriving to take targets."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Lamar Jackson"
+stat = "passing_yds"
+line = 219.5
+direction = "under"
+confidence = "moderate"
+why = "220+ in 4 of 13, 196 a game, 184.5 over his last six. Indianapolis rates 29th against the pass, which is measured to do nothing for him."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Daniel Jones"
+stat = "passing_att"
+line = 32.5
+direction = "under"
+confidence = "moderate"
+why = "33+ in 4 of 13, 29.5 a game, median 29, 28.3 over his last six."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Daniel Jones"
+stat = "passing_comp"
+line = 22.5
+direction = "under"
+confidence = "moderate"
+why = "23+ in 4 of 13, 20.1 a game, 18.2 over his last six."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Derrick Henry"
+stat = "rushing_yds"
+line = 78.5
+direction = "over"
+confidence = "moderate"
+why = "79+ in 9 of 17, 93.8 a game, median 94, and 120.7 over his last six, on 18 carries a game in the league's best rushing offence."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Alec Pierce"
+stat = "receptions"
+line = 2.5
+direction = "over"
+confidence = "moderate"
+why = "3+ in 9 of 15, 3.1 a game, median 4, 67% over his last six, at +125 implying 44%."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Rashod Bateman"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "moderate"
+why = "2+ in 6 of 13, 1.5 a game, median 1, and 1.0 over his last six; the over is priced at -190 against an observed 46%."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Keenan Allen"
+position = "WR"
+stat = "receptions"
+line = 3.5
+direction = "over"
+confidence = "low"
+why = "4+ in 13 of 18 with the Chargers at 4.7 a game, at +105. Low because he is a Colt now, behind Warren and alongside Downs and Pierce."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Jonathan Taylor"
+stat = "rushing_yds"
+line = 77.5
+direction = "pass"
+why = "93.2 a game but a median of 76 and 64.7 over his last six, into the third-toughest run defence. The average and the median disagree across the line."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Zay Flowers"
+stat = "receptions"
+line = 4.5
+direction = "pass"
+why = "5+ in 10 of 17, 5.1 a game, median 5, but 2 of his last 6. The line is his median."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Tyler Warren"
+stat = "receptions"
+line = 4.5
+direction = "pass"
+why = "5+ in 8 of 17, 4.5 a game, median 4; observed 53% under against 47% implied is inside the noise."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Derrick Henry"
+stat = "receptions"
+line = 0.5
+direction = "pass"
+why = "A catch in 10 of 17 but 2 of his last 6; the season and the recent role point opposite ways."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Justice Hill"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "2+ in 5 of 9, 2.3 a game, against an over at -180. Observed 56% against 64% implied, which is thin the other way."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Justice Hill"
+stat = "rushing_yds"
+line = 8.5
+direction = "pass"
+why = "10.3 a game but a median of 2 carries; Keaton Mitchell leaving may grow the role, and nine games cannot say by how much."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Ja'Kobi Lane"
+position = "WR"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "No 2025 games in the feed."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Jonathan Taylor"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 11 of 17, 2.7 a game, median 3, at -120. Observed 65% against 55% implied, but the line is his median."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Daniel Jones"
+stat = "rushing_yds"
+line = 11.5
+direction = "pass"
+why = "12.6 a game but a median of 4; a handful of scrambling games carries the average."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Daniel Jones"
+stat = "passing_yds"
+line = 231.5
+direction = "pass"
+why = "232+ in 7 of 13, 238.5 a game, median 255, 218.5 over his last six. Genuinely split."
+
+[[props]]
+team = "Indianapolis Colts"
+player = "Daniel Jones"
+stat = "passing_td"
+line = 1.5
+direction = "pass"
+why = "2+ in 6 of 13 at 1.5 a game; priced at +115, close to fair."
+
+[[props]]
+team = "Baltimore Ravens"
+player = "Lamar Jackson"
+stat = "passing_td"
+line = 1.5
+direction = "pass"
+why = "2+ in 6 of 13 at 1.6 a game, priced at +110 implying 48% against an observed 46%."
 
 [[falsifiers]]
 condition = "Henry has fewer than 8 carries by halftime"

@@ -203,7 +203,222 @@ market = "Rush attempts"
 direction = "avoid"
 why = "Conner and Benson on IR, Love questionable, Allgeier and Knight unranked; the share is unknown."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: every posted line, evaluated 2026-09-13 against DraftKings' numbers.
+# The Chargers' defence is the measured story: fourth-toughest against the pass
+# (-33.9 against a passer's own form) and fifth against the run (-8.7). Arizona's pass
+# defence is moderately tough (12th, -14.6); its run defence rates soft, which is
+# measured to do nothing.
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Omarion Hampton"
+stat = "rushing_yds"
+line = 70.5
+direction = "under"
+confidence = "high"
+why = "71+ rushing yards in 2 of his 10 games, 54.4 a game, median 52, and 45.7 over his last six. The line sits 16 above his average."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Justin Herbert"
+stat = "rushing_yds"
+line = 21.5
+direction = "over"
+confidence = "high"
+why = "22+ in 11 of 17, 32.6 a game, median 31, and 35.0 over his last six."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Ladd McConkey"
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "high"
+why = "5+ in 6 of 17, 4.1 a game, and 0 of his last 6 at 2.5. The over is priced at -150 against an observed 35%."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Tre Harris"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "moderate"
+why = "3+ in 4 of 17, 1.9 a game. Johnston and McConkey are ahead of him and Njoku arrived at tight end."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Trey McBride"
+stat = "receptions"
+line = 6.5
+direction = "over"
+confidence = "moderate"
+why = "7+ in 10 of 17, 7.4 a game, median 7, 67% over his last six, at +115. Arizona has no run game to lean on and the matchup does not move receivers."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Justin Herbert"
+stat = "passing_yds"
+line = 238.5
+direction = "under"
+confidence = "moderate"
+why = "239+ in 7 of 17, 228.6 a game and 199 over his last six, against an Arizona pass defence measured to cost a passer about 15 yards."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jacoby Brissett"
+stat = "passing_att"
+line = 34.5
+direction = "over"
+confidence = "moderate"
+why = "35+ in 9 of 14, median 38, 37.2 over his last six, with Conner and Benson on injured reserve and Love questionable. Arizona has to throw."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Marvin Harrison Jr."
+stat = "receptions"
+line = 3.5
+direction = "under"
+confidence = "moderate"
+why = "4+ in 5 of 12, 3.4 a game, median 3, and 33% over his last six, with the under at +115."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Justin Herbert"
+stat = "passing_td"
+line = 1.5
+direction = "under"
+confidence = "moderate"
+why = "2+ in 8 of 17 at 1.5 a game; the over is priced at -220, implying 69% against an observed 47%."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jacoby Brissett"
+stat = "passing_yds"
+line = 220.5
+direction = "under"
+confidence = "moderate"
+why = "240 a game and the market has already set the line 20 below that, but the Chargers are measured to cost a passer 34 yards against his own form, which puts him near 206."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jacoby Brissett"
+stat = "passing_td"
+line = 1.5
+direction = "over"
+confidence = "low"
+why = "2+ in 10 of 14, 1.6 a game, 83% over his last six, at +150 implying 40%. Low only because the Chargers allowed 19.8 points a game."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Charlie Kolar"
+position = "TE"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "low"
+why = "2+ in 2 of 11 in Baltimore at 0.9 a game; he is a Charger now behind Njoku and Gadsden, so the role changed but not in his favour."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Justin Herbert"
+stat = "passing_comp"
+line = 20.5
+direction = "under"
+confidence = "low"
+why = "21+ in 8 of 17, 21.1 a game, median 20, 18.2 over his last six, at even money."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Michael Wilson"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 8 of 17 but 67% over his last six; the season and the trend disagree at a flat price."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Kendrick Bourne"
+position = "WR"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 6 of 14 in San Francisco, 1 of his last 6; he is a Cardinal now and the target share is unknown."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jeremiyah Love"
+position = "RB"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "A rookie with no NFL games, and questionable with an ankle."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jeremiyah Love"
+position = "RB"
+stat = "rushing_yds"
+line = 38.5
+direction = "pass"
+why = "Same rookie, same ankle; the line assumes a workload nobody has seen."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Quentin Johnston"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 8 of 14 across the season but 2 of his last 6, at a flat price between the two."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Omarion Hampton"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 4 of 10, 3.2 a game, median 2; observed 40% against 40% implied."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Tyler Allgeier"
+position = "RB"
+stat = "rushing_yds"
+line = 30.5
+direction = "pass"
+why = "30.2 a game on 8.4 carries in Atlanta, but Conner and Benson are on injured reserve and his Arizona workload could be anything."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Keaton Mitchell"
+position = "RB"
+stat = "rushing_yds"
+line = 25.5
+direction = "pass"
+why = "28.4 a game in Baltimore, median 25; he is a Charger now behind Hampton and Vidal."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jacoby Brissett"
+stat = "rushing_yds"
+line = 10.5
+direction = "pass"
+why = "11+ in 7 of 14, 12.0 a game, median 11. The line is his median."
+
+[[props]]
+team = "Arizona Cardinals"
+player = "Jacoby Brissett"
+stat = "passing_comp"
+line = 22.5
+direction = "pass"
+why = "23+ in 7 of 14, 22.5 a game, median 24. A coin flip."
+
+[[props]]
+team = "Los Angeles Chargers"
+player = "Justin Herbert"
+stat = "passing_att"
+line = 29.5
+direction = "pass"
+why = "30+ in 8 of 17, median 29, 27.8 over his last six. Thin either way."
 
 [[falsifiers]]
 condition = "Brissett has 170 passing yards by halftime"

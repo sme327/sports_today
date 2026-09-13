@@ -118,6 +118,11 @@ team = "Cincinnati Bengals"
 direction = "out"
 text = "QB Jake Browning"
 
+[[changes]]
+team = "Tampa Bay Buccaneers"
+direction = "in"
+text = "RB Kenneth Gainwell from Pittsburgh, 6.7 carries and 5.1 targets a game as a passing-down back"
+
 [shape]
 headline = "A healthy Burrow against the pass defence that gave up the most against form in the league last season, and a Bengals run defence that invites Bucky Irving."
 observations = [
@@ -166,7 +171,233 @@ market = "Passing yards"
 direction = "avoid"
 why = "35 attempts a game but a receiver room missing Evans and probably McMillan; the volume is there and the targets are unproven."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: every posted line, evaluated 2026-09-13 against DraftKings' numbers.
+# Over / under / pass; pass is the default. The two measured matchup facts here are that
+# Tampa Bay's run defence suppresses (2nd toughest, -12.6 against form) and that its pass
+# defence rates 32nd — which this project measures to mean *nothing*, because a soft
+# defence has never produced above-baseline games.
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Joe Burrow"
+stat = "rushing_yds"
+line = 8.5
+direction = "under"
+confidence = "high"
+why = "9+ rushing yards in 1 of his 8 starts in 2025; 5.1 a game, median 4. The clearest number on the board."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Emeka Egbuka"
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "high"
+why = "5+ catches in 4 of 17 as a rookie, and 0 of his last 6 at 2.5 a game. Evans leaving raises his role, not four catches of it."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Chase Brown"
+stat = "rushing_yds"
+line = 58.5
+direction = "under"
+confidence = "high"
+why = "59.9 a game, but Tampa Bay's run defence is the second-toughest by own-baseline (-12.6 against a back's own form), which puts him near 47."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Baker Mayfield"
+stat = "passing_comp"
+line = 21.5
+direction = "under"
+confidence = "moderate"
+why = "22+ completions in 6 of 17, 20.2 a game, median 18, and 1 of his last 6. The under is priced at -135 against an observed 65%."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Baker Mayfield"
+stat = "passing_yds"
+line = 232.5
+direction = "under"
+confidence = "moderate"
+why = "217 a game, median 215, and 214 over his last six, into a receiver room without Evans and probably without McMillan."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Tee Higgins"
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "moderate"
+why = "5+ catches in 6 of 15, 3.9 a game, median 3. Chase takes 10.8 targets a game ahead of him and the under pays +105."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Chris Godwin Jr."
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "moderate"
+why = "5+ in 3 of the 9 games he played, 3.7 a game. Egbuka is the volume receiver now."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Joe Burrow"
+stat = "passing_yds"
+line = 271.5
+direction = "under"
+confidence = "moderate"
+why = "226 a game across his eight 2025 starts; the line sits 45 above that. **A correction to this page's own pre-line read**, which cited Tampa Bay's 32nd-ranked pass defence as a reason to go over — that misapplied this project's measured finding that a soft defence does nothing."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Baker Mayfield"
+stat = "rushing_yds"
+line = 17.5
+direction = "over"
+confidence = "moderate"
+why = "22.5 a game, median 19, and 27.7 over his last six; he cleared 18 in 9 of 17."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Mike Gesicki"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "low"
+why = "3+ in 4 of 12, 2.3 a game. The tight-end targets behind Chase and Higgins do not support three."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Bucky Irving"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "low"
+why = "3+ in 5 of 10 across the season but 1 of his last 6, at 1.8 a game once the role settled."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Ja'Marr Chase"
+stat = "receptions"
+line = 7.5
+direction = "pass"
+why = "8+ in 7 of 16, 7.8 a game, median 7, against an over priced at +105. The line is his median."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Andrei Iosivas"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "2+ in 8 of 15 at +110; observed 53% against 48% implied is inside the noise."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Erick All Jr."
+position = "TE"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "No 2025 games in the feed; there is nothing to call."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Samaje Perine"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "2+ in 6 of 14 at +140, which implies 42% against an observed 43%. Fairly priced."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Chase Brown"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 8 of 17 but 4 of his last 6; the season and the trend disagree and the price sits between them."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Cade Otton"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 8 of 15, 3.9 a game, median 4. The line is his median at even money."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Kenneth Gainwell"
+position = "RB"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "4+ in 10 of 18 as Pittsburgh's passing-down back at 5.1 targets a game, but he is a Buccaneer now behind Irving and the share is unknown."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Kenneth Gainwell"
+position = "RB"
+stat = "rushing_yds"
+line = 21.5
+direction = "pass"
+why = "30.9 a game on 6.7 carries in Pittsburgh; the carries in this offence are Irving's and the rest is guesswork."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Bucky Irving"
+stat = "rushing_yds"
+line = 60.5
+direction = "pass"
+why = "61+ in 6 of 10 at 58.8 a game. Cincinnati's run defence rates 30th, which is measured to do nothing, so this is his own median against the line."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Samaje Perine"
+stat = "rushing_yds"
+line = 17.5
+direction = "pass"
+why = "18+ in 9 of 14 at 27.3 a game, but on 6 carries a game into the second-toughest run defence. The rate and the matchup point opposite ways."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Baker Mayfield"
+stat = "passing_att"
+line = 31.5
+direction = "pass"
+why = "32+ in 8 of 17, 31.9 a game, median 30. The line is his average."
+
+[[props]]
+team = "Tampa Bay Buccaneers"
+player = "Baker Mayfield"
+stat = "passing_td"
+line = 1.5
+direction = "pass"
+why = "2+ in 8 of 17 at 1.5 a game, priced at -110. Exactly fair."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Joe Burrow"
+stat = "passing_att"
+line = 34.5
+direction = "pass"
+why = "35+ in 4 of 8, median 34, 37.2 over his last six. A coin flip on a line set at his median."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Joe Burrow"
+stat = "passing_comp"
+line = 24.5
+direction = "pass"
+why = "25+ in 4 of 8, median 24. The same coin flip as the attempts."
+
+[[props]]
+team = "Cincinnati Bengals"
+player = "Joe Burrow"
+stat = "passing_td"
+line = 2.5
+direction = "pass"
+why = "3+ in 3 of 8 at +160, which implies 38% against an observed 38%."
 
 [[falsifiers]]
 condition = "Cincinnati is throwing under 55% of the time in the first half"
