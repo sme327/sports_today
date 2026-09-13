@@ -198,7 +198,193 @@ market = "Receptions"
 direction = "over"
 why = "10.3 targets a game; the Saints pass defence does nothing to receivers by measure, and nothing does."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: every posted line, evaluated 2026-09-13 against DraftKings' numbers.
+# Detroit's pass defence rates 30th, which this project measures to mean nothing — a soft
+# defence has never produced above-baseline games — so the Saints' passing reads rest on
+# Shough's own record, which is thin. Both run defences rate average.
+
+[[props]]
+team = "Detroit Lions"
+player = "Jahmyr Gibbs"
+stat = "rushing_yds"
+line = 86.5
+direction = "under"
+confidence = "high"
+why = "87+ rushing yards in 5 of 17, 71.9 a game, median 65, and 0 of his last 6 at 45.3. The line sits 15 above his average."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Devaughn Vele"
+stat = "receptions"
+line = 3.5
+direction = "under"
+confidence = "high"
+why = "4+ in 2 of the 9 games he played, 2.8 a game, behind Olave and Juwan Johnson."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jahmyr Gibbs"
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "moderate"
+why = "5+ in 6 of 17, 4.5 a game, median 3. The line is his average and the under is priced at -145 against an observed 65%."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jameson Williams"
+stat = "receptions"
+line = 3.5
+direction = "over"
+confidence = "moderate"
+why = "4+ in 10 of 17, and 5 of his last 6 at 5.7 a game. The role grew through the season."
+
+[[props]]
+team = "Detroit Lions"
+player = "Sam LaPorta"
+stat = "receptions"
+line = 4.5
+direction = "over"
+confidence = "moderate"
+why = "5+ in 5 of the 9 games he played, median 5, 67% over his last six, at +115 implying 47%."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Travis Etienne"
+position = "RB"
+stat = "rushing_yds"
+line = 57.5
+direction = "over"
+confidence = "moderate"
+why = "65.2 a game and a median of 62 in Jacksonville, and he inherits a Saints backfield with Kamara out and Estimé on injured reserve."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Tyler Shough"
+stat = "passing_att"
+line = 34.5
+direction = "under"
+confidence = "moderate"
+why = "35+ in 4 of his 11 starts, 29.7 a game, median 30. The line sits five above his average."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Tyler Shough"
+stat = "passing_td"
+line = 1.5
+direction = "under"
+confidence = "moderate"
+why = "2+ in 3 of 11, 0.9 a game; the under at -170 implies 63% against an observed 73%."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Tyler Shough"
+stat = "rushing_yds"
+line = 20.5
+direction = "under"
+confidence = "moderate"
+why = "21+ in 4 of 11, 16.9 a game, median 12."
+
+[[props]]
+team = "Detroit Lions"
+player = "Isaac TeSlaa"
+stat = "receptions"
+line = 1.5
+direction = "under"
+confidence = "moderate"
+why = "2+ in 4 of 14, 1.1 a game across the season, though 4 of his last 6 cleared it — the season and the trend disagree and the season is the larger sample."
+
+[[props]]
+team = "Detroit Lions"
+player = "Amon-Ra St. Brown"
+stat = "receptions"
+line = 6.5
+direction = "over"
+confidence = "low"
+why = "7+ in 10 of 17, 6.9 a game, median 7, on 10.3 targets a game."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jared Goff"
+stat = "passing_yds"
+line = 259.5
+direction = "over"
+confidence = "low"
+why = "268.5 a game, median 258, and 299 over his last six, against a Saints pass defence that rates average."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jared Goff"
+stat = "passing_att"
+line = 33.5
+direction = "over"
+confidence = "low"
+why = "34.0 a game, median 33, and 37.7 over his last six. The line is his average, which is why this is low."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Chris Olave"
+stat = "receptions"
+line = 6.5
+direction = "pass"
+why = "7+ in 7 of 16, 6.2 a game, median 6. The line is a half-catch above his average at a flat price."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Juwan Johnson"
+stat = "receptions"
+line = 4.5
+direction = "pass"
+why = "5+ in 8 of 17, 4.5 a game, median 4; observed 53% under against 62% implied is the wrong way for the under."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Travis Etienne"
+position = "RB"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 8 of 18 in Jacksonville at 2.3 a game, but his role in this offence is one game old."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Tyler Shough"
+stat = "passing_yds"
+line = 240.5
+direction = "pass"
+why = "216.7 a game but a median of 243 and 259 over his last six. Genuinely split across the line."
+
+[[props]]
+team = "New Orleans Saints"
+player = "Tyler Shough"
+stat = "passing_comp"
+line = 21.5
+direction = "pass"
+why = "22+ in 6 of 11, 20.1 a game, median 22, 83% over his last six. The same split."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jared Goff"
+stat = "passing_comp"
+line = 22.5
+direction = "pass"
+why = "23+ in 10 of 17, 23.1 a game, median 23; observed 59% against 57% implied."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jared Goff"
+stat = "passing_td"
+line = 1.5
+direction = "pass"
+why = "2+ in 10 of 17 at 2.0 a game; the over at -210 implies 68% against an observed 59%, and the under at +155 implies 39% against 41%."
+
+[[props]]
+team = "Detroit Lions"
+player = "Jared Goff"
+stat = "rushing_yds"
+line = 0.5
+direction = "pass"
+why = "Positive rushing yards in 6 of 17; the under at -170 implies 63% against an observed 65%."
 
 [[falsifiers]]
 condition = "Etienne carries 15 times or more"

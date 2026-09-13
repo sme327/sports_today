@@ -199,7 +199,241 @@ market = "Rush attempts"
 direction = "over"
 why = "16.6 a game with Spears at 9.4; a run-first script favours the lead back on both sides."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: every posted line, evaluated 2026-09-13 against DraftKings' numbers.
+# Both pass defences are measured to suppress — the Jets 7th toughest at -22 against a
+# passer's own form, the Titans 6th at -27 — in front of two offences that threw for 164
+# and 191 yards a game in 2025. Everything on this board points at the run and the under.
+
+[[props]]
+team = "Tennessee Titans"
+player = "Cam Ward"
+stat = "passing_yds"
+line = 201.5
+direction = "under"
+confidence = "high"
+why = "186.4 a game, median 194, and 159.8 over his last six, against a Jets pass defence measured to cost a passer 22 yards against his own form."
+
+[[props]]
+team = "New York Jets"
+player = "Geno Smith"
+position = "QB"
+stat = "passing_yds"
+line = 211.5
+direction = "under"
+confidence = "high"
+why = "201.7 a game and a median of 180 in Las Vegas, against the Titans' pass defence at -27 against form. A new offence in its first game rarely beats that."
+
+[[props]]
+team = "New York Jets"
+player = "Breece Hall"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "high"
+why = "3+ catches in 4 of 16, 2.2 a game, and 1 of his last 6. The under pays +110 against an observed 75%."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Tony Pollard"
+stat = "rushing_yds"
+line = 49.5
+direction = "over"
+confidence = "moderate"
+why = "50+ in 10 of 17, 63.6 a game, median 60, and 5 of his last 6 at 93.3, on 14 carries a game against a Jets run defence that rates average."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Wan'Dale Robinson"
+position = "WR"
+stat = "receptions"
+line = 4.5
+direction = "over"
+confidence = "moderate"
+why = "5+ in 11 of 16 with the Giants at 5.8 a game; he arrives on a Titans roster where no receiver drew more than 5.6 targets a game."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Tyjae Spears"
+stat = "receptions"
+line = 2.5
+direction = "over"
+confidence = "moderate"
+why = "3+ in 9 of 13, 3.5 a game, on 3.8 targets — he is the passing-down back behind Pollard."
+
+[[props]]
+team = "New York Jets"
+player = "Mason Taylor"
+stat = "receptions"
+line = 2.5
+direction = "over"
+confidence = "moderate"
+why = "3+ in 8 of 13, 3.4 a game, and 4 of his last 6, at +105 implying 49%."
+
+[[props]]
+team = "New York Jets"
+player = "Adonai Mitchell"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "moderate"
+why = "3+ in 5 of 16, 2.1 a game across the season, though 4 of his last 6 cleared it. The season is the larger sample and the price is flat."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Tyjae Spears"
+stat = "rushing_yds"
+line = 25.5
+direction = "under"
+confidence = "moderate"
+why = "26+ in 5 of 13, 21.8 a game, median 19, on 5.5 carries a game behind Pollard."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Cam Ward"
+stat = "rushing_yds"
+line = 10.5
+direction = "under"
+confidence = "moderate"
+why = "11+ in 5 of 17, 9.4 a game, median 7, and 1 of his last 6."
+
+[[props]]
+team = "New York Jets"
+player = "Geno Smith"
+position = "QB"
+stat = "passing_att"
+line = 30.5
+direction = "under"
+confidence = "moderate"
+why = "31+ in 6 of 15, 29.9 a game, median 28, into the sixth-toughest pass defence."
+
+[[props]]
+team = "New York Jets"
+player = "Breece Hall"
+stat = "rushing_yds"
+line = 63.5
+direction = "under"
+confidence = "low"
+why = "64+ in 7 of 16, 66.6 a game but a median of 58 and 57.2 over his last six. Tennessee's run defence rates 25th, which is measured to do nothing for him."
+
+[[props]]
+team = "New York Jets"
+player = "Geno Smith"
+position = "QB"
+stat = "rushing_yds"
+line = 6.5
+direction = "under"
+confidence = "low"
+why = "7+ in 8 of 15 across the season but 2 of his last 6, at 3.5 a game once the role settled."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Cam Ward"
+stat = "passing_td"
+line = 1.5
+direction = "under"
+confidence = "low"
+why = "2+ in 4 of 17, 0.9 a game; the under at -250 implies 71% against an observed 76%, so the price has most of it."
+
+[[props]]
+team = "New York Jets"
+player = "Garrett Wilson"
+stat = "receptions"
+line = 5.5
+direction = "pass"
+why = "6+ in 4 of the 7 games he played, 5.1 a game, median 6. Seven games is too thin to call at a flat price."
+
+[[props]]
+team = "New York Jets"
+player = "Geno Smith"
+position = "QB"
+stat = "passing_td"
+line = 0.5
+direction = "pass"
+why = "A touchdown pass in 11 of 15; the over at -250 implies 71% against an observed 73%."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Calvin Ridley"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 3 of the 7 games he played; too small a sample against a -185 under."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Gunnar Helm"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 7 of 16, 2.8 a game, median 2; observed 56% under against 57% implied."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Tony Pollard"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "2+ in 9 of 17 across the season but 2 of his last 6; the two halves disagree at a flat price."
+
+[[props]]
+team = "New York Jets"
+player = "Braelon Allen"
+stat = "rushing_yds"
+line = 19.5
+direction = "pass"
+why = "19.0 a game across four appearances. Four games cannot carry a call."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Cam Ward"
+stat = "passing_att"
+line = 31.5
+direction = "pass"
+why = "32+ in 10 of 17, median 34, but 2 of his last 6 at 27.7 a game. The season and the trend disagree across the line."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Cam Ward"
+stat = "passing_comp"
+line = 19.5
+direction = "pass"
+why = "20+ in 10 of 17, median 21, but 16.8 a game over his last six. The same split."
+
+[[props]]
+team = "New York Jets"
+player = "Geno Smith"
+position = "QB"
+stat = "passing_comp"
+line = 19.5
+direction = "pass"
+why = "20+ in 7 of 15, 20.1 a game, median 19. The line is his median."
+
+[[props]]
+team = "New York Jets"
+player = "Kenyon Sadiq"
+position = "TE"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "A rookie with no NFL games in the feed."
+
+[[props]]
+team = "New York Jets"
+player = "Omar Cooper Jr."
+position = "WR"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "A rookie with no NFL games in the feed."
+
+[[props]]
+team = "Tennessee Titans"
+player = "Carnell Tate"
+position = "WR"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "A rookie with no NFL games in the feed."
 
 [[falsifiers]]
 condition = "Either quarterback throws 20 times in the first half"
