@@ -7,7 +7,7 @@ game_id = "401872658"
 away = "Atlanta Falcons"
 home = "Pittsburgh Steelers"
 kickoff = "2026-09-13"
-authored = "2026-09-11"
+authored = "2026-09-13"
 report_date = "2026-09-11"
 
 [[availability]]
@@ -38,7 +38,7 @@ player = "Michael Penix Jr."
 position = "QB"
 status = "Out"
 detail = "Knee - ACL · Surgery"
-impact = "The starting quarterback, out for the season after ACL surgery."
+impact = "Inactive for Week 1 while recovering from ACL surgery; no season-long absence is established."
 
 [[availability]]
 team = "Atlanta Falcons"
@@ -61,13 +61,6 @@ player = "Tyler Allgeier"
 position = "RB"
 status = "Departed"
 detail = "signed with Arizona"
-
-[[availability]]
-team = "Atlanta Falcons"
-player = "Kyle Pitts"
-position = "TE"
-status = "Departed"
-detail = "not on the roster"
 
 [[availability]]
 team = "Atlanta Falcons"
@@ -136,17 +129,17 @@ detail = "on injured reserve with the Giants"
 [[changes]]
 team = "Atlanta Falcons"
 direction = "in"
-text = "QB Tua Tagovailoa from Dolphins; QB Cooper Rush from Ravens; WR Olamide Zaccheaus from Bears"
+text = "QB Tua Tagovailoa from Dolphins; QB Cooper Rush from Ravens; WR Olamide Zaccheaus from Bears; RB Brian Robinson Jr. and WR Jahan Dotson are on the Week 1 depth chart."
 
 [[changes]]
 team = "Atlanta Falcons"
 direction = "out"
-text = "QB Kirk Cousins; RB Tyler Allgeier; TE Kyle Pitts; WR Darnell Mooney; RB Nate Carter"
+text = "QB Kirk Cousins; RB Tyler Allgeier; WR Darnell Mooney; RB Nate Carter. Correction September 13: Kyle Pitts Sr. remains Atlanta's starting tight end."
 
 [[changes]]
 team = "Pittsburgh Steelers"
 direction = "in"
-text = "RB Rico Dowdle from Panthers"
+text = "RB Rico Dowdle from Panthers; WR Michael Pittman Jr. from Colts"
 
 [[changes]]
 team = "Pittsburgh Steelers"
@@ -156,15 +149,15 @@ text = "RB Kenneth Gainwell; WR Calvin Austin III"
 [shape]
 headline = "Atlanta on its third quarterback of the summer with Penix and Tagovailoa both out, against a Steelers defence that rated soft both ways by own-baseline, which we measure to mean nothing."
 observations = [
-  { lead = "Cooper Rush starts for the Falcons.", text = "Michael Penix Jr. is out after ACL surgery and Tua Tagovailoa, signed from Miami, is out with an oblique strain. Rush threw 14 times a game in relief in Baltimore last season. Kevin Stefanski coaches Atlanta." },
-  { lead = "Bijan Robinson is the plan.", text = "22.9 touches a game in 2025, 93 rushing yards a game over his last ten, Tyler Allgeier now in Arizona. The Falcons' run game rated 78th percentile; the Steelers' run defence gave up about 8 yards against form, 29th of 32." },
+  { lead = "Cooper Rush starts for the Falcons.", text = "Penix is inactive for Week 1 and Tagovailoa is out with an oblique injury. Rush's two Baltimore starts in 2025 produced 20 and 19 attempts; his eight Dallas starts in 2024 ranged from 23 to 55. Relief averages cannot set today's workload. Saturday reporting described back spasms, with Rush still expected to start." },
+  { lead = "Bijan Robinson is the plan, with help behind him.", text = "86.9 rushing yards per game in the 2025 regular season and 72 or more in 11 of 17 appearances. Brian Robinson Jr. is the new backup, so Allgeier's departure does not hand Bijan every vacated carry." },
   { lead = "Pittsburgh's defence rated soft by own-baseline on both sides.", text = "28th against the pass (+17), 29th against the run. The project's measurement is that a soft defence does not lift a player above his form, so this is not a reason to expect a Falcons explosion; it is a reason not to expect suppression." },
-  { lead = "Rodgers, in his second Pittsburgh season, with a rebuilt supporting cast.", text = "32.5 attempts a game; Rico Dowdle arrived from Carolina with 16.3 carries a game to pair with Jaylen Warren, and Metcalf (6.6 targets) is the number one after MVS, Austin and Jonnu Smith left. Mike McCarthy coaches the Steelers." },
+  { lead = "Rodgers has more mouths to feed.", text = "31.1 attempts and 20.4 completions per appearance in the 2025 regular season. Michael Pittman Jr. joins Metcalf and Roman Wilson at receiver; Warren and newcomer Dowdle share the backfield. Those new allocations matter more than carrying each arrival's old-team average forward." },
 ]
-alternative = "The other shape: Rush is fine, London and Bijan carry a simple plan against a defence that rated soft, and a rainy Pittsburgh afternoon (24% precipitation) keeps both totals low regardless."
+alternative = "Rush sustains drives through London, Pitts and Bijan, forcing Pittsburgh to keep throwing. That would challenge the low-scoring script. A precipitation chance alone is not evidence of game-time rain or passing suppression."
 
 [read]
-game_script = "Grind. A third-string quarterback and rain argue for Atlanta running Bijan into a 29th-ranked run defence and asking little of Rush; Pittsburgh's defence can afford that. Rodgers against an average Falcons pass defence (21st) decides whether the Steelers pull away."
+game_script = "A measured start, with Atlanta leaning on Bijan and short throws while Rush settles in. London and Pitts are both targets on the depth chart. Pittsburgh can distribute short completions among a deeper receiving group, but a Warren-Dowdle split makes individual rushing volume uncertain. An early Pittsburgh lead could force Atlanta above its preferred passing volume. September 13 review: the original preline notes below contained incorrect Pitts-departure and unsupported rain assumptions; they remain visible as the original read, superseded by this analysis and the prop board."
 
 [[preline]]
 team = "Atlanta Falcons"
@@ -194,7 +187,232 @@ market = "Receptions"
 direction = "over"
 why = "9.3 targets a game, and with Pitts and Mooney gone the share only concentrates. The passer is the risk, not the role."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: screenshots supplied September 13, 09:03–09:04 Pacific.
+# Main lines only; alternate yardage ladders are retained in the research note.
+# All descriptive samples below are 2025 regular-season appearances unless dated 2024.
+# Explicit positions and ESPN display names support grading despite vendor suffix differences.
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Bijan Robinson"
+position = "RB"
+stat = "rushing_yds"
+line = 71.5
+direction = "over"
+confidence = "moderate"
+why = "Reached 72 yards in 11 of 17 regular-season games in 2025; median 76, with five of the last six above this line. His lead role supports the over with Rush starting. Brian Robinson's relief work and an early deficit are the main risks; the opponent's old run ranking earns no extra boost."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Aaron Rodgers"
+position = "QB"
+stat = "passing_td"
+line = 1.5
+direction = "under"
+confidence = "moderate"
+why = "Zero or one touchdown in 10 of 16 regular-season appearances, including five of the last six. A controlled game can end drives on the ground. Pittman's arrival and McCarthy's play-calling may change red-zone distribution; two short scoring throws beat this call quickly."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Aaron Rodgers"
+position = "QB"
+stat = "passing_comp"
+line = 20.5
+direction = "over"
+confidence = "low"
+why = "At least 21 completions in 10 of 16 appearances and five of the last six; median 21.5. Short throws offer a route to this number without a big yardage day. A comfortable lead and fewer than 30 attempts threaten it. It can win alongside the touchdown under, but both depend on the game script."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Pat Freiermuth"
+position = "TE"
+stat = "receptions"
+line = 2.5
+direction = "over"
+confidence = "low"
+why = "Three catches in 11 of 17 games, including the final four; median three. He remains a first-team tight end. Pittman and Washington compete for short throws, and the new offense may change his routes. The evidence supports a small lean."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Darnell Washington"
+position = "TE"
+stat = "receptions"
+line = 1.5
+direction = "over"
+confidence = "low"
+why = "Two catches in 10 of 16 appearances and five of the final six; median two. Listed with Freiermuth at first-team tight end. Blocking work and Pittman's arrival can reduce routes. This shares target-volume risk with the Freiermuth call; the two are not independent evidence."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Drake London"
+position = "WR"
+stat = "receptions"
+line = 4.5
+direction = "over"
+confidence = "low"
+why = "Five catches in seven of 12 appearances; median 5.5. He remains the lead outside receiver, with short targets or catch-up volume offering a path to five. Only three of the final six cleared, Rush is a new passer, and Pitts remains on the roster. No target-share bump for a nonexistent departure."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Aaron Rodgers"
+position = "QB"
+stat = "passing_att"
+line = 31.5
+direction = "pass"
+why = "Eight of 16 appearances above 31.5; median 32. A late-season volume rise conflicts with a plausible run-heavy lead today. The coaching change adds uncertainty, leaving too little separation."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Aaron Rodgers"
+position = "QB"
+stat = "passing_yds"
+line = 212.5
+direction = "pass"
+why = "Eight of 16 above the main line; median 211 and average 207.6. More receiving options may help efficiency, but the game may not demand volume. Easier alternate overs change the difficulty, not the evidence."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Aaron Rodgers"
+position = "QB"
+stat = "rushing_yds"
+line = 0.5
+direction = "pass"
+why = "Nine of 16 appearances ended with at least one rushing yard, but three of his last six were zero. One scramble or late kneel can decide this market; no stable margin at half a yard."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Cooper Rush"
+position = "QB"
+stat = "passing_att"
+line = 29.5
+direction = "pass"
+why = "His two 2025 Baltimore starts had 20 and 19 attempts, but five of eight Dallas starts in 2024 reached 30. Different teams and scripts point in opposite directions. Atlanta may protect him or be forced to chase; a relief average cannot justify an under."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Cooper Rush"
+position = "QB"
+stat = "passing_comp"
+line = 17.5
+direction = "pass"
+why = "Only 14 and 11 completions in two Baltimore starts, versus five of eight Dallas starts with at least 18 in 2024. Atlanta workload is unobserved, with reported back spasms adding uncertainty. Those samples do not justify choosing a side."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Cooper Rush"
+position = "QB"
+stat = "passing_yds"
+line = 179.5
+direction = "pass"
+why = "Baltimore starts produced 179 and 72 yards; six of eight Dallas starts in 2024 exceeded 179.5. The main line already demands little. The earlier directional under leaned on relief usage and overstates what we know about a full Atlanta start."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Cooper Rush"
+position = "QB"
+stat = "passing_td"
+line = 0.5
+direction = "pass"
+why = "No touchdown in either Baltimore start, versus at least one in seven of eight Dallas starts in 2024. London, Pitts and Bijan offer scoring options, but rushing scores can take them away. Two recent starts cannot support a confident under."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Brian Robinson Jr."
+position = "RB"
+stat = "rushing_yds"
+line = 19.5
+direction = "pass"
+why = "Reached 20 yards in 13 of 17 games as San Francisco's backup; median 22. Now Atlanta's backup, but a similar depth-chart label does not guarantee the same carries. Bijan's share and the new rotation have not been observed."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Jaylen Warren"
+position = "RB"
+stat = "rushing_yds"
+line = 42.5
+direction = "pass"
+why = "Cleared in 11 of 16 games, median 57, but only three of the last six. He tops the depth chart; Dowdle's arrival makes carry share uncertain. Last year's workload cannot be carried intact into the new rotation."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Rico Dowdle"
+position = "RB"
+stat = "rushing_yds"
+line = 45.5
+direction = "pass"
+why = "Nine of 17 Carolina appearances cleared; median 49. Behind Warren on Pittsburgh's depth chart, with no measured share in this offense. Neither his old starting workload nor an assumed demotion supplies a reliable call."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Bijan Robinson"
+position = "RB"
+stat = "receptions"
+line = 4.5
+direction = "pass"
+why = "Five catches in nine of 17 games; median five, close to the line. Rush may check down, but fewer sustained drives can erase that benefit and Pitts still competes underneath. The rushing over does not establish a receiving over."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "DK Metcalf"
+position = "WR"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "Four catches in eight of 15 appearances; median four. Pittman's addition changes target distribution. A prominent role alone does not supply enough separation at this number."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Jahan Dotson"
+position = "WR"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "Two catches in four of 17 Philadelphia games, median one, but Atlanta lists him as a starting receiver. That role change makes the old under rate a poor forecast. His routes alongside London and Pitts are the missing evidence."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Jaylen Warren"
+position = "RB"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "Three catches in six of 16 appearances; median two. That favors an under descriptively, but Dowdle can change both rushing and passing-down assignments. The depth chart does not establish who owns two-minute or third-down work."
+
+[[props]]
+team = "Atlanta Falcons"
+player = "Kyle Pitts Sr."
+position = "TE"
+stat = "receptions"
+line = 4.5
+direction = "pass"
+why = "Pitts remains Atlanta's starting tight end. Five catches in nine of 17 games and five of the final six support interest, but those targets came with different quarterbacks. Rush's uncertain volume keeps the recent surge from establishing a five-catch expectation."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Michael Pittman Jr."
+position = "WR"
+stat = "receptions"
+line = 3.5
+direction = "pass"
+why = "Four catches in 11 of 17 Indianapolis games, median five, but only two of the final six cleared. Now a Pittsburgh starter alongside Metcalf and Wilson. A new passer, coach and target competition make his old-team rate insufficient."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Rico Dowdle"
+position = "RB"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "Two catches in 11 of 17 Carolina games and five of the final six. The attraction rests on old-team passing-down work; Warren now competes for it. Until assignments are known, pass."
+
+[[props]]
+team = "Pittsburgh Steelers"
+player = "Roman Wilson"
+position = "WR"
+stat = "receptions"
+line = 1.5
+direction = "pass"
+why = "Only three of 13 appearances produced two catches, but the current depth chart lists him as a starter. Assuming the old limited role would manufacture an under. His routes relative to Pittman and Germie Bernard remain uncertain."
 
 [[falsifiers]]
 condition = "Rush throws 20 times in the first half"
@@ -207,3 +425,27 @@ consequence = "Pittsburgh's backfield is Dowdle-first, not a split; Warren's num
 [[sources]]
 title = "ESPN: injuries, rosters and coaches (site API, fetched 2026-09-11)"
 url = "https://www.espn.com/nfl/game/_/gameId/401872658"
+
+[[sources]]
+title = "Falcons Week 1 depth chart: Pitts, Brian Robinson and Dotson roles (checked September 13)"
+url = "https://www.atlantafalcons.com/news/atlanta-falcons-week-1-depth-chart-vs-pittsburgh-steelers"
+
+[[sources]]
+title = "Falcons: Tagovailoa ruled out (September 11)"
+url = "https://www.atlantafalcons.com/news/falcons-game-report-qb-tua-tagovailoa-ruled-out-of-sunday-s-game"
+
+[[sources]]
+title = "Falcons: Penix's Week 1 recovery status"
+url = "https://www.atlantafalcons.com/news/kevin-stefanski-details-plan-for-quarterback-position-michael-penix-tua-tagovailoa"
+
+[[sources]]
+title = "Steelers official depth chart (checked September 13)"
+url = "https://www.steelers.com/team/depth-chart/"
+
+[[sources]]
+title = "Steelers final practice injury report (September 11)"
+url = "https://www.steelers.com/news/week-1-injury-report-falcons-x3059"
+
+[[sources]]
+title = "AJC: Rush expected to start despite Saturday back spasms"
+url = "https://feeds.ajc.com/sports/2026/09/rush-to-start-against-steelers-despite-back-spasms/"
