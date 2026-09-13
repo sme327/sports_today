@@ -145,6 +145,14 @@ team = "New York Giants"
 direction = "out"
 text = "QB Russell Wilson; WR Wan'Dale Robinson; WR Darius Slayton"
 
+[[availability]]
+team = "New York Giants"
+player = "Najee Harris"
+position = "RB"
+status = "Out"
+detail = "coach's decision"
+impact = "Signed from the Chargers at 16.6 touches a game and inactive for the opener, which leaves the backfield to Cam Skattebo and Tyrone Tracy."
+
 [shape]
 headline = "The best passing offence in the league against a Giants pass defence that rates average, on a Dallas defence that allowed the third-most points and rated 31st against the pass, with Malik Nabers questionable off an ACL."
 observations = [
@@ -193,7 +201,239 @@ market = "Rush attempts"
 direction = "over"
 why = "18.9 a game with the other three 2025 backs gone; a Dallas lead adds carries."
 
-# --- Prop board: filled in when the posted lines arrive.
+# --- Prop board: every posted line, evaluated 2026-09-13 against DraftKings' numbers.
+# Neither defence suppresses by own-baseline: Dallas rates 31st against the pass and the
+# Giants 28th against the run, and a soft rating is measured to mean nothing. So every
+# call here rests on usage and price, not matchup. The one live personnel fact is Najee
+# Harris out, which concentrates the Giants' backfield on Skattebo and Tracy.
+
+[[props]]
+team = "New York Giants"
+player = "Theo Johnson"
+position = "TE"
+stat = "receptions"
+line = 1.5
+direction = "over"
+confidence = "high"
+why = "2+ catches in 12 of 15, 3.0 a game on 4.9 targets, and 5 of his last 6. The line sits a catch and a half below his average at even-money pricing."
+
+[[props]]
+team = "New York Giants"
+player = "Jaxson Dart"
+stat = "passing_yds"
+line = 213.5
+direction = "under"
+confidence = "high"
+why = "214+ in 4 of his 14 rookie starts, 162.3 a game, median 194, and 182.8 over his last six. The line sits 50 yards above his average."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Dak Prescott"
+stat = "passing_att"
+line = 33.5
+direction = "over"
+confidence = "moderate"
+why = "34+ in 11 of 17, 35.3 a game, median 36, on the league's most prolific passing offence (278.5 yards a game, 100th percentile). Dallas throws because its defence allowed 30.1 points a game."
+
+[[props]]
+team = "New York Giants"
+player = "Darnell Mooney"
+position = "WR"
+stat = "receptions"
+line = 1.5
+direction = "over"
+confidence = "moderate"
+why = "2+ in 10 of 15 in Atlanta at 2.1 a game, and 5 of his last 6. He arrives on a Giants roster that lost Wan'Dale Robinson and Darius Slayton, so the role should grow rather than shrink."
+
+[[props]]
+team = "New York Giants"
+player = "Cam Skattebo"
+stat = "rushing_yds"
+line = 49.5
+direction = "over"
+confidence = "moderate"
+why = "50+ in 5 of 8, median 60, and 61.3 over his last six — and Najee Harris is out, which leaves the backfield to him and Tyrone Tracy."
+
+[[props]]
+team = "New York Giants"
+player = "Isaiah Likely"
+position = "TE"
+stat = "receptions"
+line = 3.5
+direction = "under"
+confidence = "moderate"
+why = "4+ in 2 of 11 in Baltimore at 2.5 a game. He is a Giant now, which is the risk in both directions, but 3.5 is above anything he has done while Theo Johnson takes 4.9 targets a game beside him."
+
+[[props]]
+team = "New York Giants"
+player = "Jaxson Dart"
+stat = "passing_comp"
+line = 18.5
+direction = "under"
+confidence = "moderate"
+why = "19+ in 6 of 14, 15.4 a game, median 17. His last six ran hotter at 17.8, which is why this is not higher."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Javonte Williams"
+stat = "receptions"
+line = 2.5
+direction = "under"
+confidence = "moderate"
+why = "3+ in 5 of 16, 2.2 a game, and 1 of his last 6 at 1.5. The under is priced at -180 and the record still clears it."
+
+[[props]]
+team = "New York Giants"
+player = "Malik Nabers"
+stat = "receptions"
+line = 4.5
+direction = "under"
+confidence = "low"
+why = "5+ in 2 of the 4 games he played before the ACL injury, 4.5 a game — the line is his average on a four-game sample, against an over priced at -160. Low because four games and a knee cannot carry more."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "George Pickens"
+stat = "receptions"
+line = 4.5
+direction = "over"
+confidence = "low"
+why = "5+ in 11 of 17, 5.5 a game, median 5, but 3 of his last 6 at 4.3. The season says over and the trend says the line is right."
+
+[[props]]
+team = "New York Giants"
+player = "Jaxson Dart"
+stat = "rushing_yds"
+line = 30.5
+direction = "over"
+confidence = "low"
+why = "31+ in 8 of 14, 34.8 a game, median 40, and 39.3 over his last six, on 6.1 carries a game. Low because a quarterback's rushing line is a game-script bet."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Jake Ferguson"
+stat = "receptions"
+line = 3.5
+direction = "over"
+confidence = "low"
+why = "4+ in 11 of 17 at 4.8 a game, but 2 of his last 6 at 2.8. Genuinely split, and the season is the larger half."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Dak Prescott"
+stat = "passing_yds"
+line = 264.5
+direction = "pass"
+why = "267.8 a game and a median of 264 — the line is his median to the yard."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Dak Prescott"
+stat = "passing_comp"
+line = 23.5
+direction = "pass"
+why = "24+ in 8 of 17, 23.8 a game, median 23; the no-vig under is 53% against an observed 53%."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Dak Prescott"
+stat = "passing_td"
+line = 1.5
+direction = "pass"
+why = "2+ in 10 of 17 at 1.8 a game; the no-vig over is 56% against an observed 59%. Inside the noise."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Dak Prescott"
+stat = "rushing_yds"
+line = 8.5
+direction = "pass"
+why = "10.4 a game but a median of 7 on 3.1 carries; a coin flip at a flat price."
+
+[[props]]
+team = "New York Giants"
+player = "Jaxson Dart"
+stat = "passing_att"
+line = 29.5
+direction = "pass"
+why = "30+ in 6 of 14, 24.2 a game, but a median of 27 and 27.3 over his last six — the gap to the price is inside the noise once the trend is counted."
+
+[[props]]
+team = "New York Giants"
+player = "Jaxson Dart"
+stat = "passing_td"
+line = 1.5
+direction = "pass"
+why = "2+ in 5 of 14 at 1.1 a game; the under at -170 already implies 59% against an observed 64%."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Javonte Williams"
+stat = "rushing_yds"
+line = 75.5
+direction = "pass"
+why = "76+ in 9 of 16 at 75.1 a game, median 80, but 2 of his last 6 at 65.3. The season and the trend land either side of the line."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "CeeDee Lamb"
+stat = "receptions"
+line = 6.5
+direction = "pass"
+why = "7+ in 5 of 13, 5.8 a game, median 6, and 1 of his last 6 — but the under is priced at -160, which takes the gap."
+
+[[props]]
+team = "New York Giants"
+player = "Cam Skattebo"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 3 of 8 at 3.0 a game on 4.0 targets; the no-vig under is 58% against an observed 62%."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Ryan Flournoy"
+position = "WR"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "3+ in 6 of 13 at 3.1 a game, and 4 of his last 6 — the trend is up but the price already pays for it."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Kavontae Turpin"
+position = "WR"
+stat = "receptions"
+line = 0.5
+direction = "pass"
+why = "No 2025 rows in the feed under this name; the return man's offensive role cannot be read from the record."
+
+[[props]]
+team = "Dallas Cowboys"
+player = "Kavontae Turpin"
+position = "WR"
+stat = "rushing_yds"
+line = 4.5
+direction = "pass"
+why = "Same absence: a jet-sweep line with no usage behind it in the feed."
+
+[[props]]
+team = "New York Giants"
+player = "Malachi Fields"
+position = "WR"
+stat = "receptions"
+line = 2.5
+direction = "pass"
+why = "A rookie with no NFL games in the feed."
+
+[[props]]
+team = "New York Giants"
+player = "Odell Beckham Jr."
+position = "WR"
+stat = "receptions"
+line = 0.5
+direction = "pass"
+why = "No 2025 games in the feed; the over at -210 is a bet on a role nobody here has seen."
 
 [[falsifiers]]
 condition = "Nabers is active and draws 5 targets in the first half"
