@@ -12,12 +12,14 @@ from __future__ import annotations
 from typing import Any
 
 import requests
+from src.espn_http import espn_get
 
 _SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary"
-# No custom User-Agent, on purpose. On 2026-09-09 this endpoint answered 403 to every
+# No custom User-Agent, on purpose. On 2026-09-09 the old host answered 403 to every
 # browser-shaped agent tried (including the one src/espn_boxscore sends) and 200 to the
-# requests default — the first grading run failed on exactly that, so the client sends
-# what is known to work and a test pins that no browser agent is reintroduced.
+# requests default — the first grading run failed on exactly that. Since 2026-09-13 the
+# host fallback in src/espn_http is the real protection; keeping the plain agent as well
+# costs nothing, and a test pins that no browser agent is reintroduced here.
 _HEADERS = {"Accept": "application/json,text/plain,*/*"}
 
 # ESPN category → (label → our stat key). "C/ATT" splits into two stats.
@@ -72,7 +74,8 @@ def parse_summary(payload: dict[str, Any]) -> dict[str, Any]:
 def fetch_summary(event_id: str, session: requests.Session | None = None,
                   timeout: float = 20.0) -> dict[str, Any]:
     s = session or requests.Session()
-    r = s.get(_SUMMARY, params={"event": event_id}, headers=_HEADERS, timeout=timeout)
+    r = espn_get(s.get, _SUMMARY, params={"event": event_id}, headers=_HEADERS,
+                 timeout=timeout)
     r.raise_for_status()
     return r.json()
 

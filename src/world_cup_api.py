@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 import requests
+from src.espn_http import espn_get
 
 BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard"
 
@@ -172,7 +173,8 @@ def schedule(game_date: date | str) -> list[dict]:
     date_key = game_date.isoformat() if hasattr(game_date, "isoformat") else str(game_date)
     token = date_key.replace("-", "")
     try:
-        response = requests.get(BASE, params={"dates": token, "limit": 20}, timeout=15)
+        response = espn_get(requests.get, BASE, params={"dates": token, "limit": 20},
+                            timeout=15)
         response.raise_for_status()
         games = _parse_espn(response.json())
         if games:

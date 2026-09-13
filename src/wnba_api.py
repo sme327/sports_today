@@ -4,6 +4,7 @@ from datetime import date
 import requests
 
 from src.espn_scoreboard import season_phase, team_records, venue_record
+from src.espn_http import espn_get
 
 BASE = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
 
@@ -136,6 +137,7 @@ def schedule(game_date: date | str) -> list[dict]:
     else:
         date_token = str(game_date).replace("-", "")
 
-    response = requests.get(BASE, params={"dates": date_token, "limit": 20}, timeout=20)
+    response = espn_get(requests.get, BASE, params={"dates": date_token, "limit": 20},
+                        timeout=20)
     response.raise_for_status()
     return _parse_events(response.json())

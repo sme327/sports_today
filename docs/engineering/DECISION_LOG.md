@@ -3980,3 +3980,32 @@ log before editing a note you did not write.
 
 **Future.** Build the ESPN-id `players` dimension with the injury/roster collector, and
 have the note generator fail loudly when a name resolves to two candidates.
+
+## 2026-09-13 — Every ESPN client tries the web host first and falls back
+
+**Decision.** `src/espn_http.py` is the one place that decides which ESPN host to ask:
+`site.web.api.espn.com` first, `site.api.espn.com` as the fallback, with a non-ESPN URL
+(the core API, MLB StatsAPI) passed through untouched. Ten clients route through it —
+scoreboard, box scores, the NFL box score, injuries, soccer, World Cup, WNBA API and
+collector, standings, and `ncaaf_collector.fetch_json`, which `nfl_schedule` and
+`prior_season_collector` also use. A response that is not `ok` counts as a reason to try
+the next host, because the 403 is a property of the host and not of the request.
+
+**Reason.** `site.api.espn.com` sits behind a rule that answers 403 to many non-curl
+User-Agents — browser-shaped strings and Cloudflare Worker fetches both — while the web
+host serves byte-identical JSON at the same paths and answered every agent tried. The
+project only worked by accident: its clients happened to send the `requests` default. On
+2026-09-09 the NFL box-score client sent a browser-shaped agent and the first grading run
+died on a 403, which reads exactly like a network blip inside a daily run that treats
+collector errors as non-fatal. Verified after the change: a browser agent that still gets
+403 on the old host returns a full scoreboard through the helper.
+
+**Tradeoffs.** Every ESPN request can now cost two round trips instead of one when the web
+host is down, which is the right trade against a silent total failure. Neither host is
+reliably better forever, so the order is a current fact and not a law; both are tried.
+
+**Related.** KOTH does the same thing in `src/espn.ts`, and `Projects/DATA-SOURCES.md` is
+the shared note across projects.
+
+**Future.** If the web host ever becomes the one that 403s, swap the order in `HOSTS`; no
+client changes.

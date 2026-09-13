@@ -13,6 +13,7 @@ from typing import Iterable
 
 import re
 import requests
+from src.espn_http import espn_get
 
 _BASE = "https://site.api.espn.com/apis/site/v2/sports/{path}/scoreboard"
 _TYPE_LABEL = {1: "Preseason", 2: "Regular Season", 3: "Postseason", 4: "Postseason"}
@@ -289,7 +290,8 @@ def fetch(sport_path: str, game_date: date | str, limit: int = 100,
         if group is not None:
             params["groups"] = group
         try:
-            response = requests.get(_BASE.format(path=sport_path), params=params, timeout=15)
+            response = espn_get(requests.get, _BASE.format(path=sport_path),
+                                params=params, timeout=15)
             response.raise_for_status()
             payload = response.json()
         except Exception:

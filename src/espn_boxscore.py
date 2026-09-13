@@ -37,6 +37,7 @@ import pandas as pd
 import requests
 
 from src.config import DB_PATH
+from src.espn_http import espn_get
 
 _BASE = "https://site.api.espn.com/apis/site/v2/sports/{path}/{endpoint}"
 _HEADERS = {
@@ -329,7 +330,7 @@ def _get(session: requests.Session, path: str, endpoint: str, params: dict,
     last: Exception | None = None
     for attempt in range(retries):
         try:
-            r = session.get(url, params=params, headers=_HEADERS, timeout=30)
+            r = espn_get(session.get, url, params=params, headers=_HEADERS, timeout=30)
             r.raise_for_status()
             return r.json()
         except Exception as exc:                       # noqa: BLE001

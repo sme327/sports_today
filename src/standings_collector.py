@@ -18,6 +18,7 @@ from pathlib import Path
 from src.config import DB_PATH
 from src.ncaaf_collector import fetch_json
 from src.standings_store import ensure_tables, upsert
+from src.espn_http import espn_get
 
 STANDINGS = "https://site.api.espn.com/apis/v2/sports"
 
@@ -178,7 +179,8 @@ def mlb_rows(season: int, snapshot: str) -> list[dict]:
     import requests
 
     divisions = _mlb_divisions()
-    payload = requests.get(
+    payload = espn_get(
+        requests.get,
         f"{_MLB_STANDINGS}?leagueId=103,104&season={season}"
         f"&standingsTypes=regularSeason", timeout=20).json()
     collected = datetime.now(timezone.utc).isoformat(timespec="seconds")

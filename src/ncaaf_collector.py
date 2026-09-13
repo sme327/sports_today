@@ -34,6 +34,7 @@ from pathlib import Path
 
 from src import ncaaf_store
 from src.config import DB_PATH
+from src.espn_http import host_candidates
 
 CORE = "http://sports.core.api.espn.com/v2/sports/football/leagues/college-football"
 SITE = "https://site.api.espn.com/apis/site/v2/sports/football/college-football"
@@ -68,13 +69,15 @@ def _context() -> ssl.SSLContext | None:
 def fetch_json(url: str, timeout: float = 25.0) -> dict | None:
     """None on any failure. Season context is enrichment: a page without it says less,
     but a collector failure must never take down the daily run."""
-    request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
-    try:
-        with urllib.request.urlopen(request, timeout=timeout,
-                                    context=_context()) as response:
-            return json.loads(response.read().decode("utf-8", "replace"))
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
-        return None
+    for candidate in host_candidates(url):
+        request = urllib.request.Request(candidate, headers={"User-Agent": _USER_AGENT})
+        try:
+            with urllib.request.urlopen(request, timeout=timeout,
+                                        context=_context()) as response:
+                return json.loads(response.read().decode("utf-8", "replace"))
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            continue
+    return None
 
 
 def _athlete_id(ref: str | None) -> str | None:

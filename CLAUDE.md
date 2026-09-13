@@ -237,6 +237,10 @@ motion. Full spec in the [Design System](docs/design/DESIGN_SYSTEM.md).
   other collector: context must never fail a data run. The NCAAF **market line** rides
   the ordinary schedule fetch, so it appears only after a refresh — a code change alone
   will not surface it, which cost a publish to learn.
+  Every ESPN client asks `site.web.api.espn.com` first and falls back to
+  `site.api.espn.com` (`src/espn_http.py`, since 2026-09-13): the old host 403s many
+  non-curl User-Agents and the project only worked because its clients sent the
+  `requests` default.
   Full steps: [Setup](docs/engineering/SETUP.md).
 - **NFL feeds are picked up by the same daily run**, if a `*nfl-season-team-feed*.xlsx`
   + `*nfl-season-player-feed*.xlsx` pair is sitting in `~/Downloads`. Silent when there

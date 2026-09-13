@@ -16,6 +16,7 @@ from __future__ import annotations
 from datetime import date
 
 import requests
+from src.espn_http import espn_get
 
 BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/scoreboard"
 
@@ -141,7 +142,8 @@ def schedule(competition_slug: str, game_date: date | str) -> list[dict]:
     date_key = game_date.isoformat() if hasattr(game_date, "isoformat") else str(game_date)
     token = date_key.replace("-", "")
     try:
-        response = requests.get(
+        response = espn_get(
+            requests.get,
             BASE.format(slug=competition_slug),
             params={"dates": token, "limit": 30},
             timeout=15,

@@ -18,6 +18,7 @@ from __future__ import annotations
 import requests
 
 from src.availability import InjuryReport, PlayerStatus
+from src.espn_http import espn_get
 
 _SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/{path}/summary"
 
@@ -49,7 +50,7 @@ def parse(payload: dict) -> InjuryReport:
 def fetch(sport_path: str, event_id: str | int, timeout: int = 15) -> InjuryReport:
     """Injury report for one game. Empty (and ``known`` False) on any failure."""
     try:
-        response = requests.get(_SUMMARY.format(path=sport_path),
+        response = espn_get(requests.get, _SUMMARY.format(path=sport_path),
                                 params={"event": str(event_id)}, timeout=timeout)
         response.raise_for_status()
         return parse(response.json())

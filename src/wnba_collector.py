@@ -11,6 +11,7 @@ import pandas as pd
 import requests
 
 from src.config import DATABASE_DIR, DATA_DIR
+from src.espn_http import espn_get
 
 SCOREBOARD_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/"
@@ -62,7 +63,7 @@ def _request_json(
     last_error: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
-            response = session.get(url, params=params, timeout=timeout)
+            response = espn_get(session.get, url, params=params, timeout=timeout)
             response.raise_for_status()
             payload = response.json()
             if not isinstance(payload, dict):
