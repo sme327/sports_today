@@ -54,7 +54,9 @@ same local update, exports the public site, and publishes the finished snapshot.
 Mac only needs to be online during that workflow; Cloudflare serves the site afterward.
 Day to day that run is launched from `Update Sports Today.app` in the project root —
 a Dock/Desktop launcher that opens a Terminal on `update.command` and blocks a second
-concurrent run.
+concurrent run — or from the **Update Center** (`Tools/Update Center/`), the menu bar
+app that collects every project's manual update in one place. Both call
+`update_and_publish.command`; neither reimplements its steps.
 
 Exact steps and the macOS double-click workflow: [Setup](docs/engineering/SETUP.md).
 

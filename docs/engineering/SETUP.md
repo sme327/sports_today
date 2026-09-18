@@ -31,6 +31,14 @@ Terminal window running `update.command`, so the whole run stays visible. Drag i
 the **Dock** (a Dock tile is a path reference — the app itself stays in the project),
 or keep the **Desktop alias** at `~/Desktop/Update Sports Today.app`.
 
+The same run is also the **Sports Today** item in the Update Center
+(`Tools/Update Center/`), the ⟳ menu bar app that collects every project's manual
+update and says which are due. It calls `update_and_publish.command` too — so
+whichever you click, the update is the same one. That is why the keypress prompt at
+the end of `update_and_publish.command` and `update_wnba.command` is guarded with
+`[[ -t 0 ]]` (as `refresh.command` already was): run from a launcher with no terminal
+on stdin, an unanswered prompt would hold the job open indefinitely.
+
 Two things it does that a bare double-click does not:
 
 - **It resolves the project root relative to its own bundle**, so no user path is baked
