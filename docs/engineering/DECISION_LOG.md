@@ -9,6 +9,50 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-18 — launchd starts the nightly refresh through Python, not zsh
+
+**Decision** — `com.sme.sports-today.nightly` names the python.org framework
+interpreter and `scripts/nightly_launch.py` as its program, instead of naming
+`scripts/nightly_refresh.sh` directly. The launcher runs the same shell script; it
+adds nothing to what a refresh *is*, which stays defined in `refresh.command`.
+
+**Reason** — macOS gives a launchd-spawned shell no TCC grant for `~/Documents`.
+The old form let the kernel read the shebang and exec `/bin/zsh`, and zsh then
+could not open the very script it had been handed:
+
+```
+/bin/zsh: can't open input file: …/scripts/nightly_refresh.sh
+```
+
+The job exited **78 (EX_CONFIG)** and had run **4 times in 19 days**, so the
+midnight slate roll-over — the whole reason the job exists — had not been
+happening since 2026-08-30, silently. Nothing reported it because the failure was
+in launchd's own log, not in the run records `scripts/run_status.py` reads.
+
+Established with throwaway agents rather than inferred: `/bin/zsh` under launchd
+cannot read this folder, the framework interpreter can, and a zsh *it* spawns
+inherits that access and can. That last point is what makes the fix a one-line
+change of program rather than a rewrite of the pipeline.
+
+**It also raises the open-file limit**, 256 → 8192. launchd's soft limit is 256
+and the publish step's measured peak is ~517 descriptors, so the job would have
+traded one silent failure for another — `OSError: [Errno 24]` part-way through
+`export_static`, which is itself nearly unreadable because a full descriptor table
+stops Django opening its own error template.
+
+**Tradeoffs** — The plist now hardcodes an interpreter path, so a Python upgrade
+that moves `Versions/3.14` breaks the job. `--check` exists to catch that in a
+second: it verifies the interpreter, the limit, and that a child shell inherits
+access, without running a refresh. Granting `/bin/zsh` Full Disk Access instead
+would have fixed the access half, but it is a far broader permission and does
+nothing about the descriptor limit.
+
+**Future considerations** — Nothing watches this job. `run_status.py` answers "is
+the site serving today?" from the run records, and a job that never starts writes
+no record, so three weeks of silence looked identical to three weeks of success.
+Worth having the status surface say when the last *nightly* run was, separately
+from the last run of any kind.
+
 ## 2026-09-09 — Daily Results answers "how good was the day", not "which ones hit"
 
 **Decision.** The page keeps every graded prediction and every grading rule, and gains an

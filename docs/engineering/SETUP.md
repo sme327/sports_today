@@ -24,6 +24,38 @@ Normal operator steps:
 the published site a day behind.) To refresh local data without publishing, run
 `python -m scripts.morning_update` from a terminal.
 
+### The nightly job
+
+`com.sme.sports-today.nightly` rebuilds and republishes the slate at 00:05 so the
+static site stops describing yesterday. It runs `scripts/nightly_launch.py` under
+the **python.org framework interpreter** — not `nightly_refresh.sh` directly,
+because a launchd-spawned shell cannot read `~/Documents` and the job failed with
+exit 78 for three weeks because of it (decision log, 2026-09-18).
+
+Check it any time, without running a refresh:
+
+```bash
+python3 scripts/nightly_launch.py --check
+```
+
+```
+interpreter      /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14
+open files       256 → 8192
+read refresh.command   yes
+child shell      inherits access
+
+ready
+```
+
+Run it the way launchd does, to be certain the agent itself is healthy:
+
+```bash
+launchctl print gui/$(id -u)/com.sme.sports-today.nightly | grep -E "state|last exit|runs"
+```
+
+A `last exit code` of 78 means the access problem is back — most likely a Python
+upgrade moved the interpreter the plist names.
+
 ### One-click launcher (Dock / Desktop)
 
 `Update Sports Today.app` in the project root is a launcher for step 2: it opens a
