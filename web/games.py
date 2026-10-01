@@ -50,6 +50,7 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
     hero, series = _postseason_hero(game, page.hero, slate_date)
     chunks = [
         mlb_components.hero_html(hero, series),
+        _prop_desk(game, slate_date),
         mlb_components.team_identity_html(page.away_identity, page.home_identity),
         mlb_components.game_story_html(page.game_story),
         mlb_components.key_matchups_html(page.key_matchups),
@@ -90,6 +91,44 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
         "cache_source": cache_source,
         "build_ms": round((perf_counter() - started) * 1000, 1),
     }
+
+
+def _prop_desk(game: SlateGame, slate_date: date) -> str:
+    """The postseason prop desk, under the header and above the existing analysis.
+
+    Postseason only for now (decision log 2026-09-30). Built at render time, like the
+    series strip: lineups post a few hours before first pitch, and a page cached at the
+    morning build would otherwise keep yesterday's order all day. Non-fatal — the rest of
+    the page stands on its own.
+    """
+    if not game.is_postseason:
+        return ""
+    key = f"django:mlb-prop-desk:v1:{slate_date.isoformat()}:{game.game_id}"
+    html = cache.get(key)
+    if html is not None:
+        return html
+    try:
+        from components.prop_desk import prop_desk_html
+        from services import mlb_analytics, mlb_prop_desk
+        from services.data_access import load_plate_appearances
+        from services.lineups import get_lineups
+
+        pa = load_plate_appearances(as_of=slate_date)
+        meta = game.meta or {}
+        desk = mlb_prop_desk.build(
+            pa, away_team=game.away_name or "", home_team=game.home_name or "",
+            away_short=game.away_short or game.away_display,
+            home_short=game.home_short or game.home_display,
+            away_pid=mlb_analytics.match_pitcher(pa, meta.get("away_pitcher")),
+            home_pid=mlb_analytics.match_pitcher(pa, meta.get("home_pitcher")),
+            lineups=get_lineups(slate_date))
+        html = prop_desk_html(desk)
+    except Exception:                                    # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).exception("prop desk failed for %s", game.game_id)
+        html = ""
+    cache.set(key, html, timeout=300)
+    return html
 
 
 def _postseason_hero(game: SlateGame, hero, slate_date: date):

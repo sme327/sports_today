@@ -117,6 +117,15 @@ against the pairings; and **series wins are counted from final games by team id*
 parsed from the source's "NYY leads 1-0". A preview states the series going in, a final
 states it after, and a game behind an unfinished one claims no stakes.
 
+**Postseason MLB matchup pages open with a Playoff Prop Desk** (decision log 2026-09-30):
+starter cards led by workload, both lineups in batting order with game-by-game strips, and
+threshold counts, under a six-way market mode that only changes emphasis. It is evidence for
+a line the reader saw elsewhere — **no odds, no scores, no verdict words, no green/red**, and
+small samples as counts. **Regular season and postseason are never pooled**: the feed tags
+playoff rows in `dataset`, `load_plate_appearances(phase=...)` splits them, and the MLB
+page's season reads are regular-season only. L14/L28 are the last days *of the regular
+season*. The prop scorers still read both phases, deliberately, until that is measured.
+
 **The site rolls itself over at midnight.** The export is static, so "today" is baked
 in at build time; the daily run precomputes **three** days and an inline script in
 `base.html` redirects the viewer to whichever is actually today, by their clock. It

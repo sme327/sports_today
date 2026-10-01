@@ -31,15 +31,34 @@ def table_exists(conn: sqlite3.Connection, name: str) -> bool:
     return row is not None
 
 
+POSTSEASON_MARK = "Postseason"
+
+
+def is_postseason(pa: pd.DataFrame) -> pd.Series:
+    """Rows from a postseason game. The vendor feed says so in ``dataset``
+    ("MLB 2026 Postseason" against "MLB 2026 Regular Season")."""
+    if pa.empty or "dataset" not in pa.columns:
+        return pd.Series(False, index=pa.index)
+    return pa["dataset"].astype(str).str.contains(POSTSEASON_MARK, case=False, na=False)
+
+
 def load_plate_appearances(
     *,
     as_of: date | str | None = None,
     db_path: Path = DB_PATH,
+    phase: str | None = None,
 ) -> pd.DataFrame:
     """Load MLB plate appearances, optionally bounded to before ``as_of``.
 
     ``game_date`` is stored as ``YYYY-MM-DD`` text, so the string comparison is a
     correct chronological bound. Returns an empty frame if the table is absent.
+
+    ``phase`` is ``"regular"``, ``"postseason"`` or ``None`` (both). The feed carries
+    postseason games in the same table, so a caller describing *the season* must ask for
+    ``"regular"`` — otherwise a Wild Card game quietly becomes game 163 of it, which is
+    how the matchup page came to say "163 games" (decision log 2026-09-30). The prop
+    scorers deliberately still read both: they are versioned engines graded on the
+    Performance page, and changing their inputs is a backtest, not a filter.
     """
     if not Path(db_path).exists():
         return pd.DataFrame()
@@ -57,6 +76,10 @@ def load_plate_appearances(
             )
     if not df.empty:
         df["game_date"] = pd.to_datetime(df["game_date"])
+        if phase == "regular":
+            df = df[~is_postseason(df)].reset_index(drop=True)
+        elif phase == "postseason":
+            df = df[is_postseason(df)].reset_index(drop=True)
     return df
 
 

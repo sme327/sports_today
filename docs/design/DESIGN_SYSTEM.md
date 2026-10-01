@@ -526,6 +526,20 @@ claim.
 | **Card seed + series line** | A small orange seed numeral before each name, and "Yankees lead 1-0 · **Elimination game**" under the teams, linking to the series page | The only height a card gains in October. Stakes are the one orange word; none are claimed for a game behind an unfinished one, which says "if necessary" instead |
 | **Hero series strip** | One ruled line across the top of the MLB matchup hero: round and game in orange caps on the left, the series standing on the right, "Series →" at the end | Replaces "games back" with "No. N seed · record in the regular season" under each club. In October, games back is true and beside the point |
 
+### Playoff Prop Desk (postseason MLB matchup pages)
+
+| Pattern | What it is | Rule it carries |
+|---|---|---|
+| **Market mode** | Six-way segmented control: Hits · Total bases · Batter K · Starter K · Hits allowed · Walks | Changes emphasis, never layout. Cells carry `data-m`; one `data-mode` on the section decides what is drawn. Hidden without the script, which leaves the Hits view |
+| **Starter card** | A small table: Avg, then one column per recent start (oldest first), playoff outings after an orange rule; rows Pitches · Batters faced · Innings above Strikeouts · Hits allowed · Walks | Workload rows lead in every starter mode; the mode's own row is bold and lightly filled, the others recede. Never coloured by result |
+| **Lineup row** | A large slot numeral in a filled square, the name and handedness vs tonight's starter, a one-line summary for the mode and a game-by-game strip | The slot is the loudest thing on the row. Unconfirmed: dashed square, and the lineup says it is last game's order |
+| **Result strip** | Small filled number chips, oldest → newest; playoff games outlined in orange | Shows consistency at a glance without arithmetic. No colour by value |
+| **Slice table** (expanded hitter) | Regular season (bold) → L28 → L14 → orange rule → Postseason → This series → vs opponent (muted), then batter-vs-pitcher as one muted line | Weight falls with sample size. Counts below ten games; a rate only beside its denominator |
+| **Thresholds** | Games that cleared each mark — Season · L28 · L14 · Post — with per-mode threshold pills | Postseason cells in orange because they are the small, separate slice, not because they are good |
+
+**No green or red anywhere in the desk.** Elsewhere they mean supporting and risk evidence;
+beside a player prop they would read as "bet" and "don't", and this surface makes no call.
+
 ### Daily Results
 
 | Pattern | What it is | Rule it carries |

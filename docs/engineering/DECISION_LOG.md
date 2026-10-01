@@ -9,6 +9,65 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-30 — A Playoff Prop Desk on postseason MLB matchup pages, and the two phases split
+
+**Decision.** Postseason MLB matchup pages get a **Playoff Prop Desk** between the header
+and the existing analysis (`services/mlb_prop_desk.py`, `components/prop_desk.py`, built at
+render time in `web/games._prop_desk`). It lays out the evidence behind seven kinds of line —
+1+ and 2+ hits, total bases, batter strikeouts, starter strikeouts, hits allowed, walks —
+for a reader who has seen the line elsewhere. One layout: two **starter cards** (workload
+rows — pitches, batters faced, innings — above strikeouts, hits and walks, as game-by-game
+columns with playoff outings set apart; the opposing lineup's rate against his hand; his
+regular-season starts against tonight's club), the two **lineups** in batting order (the
+slot number the loudest thing in a row, a per-mode summary and a game-by-game strip; tap
+for Opportunity → Regular season → L28 → L14 → Postseason → This series → vs opponent →
+batter-vs-pitcher), then **thresholds** (games that cleared each mark: season, L28, L14,
+postseason). A six-way mode control (Hits, Total bases, Batter K, Starter K, Hits allowed,
+Walks) only changes which cells show and which starter rows are emphasised; it is
+client-side, hidden without the script, and remembered per browser.
+
+**The owner's spec, kept here so it is not re-litigated.** Evidence, never a verdict: no
+odds are read or shown, nothing is scored, no "strong", "best bet", "confidence" or
+"positioned to succeed", and no green or red (here they would read as bet / don't). Small
+samples are counts, a rate only ever beside its denominator (`3/4`, never `75%`), and only
+from ten games up. Batter-vs-pitcher is muted raw counts, never ranked or coloured. An
+unposted lineup is shown as the last game's order and says so. Deliberately **not** built
+yet: a price checker, break-even/edge/pass-zone arithmetic, any model, and an MLB call
+ledger (the desk's rows are keyed by player id so an "add to ledger" action can attach
+later). The existing lower sections stay until the desk has been used on real October
+data; Player Trends, Players Positioned to Succeed and some Key Matchups may then go.
+
+**The contamination fix.** The vendor feed carries postseason plate appearances in the same
+table, tagged `dataset = "MLB 2026 Postseason"`, and the matchup page was folding them into
+the season: the Cubs read "163 games" after Game 1, and Team Identity's recent form moved
+on one playoff game. `load_plate_appearances(phase=...)` and `data_access.is_postseason`
+now split them, and every season read on the MLB page is regular season only
+(`mlb-game-page-v3`). **The prop scorers still read both phases on purpose**: they are
+versioned engines graded on Performance, and changing their inputs is a backtest, not a
+filter. Measure whether postseason rows help or hurt them before changing that.
+
+**Recent windows are the last 14 and 28 days of the regular season,** not of the calendar.
+Anchored on the slate date they would be mostly playoff games within a week, pooling the
+two phases by the back door; anchored on the season's last day they stay the same thing
+all October, and the label says which days ("L14 · Sep 14–27"). The postseason slice holds
+everything after. "This series" is this postseason's games against tonight's opponent —
+two clubs meet in at most one series a year, so that is the series.
+
+**Why these rows lead.** Each mode's one-line note says what has been measured to matter:
+for a hit, lineup spot (plate appearances predict a hit more than twice as well as recent
+hitting); for a batter strikeout, the opposing starter; for a starter strikeout, workload as
+much as strikeout rate, because a playoff hook caps batters faced; hits allowed carried no
+information when measured; walks have no model. Pitches are summed per plate appearance and
+innings are outs recorded ÷ 3 — close, not official, and the card says so.
+
+**Tradeoffs.** The desk reloads the plate-appearance feed per postseason game (~4 s) and
+caches its HTML for five minutes; at four games a day across three slate days that is
+cheap. The feed runs a day behind, so tonight's page knows Game 1 but not Game 2 in
+progress — the desk states the date its data runs through. A starter with an injury gap
+shows it plainly (Pivetta's "last six" span April to September) rather than hiding it.
+
+---
+
 ## 2026-09-30 — In October the playoff page is the bracket, and every series has a page
 
 **Decision.** From the moment the MLB field is set — every Wild Card series has two real

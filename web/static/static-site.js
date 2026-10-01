@@ -622,3 +622,47 @@
   });
   controls.hidden = false;
 })();
+
+// Playoff prop desk: the market mode and each hitter mode's threshold pills. The server
+// renders every mode's cells; this only moves `data-mode`, so the layout never rebuilds
+// and a reader learns it once. Controls stay hidden without the script (the page then
+// shows the Hits view). The chosen mode is a per-browser convenience, nothing more.
+(() => {
+  const desk = document.querySelector("[data-pd]");
+  if (!desk) return;
+  const modes = desk.querySelector("[data-pd-modes]");
+  if (!modes) return;
+  const KEY = "sports-today:prop-desk-mode";
+
+  function setMode(mode) {
+    desk.dataset.mode = mode;
+    for (const button of modes.querySelectorAll("button[data-mode]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+    }
+    try { localStorage.setItem(KEY, mode); } catch (error) { /* storage blocked */ }
+  }
+
+  modes.hidden = false;
+  for (const group of desk.querySelectorAll("[data-pd-tpills]")) group.hidden = false;
+
+  modes.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-mode]");
+    if (button) setMode(button.dataset.mode);
+  });
+
+  desk.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pd-tpills] button[data-t]");
+    if (!button) return;
+    const group = button.closest("[data-pd-tpills]");
+    for (const other of group.querySelectorAll("button[data-t]")) {
+      other.setAttribute("aria-pressed", String(other === button));
+    }
+    for (const table of desk.querySelectorAll(`.pd-th-table[data-m="${group.dataset.m}"]`)) {
+      table.hidden = table.dataset.t !== button.dataset.t;
+    }
+  });
+
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (error) { /* storage blocked */ }
+  if (saved && modes.querySelector(`button[data-mode="${saved}"]`)) setMode(saved);
+})();

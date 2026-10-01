@@ -19,14 +19,14 @@ from domain.mlb_game_page import (
 )
 from domain.models import DataStatus, Opportunity, OpportunityMode, SlateGame, SourceStatus
 from services import mlb_analytics as A
-from services.data_access import load_plate_appearances
+from services.data_access import is_postseason, load_plate_appearances
 from src.opportunity import score_hit_opportunities
 
 # Bump whenever the page's *content* changes, not just its computation. The cache is
 # keyed on this, so a page that gains a field while the version stands still keeps
 # serving the old payload — which is exactly what happened when the ballpark note was
 # added and Coors Field went on showing no note through a full publish.
-ENGINE_VERSION = "mlb-game-page-v2"
+ENGINE_VERSION = "mlb-game-page-v3"   # v3: season reads exclude postseason
 
 # Identity vocabulary — lead adjectives read cleanly before "offense"; the second
 # element is a verb phrase for a "that ..." clause.
@@ -563,6 +563,10 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
                         pa: pd.DataFrame | None = None) -> MLBGamePage:
     if pa is None:
         pa = load_plate_appearances(as_of=as_of)
+    # Everything that describes *the season* reads the regular season only. The scorer
+    # keeps the full feed, so a matchup page's picks always match the slate's.
+    scoring_pa = pa
+    pa = pa[~is_postseason(pa)].reset_index(drop=True) if not pa.empty else pa
     away, home = game.away_name, game.home_name
     a_disp = game.away_short or away
     h_disp = game.home_short or home
@@ -601,7 +605,7 @@ def build_mlb_game_page(game: SlateGame, slate_date: date, as_of: date,
         lineups = get_lineups(slate_date)
     except Exception:
         lineups = None
-    opportunities = _build_opportunities(pa, game, [away, home], lineups)
+    opportunities = _build_opportunities(scoring_pa, game, [away, home], lineups)
     pitcher_trends, batter_trends = _build_spotlights(
         pa, away_pid, home_pid, opportunities, heating, cooling)
     away_dom, home_dom = _starter_dominance(ptable, away_pid), _starter_dominance(ptable, home_pid)

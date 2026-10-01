@@ -42,6 +42,12 @@ game**. Team Identity (evidence) is placed above the story (synthesis).
    seed · 87-75 in the regular season" instead of games back. Applied at render time
    from the bracket (`web/games._postseason_hero`), not cached in the page model,
    because the series moves nightly (decision log 2026-09-30).
+   **Then, in the postseason, the Playoff Prop Desk** (`components/prop_desk.py` over
+   `services/mlb_prop_desk.py`): starter cards (workload first), both lineups in batting
+   order with per-market strips and an expandable breakdown, and threshold counts, under a
+   Hits / Total bases / Batter K / Starter K / Hits allowed / Walks mode. Evidence only —
+   see the decision log entry for the rules it must keep. Everything below it describes
+   the **regular season only**; playoff plate appearances are excluded from season reads.
 2. **Team Identity** — six dimensions per team: Power, Contact, Plate Discipline,
    Speed, RISP (league-relative percentiles shown as qualitative tiers + the
    number), and Recent Form (composite last-10 vs. season baseline → Trending

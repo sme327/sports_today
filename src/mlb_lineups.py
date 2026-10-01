@@ -9,7 +9,7 @@ Joins are by MLB player id, which equals the vendor feed's ``batter_id`` (verifi
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 import requests
@@ -26,6 +26,10 @@ class Lineups:
     (1–9); ``posted_teams`` is the set of team names whose lineup is out."""
     slot: dict[int, int]
     posted_teams: frozenset[str]
+    # team name -> ((player id, full name), ...) in batting order, for posted lineups.
+    # The slot map answers "where does he bat"; this answers "who bats, in order", which
+    # the postseason prop desk lays out as a board.
+    order: dict[str, tuple[tuple[int, str], ...]] = field(default_factory=dict)
 
     def is_posted(self, team_name: str | None) -> bool:
         return team_name in self.posted_teams
@@ -51,6 +55,7 @@ def fetch_lineups(slate_date: date | str) -> Lineups:
 def _parse(payload: dict) -> Lineups:
     slot: dict[int, int] = {}
     posted: set[str] = set()
+    order: dict[str, tuple[tuple[int, str], ...]] = {}
     for day in payload.get("dates", []):
         for game in day.get("games", []):
             teams = game.get("teams", {})
@@ -62,8 +67,10 @@ def _parse(payload: dict) -> Lineups:
                 name = teams.get(side, {}).get("team", {}).get("name")
                 if name:
                     posted.add(name)
-                for order, player in enumerate(players, start=1):
+                    order[name] = tuple((int(p["id"]), str(p.get("fullName") or ""))
+                                        for p in players if p.get("id") is not None)
+                for position, player in enumerate(players, start=1):
                     pid = player.get("id")
                     if pid is not None:
-                        slot[int(pid)] = order
-    return Lineups(slot=slot, posted_teams=frozenset(posted))
+                        slot[int(pid)] = position
+    return Lineups(slot=slot, posted_teams=frozenset(posted), order=order)
