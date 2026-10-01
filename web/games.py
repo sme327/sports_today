@@ -116,6 +116,29 @@ def _regular_season_chunks(game: SlateGame, page, hero, series, data_note: str) 
     return chunks
 
 
+_FEED: dict = {}
+
+
+def _repaired_feed(slate_date: date):
+    """The plate-appearance feed before ``slate_date``, repaired, loaded once per slate
+    day and database version. Every postseason matchup page on a day reads the same
+    frame; reloading and repairing it per page was ~4 of a page's ~9 seconds in the static
+    export (profiled 2026-09-30). The desk and the matchups only read it."""
+    from services.data_access import load_plate_appearances
+    from services.mlb_prop_desk import repair
+    from src.config import DB_PATH
+
+    try:
+        stat = DB_PATH.stat()
+        stamp = (slate_date.isoformat(), stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        stamp = None
+    if stamp is None or _FEED.get("stamp") != stamp:
+        _FEED["frame"] = repair(load_plate_appearances(as_of=slate_date))
+        _FEED["stamp"] = stamp
+    return _FEED["frame"]
+
+
 def _postseason_sections(game: SlateGame, slate_date: date) -> tuple[str, tuple]:
     """``(prop desk html, tactical key matchups)`` for a postseason game.
 
@@ -131,12 +154,11 @@ def _postseason_sections(game: SlateGame, slate_date: date) -> tuple[str, tuple]
         from services.mlb_playoff_matchups import tactical
         from components.prop_desk import prop_desk_html
         from services import mlb_analytics, mlb_prop_desk
-        from services.data_access import load_plate_appearances
         from services.lineups import get_lineups
 
         from services.lineups import get_last_order
 
-        pa = load_plate_appearances(as_of=slate_date)
+        pa = _repaired_feed(slate_date)
         meta = game.meta or {}
         lineups = get_lineups(slate_date)
         # An unposted lineup falls back to the club's last official starting nine, which

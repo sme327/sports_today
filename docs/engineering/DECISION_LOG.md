@@ -9,6 +9,48 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-30 — The static export, profiled: 13 minutes to 74 seconds
+
+**Decision.** Two read-once caches and one narrowed loop, chosen by profiling a full export
+(725 pages) rather than by guessing — the obvious suspect, the new playoff pages, was 9% of
+the time.
+
+| Where the 767 s went (profiled) | Pages | Before | After |
+|---|---|---|---|
+| `/performance/` filter combinations | 550 | 671 s (1.22 s each) | 77 s (0.14 s) |
+| Postseason MLB matchup pages | 8 | 70 s (8.7 s each) | ~30 s (~3.6 s) |
+| `/trending/` | 3 | 24 s | 24 s (untouched) |
+| Everything else, incl. bracket and series pages | 164 | ~2 s | ~2 s |
+
+Unprofiled, the full export now takes **74 seconds**.
+
+- **The Performance ledger is read once per database version** (`web/analytics.load_performance_range`).
+  Each page asked for three or four date ranges and each ask re-read and de-duplicated the
+  whole `opportunity_snapshots` table: 3,156 reads, ~440 s. It now reads everything once,
+  keyed on the database file's mtime and size (and the loader's identity, so a test that
+  patches it never sees another test's rows), and slices by date. Slicing after the read is
+  exact because featured ranks are computed within a slate date. 57 Performance and Results
+  pages were rendered with the old and new code and compared byte for byte: identical.
+  The market-type lookup behind every filter (19.6 million calls) is memoised on its three
+  strings.
+- **The postseason feed is loaded and repaired once per slate day** (`web/games._repaired_feed`),
+  and `repair` checks only its few thousand candidate rows instead of all 190k in Python
+  (2.8 s → 0.4 s per call; the same 51 / 101 / 17 rows).
+
+**Not the cause of the 45-minute publish.** The run log shows that publish itself took 689 s,
+like every other publish that evening (544–689 s); it *began* 32 minutes after the command
+was launched. Something stalled the process before the script's first line. This project's
+iCloud-synced folder has hung processes that way before (`killall bird fileproviderd`); it
+could not be confirmed after the fact.
+
+**Tradeoffs.** Both caches live in process memory and key on the database file, so a
+long-running server picks up a daily run's writes without a restart; a write that changes
+neither mtime nor size would be missed, which SQLite does not do. Rows are shared between
+requests — safe only while nothing downstream mutates them, which is true today and is now
+written down.
+
+---
+
 ## 2026-09-30 — Full QC of the prop desk and the bracket, and what it changed
 
 **What was checked.** Every hitter in both lineups and both starters for every postseason

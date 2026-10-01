@@ -82,9 +82,14 @@ def _num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce").fillna(0)
 
 
-def _starts_with_batter(pa: pd.DataFrame, text: pd.Series) -> pd.Series:
-    names = pa["batter_name"].fillna("").astype(str)
-    return pd.Series([bool(n) and t.startswith(n) for t, n in zip(text, names)], index=pa.index)
+def _starts_with_batter(pa: pd.DataFrame, text: pd.Series, where: pd.Series) -> pd.Series:
+    """Whether ``text`` opens with the row's batter name — checked only on ``where`` rows,
+    since a Python-level comparison over all 190k rows cost ~1.4 s per call."""
+    out = pd.Series(False, index=pa.index)
+    if where.any():
+        names = pa.loc[where, "batter_name"].fillna("").astype(str)
+        out.loc[where] = [bool(n) and t.startswith(n) for t, n in zip(text[where], names)]
+    return out
 
 
 def repair(pa: pd.DataFrame) -> pd.DataFrame:
@@ -110,11 +115,13 @@ def repair(pa: pd.DataFrame) -> pd.DataFrame:
         return pa
     desc = pa["description"].fillna("").astype(str)
     empty = pa["play_type"].fillna("").astype(str).str.strip() == ""
-    walks = empty & _starts_with_batter(pa, desc) & desc.str.contains(r"\bwalked\b", regex=True)
+    walk_like = empty & desc.str.contains(r"\bwalked\b", regex=True)
+    walks = walk_like & _starts_with_batter(pa, desc, walk_like)
     interference = empty & desc.str.contains("Interference by Batter", case=False, regex=False)
+    dp_k = (_num(pa["is_strikeout"]) == 0) & desc.str.startswith("Double Play:") \
+        & desc.str.contains("struck out", regex=False)
     after_dp = desc.str.replace(r"^Double Play:\s*", "", regex=True)
-    k_dp = (_num(pa["is_strikeout"]) == 0) & desc.str.startswith("Double Play:") \
-        & _starts_with_batter(pa, after_dp) & after_dp.str.contains("struck out", regex=False)
+    k_dp = dp_k & _starts_with_batter(pa, after_dp, dp_k)
     if not (walks.any() or interference.any() or k_dp.any()):
         return pa
     pa = pa.copy()

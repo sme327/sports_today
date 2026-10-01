@@ -7,12 +7,13 @@ applies shared filters, and prepares framework-neutral presentation context.
 from __future__ import annotations
 
 from datetime import date, timedelta
+from functools import lru_cache
 from math import ceil
+from pathlib import Path
 from urllib.parse import urlencode
 
 from components.results_feed import (
     calibration_bars_html,
-    calibration_interpretation,
     calibration_table_html,
     cohort_comparison_html,
     confident_misses_html,
@@ -28,7 +29,6 @@ from components.results_feed import (
     monthly_table_html,
     over_under_html,
     performance_summary_html,
-    period_comparison_html,
     prop_list_html,
     signal_check_html,
     trust_board_html,
@@ -74,10 +74,15 @@ def _direction(row: dict) -> str:
     return row.get("direction") or markets.resolve(row.get("league"), row.get("market"))[1]
 
 
+@lru_cache(maxsize=4096)
+def _prop_type(market_key, league, market) -> str:
+    return prop_type_for(market_key, league, market)
+
+
 def _market_type(row: dict) -> str:
-    return prop_type_for(
-        row.get("market_key"), row.get("league"), row.get("market")
-    )
+    # Memoised on the three strings it depends on: one static export asked this 19.6
+    # million times for a few dozen distinct answers.
+    return _prop_type(row.get("market_key"), row.get("league"), row.get("market"))
 
 
 def apply_filters(rows: list[dict], active: dict[str, str]) -> list[dict]:
@@ -109,12 +114,39 @@ def apply_filters(rows: list[dict], active: dict[str, str]) -> list[dict]:
     return out
 
 
+_LEDGER: dict[str, object] = {"stamp": None, "rows": []}
+
+
+def _ledger_stamp() -> tuple | None:
+    """Changes whenever the database file does — a write, a daily run, a swap — or the
+    loader itself is replaced (a test patching it must never see another test's rows)."""
+    try:
+        stat = Path(grading.DB_PATH).stat()
+    except (OSError, AttributeError):
+        return None
+    return (str(grading.DB_PATH), stat.st_mtime_ns, stat.st_size, id(grading.load_graded_range))
+
+
 def load_performance_range(start: date, end: date) -> list[dict]:
-    return [
-        row for row in grading.load_graded_range(start, end)
-        if row.get("market_key") not in PERFORMANCE_EXCLUDED_MARKETS
-        and _market_type(row) not in PERFORMANCE_EXCLUDED_TYPES
-    ]
+    """Graded props with ``snapshot_date`` in ``[start, end]``, excluded markets removed.
+
+    The whole ledger is read once per database version and sliced by date. A Performance
+    page asks for three or four ranges, and the static export renders 550 of them: reading
+    and de-duplicating the table on every request was 3,156 queries and ~440 of a 767-second
+    export (profiled 2026-09-30). Slicing after the read is exact, because the featured
+    rank ``load_graded_range`` assigns is computed within each slate date. Rows are shared
+    across requests, so nothing downstream may modify them — none does.
+    """
+    stamp = _ledger_stamp()
+    if stamp is None or stamp != _LEDGER["stamp"]:
+        _LEDGER["rows"] = [
+            row for row in grading.load_graded_range(date(2000, 1, 1), date(2100, 1, 1))
+            if row.get("market_key") not in PERFORMANCE_EXCLUDED_MARKETS
+            and _market_type(row) not in PERFORMANCE_EXCLUDED_TYPES
+        ]
+        _LEDGER["stamp"] = stamp
+    lo, hi = start.isoformat(), end.isoformat()
+    return [row for row in _LEDGER["rows"] if lo <= str(row.get("snapshot_date") or "") <= hi]
 
 
 def apply_cohort(rows: list[dict], cohort: str) -> list[dict]:

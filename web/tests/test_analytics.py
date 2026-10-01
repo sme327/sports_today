@@ -51,7 +51,9 @@ def test_results_show_the_complete_daily_audit_without_dead_pagination(load):
     assert context["prop_html"].count("prop-item") == 205
 
 
-@patch("web.analytics.grading.load_graded_range")
+# Patched at the range function, which is where the window is chosen: the ledger read
+# underneath is one cached whole-table read sliced by date (decision log 2026-09-30).
+@patch("web.analytics.load_performance_range")
 @patch("web.analytics.grading.load_graded_slate")
 def test_results_compare_the_day_with_the_days_before_it(slate, window):
     """The comparison window ends the day *before* the slate being read.
@@ -250,3 +252,23 @@ def test_markets_sharing_a_noun_get_distinct_group_labels():
     labels = [g["label"] for g in _version_groups(rows)]
     assert len(set(labels)) == len(labels), f"duplicate group labels: {labels}"
     assert "MLB Batter Ks" in labels and "MLB SP Strikeouts" in labels
+
+
+def test_the_performance_ledger_is_read_once_and_sliced_exactly(monkeypatch):
+    """One read per database version, sliced by date — the same rows a ranged read
+    returns, inclusive at both ends."""
+    from web import analytics
+
+    calls = []
+    rows = [row(snapshot_date=d, player_id=d) for d in ("2026-08-01", "2026-08-02", "2026-08-03")]
+
+    def load(start, end, *a, **k):
+        calls.append((start, end))
+        return rows
+
+    monkeypatch.setattr(analytics.grading, "load_graded_range", load)
+    first = analytics.load_performance_range(date(2026, 8, 2), date(2026, 8, 3))
+    second = analytics.load_performance_range(date(2026, 8, 1), date(2026, 8, 1))
+    assert [r["snapshot_date"] for r in first] == ["2026-08-02", "2026-08-03"]
+    assert [r["snapshot_date"] for r in second] == ["2026-08-01"]
+    assert len(calls) == 1
