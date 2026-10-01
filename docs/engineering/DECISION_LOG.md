@@ -60,6 +60,35 @@ much as strikeout rate, because a playoff hook caps batters faced; hits allowed 
 information when measured; walks have no model. Pitches are summed per plate appearance and
 innings are outs recorded ÷ 3 — close, not official, and the card says so.
 
+**Checked against MLB's own game logs before shipping.** One hitter and one starter in each
+of four postseason games (CHC@SD and BOS@NYY Game 2, CWS@HOU Game 2, PHI@ATL Game 3), every
+number on the desk recomputed from StatsAPI's official game logs. The first pass found 39
+mismatches and two real defects:
+- **The feed writes running events as rows.** A stolen base, caught stealing or pickoff is
+  its own row with an empty `play_type`, the pitch count so far and `is_official_ab` set —
+  6,325 rows in 2026, none a hit, strikeout or walk. They inflated PA, at-bats, batters
+  faced and pitches by ~3% (Hunter Brown read 107 pitches in a 101-pitch start). The desk
+  now counts only rows that end a plate appearance, takes **outs from every row** (a caught
+  stealing is the pitcher's out, which is why innings already matched), and keeps an event's
+  pitches only when it ended the inning mid-at-bat. **The rest of the site still counts
+  those rows** — Team Identity, the trends and the scorers' per-PA rates run ~3% low on PA.
+  That is a scorer-input change and is left for a backtest, like the phase split.
+- **"Start" now means MLB's definition**: the first pitcher a team used. The old rule
+  (`src/pitcher_opportunity`: inning 1 and ten batters) dropped Pivetta's nine-batter exit,
+  which is exactly the outcome a strikeout line needs to see.
+After the fixes Max Fried and Hunter Brown match on every figure. What remains is the
+source: the play-by-play does not pick up **official scoring changes** (Crow-Armstrong's
+hits differ in three games, one hit each way), so a season total can be one hit off; and a
+pitcher pulled mid-count leaves that at-bat's pitches to the reliever (Pivetta 42 vs 46).
+The page says both: pitches and innings are marked `~ reconstructed from play-by-play`, and
+the legend names the scoring-change limit.
+
+**Labelling, from the owner's review.** On postseason pages the form pill reads "Regular-season
+form: …"; a confirmed lineup reads "✓ Confirmed lineup" and an unconfirmed one is an orange
+dashed badge with the date of the order it is showing; a starter's strip is "last 6
+*recorded* starts", and when those starts are not one recent run (a gap over three weeks, or
+over six weeks end to end) the card says "Starts span Apr 1 – Sep 24" and draws the gap.
+
 **Tradeoffs.** The desk reloads the plate-appearance feed per postseason game (~4 s) and
 caches its HTML for five minutes; at four games a day across three slate days that is
 cheap. The feed runs a day behind, so tonight's page knows Game 1 but not Game 2 in

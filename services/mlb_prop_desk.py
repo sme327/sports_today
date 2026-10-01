@@ -38,7 +38,6 @@ from services.data_access import is_postseason
 WINDOWS = (28, 14)                 # days, widest first
 STRIP_GAMES = 10                   # game-by-game strip length for a hitter
 STRIP_STARTS = 6                   # for a starter
-MIN_START_BF = 10                  # same bar as src/pitcher_opportunity: fewer is an opener
 SMALL = 10                         # below this many games, show counts only
 
 HITTER_MODES = ("hits", "tb", "bk")
@@ -83,6 +82,20 @@ def _num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce").fillna(0)
 
 
+def ends_plate_appearance(pa: pd.DataFrame) -> pd.Series:
+    """Rows that close a plate appearance, as opposed to running events inside one.
+
+    The feed writes a stolen base, caught stealing or pickoff as its own row, with an
+    empty ``play_type``, the pitch count *so far*, and ``is_official_ab`` set — 6,325 rows
+    in 2026, none of them a hit, strikeout or walk. Counted as plate appearances they
+    inflated PA, at-bats, batters faced and pitches by about 3%, which is how a QC against
+    MLB's own game logs found them (decision log 2026-09-30).
+    """
+    if "play_type" not in pa.columns:
+        return pd.Series(True, index=pa.index)
+    return pa["play_type"].fillna("").astype(str).str.strip() != ""
+
+
 def batter_games(pa: pd.DataFrame) -> pd.DataFrame:
     """One row per batter per game: chances, results, phase and batting slot.
 
@@ -91,6 +104,7 @@ def batter_games(pa: pd.DataFrame) -> pd.DataFrame:
     """
     if pa.empty:
         return pd.DataFrame()
+    pa = pa[ends_plate_appearance(pa)]
     df = pa.assign(
         _post=is_postseason(pa).values,
         _h=_num(pa["is_hit"]), _tb=_num(pa["total_bases"]),
@@ -120,27 +134,41 @@ def batter_games(pa: pd.DataFrame) -> pd.DataFrame:
 def pitcher_appearances(pa: pd.DataFrame) -> pd.DataFrame:
     """One row per pitcher per game: workload, results, and whether it was a start.
 
-    Pitches are the sum of each plate appearance's pitch count; innings are outs recorded
-    while he was on the mound, over three. Both are close, not official: a pitcher pulled
-    mid-count leaves that plate appearance to the reliever.
+    A **start** is MLB's own definition: the first pitcher a team used in the game, however
+    briefly — an early exit is exactly what a strikeout line needs to see. Batters faced,
+    pitches and results come from rows that end a plate appearance; **outs come from every
+    row**, because a caught stealing is an out the pitcher is credited with. A running
+    event that ends an inning mid-at-bat leaves its pitches on that row, so those count too.
+    Pitches are therefore close to official, and the page marks them as reconstructed.
     """
     if pa.empty:
         return pd.DataFrame()
+    pa = pa.reset_index(drop=True)
     inning = pd.to_numeric(pa["inning"].astype(str).str.extract(r"(\d+)")[0], errors="coerce")
+    closes = ends_plate_appearance(pa)
+    # An event row's pitches belong to the at-bat it interrupts, which the next row of the
+    # same at-bat repeats in full — unless the event ended the inning and there is no next row.
+    same_at_bat_next = (
+        (pa["game_id"].shift(-1) == pa["game_id"])
+        & (pa["batter_id"].shift(-1) == pa["batter_id"])
+        & (inning.shift(-1) == inning))
+    pitches = _num(pa["pitch_count_pa"]).where(closes | ~same_at_bat_next, 0)
     df = pa.assign(
-        _post=is_postseason(pa).values, _inn=inning,
-        _pitches=_num(pa["pitch_count_pa"]), _outs=_num(pa["outs_on_play"]),
+        _post=is_postseason(pa).values, _inn=inning, _order=range(len(pa)),
+        _pitches=pitches, _outs=_num(pa["outs_on_play"]), _bf=closes.astype(int),
         _h=_num(pa["is_hit"]), _k=_num(pa["is_strikeout"]), _bb=_num(pa["is_walk"]),
     )
+    first = (df.sort_values(["game_id", "pitching_team", "_inn", "_order"], kind="stable")
+               .drop_duplicates(["game_id", "pitching_team"]))
+    starters = set(zip(first["game_id"], first["pitcher_id"]))
     apps = df.groupby(["game_id", "pitcher_id"], sort=False).agg(
         game_date=("game_date", "first"), pitcher_name=("pitcher_name", "last"),
         pitcher_hand=("pitcher_hand", "last"), team=("pitching_team", "first"),
         opp=("batting_team", "first"), post=("_post", "first"),
-        first_inning=("_inn", "min"), bf=("pa_number", "size"),
-        pitches=("_pitches", "sum"), outs=("_outs", "sum"),
+        bf=("_bf", "sum"), pitches=("_pitches", "sum"), outs=("_outs", "sum"),
         h=("_h", "sum"), k=("_k", "sum"), bb=("_bb", "sum"),
     ).reset_index()
-    apps["start"] = (apps["first_inning"] == 1) & (apps["bf"] >= MIN_START_BF)
+    apps["start"] = [(g, p) in starters for g, p in zip(apps["game_id"], apps["pitcher_id"])]
     for col in ("pitches", "outs", "h", "k", "bb", "bf"):
         apps[col] = apps[col].astype(int)
     return apps.sort_values("game_date").reset_index(drop=True)
@@ -278,10 +306,34 @@ class Starter:
     thresholds: dict[str, tuple[tuple[str, Count, Count, Count], ...]]   # label, season, recent, post
     lineup: dict[str, Count] = field(default_factory=dict)   # opposing nine vs his hand
     lineup_note: str = ""
+    recent_dates: tuple[date, ...] = ()
 
     @property
     def throws(self) -> str:
         return {"L": "LHP", "R": "RHP"}.get(self.hand or "", "SP")
+
+    @property
+    def recent_span(self) -> str | None:
+        """"Apr 1 – Sep 24" when the recorded starts are not one recent run.
+
+        "Last six starts" reads as a continuous recent stretch, and for a pitcher back from
+        the injured list it is not: 8 · 8 · 2 · 5 · 4 · 7 looks like September until the
+        dates say April. Any gap of more than three weeks between consecutive starts, or
+        a first start more than six weeks before the last, gets the span stated.
+        """
+        if len(self.recent_dates) < 2:
+            return None
+        first, last = self.recent_dates[0], self.recent_dates[-1]
+        gaps = [(b - a).days for a, b in zip(self.recent_dates, self.recent_dates[1:])]
+        if max(gaps) > 21 or (last - first).days > 42:
+            return f"{first.strftime('%b %-d')} – {last.strftime('%b %-d')}"
+        return None
+
+    @property
+    def gap_before(self) -> set[int]:
+        """Indexes of recent starts that follow a gap of more than three weeks."""
+        return {i + 1 for i, (a, b) in enumerate(zip(self.recent_dates, self.recent_dates[1:]))
+                if (b - a).days > 21}
 
 
 def _outing(row) -> Outing:
@@ -321,6 +373,7 @@ def build_starter(apps: pd.DataFrame, pid: str | None, opp: str) -> Starter | No
         hand=str(last["pitcher_hand"]) if pd.notna(last["pitcher_hand"]) else None,
         team=str(last["team"]), opp=opp, starts=len(reg), avg=avg,
         recent=tuple(_outing(r) for _, r in recent.iterrows()),
+        recent_dates=tuple(pd.Timestamp(d).date() for d in recent["game_date"]),
         post=tuple(_outing(r) for _, r in post.iterrows()),
         vs_opp=tuple(_outing(r) for _, r in reg[reg["opp"] == opp].iterrows()),
         thresholds=thresholds)
@@ -328,14 +381,17 @@ def build_starter(apps: pd.DataFrame, pid: str | None, opp: str) -> Starter | No
 
 # --- the lineup ----------------------------------------------------------------------
 
-def _last_game_order(games: pd.DataFrame, team: str) -> tuple[tuple[str, str], ...]:
-    """The team's most recent batting order in the feed, for when tonight's is not posted."""
+def _last_game_order(games: pd.DataFrame, team: str
+                     ) -> tuple[tuple[tuple[str, str], ...], date | None]:
+    """The team's most recent batting order in the feed, and its date, for when tonight's
+    is not posted."""
     mine = games[(games["batting_team"] == team) & (games["slot"] > 0)]
     if mine.empty:
-        return ()
+        return (), None
     last = mine[mine["game_id"] == mine.sort_values("game_date")["game_id"].iloc[-1]]
     last = last.sort_values("slot")
-    return tuple((str(r["batter_id"]), str(r["batter_name"])) for _, r in last.iterrows())
+    order = tuple((str(r["batter_id"]), str(r["batter_name"])) for _, r in last.iterrows())
+    return order, pd.Timestamp(last["game_date"].iloc[0]).date()
 
 
 def _hand(pa: pd.DataFrame, pid: str) -> str | None:
@@ -367,7 +423,7 @@ def build_hitter(pa: pd.DataFrame, games: pd.DataFrame, pid: str, name: str,
 
     vs_hand = bvp = None
     if starter is not None:
-        his = pa[pa["batter_id"] == pid]
+        his = pa[(pa["batter_id"] == pid) & ends_plate_appearance(pa)]
         if starter.hand:
             side = his[(~is_postseason(his)) & (his["pitcher_hand"] == starter.hand)]
             vs_hand = Count(int(_num(side["is_strikeout"]).sum()), len(side))
@@ -416,7 +472,7 @@ def _lineup_profile(starter: Starter | None, hitters: tuple[Hitter, ...], pa: pd
         return {}, ""
     ids = {h.pid for h in hitters}
     rows = pa[(pa["batter_id"].isin(ids)) & (~is_postseason(pa))
-              & (pa["pitcher_hand"] == starter.hand)]
+              & (pa["pitcher_hand"] == starter.hand) & ends_plate_appearance(pa)]
     n = len(rows)
     if not n:
         return {}, ""
@@ -453,8 +509,9 @@ def build(pa: pd.DataFrame, *, away_team: str, home_team: str, away_short: str,
             order = tuple((str(pid), name) for pid, name in lineups.order[team])
             source = "Confirmed lineup"
         else:
-            order = _last_game_order(games, team)
-            source = "Not posted yet — showing the last game's order, not tonight's"
+            order, played = _last_game_order(games, team)
+            when = f" ({played.strftime('%b %-d')})" if played else ""
+            source = f"Not posted yet — this is the last game's order{when}, not tonight's"
         hitters = tuple(
             build_hitter(pa, games, pid, name, i, posted, opp, facing, reg_end, slot_pa)
             for i, (pid, name) in enumerate(order, 1))

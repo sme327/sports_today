@@ -2474,7 +2474,11 @@ a.mlb-hero-series:focus-visible { outline: 2px solid var(--brand); outline-offse
 .pd-lineup-head strong { color: var(--text-1); font-size: 1rem; }
 .pd-badge { padding: .14rem .5rem; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-2);
   font-size: .66rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.pd-badge.off { background: none; border: 1px dashed var(--text-4); color: var(--text-3); }
+.pd-badge.off { background: var(--brand-soft); border: 1px dashed var(--brand-2); color: var(--brand-2); }
+.pd-unconfirmed { color: var(--brand-2) !important; font-style: normal !important; font-weight: 650; }
+.pd-sp-table abbr { text-decoration: none; cursor: help; }
+.pd-sp-table .gap { border-left: 2px dashed var(--hairline-2); }
+.pd-span { color: var(--text-2); font-weight: 700; }
 .pd-facing { color: var(--text-3); font-size: .74rem; }
 .pd-unconfirmed { margin: 0 0 .4rem; color: var(--text-3); font-size: .74rem; font-style: italic; }
 .pd-hitter { border-bottom: 1px solid var(--hairline); }

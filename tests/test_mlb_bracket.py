@@ -263,11 +263,13 @@ def test_the_matchup_hero_trades_games_back_for_the_seed(monkeypatch):
     monkeypatch.setattr(B, "load", lambda *_a, **_k: B.build(_payload()))
     hero = _hero(away_team="Boston Red Sox", home_team="New York Yankees",
                        away_standing="87-75 · 3rd in AL East, 11 GB",
-                       home_standing="93-68 · 2nd in AL East, 4.5 GB")
+                       home_standing="93-68 · 2nd in AL East, 4.5 GB",
+                       home_form_note="Bats heating up")
     game = SlateGame(league="MLB", game_id="2", away_id="111", home_id="147",
                      phase="postseason")
     hero, series = games._postseason_hero(game, hero, date(2026, 9, 30))
     assert hero.away_standing == "No. 5 seed · 87-75 in the regular season"
+    assert hero.home_form_note == "Regular-season form: bats heating up"
     assert "GB" not in hero.home_standing
     assert series["standing"] == "Yankees lead 1-0"
     assert series["href"] == "/playoffs/mlb/al-wild-card-b/"

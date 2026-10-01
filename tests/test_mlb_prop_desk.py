@@ -230,3 +230,61 @@ def test_the_desk_appears_only_on_postseason_games():
 
     regular = SlateGame(league="MLB", game_id="1", phase="regular")
     assert _prop_desk(regular, date(2026, 9, 30)) == ""
+
+
+# --- found by the QC against MLB's own game logs (2026-09-30) ---------------------------
+
+def _with_steal():
+    """Batter 201 singles; 202's at-bat is interrupted by a steal (an event row carrying
+    the pitch count so far), then completes; 203's at-bat ends the inning on a caught
+    stealing before it finishes."""
+    rows = [
+        _pa(1, "2026-09-01", PADRES, CUBS, 201, 800, hit=1, tb=1, pitches=3, outs=0),
+        {**_pa(1, "2026-09-01", PADRES, CUBS, 202, 800, pitches=2, outs=0), "play_type": ""},
+        _pa(1, "2026-09-01", PADRES, CUBS, 202, 800, k=1, pitches=5, outs=1),
+        _pa(1, "2026-09-01", PADRES, CUBS, 204, 800, pitches=4, outs=1),
+        {**_pa(1, "2026-09-01", PADRES, CUBS, 203, 800, pitches=2, outs=1), "play_type": ""},
+    ]
+    for r in rows:
+        r.setdefault("play_type", "SINGLE")
+    return pd.DataFrame(rows)
+
+
+def test_running_events_are_not_plate_appearances():
+    games = D.batter_games(_with_steal().assign(batter_id=lambda d: d["batter_id"].astype(str)))
+    assert games.loc[games["batter_id"] == "202", "pa"].item() == 1
+    assert "203" not in set(games["batter_id"])        # never completed an at-bat
+
+
+def test_a_starters_workload_counts_each_at_bat_once_and_every_out():
+    apps = D.pitcher_appearances(_with_steal())
+    row = apps.iloc[0]
+    assert row["bf"] == 3                     # 201, 202, 204 — not the steal rows
+    assert row["pitches"] == 3 + 5 + 4 + 2    # 202's interrupted count dropped; 203's kept
+    assert row["outs"] == 3                   # the caught stealing is his out too
+    assert bool(row["start"])
+
+
+def test_a_short_start_is_still_a_start():
+    # Four batters and out: an early exit is exactly what a strikeout line needs to see.
+    assert bool(D.pitcher_appearances(_with_steal()).iloc[0]["start"])
+
+
+def test_starts_separated_by_a_long_gap_state_their_span():
+    sp = _desk().home.starter
+    gapped = D.Starter(**{**sp.__dict__, "recent_dates": (date(2026, 4, 1), date(2026, 4, 7),
+                                                           date(2026, 9, 7), date(2026, 9, 13))})
+    assert gapped.recent_span == "Apr 1 – Sep 13"
+    assert gapped.gap_before == {2}
+    tight = D.Starter(**{**sp.__dict__, "recent_dates": (date(2026, 9, 1), date(2026, 9, 7))})
+    assert tight.recent_span is None
+
+
+def test_estimated_workload_is_marked_and_the_lineup_state_is_unmissable():
+    from components.prop_desk import prop_desk_html
+
+    html = prop_desk_html(_desk())
+    assert "Pitches ~" in html and "Innings ~" in html and "Batters faced ~" not in html
+    assert "Not confirmed" in html
+    assert "last game&#x27;s order (Sep 29), not tonight&#x27;s" in html
+    assert "\\" not in html                  # no stray escapes reach the page

@@ -158,6 +158,15 @@ def _postseason_hero(game: SlateGame, hero, slate_date: date):
                 f"{record} in the regular season" if record else None]
         return " · ".join(b for b in bits if b) or None
 
+    # The form pill describes the regular season (playoff games are excluded from season
+    # reads), so on a playoff page it says so — "heating up" must not read as "including
+    # Game 1".
+    hero = replace(
+        hero,
+        away_form_note=f"Regular-season form: {hero.away_form_note[0].lower()}{hero.away_form_note[1:]}"
+        if hero.away_form_note else None,
+        home_form_note=f"Regular-season form: {hero.home_form_note[0].lower()}{hero.home_form_note[1:]}"
+        if hero.home_form_note else None)
     if info is None:
         series = {"round": game.round_name, "game": game.series_label,
                   "standing": game.series_summary, "stakes": game.series_stakes}

@@ -50,6 +50,11 @@ def _strip(values: tuple[int, ...], post: tuple[bool, ...] = ()) -> str:
 
 # --- starters --------------------------------------------------------------------------
 
+# Reconstructed from play-by-play, not the official box score — marked "~" with a tooltip so
+# an estimate never looks identical to an official figure. Batters faced is an exact count.
+_APPROX = ("Reconstructed from play-by-play: pitches are summed per plate appearance and "
+           "innings are outs recorded ÷ 3. Close to the official box score, not identical.")
+
 _STARTER_ROWS = (
     # key, label, modes that emphasise it, workload?
     ("pitches", "Pitches", _STARTER_ALL, True),
@@ -78,19 +83,30 @@ def starter_card(sp: Starter | None, side: Side, facing: Side) -> str:
                 f'{_e(side.short)} starter</strong></div><p class="pd-quiet">No probable '
                 "starter matched in the feed, so there is nothing to show.</p></div>")
     outings = list(sp.recent) + list(sp.post)
+    gaps = sp.gap_before
+
+    def cls(i: int) -> str:
+        bits = ["post" if i >= len(sp.recent) else "", "gap" if i in gaps else ""]
+        return " ".join(b for b in bits if b)
+
     head = "".join(
-        f'<th class="{"post" if i >= len(sp.recent) else ""}" scope="col">'
+        f'<th class="{cls(i)}" scope="col">'
         f'{_e(o.day)}{"" if o.start else "<small>relief</small>"}</th>'
         for i, o in enumerate(outings))
     rows = []
     for key, label, emph, workload in _STARTER_ROWS:
+        approx = key in ("pitches", "ip")
         cells = "".join(
-            f'<td class="{"post" if i >= len(sp.recent) else ""}">{_e(_outing_value(o, key))}</td>'
+            f'<td class="{cls(i)}">{_e(_outing_value(o, key))}</td>'
             for i, o in enumerate(outings))
+        name = (f'<abbr title="{_e(_APPROX)}">{label} ~</abbr>' if approx else label)
+        avg = f'~{_avg_cell(sp, key)}' if approx else _avg_cell(sp, key)
         rows.append(f'<tr class="pd-sp-row{" workload" if workload else ""}" data-emph="{emph}">'
-                    f'<th scope="row">{label}</th><td class="pd-avg">{_avg_cell(sp, key)}</td>'
+                    f'<th scope="row">{name}</th><td class="pd-avg">{avg}</td>'
                     f'{cells}</tr>')
     divider = (' · <span class="pd-post-key">playoff</span>' if sp.post else "")
+    span = (f' <b class="pd-span">Starts span {_e(sp.recent_span)}.</b>'
+            if sp.recent_span else "")
     post_note = ("" if sp.post else
                  '<p class="pd-quiet">No postseason appearance yet.</p>')
     vs = ""
@@ -116,8 +132,8 @@ def starter_card(sp: Starter | None, side: Side, facing: Side) -> str:
         f'<div class="pd-sp-scroll"><table class="pd-sp-table">'
         f'<thead><tr><th></th><th scope="col">Avg</th>{head}</tr></thead>'
         f'<tbody>{"".join(rows)}</tbody></table></div>'
-        f'<p class="pd-quiet">Last {len(sp.recent)} regular-season starts, oldest first{divider}. '
-        f'Innings are outs recorded ÷ 3.</p>'
+        f'<p class="pd-quiet">Last {len(sp.recent)} recorded regular-season starts, oldest '
+        f'first{divider}.{span} ~ = reconstructed from play-by-play.</p>'
         f'{post_note}{lineup}{vs}</div>')
 
 
@@ -221,7 +237,7 @@ def _hitter_row(h: Hitter, facing: Starter | None, confirmed: bool) -> str:
 
 
 def _lineup(side: Side, facing: Starter | None) -> str:
-    badge = ("Confirmed" if side.confirmed else "Not confirmed")
+    badge = ("✓ Confirmed lineup" if side.confirmed else "Not confirmed")
     facing_note = (f'<span class="pd-facing" data-m="bk sk">Facing {_e(facing.throws)} '
                    f'{_e(facing.name)}</span>' if facing else "")
     rows = "".join(_hitter_row(h, facing, side.confirmed) for h in side.hitters)
@@ -272,7 +288,8 @@ def _starter_thresholds(desk: PropDesk) -> str:
                 for label, season, recent, post in sp.thresholds.get(mode, ()))
             tables.append(
                 f'<table><thead><tr><th scope="col">{_e(sp.name)}</th><th scope="col">Season</th>'
-                f'<th scope="col">Last {len(sp.recent)}</th><th scope="col">Post</th></tr></thead>'
+                f'<th scope="col">Last {len(sp.recent)} recorded</th><th scope="col">Post</th>'
+                f'</tr></thead>'
                 f'<tbody>{rows}</tbody></table>')
         out.append(f'<div class="pd-th-table pd-th-starters" data-m="{mode}">{"".join(tables)}</div>')
     return "".join(out)
@@ -317,6 +334,8 @@ def prop_desk_html(desk: PropDesk | None) -> str:
         f'{SMALL} games up. L14/L28 are the last days of the regular season.</span></div>'
         f'{_threshold_pills()}{_hitter_thresholds(desk)}{_starter_thresholds(desk)}</div>'
         f'<p class="pd-legend"><span class="pd-v post">2</span> playoff game · '
-        f'strips run oldest → newest · tap a hitter for the full breakdown. Evidence, not '
-        f'picks: no odds are read and nothing here is scored.</p>'
+        f'strips run oldest → newest · tap a hitter for the full breakdown. Built from the '
+        f'play-by-play feed, which does not pick up official scoring changes, so a season '
+        f'total can differ from MLB’s by a hit. Evidence, not picks: no odds are read and '
+        f'nothing here is scored.</p>'
         f'</section>')
