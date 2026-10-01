@@ -128,10 +128,17 @@ def build_context(params, local_today: date) -> dict:
             race = slate_implications(all_visible, slate_date)
         except Exception:                                    # noqa: BLE001
             race = {}
+        # Where each postseason game sits in its series, for the card's seed and series
+        # line. Non-fatal for the same reason: the card falls back to the source's line.
+        try:
+            from services.mlb_bracket import slate_series
+            series = slate_series(all_visible, slate_date)
+        except Exception:                                    # noqa: BLE001
+            series = {}
         schedule_groups = [
             django_matchup_links(
                 schedule_grid_html(group, day, counts, threshold,
-                                   set(best_ids.values()), norms, race)
+                                   set(best_ids.values()), norms, race, series)
             )
             for group in group_games_by_state(all_visible)
             if group

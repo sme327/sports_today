@@ -517,6 +517,15 @@ claim.
 | **Sparkline** | Unlabelled, unscaled shape beside a table | A shape, not a chart. The table holds every number |
 | **Filter chips** | "Filtered to …", each clearing only itself | Every figure below responds to them, and a reader who has scrolled has no other cue |
 
+### MLB postseason
+
+| Pattern | What it is | Rule it carries |
+|---|---|---|
+| **Bracket** | Seven columns — AL climbing from the left, the World Series in the middle (its title the only orange heading), the NL mirrored — each centring its series so a Division Series sits between the two Wild Card series that feed it | No drawn connectors: the vertical centring carries the tree. On phones the columns stack, each league reading Wild Card → Division Series → pennant, World Series last |
+| **Series cell** | Two rows (orange seed · logo · name · wins) over one quiet status line | The leader is bright, the eliminated side dimmed; wins appear only once a game is final. An unfilled slot is italic and named by where its occupant comes from ("NYY/BOS winner"), never by the source's placeholder |
+| **Card seed + series line** | A small orange seed numeral before each name, and "Yankees lead 1-0 · **Elimination game**" under the teams, linking to the series page | The only height a card gains in October. Stakes are the one orange word; none are claimed for a game behind an unfinished one, which says "if necessary" instead |
+| **Hero series strip** | One ruled line across the top of the MLB matchup hero: round and game in orange caps on the left, the series standing on the right, "Series →" at the end | Replaces "games back" with "No. N seed · record in the regular season" under each club. In October, games back is true and beside the point |
+
 ### Daily Results
 
 | Pattern | What it is | Rule it carries |

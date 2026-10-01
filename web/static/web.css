@@ -646,6 +646,137 @@ html[data-slate-stale] .opportunity-section { display: none; }
   .race-game { grid-template-columns: 4.4rem minmax(0, 1fr); }
 }
 
+/* --- MLB postseason bracket ------------------------------------------------------
+   Seven columns: the AL climbs from the left, the World Series sits in the middle, the
+   NL mirrors it. Each column centres its series vertically, so a Division Series lands
+   between the two Wild Card series and the pennant between those — the tree reads
+   without drawn connectors. The leader's side is bright, the eliminated side dimmed;
+   seeds are the only orange, as in the race table they replace. */
+.bracket { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .55rem;
+  margin: .4rem 0 0; }
+.bk-col { display: flex; flex-direction: column; min-width: 0; }
+.bk-col-title { margin: 0 0 .5rem; color: var(--text-4); font-size: .62rem; font-weight: 750;
+  letter-spacing: .05em; text-align: center; text-transform: uppercase; }
+.bk-col-body { display: flex; flex: 1; flex-direction: column; justify-content: space-around;
+  gap: .7rem; min-height: 15rem; }
+.bk-col--mlb-w .bk-col-title { color: var(--brand-2); }
+.bk-series { display: block; overflow: hidden; border: 1px solid var(--divider);
+  border-radius: var(--r-sm); background: var(--surface-1); color: inherit;
+  text-decoration: none; box-shadow: var(--edge-hi); transition: .16s ease; }
+.bk-series:hover { transform: translateY(-1px); border-color: var(--hairline-2); background: var(--surface-2); }
+.bk-series:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.bk-series--live { border-color: var(--brand-ring); }
+.bk-col--mlb-w .bk-series { border-color: var(--brand-ring); }
+.bk-side { display: grid; grid-template-columns: 1rem 20px minmax(0, 1fr) auto; align-items: center;
+  gap: .4rem; min-height: 2.05rem; padding: .25rem .5rem; border-bottom: 1px solid var(--hairline);
+  color: var(--text-1); font-size: .76rem; font-weight: 700; }
+.bk-side img, .bk-logo-gap { width: 20px; height: 20px; object-fit: contain; }
+.bk-seed { color: var(--brand-2); font-size: .66rem; text-align: center; font-variant-numeric: tabular-nums; }
+.bk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-wins { color: var(--text-1); font-variant-numeric: tabular-nums; }
+.bk-side.out { color: var(--text-4); }
+.bk-side.out img { opacity: .45; }
+.bk-side.out .bk-wins { color: var(--text-4); }
+.bk-side.won .bk-wins { color: var(--brand-2); }
+.bk-side.tbd .bk-name { color: var(--text-3); font-weight: 600; font-style: italic; }
+.bk-status { padding: .3rem .5rem .35rem; color: var(--text-3); font-size: .64rem; line-height: 1.3; }
+.bk-series--live .bk-status { color: var(--brand-2); }
+.bk-stakes { color: var(--brand-2); font-weight: 750; }
+.bk-champion { display: flex; align-items: center; gap: .8rem; margin: 0 0 1rem; padding: .8rem 1rem;
+  border-radius: var(--r-md); background: var(--brand-soft); }
+.bk-champion span { display: block; color: var(--text-3); font-size: .7rem; font-weight: 750;
+  letter-spacing: .05em; text-transform: uppercase; }
+.bk-champion strong { color: var(--text-1); font-size: 1.1rem; }
+.race-game-date small { display: block; margin-top: .15rem; color: var(--text-3);
+  font-size: .66rem; font-weight: 600; text-transform: none; }
+.race-game p a { color: var(--text-2); }
+
+/* Series page */
+.back-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-bottom: 1rem; flex-wrap: wrap; }
+.series-hero { padding: 1.1rem 1.25rem; border-radius: var(--r-lg);
+  background: linear-gradient(150deg, var(--surface-1-top), var(--surface-1));
+  box-shadow: var(--edge-hi), var(--shadow-md); }
+.series-hero-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center; gap: 1rem; }
+.series-team { display: flex; align-items: center; gap: .8rem; min-width: 0; }
+.series-team.low { flex-direction: row-reverse; text-align: right; }
+.series-team > div { min-width: 0; flex: 1; }
+.series-team img, .series-logo-gap { width: 56px; height: 56px; flex: 0 0 56px; object-fit: contain; }
+.series-seed { display: block; color: var(--brand-2); font-size: .7rem; font-weight: 750;
+  letter-spacing: .04em; text-transform: uppercase; }
+.series-name { display: block; color: var(--text-1); font-size: 1.3rem; font-weight: 800;
+  line-height: 1.15; text-decoration: none; }
+a.series-name { color: var(--text-2); font-style: italic; font-weight: 650; font-size: 1.05rem; }
+.series-wins { color: var(--text-1); font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.series-team.won .series-wins { color: var(--brand); }
+.series-team.out { opacity: .55; }
+.series-vs { color: var(--text-4); font-size: 1.6rem; }
+.series-summary { display: flex; align-items: baseline; gap: .4rem 1rem; flex-wrap: wrap;
+  margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--hairline); color: var(--text-3);
+  font-size: .82rem; }
+.series-summary strong { color: var(--text-1); font-size: 1.05rem; }
+.series-games { overflow: hidden; border: 1px solid var(--divider); border-radius: var(--r-md);
+  background: var(--surface-1); }
+.series-game { display: grid; grid-template-columns: 4.2rem 7rem minmax(0, 1fr) 9rem 5.5rem;
+  align-items: center; gap: .6rem; padding: .6rem .8rem; border-bottom: 1px solid var(--hairline);
+  color: var(--text-2); font-size: .8rem; }
+.series-game:last-child { border-bottom: 0; }
+.series-game.maybe { color: var(--text-4); }
+.series-game--live { background: var(--brand-soft); }
+.sg-num { color: var(--text-3); font-size: .7rem; font-weight: 750; text-transform: uppercase; }
+.sg-when small { display: block; color: var(--text-4); font-size: .68rem; }
+.sg-teams { display: flex; align-items: baseline; gap: .4rem; flex-wrap: wrap; min-width: 0; }
+.sg-teams i { color: var(--text-4); font-size: .7rem; font-style: normal; }
+.sg-teams .won { color: var(--text-1); font-weight: 750; }
+.sg-teams b { font-variant-numeric: tabular-nums; }
+.sg-teams small { flex-basis: 100%; color: var(--text-4); font-size: .68rem; }
+.sg-after { color: var(--text-3); font-size: .74rem; }
+.sg-link { text-align: right; }
+.sg-link .race-game-link { margin: 0; }
+.series-tape { max-width: 40rem; }
+.series-tape .race-row { grid-template-columns: 8rem minmax(0, 1fr) minmax(0, 1fr); }
+.tape-label { color: var(--text-3); }
+.series-meetings { margin-top: .6rem; }
+.series-roads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.series-road { padding: .8rem; border: 1px solid var(--divider); border-radius: var(--r-md);
+  background: var(--surface-1); }
+.series-road strong { color: var(--text-1); }
+.series-road ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--text-2); font-size: .8rem; line-height: 1.5; }
+.series-road a { color: var(--text-2); }
+.series-next { margin: .9rem 0 0; }
+
+@media (max-width: 1000px) {
+  /* Stacked: each league reads Wild Card → Division Series → pennant, top to bottom, and
+     the World Series closes the page — the mirrored desktop order would put the NL
+     pennant above the NL Wild Card. */
+  .bracket { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem .65rem; }
+  .bk-col-body { min-height: 0; justify-content: flex-start; }
+  .bk-col--al-f { order: 1; } .bk-col--al-d { order: 2; }
+  .bk-col--nl-f { order: 3; } .bk-col--nl-d { order: 4; }
+  .bk-col--al-l { order: 5; } .bk-col--nl-l { order: 6; }
+  .bk-col--mlb-w { order: 7; grid-column: 1 / -1; }
+  .bk-col-title { text-align: left; }
+}
+@media (max-width: 560px) {
+  .bracket { grid-template-columns: 1fr; }
+  .bk-col--al-f { order: 1; } .bk-col--al-d { order: 2; } .bk-col--al-l { order: 3; }
+  .bk-col--nl-f { order: 4; } .bk-col--nl-d { order: 5; } .bk-col--nl-l { order: 6; }
+  .series-hero-row { grid-template-columns: 1fr; gap: .6rem; }
+  .series-vs { display: none; }
+  .series-team.low { flex-direction: row; text-align: left; }
+  .series-name { font-size: 1.1rem; }
+  .series-wins { font-size: 1.9rem; }
+  .series-game { grid-template-columns: 3.4rem minmax(0, 1fr) auto; gap: .3rem .5rem; }
+  .sg-when { grid-column: 2; grid-row: 1; }
+  .sg-num { grid-row: 1 / 3; }
+  .sg-teams { grid-column: 2 / -1; }
+  .sg-after { grid-column: 3; grid-row: 1; text-align: right; }
+  .sg-link { grid-column: 2 / -1; text-align: left; }
+  .series-roads { grid-template-columns: 1fr; }
+  .series-tape .race-row { grid-template-columns: 6.5rem minmax(0, 1fr) minmax(0, 1fr); }
+}
+
 /* --- NFL season schedule ---------------------------------------------------------
    Two axes over one table: browse a week, or follow a team. Tabular numerals and a
    fixed logo box so 16 rows line up as a column rather than 16 independent rows. */

@@ -1,0 +1,70 @@
+{% extends "web/base.html" %}
+{% block title %}{{ season }} MLB Postseason · Sports Today{% endblock %}
+{% block content %}
+<section class="analytics-hero playoff-hero">
+  <div>
+    <div class="eyebrow">{{ season }} postseason</div>
+    <h1 class="page-title">MLB playoff bracket</h1>
+    {% if read %}<p class="page-read">{{ read }}</p>{% endif %}
+  </div>
+  <a class="text-link" href="{% url 'standings' %}?league=MLB">Final standings →</a>
+</section>
+
+{% if leagues|length > 1 %}
+<section class="filter-row" aria-label="League">
+  <div class="filter-pills">
+    {% for name in leagues %}<a class="filter-pill {% if name == league %}active{% endif %}" href="{% url 'playoffs' %}?league={{ name }}" aria-label="{{ name }} playoffs"{% if name == league %} aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if champion %}
+<div class="bk-champion">{% if champion.logo %}<img src="{{ champion.logo }}" alt="" width="40" height="40">{% endif %}<div><span>World Series champions</span><strong>{{ champion.full_name }}</strong></div></div>
+{% endif %}
+
+{% comment %}The AL climbs toward the middle from the left and the NL mirrors it from the
+right, so each series sits beside the one its winner goes on to. On a phone the columns
+stack instead, each league reading Wild Card → Division Series → pennant.{% endcomment %}
+<section class="bracket" aria-label="{{ season }} MLB postseason bracket">
+  {% for column in columns %}
+  <div class="bk-col bk-col--{{ column.league|lower }}-{{ column.type|lower }}">
+    <h2 class="bk-col-title">{% if column.league != "MLB" and column.type != "L" %}{{ column.league }} {% endif %}{{ column.title }}</h2>
+    <div class="bk-col-body">
+      {% for s in column.series %}
+      <a class="bk-series bk-series--{{ s.state }}" href="{{ s.href }}" aria-label="{{ s.round_name }}: {{ s.sides.0.name }} and {{ s.sides.1.name }}, {{ s.status }}">
+        {% for side in s.sides %}
+        <div class="bk-side{% if side.won %} won{% elif side.out %} out{% endif %}{% if side.placeholder %} tbd{% endif %}">
+          <span class="bk-seed">{% if side.seed %}{{ side.seed }}{% endif %}</span>
+          {% if side.logo %}<img src="{{ side.logo }}" alt="" width="20" height="20" loading="lazy">{% else %}<span class="bk-logo-gap" aria-hidden="true"></span>{% endif %}
+          <span class="bk-name"{% if side.compact != side.name %} title="{{ side.name }}"{% endif %}>{{ side.compact }}</span>
+          {% if s.state != "upcoming" and not side.placeholder %}<span class="bk-wins">{{ side.wins }}</span>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="bk-status">{{ s.status }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+{% if next_games %}
+<section class="important-games">
+  <div class="section-heading">
+    <div><h2>Next up</h2><p>The next game in every series still being played.</p></div>
+  </div>
+  <div class="race-games">
+    {% for game in next_games %}
+    <article class="race-game linked">
+      <span class="race-game-date">{{ game.day }}<small{% if game.start_utc %} data-start-utc="{{ game.start_utc }}"{% endif %}>{{ game.time }}</small></span>
+      <div class="race-matchup"><span>{{ game.away }}</span><i>at</i><span>{{ game.home }}</span></div>
+      <p><a href="{{ game.href }}">{{ game.round }}</a> · Game {{ game.number }}{% if game.standing %} · {{ game.standing }}{% endif %}{% if game.stakes %} · <b class="bk-stakes">{{ game.stakes }}</b>{% endif %}{% if game.if_necessary %} · if necessary{% endif %}</p>
+      {% if game.matchup %}<a class="race-game-link" href="{{ game.matchup }}" aria-label="{{ game.away }} at {{ game.home }} matchup">Matchup →</a>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<p class="quiet-note">Series records are counted from final scores. Seeds are MLB's own, from the final regular-season standings{% if seeds_dropped %} — not shown for the {{ seeds_dropped|join:" or " }}, where the source's seeds contradicted its own pairings{% endif %}. A bracket, not a forecast: nothing here says who will win.{% if collected_at %} Bracket as of {{ collected_at }}.{% endif %}</p>
+{% endblock %}

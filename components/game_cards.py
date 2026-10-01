@@ -47,7 +47,7 @@ def _score_cell(game: SlateGame, side: str) -> str:
 
 
 def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str,
-              market: str = "") -> str:
+              market: str = "", seed: int | None = None) -> str:
     """The market spread rides *inside* the name cell, immediately after the team.
 
     Not as its own column: `.team-row` is a three-column grid and the live-score script
@@ -56,10 +56,41 @@ def _team_row(game: SlateGame, side: str, logo: str, name: str, win_cls: str,
     also reads better — a spread describes that team, so it belongs beside it rather
     than in a far-right column the eye reaches last.
     """
+    # A postseason seed leads the name, in the bracket's orange, so "4 Yankees" on the
+    # card is the same "4 Yankees" the reader saw on the bracket.
+    seed_html = (f'<span class="team-seed" title="No. {seed} seed">{seed}</span>'
+                 if seed else "")
     return (f'<div class="team-row {side}{win_cls}">'
             f'<span class="team-logo-wrap">{logo}</span>'
-            f'<span class="team-name">{escape(name)}{market}</span>'
+            f'<span class="team-name">{seed_html}{escape(name)}{market}</span>'
             f'{_score_cell(game, side)}</div>')
+
+
+def _series_line(game: SlateGame, series) -> str:
+    """The state of a postseason series, under the two clubs it is about.
+
+    The top line already says which round and which game; this says who is winning it,
+    which is the first thing anyone asks about a playoff game and the one thing the card
+    did not show. Links to the series page. Falls back to the source's own wording when
+    no bracket was collected, rather than going quiet.
+    """
+    if series is not None:
+        standing = series.standing
+        if standing.startswith("Best of"):
+            standing = f"Series opener · best of {series.series.best_of}"
+        bits = [standing]
+        if series.stakes:
+            bits.append(f'<b>{escape(series.stakes)}</b>')
+        elif series.if_necessary:
+            bits.append("if necessary")
+        body = " · ".join(b if b.startswith("<b>") else escape(b) for b in bits)
+        label = f"{series.round_name}: {series.standing}"
+        return (f'<a class="game-series" href="{escape(series.href, quote=True)}" '
+                f'aria-label="{escape(label, quote=True)}">{body}'
+                f'<span aria-hidden="true"> →</span></a>')
+    if game.is_postseason and game.series_summary:
+        return f'<div class="game-series">{escape(game.series_summary)}</div>'
+    return ""
 
 
 def _focus_href(day: str, game: SlateGame) -> str:
@@ -152,7 +183,7 @@ def _footer(game: SlateGame, day: str, matchup_href: str, count: int,
 
 def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 90,
                    is_best: bool = False, norm: LeagueNorm | None = None,
-                   race_why: str = "") -> str:
+                   race_why: str = "", series=None) -> str:
     adapter = get_adapter(game.league)
     away = game.away_display
     home = game.home_display
@@ -199,6 +230,10 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     # Only shown when it is notable (playoffs, a football week, a neutral site);
     # ordinary regular-season games say nothing, which is the common case.
     context = game.notable_context
+    if series is not None:
+        # The bracket's name for the round ("AL Wild Card", "NLDS") and the game number;
+        # the standing gets its own line below the teams.
+        context = f"{series.series.round_short} · {series.game_line}"
     context_html = (f'<span class="game-context">{escape(context)}</span>'
                     if context else "")
     # Marked per league, never across the slate — see editorial.best_per_league.
@@ -209,6 +244,7 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
     race_html = (f'<span class="race-chip" title="{escape(race_why, quote=True)}">'
                  f'Playoff race</span>' if race_why else "")
     away_line, home_line, total_line = market_cells(game)
+    seeds = series.seeds if series is not None else {}
     footer = _footer(game, day, matchup_href, count, threshold, deep_dive, norm)
     # Schedule-only cards (no analysis footer — NFL, World Cup) render compact: the
     # reader just needs to know the game is happening, so it needn't be as tall.
@@ -221,10 +257,11 @@ def game_card_html(game: SlateGame, day: str, count: int = 0, threshold: int = 9
         f'<span class="league-name">{escape(league_label)}</span>{context_html}{total_line}{race_html}</span>'
         f'{time_html}{_state_badge(game)}</div>'
         f'<div class="teams">'
-        f'{_team_row(game, "away", away_logo, away, away_cls, away_line)}'
+        f'{_team_row(game, "away", away_logo, away, away_cls, away_line, seeds.get(str(game.away_id)))}'
         f'<div class="team-sep">at</div>'
-        f'{_team_row(game, "home", home_logo, home, home_cls, home_line)}'
+        f'{_team_row(game, "home", home_logo, home, home_cls, home_line, seeds.get(str(game.home_id)))}'
         f'</div>'
+        f'{_series_line(game, series)}'
         f'{footer}'
         f'</div>'
     )
@@ -234,7 +271,8 @@ def schedule_grid_html(games: list[SlateGame], day: str,
                        counts: dict[str, int] | None = None, threshold: int = 90,
                        best_ids: set[str] | None = None,
                        norms: dict[str, LeagueNorm] | None = None,
-                       race: dict[str, str] | None = None) -> str:
+                       race: dict[str, str] | None = None,
+                       series: dict | None = None) -> str:
     """``norms`` should be built from the **whole** slate, not this group — the grid is
     rendered once per game state, and a league's shape is not a property of who
     happens to be mid-game."""
@@ -242,10 +280,12 @@ def schedule_grid_html(games: list[SlateGame], day: str,
     best_ids = best_ids or set()
     norms = norms or {}
     race = race or {}
+    series = series or {}
     cards = "".join(game_card_html(game, day, counts.get(game.game_id, 0), threshold,
                                    is_best=str(game.game_id) in best_ids,
                                    norm=norms.get(game.league),
-                                   race_why=race.get(str(game.game_id), ""))
+                                   race_why=race.get(str(game.game_id), ""),
+                                   series=series.get(str(game.game_id)))
                     for game in games)
     return f'<div class="schedule-grid">{cards}</div>'
 

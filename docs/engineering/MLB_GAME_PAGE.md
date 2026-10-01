@@ -36,6 +36,12 @@ game**. Team Identity (evidence) is placed above the story (synthesis).
    probable starter with handedness + a descriptor ("Elite strikeout stuff",
    "Command specialist", "Pitches to contact") derived from the same K/control
    percentiles. "Probable starters not yet available" when missing.
+   **In the postseason** a strip across the top names the round, the game number and
+   the series standing ("AL Wild Card Series · Game 2 of 3 — Yankees lead 1-0 ·
+   Elimination game", linking to the series page), and each club's line reads "No. 5
+   seed · 87-75 in the regular season" instead of games back. Applied at render time
+   from the bracket (`web/games._postseason_hero`), not cached in the page model,
+   because the series moves nightly (decision log 2026-09-30).
 2. **Team Identity** — six dimensions per team: Power, Contact, Plate Discipline,
    Speed, RISP (league-relative percentiles shown as qualitative tiers + the
    number), and Recent Form (composite last-10 vs. season baseline → Trending

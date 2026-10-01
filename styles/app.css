@@ -371,6 +371,23 @@
   width: .42rem; height: .42rem; border-radius: 50%; background: #ff6b5e;
   box-shadow: 0 0 0 3px rgba(255, 107, 94, .18);
 }
+/* Postseason: the seed before the name and the series standing under the teams. The
+   seed is a quiet orange numeral, the same mark the bracket uses, so the two surfaces
+   name a club the same way. The series line is the card's one addition in October —
+   "Yankees lead 1-0" is the first thing anyone asks about a playoff game. */
+.team-seed {
+  display: inline-block; min-width: 1.05em; margin-right: .4rem;
+  color: var(--brand-2); font-size: .78em; font-weight: 800;
+  font-variant-numeric: tabular-nums; vertical-align: .08em;
+}
+.game-series {
+  display: block; margin-top: .45rem; padding-left: calc(34px + .6rem);
+  color: var(--text-2); font-size: .8rem; font-weight: 650; text-decoration: none;
+}
+a.game-series:hover { color: var(--text-1); }
+a.game-series:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--r-xs); }
+.game-series b { color: var(--brand-2); font-weight: 750; }
+
 /* Subtle winner emphasis on final cards. */
 .team-row.loss .team-name { color: var(--text-3); }
 .team-row.win .team-name { color: var(--text-1); }
@@ -873,6 +890,20 @@ body.picks-ready .op-identity { padding-right: 2.2rem; }   /* keep names clear o
   background: linear-gradient(150deg, var(--mlb-navy-2), var(--mlb-navy));
   box-shadow: var(--edge-hi), var(--shadow-md); margin-bottom: 1.2rem;
 }
+/* Postseason strip across the top of the hero. One line, the round on the left and the
+   series on the right, ruled off from the teams like the meta line is below them. */
+.mlb-hero-series {
+  display: flex; align-items: baseline; gap: .4rem 1rem; flex-wrap: wrap;
+  margin: -.1rem 0 .85rem; padding-bottom: .7rem; border-bottom: 1px solid var(--mlb-navy-line);
+  color: var(--text-2); font-size: .9rem; text-decoration: none;
+}
+.mlb-hero-series-round { color: var(--brand-2); font-size: .74rem; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; }
+.mlb-hero-series-state { color: var(--text-1); font-weight: 750; }
+.mlb-hero-series-state b { color: var(--brand-2); }
+.mlb-hero-series-go { margin-left: auto; color: var(--brand-2); font-size: .8rem; font-weight: 700; }
+a.mlb-hero-series:hover .mlb-hero-series-go { text-decoration: underline; }
+a.mlb-hero-series:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: var(--r-xs); }
 .mlb-hero-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: flex-start; gap: 1rem; }
 .mlb-hero-team { display: flex; align-items: flex-start; gap: .7rem; min-width: 0; }
 .mlb-hero-team.home { flex-direction: row-reverse; text-align: right; }

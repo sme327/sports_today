@@ -47,8 +47,9 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
         cache.set(cache_key, page, timeout=900)
         cache_source = "built"
 
+    hero, series = _postseason_hero(game, page.hero, slate_date)
     chunks = [
-        mlb_components.hero_html(page.hero),
+        mlb_components.hero_html(hero, series),
         mlb_components.team_identity_html(page.away_identity, page.home_identity),
         mlb_components.game_story_html(page.game_story),
         mlb_components.key_matchups_html(page.key_matchups),
@@ -89,6 +90,51 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
         "cache_source": cache_source,
         "build_ms": round((perf_counter() - started) * 1000, 1),
     }
+
+
+def _postseason_hero(game: SlateGame, hero, slate_date: date):
+    """Reframe the hero for a postseason game: seeds and the series, not games back.
+
+    "3rd in AL East, 11 GB" is true of a Wild Card club and beside the point — in October
+    the reader wants the round, the seeds and who leads the series. Applied here, at
+    render time, rather than in the cached page model: the series moves every night and
+    the model is cached per slate day, so baking it in would serve yesterday's standing.
+
+    Falls back to the slate game's own series fields (the source's wording) when no
+    bracket was collected, so a postseason game is never framed as a regular-season one.
+    """
+    from dataclasses import replace
+
+    if not game.is_postseason:
+        return hero, None
+    try:
+        from services import mlb_bracket
+        info = mlb_bracket.game_in_series(mlb_bracket.load(slate_date), game.game_id)
+    except Exception:                                    # noqa: BLE001
+        info = None
+
+    def _line(standing: str | None, seed: int | None) -> str | None:
+        record = (standing or "").split(" · ")[0]
+        bits = [f"No. {seed} seed" if seed else None,
+                f"{record} in the regular season" if record else None]
+        return " · ".join(b for b in bits if b) or None
+
+    if info is None:
+        series = {"round": game.round_name, "game": game.series_label,
+                  "standing": game.series_summary, "stakes": game.series_stakes}
+        hero = replace(hero, away_standing=_line(hero.away_standing, None),
+                       home_standing=_line(hero.home_standing, None))
+        return hero, series
+    standing = None if info.standing.startswith("Best of") else info.standing
+    series = {"round": info.round_name, "game": info.game_line,
+              "standing": standing or f"Series opener · best of {info.series.best_of}",
+              "stakes": info.stakes or ("If necessary" if info.if_necessary else None),
+              "href": info.href}
+    hero = replace(
+        hero,
+        away_standing=_line(hero.away_standing, info.seeds.get(str(game.away_id))),
+        home_standing=_line(hero.home_standing, info.seeds.get(str(game.home_id))))
+    return hero, series
 
 
 def wnba_context(game: SlateGame, slate_date: date) -> dict:

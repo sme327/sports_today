@@ -142,6 +142,19 @@ def _parse_schedule(payload: dict) -> list[dict]:
                 "state": _state(status.get("abstractGameState")),
                 "winner": winner,
                 "status_detail": status.get("detailedState"),
+                # Bracket fields. A postseason schedule is published before most of its
+                # participants are known: an unfilled slot is a *placeholder* team
+                # ("HOU/CWS", "AL Higher Seed") with a real-looking id, so it has to be
+                # flagged or it would be drawn as a club. "If necessary" games and a
+                # time the league has not set yet are likewise the source's own facts.
+                "official_date": game.get("officialDate"),
+                "if_necessary": str(game.get("ifNecessary") or "N").upper() == "Y",
+                "start_time_tbd": bool(status.get("startTimeTBD")),
+                "away_placeholder": bool(away_side.get("team", {}).get("placeholder")),
+                "home_placeholder": bool(home_side.get("team", {}).get("placeholder")),
+                # e.g. "ALDS 'B' Game 1" — the only place the source names *which* series
+                # of a round this is.
+                "game_description": game.get("description"),
             })
     return games
 
@@ -175,3 +188,106 @@ def schedule_range(start_date: date | str, end_date: date | str) -> list[dict]:
     )
     response.raise_for_status()
     return _parse_schedule(response.json())
+
+
+def postseason_series(season: int) -> list[dict]:
+    """The whole postseason bracket for a season, one request, series by series.
+
+    StatsAPI publishes every round up front — Wild Card through World Series — with
+    placeholder teams in the slots nobody has reached yet, which is what makes the
+    bracket drawable before it is decided. Games go through the same parser as the slate,
+    so a bracket game and a slate game can never disagree about a score or a state.
+    """
+    response = requests.get(
+        f"{BASE}/schedule/postseason/series",
+        params={"season": season, "sportId": 1,
+                "hydrate": "probablePitcher,team,venue,seriesStatus"},
+        timeout=20,
+    )
+    response.raise_for_status()
+    out = []
+    for entry in response.json().get("series") or []:
+        meta = entry.get("series") or {}
+        games = _parse_schedule({"dates": [{"games": entry.get("games") or []}]})
+        out.append({"series_id": meta.get("id"), "game_type": meta.get("gameType"),
+                    "games": games})
+    return out
+
+
+def postseason_seeds(season: int) -> dict[str, int]:
+    """``{team_id: seed}`` for the twelve clubs in the field, from the final standings.
+
+    MLB seeds its three division winners 1-3 and its three Wild Cards 4-6. The source
+    states both halves directly — the clinch indicator says which kind of place a club
+    won, and each group's rank carries the official tiebreakers (``leagueRank`` among
+    the champions, ``wildCardRank`` among the rest) — so nothing here compares records
+    itself. Empty until the field is set: a Wild Card rank in mid-September is a race
+    position, not a seed.
+
+    Keyed on ``clinchIndicator`` and **not** ``divisionChamp``: in 2026 the source set
+    ``divisionChamp`` on the Phillies, a Wild Card whose division the Braves won, which
+    gave the NL four champions. The indicator (``z``/``y`` division, ``w`` Wild Card)
+    was right, and ``x`` — in, but not yet which way — means the field is not set.
+    """
+    response = requests.get(
+        f"{BASE}/standings",
+        params={"leagueId": "103,104", "season": season,
+                "standingsTypes": "regularSeason"},
+        timeout=20,
+    )
+    response.raise_for_status()
+    return seeds_from_standings(response.json())
+
+
+def seeds_from_standings(payload: dict) -> dict[str, int]:
+    by_league: dict[int, list[dict]] = {}
+    for record in payload.get("records") or []:
+        league = (record.get("league") or {}).get("id")
+        for team in record.get("teamRecords") or []:
+            by_league.setdefault(league, []).append(team)
+
+    seeds: dict[str, int] = {}
+    for teams in by_league.values():
+        # Only clubs that have *clinched* — a clinch indicator is the source saying the
+        # place is theirs, not that they hold it today.
+        marks = [str(t.get("clinchIndicator") or "").lower() for t in teams]
+        if "x" in marks:
+            continue                      # someone is in, but not yet which way
+        champs = [t for t, m in zip(teams, marks) if m in ("y", "z")]
+        wild = [t for t, m in zip(teams, marks) if m == "w"]
+        if len(champs) != 3 or len(wild) != 3:
+            continue                      # field not set yet — no seeds, not guesses
+
+        def rank(t, key):
+            try:
+                return int(t.get(key))
+            except (TypeError, ValueError):
+                return 99
+        champs.sort(key=lambda t: rank(t, "leagueRank"))
+        wild.sort(key=lambda t: rank(t, "wildCardRank"))
+        for seed, team in enumerate([*champs, *wild], 1):
+            seeds[str((team.get("team") or {}).get("id"))] = seed
+    return seeds
+
+
+def head_to_head(season: int, team_id: int | str, opponent_id: int | str) -> dict[str, int]:
+    """Regular-season wins by team id in one pairing: ``{"147": 7, "111": 6}``.
+
+    Counted from decided games only. A game marked final with no winner (a suspended
+    game resumed elsewhere, a tie called for weather) is not a win for anyone.
+    """
+    response = requests.get(
+        f"{BASE}/schedule",
+        params={"sportId": 1, "season": season, "gameType": "R",
+                "teamId": team_id, "opponentId": opponent_id},
+        timeout=20,
+    )
+    response.raise_for_status()
+    wins = {str(team_id): 0, str(opponent_id): 0}
+    for game in _parse_schedule(response.json()):
+        if game["state"] != "final" or not game["winner"]:
+            continue
+        winner_id = str(game["away_id"] if game["winner"] == "away" else game["home_id"])
+        if winner_id in wins:
+            wins[winner_id] += 1
+    return wins

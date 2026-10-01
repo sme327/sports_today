@@ -68,7 +68,8 @@ model. Percentage-point differences are **"pts" everywhere** on it (decision log
 **The slate is not the whole site any more.** Beside today's games there are now
 league surfaces, reached from one header menu (leagues first, Performance and Daily
 Results at the bottom): **Standings** for MLB, WNBA, MLS, NFL, NBA and NHL;
-**Trending players** for MLB and WNBA; an **MLB playoff race**; and the **NFL season
+**Trending players** for MLB and WNBA; an **MLB playoff race** that becomes the
+**postseason bracket** in October; and the **NFL season
 schedule**, browsable by week or by team. Every one of them is description, never
 forecast — the rule the editorial signals follow applies to all of them, and each page
 states what it is *not*. A menu entry with no page yet renders as plain text rather
@@ -87,7 +88,8 @@ result.
 *games remaining* rather than a date — a date breaks on a lockout or a shortened season.
 MLB opens at 30 games left (~Aug 27), the NFL at 7 (week 12). A page persists through the
 offseason showing how the race finished, worded as finished, and disappears when the
-next season's standings reset to 0-0. The same window decides which leagues the
+next season's standings reset to 0-0 — **except MLB, whose race gives way to the bracket**
+(below) the moment the field is set. The same window decides which leagues the
 **standings** list offers, so a mid-season break — the WNBA's two-week FIBA window — no
 longer reads as an offseason.
 
@@ -101,6 +103,19 @@ race a club was actually in. The WNBA (`services/wnba_playoffs.py`) is one table
 MLB's shape would invent structure the league does not have. An empty chasing list says
 *which* kind of empty it is, because "nobody is close" and "everyone left is
 mathematically out" look identical otherwise.
+
+**In October the MLB playoff page is the bracket** (decision log 2026-09-30). Once every
+Wild Card series has two real clubs, `/playoffs/?league=MLB` draws the whole bracket and each
+series has a page (`/playoffs/mlb/<slug>/`): its games with the standing after each, the
+regular-season records side by side, the season series, and how each club got there.
+Postseason slate cards carry the **seeds** and a **series line** ("Yankees lead 1-0 ·
+Elimination game"), and the MLB matchup hero opens with the round and series and trades games
+back for the seed. The bracket is a daily StatsAPI snapshot (`src/mlb_postseason.py`,
+`services/mlb_bracket.py`). Two things to know: **seeds key on `clinchIndicator`, not
+`divisionChamp`** — the source set the latter on a 2026 Wild Card — and are then checked
+against the pairings; and **series wins are counted from final games by team id**, never
+parsed from the source's "NYY leads 1-0". A preview states the series going in, a final
+states it after, and a game behind an unfinished one claims no stakes.
 
 **The site rolls itself over at midnight.** The export is static, so "today" is baked
 in at build time; the daily run precomputes **three** days and an inline script in

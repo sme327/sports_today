@@ -1,0 +1,77 @@
+{% extends "web/base.html" %}
+{% block title %}{{ series.sides.0.name }} vs {{ series.sides.1.name }} · {{ series.round_name }} · Sports Today{% endblock %}
+{% block content %}
+<div class="back-row"><a class="text-link" href="{% url 'playoffs' %}?league=MLB">← Full bracket</a><span class="quiet-note">{{ season }} {{ series.round_name }} · best of {{ best_of }}</span></div>
+
+{% comment %}The series standing is the headline, stated once and large. The better seed
+is on the left because it hosts Game 1; the wins beside each club are counted from final
+scores, not read off the source's summary string.{% endcomment %}
+<section class="series-hero series-hero--{{ state }}">
+  <div class="series-hero-row">
+    {% for side in series.sides %}
+    <div class="series-team{% if forloop.last %} low{% endif %}{% if side.won %} won{% elif side.out %} out{% endif %}">
+      {% if side.logo %}<img src="{{ side.logo }}" alt="" width="56" height="56">{% else %}<span class="series-logo-gap" aria-hidden="true"></span>{% endif %}
+      <div>
+        {% if side.seed %}<span class="series-seed">No. {{ side.seed }} seed</span>{% endif %}
+        {% if side.feeder_href %}<a class="series-name" href="{{ side.feeder_href }}">{{ side.full_name }}</a>{% else %}<span class="series-name">{{ side.full_name }}</span>{% endif %}
+      </div>
+      {% if not side.placeholder %}<span class="series-wins" aria-label="{{ side.wins }} wins">{{ side.wins }}</span>{% endif %}
+    </div>
+    {% if forloop.first %}<div class="series-vs" aria-hidden="true">–</div>{% endif %}
+    {% endfor %}
+  </div>
+  <div class="series-summary">
+    <strong>{{ summary }}</strong>
+    {% if state != "decided" %}<span>First to {{ wins_needed }} wins</span>{% endif %}
+    {% if stakes and next_number %}<span class="bk-stakes">Game {{ next_number }}: {{ stakes }}</span>{% endif %}
+  </div>
+</section>
+
+<section class="important-games">
+  <div class="section-heading"><div><h2>Games</h2><p>{% if state == "decided" %}How the series was won.{% else %}Every scheduled game, with the series standing after each one.{% endif %}</p></div></div>
+  <div class="series-games" role="table" aria-label="Games in this series">
+    {% for game in games %}
+    <div class="series-game series-game--{{ game.state }}{% if game.if_necessary %} maybe{% endif %}" role="row">
+      <span class="sg-num">Game {{ game.number }}</span>
+      <span class="sg-when">{{ game.day }}<small{% if game.start_utc and game.state == "pre" %} data-start-utc="{{ game.start_utc }}"{% endif %}>{% if game.state == "pre" %}{{ game.time }}{% elif game.state == "live" %}Live · {{ game.status }}{% else %}Final{% endif %}</small></span>
+      <span class="sg-teams">
+        <span class="{% if game.away_won %}won{% endif %}">{{ game.away }}{% if game.state != "pre" and game.away_score is not None %} <b>{{ game.away_score }}</b>{% endif %}</span>
+        <i>at</i>
+        <span class="{% if game.home_won %}won{% endif %}">{{ game.home }}{% if game.state != "pre" and game.home_score is not None %} <b>{{ game.home_score }}</b>{% endif %}</span>
+        {% if game.venue or game.pitchers %}<small>{% if game.pitchers %}{{ game.pitchers }}{% if game.venue %} · {% endif %}{% endif %}{{ game.venue }}</small>{% endif %}
+      </span>
+      <span class="sg-after">{% if game.after %}{{ game.after }}{% elif game.if_necessary %}If necessary{% endif %}</span>
+      <span class="sg-link">{% if game.matchup %}<a class="race-game-link" href="{{ game.matchup }}" aria-label="Game {{ game.number }} matchup">Matchup →</a>{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if tape %}
+<section class="important-games">
+  <div class="section-heading"><div><h2>The regular season</h2><p>How each club finished. Records, not ratings.</p></div></div>
+  <div class="race-table series-tape" role="table" aria-label="Regular-season comparison">
+    <div class="race-row race-head" role="row"><span></span><span>{{ tape_names.0 }}</span><span>{{ tape_names.1 }}</span></div>
+    {% for row in tape %}
+    <div class="race-row" role="row"><span class="tape-label">{{ row.label }}</span><span>{{ row.high }}</span><span>{{ row.low }}</span></div>
+    {% endfor %}
+  </div>
+  {% if meetings %}<p class="quiet-note series-meetings">{{ meetings }}</p>{% endif %}
+</section>
+{% endif %}
+
+<section class="important-games">
+  <div class="section-heading"><div><h2>How they got here</h2></div></div>
+  <div class="series-roads">
+    {% for road in roads %}
+    <div class="series-road">
+      <strong>{{ road.name }}</strong>
+      <ul>{% for item in road.items %}<li>{% if item.href %}<a href="{{ item.href }}">{{ item.text }}</a>{% else %}{{ item.text }}{% endif %}</li>{% empty %}<li>—</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </div>
+  {% if next_round %}<p class="series-next"><a class="text-link" href="{{ next_round.href }}">{{ next_round.text }} →</a></p>{% endif %}
+</section>
+
+<p class="quiet-note">The series standing is counted from final scores. Seeds and regular-season records are MLB's own. Description, not prediction.{% if collected_at %} Bracket as of {{ collected_at }}.{% endif %}</p>
+{% endblock %}

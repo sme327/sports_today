@@ -9,6 +9,76 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-30 — In October the playoff page is the bracket, and every series has a page
+
+**Decision.** From the moment the MLB field is set — every Wild Card series has two real
+clubs — `/playoffs/?league=MLB` renders the **bracket** instead of the race, and each series
+gets its own page at `/playoffs/mlb/<slug>/` (`al-wild-card-b`, `alds-a`, `nlcs`,
+`world-series`). Postseason games also change how they are framed elsewhere: the slate card
+shows each club's **seed** and a **series line** ("Yankees lead 1-0 · Elimination game",
+linking to the series page), and the MLB matchup hero opens with the round, the game number
+and the series standing, and trades "3rd in AL East, 11 GB" for "No. 5 seed · 87-75 in the
+regular season". This resolves the 2026-08-09 "Future": bracket structure proper — seeds,
+slots, TBD participants, advancement — built against a live postseason.
+
+Pieces: `src/mlb_postseason.py` (collector + dated JSON snapshot, in the daily run, non-fatal),
+`src/mlb_api.postseason_series` / `postseason_seeds` / `head_to_head`, `services/mlb_bracket.py`
+(pure arithmetic), `web/bracket_view.py` (arrangement), templates `bracket.html` and
+`playoff_series.html`.
+
+> **Supersedes** the 2026-09-01 rule that a finished MLB race "persists through the
+> offseason". It now persists only until the bracket exists, which is the next day; the
+> bracket itself persists until the next season (the snapshot is ignored once the year
+> changes). Final standings remain on the standings page. The WNBA race is unchanged.
+
+**Reason.** The owner: "now that the MLB playoffs are here, we should not have a playoff
+race page." From the first Wild Card game the race's question — who is in if the season
+ended today — has an answer, and a page still asking it in October answers nothing. The
+matchup page showed a Wild Card game exactly like a September one.
+
+**What the source actually serves (verified 2026-09-30).** StatsAPI's
+`/schedule/postseason/series` publishes every round up front, Wild Card to World Series,
+with **placeholder teams** in unfilled slots — real-looking ids, names like "HOU/CWS" or
+"AL Higher Seed", flagged `placeholder: true`. Unknown first pitches are a sentinel in the
+small hours (07:33 or 10:33 UTC); a start between 06:00 and 12:00 UTC is read as "time TBD".
+`ifNecessary` is the source's own.
+
+**Seeds are the source's, and checked.** The series feed carries no seeds. They come from the
+final standings — division winners 1-3 by `leagueRank`, Wild Cards 4-6 by `wildCardRank` —
+keyed on `clinchIndicator` (`z`/`y` division, `w` Wild Card; any `x` means unset). **Not**
+`divisionChamp`: on 2026-09-30 the source set it on the Phillies, a Wild Card, giving the NL
+four champions. Seeds are then checked against the pairings (a Wild Card series is 3 v 6 or
+4 v 5, hosted by the better seed; seeds 1-2 host a Division Series) and dropped for a league
+that contradicts them, with the page saying so. All twelve 2026 seeds passed.
+
+**Series wins are counted, not parsed.** From final games by team id; the source's "NYY leads
+1-0" string is never read for who leads. A preview or live game states the series *going
+into* it, a final states it *after* — the source's own `seriesStatus` convention, so a preview
+never contains a result and a final never reads out of date. A game behind an unfinished one
+(tomorrow's Game 3 while Game 2 is live) states the series as it stands now and claims **no
+stakes**, marked "if necessary".
+
+**Applied at render time on the matchup page.** The MLB page model is cached per slate day and
+engine version; the series moves nightly, so the hero is reframed in `web/games.py` from the
+live bracket rather than baked into the model (no engine bump, never yesterday's standing).
+Without a bracket the hero and card fall back to the slate game's own series fields.
+
+**Tradeoffs.**
+- With both slots of a pennant series open, neither is named: which Division Series winner
+  lands in which slot depends on seeds not yet known, and naming one would be a guess.
+- Pairings are inferred from the structure — a placeholder's "NYY/BOS" matched against a
+  Wild Card series' two abbreviations — and verified on one postseason only.
+- The series page's regular-season comparison is records only (overall, division finish,
+  home, road, last ten, head-to-head). No team ratings: the matchup page has those, per game.
+- Description, never forecast, like every page here: no series odds, no "favoured".
+
+**Future considerations.** The WNBA and NFL will want the same once their postseasons are
+live; the bracket service is MLB-shaped on purpose (formats differ structurally, as the race
+builders already established). The race chip on slate cards (`slate_implications`) is already
+silent once the regular season is final.
+
+---
+
 ## 2026-09-18 — launchd starts the nightly refresh through Python, not zsh
 
 **Decision** — `com.sme.sports-today.nightly` names the python.org framework

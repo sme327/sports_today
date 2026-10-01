@@ -159,6 +159,15 @@ def rebuild(feed_path: str | Path, *, collect_web: bool = True,
     except Exception as exc:
         out["standings_error"] = str(exc)
 
+    # The MLB postseason bracket, once there is one: every series, the seeds, and each
+    # pairing's regular-season head-to-head. Silent (0) for most of the year, and
+    # non-fatal like every other collector — a bracket a day old says how old it is.
+    try:
+        from src.mlb_postseason import collect as collect_mlb_postseason
+        out["mlb_postseason"] = collect_mlb_postseason()
+    except Exception as exc:
+        out["mlb_postseason_error"] = str(exc)
+
     # The NFL season schedule, so it can be browsed by week or team. Rarely changes —
     # a flex moves a kickoff, not a matchup — so once per run is ample, and like the
     # other collectors a failure must not fail the run.

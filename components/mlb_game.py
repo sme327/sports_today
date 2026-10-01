@@ -74,7 +74,26 @@ def _hero_side(name, logo, form_note, form_dir, pitcher, hand, pitcher_note, hom
     )
 
 
-def hero_html(h: MLBGameHero) -> str:
+def _series_strip(series: dict | None) -> str:
+    """The postseason line across the top of the hero: which round and game, and who
+    leads. Without it a Wild Card game read exactly like a September one."""
+    if not series:
+        return ""
+    standing = escape(series.get("standing") or "")
+    stakes = series.get("stakes")
+    tail = f' · <b>{escape(stakes)}</b>' if stakes else ""
+    right = f'<span class="mlb-hero-series-state">{standing}{tail}</span>' if standing else ""
+    head = escape(" · ".join(b for b in (series.get("round"), series.get("game")) if b))
+    inner = f'<span class="mlb-hero-series-round">{head}</span>{right}'
+    href = series.get("href")
+    if href:
+        return (f'<a class="mlb-hero-series" href="{escape(href, quote=True)}" '
+                f'aria-label="{escape(f"Series page: {head}", quote=True)}">{inner}'
+                f'<span class="mlb-hero-series-go" aria-hidden="true">Series →</span></a>')
+    return f'<div class="mlb-hero-series">{inner}</div>'
+
+
+def hero_html(h: MLBGameHero, series: dict | None = None) -> str:
     # The park note rides directly behind the venue it is about, so the line reads
     # "Great American Ball Park, hits run 5% below average here" rather than stranding
     # the fact away from its subject.
@@ -86,6 +105,7 @@ def hero_html(h: MLBGameHero) -> str:
         note = '<div class="mlb-hero-note">Probable starters not yet available</div>'
     return (
         '<div class="mlb-hero">'
+        f'{_series_strip(series)}'
         '<div class="mlb-hero-row">'
         f'{_hero_side(h.away_team, h.away_logo_url, h.away_form_note, h.away_form_dir, h.probable_away_pitcher, h.away_pitcher_hand, h.away_pitcher_note, standing=h.away_standing)}'
         '<div class="mlb-hero-vs">@</div>'
