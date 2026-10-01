@@ -10,7 +10,7 @@ Joins are by MLB player id, which equals the vendor feed's ``batter_id`` (verifi
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 import requests
 
@@ -74,3 +74,33 @@ def _parse(payload: dict) -> Lineups:
                     if pid is not None:
                         slot[int(pid)] = position
     return Lineups(slot=slot, posted_teams=frozenset(posted), order=order)
+
+
+def last_starting_order(team_id: int | str, before: date, days: int = 10
+                        ) -> tuple[tuple[tuple[int, str], ...], date] | None:
+    """The club's most recent official starting lineup before ``before``, and its date.
+
+    The fallback for a lineup that is not posted yet. The play-by-play feed runs a day
+    behind, so its "last game" is two days old by the next slate; StatsAPI has the starting
+    nine of a game as soon as it is posted, including one still in progress — tonight's
+    Game 2 for tomorrow's Game 3. ``None`` when no recent game has one.
+    """
+    start = (before - timedelta(days=days)).isoformat()
+    end = (before - timedelta(days=1)).isoformat()
+    resp = requests.get(
+        f"{BASE}/schedule",
+        params={"sportId": 1, "teamId": team_id, "startDate": start, "endDate": end,
+                "gameType": "R,F,D,L,W", "hydrate": "lineups,team"},
+        timeout=20,
+    )
+    resp.raise_for_status()
+    games = [g for day in resp.json().get("dates", []) for g in day.get("games", [])]
+    for game in sorted(games, key=lambda g: (g.get("gameDate") or ""), reverse=True):
+        away_id = str(game.get("teams", {}).get("away", {}).get("team", {}).get("id"))
+        key = "awayPlayers" if away_id == str(team_id) else "homePlayers"
+        players = (game.get("lineups") or {}).get(key) or []
+        if len(players) >= _FULL_LINEUP:
+            order = tuple((int(p["id"]), str(p.get("fullName") or ""))
+                          for p in players if p.get("id") is not None)
+            return order, date.fromisoformat(game.get("officialDate") or end)
+    return None

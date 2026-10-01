@@ -113,9 +113,15 @@ def _start_table(sp: Starter) -> str:
 
 def starter_card(sp: Starter | None, side: Side, facing: Side) -> str:
     if sp is None:
-        return (f'<div class="pd-sp pd-sp--none"><div class="pd-sp-head"><strong>'
-                f'{_e(side.short)} starter</strong></div><p class="pd-quiet">No probable '
-                "starter matched in the feed, so there is nothing to show.</p></div>")
+        # Two different absences, worded apart: tomorrow's Game 3 usually has no announced
+        # starter yet, which is not the same as a starter the feed has never seen.
+        why = (f"{_e(side.probable)} has no plate appearances against him in the feed, so "
+               "there is nothing to show." if side.probable else
+               "Starter not announced yet. The card fills in once a probable is named and the "
+               "page is refreshed.")
+        return (f'<div class="pd-sp pd-sp--none"><div class="pd-sp-head"><div><strong>'
+                f'{_e(side.short)} starter</strong></div></div>'
+                f'<p class="pd-quiet">{why}</p></div>')
     outings = list(sp.recent) + list(sp.post)
     post_flags = [False] * len(sp.recent) + [True] * len(sp.post)
     titles = [f"{o.day} vs {o.opp}" + ("" if o.start else " (relief)") for o in outings]

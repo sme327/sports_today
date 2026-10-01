@@ -123,7 +123,7 @@ def _postseason_sections(game: SlateGame, slate_date: date) -> tuple[str, tuple]
     pitch, and a page cached at the morning build would otherwise keep yesterday's order
     all day. Non-fatal — the rest of the page stands on its own.
     """
-    key = f"django:mlb-postseason:v2:{slate_date.isoformat()}:{game.game_id}"
+    key = f"django:mlb-postseason:v3:{slate_date.isoformat()}:{game.game_id}"
     cached = cache.get(key)
     if cached is not None:
         return cached
@@ -134,15 +134,27 @@ def _postseason_sections(game: SlateGame, slate_date: date) -> tuple[str, tuple]
         from services.data_access import load_plate_appearances
         from services.lineups import get_lineups
 
+        from services.lineups import get_last_order
+
         pa = load_plate_appearances(as_of=slate_date)
         meta = game.meta or {}
+        lineups = get_lineups(slate_date)
+        # An unposted lineup falls back to the club's last official starting nine, which
+        # is fresher than the feed's (a day behind) — tonight's Game 2 for Game 3.
+        recent_orders = {}
+        for team, team_id in ((game.away_name, game.away_id), (game.home_name, game.home_id)):
+            if team and team_id and not lineups.is_posted(team):
+                order = get_last_order(team_id, slate_date)
+                if order:
+                    recent_orders[team] = order
         desk = mlb_prop_desk.build(
             pa, away_team=game.away_name or "", home_team=game.home_name or "",
             away_short=game.away_short or game.away_display,
             home_short=game.home_short or game.home_display,
             away_pid=mlb_analytics.match_pitcher(pa, meta.get("away_pitcher")),
             home_pid=mlb_analytics.match_pitcher(pa, meta.get("home_pitcher")),
-            lineups=get_lineups(slate_date))
+            lineups=lineups, recent_orders=recent_orders,
+            away_probable=meta.get("away_pitcher"), home_probable=meta.get("home_pitcher"))
         result = (prop_desk_html(desk, str(game.game_id)), tactical(pa, desk))
     except Exception:                                    # noqa: BLE001
         import logging

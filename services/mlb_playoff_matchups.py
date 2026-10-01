@@ -143,6 +143,8 @@ def bullpen(pa: pd.DataFrame, desk: PropDesk, days: int = 3) -> MLBKeyMatchup | 
 def tactical(pa: pd.DataFrame, desk: PropDesk | None) -> tuple[MLBKeyMatchup, ...]:
     if desk is None or pa.empty:
         return ()
-    pa = pa.assign(batter_id=pa["batter_id"].astype(str))
+    from services.mlb_prop_desk import repair
+
+    pa = repair(pa).assign(batter_id=pa["batter_id"].astype(str))
     out = (pitch_count(pa, desk), platoon(desk), bullpen(pa, desk))
     return tuple(m for m in out if m is not None)

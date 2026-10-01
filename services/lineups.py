@@ -27,3 +27,26 @@ def get_lineups(slate_date: date):
     with _lock:
         _cache[key] = (now, value)
     return value
+
+
+_order_cache: dict[tuple[str, str], tuple[float, object]] = {}
+
+
+def get_last_order(team_id, slate_date: date):
+    """``last_starting_order`` behind the same short-lived cache; ``None`` on any failure,
+    so an unreachable StatsAPI falls back to the feed's order rather than to nothing."""
+    from src.mlb_lineups import last_starting_order
+
+    key = (str(team_id), slate_date.isoformat())
+    now = monotonic()
+    with _lock:
+        cached = _order_cache.get(key)
+        if cached and now - cached[0] < _TTL_SECONDS:
+            return cached[1]
+    try:
+        value = last_starting_order(team_id, slate_date)
+    except Exception:
+        value = None
+    with _lock:
+        _order_cache[key] = (now, value)
+    return value

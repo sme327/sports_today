@@ -359,3 +359,53 @@ def test_the_tactical_matchups_ask_no_prop_questions():
     titles = [m.title.lower() for m in M.tactical(pa, _desk())]
     assert titles and len(titles) <= 3
     assert not any("miss" in t or "strike" in t or "hit" in t for t in titles)
+
+
+# --- found by the full QC (2026-09-30, evening) ----------------------------------------
+
+def test_the_repair_restores_what_the_feed_drops():
+    rows = [
+        {**_pa(1, "2026-05-19", PADRES, CUBS, 201, 800, outs=0), "play_type": "",
+         "batter_name": "Batter 201",
+         "description": "Batter 201 walked., Passed Ball. X to 3B"},
+        {**_pa(1, "2026-05-19", PADRES, CUBS, 202, 800, outs=2), "play_type": "DOUBLE PLAY",
+         "batter_name": "Batter 202",
+         "description": "Double Play: Batter 202 struck out [looking]., Y was caught stealing"},
+        {**_pa(1, "2026-05-19", PADRES, CUBS, 203, 800, outs=1), "play_type": "",
+         "batter_name": "Batter 203", "description": "Bunt Interference by Batter: C unassisted"},
+        {**_pa(1, "2026-05-19", PADRES, CUBS, 204, 800, outs=0), "play_type": "",
+         "batter_name": "Batter 204", "description": "Z stole 2B"},
+    ]
+    fixed = D.repair(pd.DataFrame(rows))
+    assert list(fixed["is_walk"]) == [1, 0, 0, 0]
+    assert list(fixed["is_strikeout"]) == [0, 1, 0, 0]
+    assert list(D.ends_plate_appearance(fixed)) == [True, True, True, False]
+    assert list(fixed["is_official_ab"])[:3] == [0, 1, 1]
+
+
+def test_doubleheader_games_keep_their_playing_order():
+    rows = (_game("G-2", "2026-08-29", CUBS, PADRES, CUBS_NINE, 900, hits={101: 1})
+            + _game("G-1", "2026-08-29", CUBS, PADRES, CUBS_NINE, 900))
+    games = D.batter_games(pd.DataFrame(rows).assign(batter_id=lambda d: d["batter_id"].astype(str)))
+    assert list(games.loc[games["batter_id"] == "101", "h"]) == [0, 1]   # game 1, then 2
+
+
+def test_an_unposted_lineup_prefers_the_last_official_order():
+    order = tuple((pid, f"Batter {pid}") for pid in reversed(CUBS_NINE))
+    desk = D.build(
+        _season(), away_team=CUBS, home_team=PADRES, away_short="Cubs", home_short="Padres",
+        away_pid="800", home_pid="900", recent_orders={CUBS: (order, date(2026, 9, 30))})
+    assert desk.away.hitters[0].pid == "109"
+    assert "(Sep 30)" in desk.away.source and not desk.away.confirmed
+
+
+def test_an_unannounced_starter_is_not_called_a_data_gap():
+    from components.prop_desk import prop_desk_html
+
+    desk = D.build(_season(), away_team=CUBS, home_team=PADRES, away_short="Cubs",
+                   home_short="Padres", away_pid=None, home_pid=None)
+    html = prop_desk_html(desk)
+    assert html.count("Starter not announced yet") == 2
+    named = D.build(_season(), away_team=CUBS, home_team=PADRES, away_short="Cubs",
+                    home_short="Padres", away_pid=None, home_pid=None, away_probable="New Arm")
+    assert "New Arm has no plate appearances against him" in prop_desk_html(named)

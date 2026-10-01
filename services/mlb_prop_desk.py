@@ -82,6 +82,48 @@ def _num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce").fillna(0)
 
 
+def _starts_with_batter(pa: pd.DataFrame, text: pd.Series) -> pd.Series:
+    names = pa["batter_name"].fillna("").astype(str)
+    return pd.Series([bool(n) and t.startswith(n) for t, n in zip(text, names)], index=pa.index)
+
+
+def repair(pa: pd.DataFrame) -> pd.DataFrame:
+    """The feed's plate appearances with its known gaps filled, before anything is counted.
+
+    Three gaps, all found by reconciling 14,748 player-games against MLB's game logs on
+    2026-09-30 (decision log, prop desk QC):
+
+    - **Compound walks** (51 rows): ball four on the same pitch as a stolen base, wild pitch
+      or passed ball — "Ozzie Albies walked., Passed Ball. M. Dubón to 3B". Empty
+      ``play_type`` and ``is_walk = 0``; the batter's own name leads the description.
+    - **Interference by the batter** (17): the batter is out, so it is his plate appearance
+      and an at-bat, but ``play_type`` is empty and it read as a running event.
+    - **Strike-'em-out, throw-'em-out double plays** (101): typed ``DOUBLE PLAY`` with
+      ``is_strikeout = 0`` — "Double Play: Paul Goldschmidt struck out [looking]., M.
+      Schuemann was caught stealing". Missing from batter *and* starter strikeouts.
+
+    What it cannot repair is official scoring: a hit later changed to an error, or a bunt
+    the feed calls a sacrifice that the scorer charged as an at-bat. Those stay as the feed
+    has them, and the page says a season total can be a hit off.
+    """
+    if pa.empty or "description" not in pa.columns or "play_type" not in pa.columns:
+        return pa
+    desc = pa["description"].fillna("").astype(str)
+    empty = pa["play_type"].fillna("").astype(str).str.strip() == ""
+    walks = empty & _starts_with_batter(pa, desc) & desc.str.contains(r"\bwalked\b", regex=True)
+    interference = empty & desc.str.contains("Interference by Batter", case=False, regex=False)
+    after_dp = desc.str.replace(r"^Double Play:\s*", "", regex=True)
+    k_dp = (_num(pa["is_strikeout"]) == 0) & desc.str.startswith("Double Play:") \
+        & _starts_with_batter(pa, after_dp) & after_dp.str.contains("struck out", regex=False)
+    if not (walks.any() or interference.any() or k_dp.any()):
+        return pa
+    pa = pa.copy()
+    pa.loc[walks, ["play_type", "is_walk", "is_official_ab"]] = ["WALK", 1, 0]
+    pa.loc[interference, ["play_type", "is_official_ab"]] = ["BATTER INTERFERENCE", 1]
+    pa.loc[k_dp, "is_strikeout"] = 1
+    return pa
+
+
 def ends_plate_appearance(pa: pd.DataFrame) -> pd.Series:
     """Rows that close a plate appearance, as opposed to running events inside one.
 
@@ -128,7 +170,9 @@ def batter_games(pa: pd.DataFrame) -> pd.DataFrame:
     games["slot"] = games["slot"].fillna(0).astype(int)
     for col in ("pa", "ab", "h", "tb", "k", "bb", "xbh"):
         games[col] = games[col].astype(int)
-    return games.sort_values("game_date").reset_index(drop=True)
+    # Date, then game: a doubleheader's two games share a date, and the strip must not
+    # swap them (the QC caught Willson Contreras's reading out of order).
+    return games.sort_values(["game_date", "game_id"]).reset_index(drop=True)
 
 
 def pitcher_appearances(pa: pd.DataFrame) -> pd.DataFrame:
@@ -171,7 +215,7 @@ def pitcher_appearances(pa: pd.DataFrame) -> pd.DataFrame:
     apps["start"] = [(g, p) in starters for g, p in zip(apps["game_id"], apps["pitcher_id"])]
     for col in ("pitches", "outs", "h", "k", "bb", "bf"):
         apps[col] = apps[col].astype(int)
-    return apps.sort_values("game_date").reset_index(drop=True)
+    return apps.sort_values(["game_date", "game_id"]).reset_index(drop=True)
 
 
 # --- slices --------------------------------------------------------------------------
@@ -216,7 +260,7 @@ class HitterSlice:
 
 
 def _hitter_slice(key: str, label: str, span: str, games: pd.DataFrame) -> HitterSlice:
-    g = games.sort_values("game_date")
+    g = games.sort_values(["game_date", "game_id"])
     return HitterSlice(
         key=key, label=label, span=span, games=len(g), pa=int(g["pa"].sum()),
         ab=int(g["ab"].sum()), h=int(g["h"].sum()), tb=int(g["tb"].sum()),
@@ -388,7 +432,7 @@ def _last_game_order(games: pd.DataFrame, team: str
     mine = games[(games["batting_team"] == team) & (games["slot"] > 0)]
     if mine.empty:
         return (), None
-    last = mine[mine["game_id"] == mine.sort_values("game_date")["game_id"].iloc[-1]]
+    last = mine[mine["game_id"] == mine.sort_values(["game_date", "game_id"])["game_id"].iloc[-1]]
     last = last.sort_values("slot")
     order = tuple((str(r["batter_id"]), str(r["batter_name"])) for _, r in last.iterrows())
     return order, pd.Timestamp(last["game_date"].iloc[0]).date()
@@ -447,6 +491,7 @@ class Side:
     source: str                    # how the order was obtained, in words
     hitters: tuple[Hitter, ...]
     starter: Starter | None        # this side's starter (who faces the *other* lineup)
+    probable: str | None = None    # the announced probable's name, whether or not matched
 
 
 @dataclass(frozen=True)
@@ -485,13 +530,21 @@ def _lineup_profile(starter: Starter | None, hitters: tuple[Hitter, ...], pa: pd
 
 def build(pa: pd.DataFrame, *, away_team: str, home_team: str, away_short: str,
           home_short: str, away_pid: str | None, home_pid: str | None,
-          lineups=None) -> PropDesk | None:
+          lineups=None, recent_orders: dict | None = None,
+          away_probable: str | None = None, home_probable: str | None = None
+          ) -> PropDesk | None:
     """The whole desk for one game. ``pa`` is every plate appearance before the slate
-    date, both phases; this function does the splitting."""
+    date, both phases; this function does the splitting.
+
+    ``recent_orders`` maps a team name to ``(order, date)`` — the club's last official
+    starting lineup from StatsAPI — and is used when tonight's is not posted. Without it
+    the fallback is the feed's last game, which runs a day behind.
+    """
     if pa.empty:
         return None
-    # Ids as strings once, up front, so every per-player filter below is a plain compare.
-    pa = pa.assign(batter_id=pa["batter_id"].astype(str))
+    # Ids as strings once, up front, so every per-player filter below is a plain compare;
+    # and the feed's known gaps repaired before anything is counted.
+    pa = repair(pa).assign(batter_id=pa["batter_id"].astype(str))
     games = batter_games(pa)
     apps = pitcher_appearances(pa)
     reg_dates = games.loc[~games["post"], "game_date"]
@@ -503,23 +556,28 @@ def build(pa: pd.DataFrame, *, away_team: str, home_team: str, away_short: str,
     home_sp = build_starter(apps, home_pid, away_team)
 
     def side(team: str, short: str, facing: Starter | None, own: Starter | None,
-             opp: str) -> Side:
+             opp: str, probable: str | None) -> Side:
         posted = bool(lineups and lineups.is_posted(team) and lineups.order.get(team))
+        recent = (recent_orders or {}).get(team)
         if posted:
             order = tuple((str(pid), name) for pid, name in lineups.order[team])
             source = "Confirmed lineup"
         else:
-            order, played = _last_game_order(games, team)
+            if recent:
+                order = tuple((str(pid), name) for pid, name in recent[0])
+                played = recent[1]
+            else:
+                order, played = _last_game_order(games, team)
             when = f" ({played.strftime('%b %-d')})" if played else ""
             source = f"Not posted yet — this is the last game's order{when}, not tonight's"
         hitters = tuple(
             build_hitter(pa, games, pid, name, i, posted, opp, facing, reg_end, slot_pa)
             for i, (pid, name) in enumerate(order, 1))
         return Side(team=team, short=short, confirmed=posted, source=source,
-                    hitters=hitters, starter=own)
+                    hitters=hitters, starter=own, probable=probable)
 
-    away = side(away_team, away_short, home_sp, away_sp, home_team)
-    home = side(home_team, home_short, away_sp, home_sp, away_team)
+    away = side(away_team, away_short, home_sp, away_sp, home_team, away_probable)
+    home = side(home_team, home_short, away_sp, home_sp, away_team, home_probable)
 
     # Each starter's opposing-lineup profile is built from the *other* side's nine.
     def with_profile(sp: Starter | None, opposing: Side) -> Starter | None:

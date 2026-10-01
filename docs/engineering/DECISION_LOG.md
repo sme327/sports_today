@@ -9,6 +9,57 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-30 — Full QC of the prop desk and the bracket, and what it changed
+
+**What was checked.** Every hitter in both lineups and both starters for every postseason
+game on the Sep 30 and Oct 1 slates (191 hitters, 14,748 player-games), the bracket, the
+slate cards and the tactical matchups — 13,768 checks, each against an independent official
+source: MLB's game logs, handedness splits, play-by-play, box scores and the live postseason
+feed. Plus 134 browser checks on the rendered pages (every bracket, series and postseason
+matchup page at 390 and 1440 px; mode switching, threshold pills, mode memory, Watching,
+the no-script fallback, internal links, console errors). Scripts kept out of the repo; the
+method is below so it can be rerun.
+
+**Result.** The bracket (wins, scores, seeds, head-to-head), batter-vs-pitcher (from MLB's
+play-by-play), handedness, lineups, starters' recent lines and every starter threshold match
+exactly. 98.4% of all checks match; every remaining difference has a named cause.
+
+**Defects found and fixed.**
+- **Three gaps in the feed, repaired before counting** (`mlb_prop_desk.repair`): 51 walks on
+  the same pitch as a stolen base, wild pitch or passed ball, with no play type and no walk
+  flag; 17 "interference by batter" outs read as running events; and 101 strike-'em-out,
+  throw-'em-out double plays with the strikeout flag off — missing from batter *and*
+  starter strikeouts. **The rest of the site still reads the unrepaired feed**; like the
+  phase split, moving the scorers onto it is a backtest.
+- **Doubleheaders kept their playing order** in strips and "last game" (sorted by date and
+  game, not date alone).
+- **An unposted lineup falls back to MLB's last official starting nine**
+  (`src/mlb_lineups.last_starting_order`), not the feed's: the feed is a day behind, so on
+  a Game 3 page it showed Game 1's order rather than Game 2's.
+- **An unannounced starter says so** ("Starter not announced yet") instead of implying the
+  feed is missing him.
+
+**What the QC got wrong first, recorded so a rerun does not chase it.** MLB's
+batter-vs-pitcher endpoint omits the current season (Tatis vs Gausman, July 12, is real and
+absent there) — verify against play-by-play. Its handedness split returns one row per team
+for a traded player — sum them. A doubleheader's gamePks are not in playing order — sort by
+game number. A box score's ``battingOrder`` lists whoever finished each slot — starters are
+the players whose code ends in ``00``. Bullpen totals need the team's schedule, not one
+hitter's game log.
+
+**Residual differences, by cause — none fixable from the feed.**
+- *Official scoring changes* (40 player-games): a hit later ruled an error, or the reverse.
+  Season hit totals can be one off; the page says so.
+- *Bunts the feed calls sacrifices* (94): the scorer charged an at-bat. Moves only the AB
+  denominator in "H-for-AB" — no hit, strikeout, walk or threshold.
+- *Total-base and walk scoring* (3): a single the scorer made a double, an intentional-walk
+  classification.
+- *A pitcher pulled mid-count* (Pivetta, 42 vs 46 pitches): already marked `~`.
+- *A stale slate cache*: a game's state, or a Game 3 that MLB removed once its series ended,
+  until the next refresh. The daily run refreshes the slate and the bracket together.
+
+---
+
 ## 2026-09-30 — The prop desk, refined: a scan, then an investigation; and the page in two layers
 
 **Decision.** A refinement of the Playoff Prop Desk (not a rebuild), from the owner's review

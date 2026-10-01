@@ -125,6 +125,9 @@ small samples as counts. **Regular season and postseason are never pooled**: the
 playoff rows in `dataset`, `load_plate_appearances(phase=...)` splits them, and the MLB
 page's season reads are regular-season only. L14/L28 are the last days *of the regular
 season*. The prop scorers still read both phases, deliberately, until that is measured.
+The desk counts from a **repaired** feed (`mlb_prop_desk.repair`: compound walks, batter
+interference, strikeout double plays — three gaps a QC against MLB's game logs found); the
+rest of the site still reads the raw feed until a backtest says otherwise.
 The postseason page is **two layers**: the desk, then a "Game Analysis" divider. Players
 Positioned to Succeed and Player Trends are retired there, and Key Matchups asks tactical
 questions (pitch counts, platoon, bullpen) rather than prop ones. Regular-season pages keep
