@@ -623,23 +623,33 @@
   controls.hidden = false;
 })();
 
-// Playoff prop desk: the market mode and each hitter mode's threshold pills. The server
-// renders every mode's cells; this only moves `data-mode`, so the layout never rebuilds
-// and a reader learns it once. Controls stay hidden without the script (the page then
-// shows the Hits view). The chosen mode is a per-browser convenience, nothing more.
+// Playoff prop desk: the market mode, each mode's threshold pills, and the Watching bar.
+// The server renders every mode's cells; this only moves `data-mode`, so the layout never
+// rebuilds and a reader learns it once. Controls stay hidden without the script (the page
+// then shows the Hits view). The chosen mode and the watched players are per-browser
+// conveniences, nothing more — watching is a bookmark, not a pick, and records nothing.
 (() => {
   const desk = document.querySelector("[data-pd]");
   if (!desk) return;
   const modes = desk.querySelector("[data-pd-modes]");
   if (!modes) return;
-  const KEY = "sports-today:prop-desk-mode";
+  const MODE_KEY = "sports-today:prop-desk-mode";
+  const WATCH_KEY = `sports-today:prop-desk-watch:${desk.dataset.pdGame || ""}`;
+  const WATCH_MAX = 4;
+
+  function read(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (error) { return fallback; }
+  }
+  function write(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) { /* storage blocked */ }
+  }
 
   function setMode(mode) {
     desk.dataset.mode = mode;
     for (const button of modes.querySelectorAll("button[data-mode]")) {
       button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
     }
-    try { localStorage.setItem(KEY, mode); } catch (error) { /* storage blocked */ }
+    write(MODE_KEY, mode);
   }
 
   modes.hidden = false;
@@ -650,19 +660,71 @@
     if (button) setMode(button.dataset.mode);
   });
 
+  // --- watching ---------------------------------------------------------------------
+  const bar = desk.querySelector("[data-pd-watching]");
+  const list = desk.querySelector("[data-pd-watch-list]");
+  const stars = [...desk.querySelectorAll("button[data-watch]")];
+  let watched = read(WATCH_KEY, []).filter((key) => stars.some((s) => s.dataset.watch === key));
+
+  function target(key) {
+    const [kind, id] = key.split(":");
+    return document.getElementById(kind === "sp" ? `pd-sp-${id}` : `pd-h-${id}`);
+  }
+
+  function renderWatching() {
+    for (const star of stars) {
+      const on = watched.includes(star.dataset.watch);
+      star.setAttribute("aria-pressed", String(on));
+      star.textContent = on ? "★" : "☆";
+      star.setAttribute("aria-label", `${on ? "Stop watching" : "Watch"} ${star.dataset.watchLabel}`);
+    }
+    list.replaceChildren(...watched.map((key) => {
+      const star = stars.find((s) => s.dataset.watch === key);
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.dataset.goto = key;
+      // The surname, skipping a suffix: "Tatis", not "Jr.".
+      const words = star ? star.dataset.watchLabel.split(" ")
+        .filter((w) => !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(w)) : [key];
+      chip.textContent = words[words.length - 1];
+      chip.title = star ? `Go to ${star.dataset.watchLabel}` : "";
+      return chip;
+    }));
+    bar.hidden = watched.length === 0;
+  }
+
+  for (const star of stars) star.hidden = false;
   desk.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-pd-tpills] button[data-t]");
-    if (!button) return;
-    const group = button.closest("[data-pd-tpills]");
+    const star = event.target.closest("button[data-watch]");
+    if (star) {
+      event.preventDefault();               // inside a <summary>: do not toggle the row
+      const key = star.dataset.watch;
+      watched = watched.includes(key) ? watched.filter((k) => k !== key)
+        : [...watched, key].slice(-WATCH_MAX);
+      write(WATCH_KEY, watched);
+      renderWatching();
+      return;
+    }
+    const chip = event.target.closest("[data-goto]");
+    if (chip) {
+      const node = target(chip.dataset.goto);
+      if (!node) return;
+      if (node.tagName === "DETAILS") node.open = true;
+      node.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    const pill = event.target.closest("[data-pd-tpills] button[data-t]");
+    if (!pill) return;
+    const group = pill.closest("[data-pd-tpills]");
     for (const other of group.querySelectorAll("button[data-t]")) {
-      other.setAttribute("aria-pressed", String(other === button));
+      other.setAttribute("aria-pressed", String(other === pill));
     }
     for (const table of desk.querySelectorAll(`.pd-th-table[data-m="${group.dataset.m}"]`)) {
-      table.hidden = table.dataset.t !== button.dataset.t;
+      table.hidden = table.dataset.t !== pill.dataset.t;
     }
   });
+  renderWatching();
 
-  let saved = null;
-  try { saved = localStorage.getItem(KEY); } catch (error) { /* storage blocked */ }
+  const saved = read(MODE_KEY, null);
   if (saved && modes.querySelector(`button[data-mode="${saved}"]`)) setMode(saved);
 })();

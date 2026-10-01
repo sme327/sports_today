@@ -528,14 +528,21 @@ claim.
 
 ### Playoff Prop Desk (postseason MLB matchup pages)
 
+**Collapsed is a scan, expanded is an investigation.** Every pattern below follows from it.
+
 | Pattern | What it is | Rule it carries |
 |---|---|---|
-| **Market mode** | Six-way segmented control: Hits · Total bases · Batter K · Starter K · Hits allowed · Walks | Changes emphasis, never layout. Cells carry `data-m`; one `data-mode` on the section decides what is drawn. Hidden without the script, which leaves the Hits view |
-| **Starter card** | A small table: Avg, then one column per recorded start (oldest first), playoff outings after an orange rule; rows Pitches ~ · Batters faced · Innings ~ above Strikeouts · Hits allowed · Walks | Workload rows lead in every starter mode; the mode's own row is bold and lightly filled, the others recede. Never coloured by result. Estimates carry `~` and a tooltip, never looking like official figures; a gap of three weeks between starts is drawn as a dashed rule and stated ("Starts span Apr 1 – Sep 24") |
-| **Lineup row** | A large slot numeral in a filled square, the name and handedness vs tonight's starter, a one-line summary for the mode and a game-by-game strip | The slot is the loudest thing on the row. Confirmed: "✓ Confirmed lineup". Unconfirmed: dashed squares and an orange dashed "Not confirmed" badge naming the date of the order shown |
-| **Result strip** | Small filled number chips, oldest → newest; playoff games outlined in orange | Shows consistency at a glance without arithmetic. No colour by value |
+| **Market mode** | Six-way segmented control: Hits · Total bases · Batter K · Starter K · Hits allowed · Walks | Changes emphasis, never layout. Hitter modes fade the starter cards, pitching modes fade the lineups (opacity), Batter K keeps both. Hidden without the script, which leaves the Hits view |
+| **Starter card** | Name and hand → one large headline for the market ("5.2 K / start", orange in pitching modes) → workload line (~pitches · BF · ~IP) → recent strips → opposing-lineup rate → folded "Start by start" table | One number is loud; everything else steps down. Estimates carry `~` and a tooltip; a gap of three weeks between starts is stated ("span Apr 7 – Sep 24") and drawn as a dashed rule in the table |
+| **Lineup row** | Large slot numeral · name and hand (RHB / LHB / Switch) vs tonight's starter · Season · L14 · Post as bare counts · game strip · watch star | Two lines, nothing more. What the counts count is said once in the lineup header. Confirmed: "✓ Confirmed lineup"; unconfirmed: orange dashed badge and dashed slot squares, with the date of the order shown |
+| **Result strip** | Small filled chips, oldest → newest; an orange rule where the regular season stops; playoff chips outlined after it | Consistency at a glance without arithmetic. No colour by value |
 | **Slice table** (expanded hitter) | Regular season (bold) → L28 → L14 → orange rule → Postseason → This series → vs opponent (muted), then batter-vs-pitcher as one muted line | Weight falls with sample size. Counts below ten games; a rate only beside its denominator |
-| **Thresholds** | Games that cleared each mark — Season · L28 · L14 · Post — with per-mode threshold pills | Postseason cells in orange because they are the small, separate slice, not because they are good |
+| **Thresholds** | Pills per mode, one small table at a time: Player · Season · L14 · Post, or Starter · Season · Last N recorded · Post | A lookup, not a spreadsheet. Postseason cells orange because they are the separate slice, not because they are good |
+| **Watching** | Star on a row or card; a bar of up to four surname chips at the top of the desk | A bookmark: per browser, per game, records nothing. A chip scrolls to the player and opens his row |
+
+**Game Analysis divider.** A ruled heading under the desk ("Game Analysis · Context and
+interpretation") opens the page's second layer, so the player evidence and the game reading
+never run together.
 
 **No green or red anywhere in the desk.** Elsewhere they mean supporting and risk evidence;
 beside a player prop they would read as "bet" and "don't", and this surface makes no call.

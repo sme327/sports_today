@@ -48,9 +48,45 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
         cache_source = "built"
 
     hero, series = _postseason_hero(game, page.hero, slate_date)
+    data_note = (mlb_components.data_context_html(page.data_status.detail)
+                 if page.data_status and page.data_status.detail else "")
+    if game.is_postseason:
+        # Two layers (decision log 2026-09-30): the Prop Desk answers "what do I need to
+        # know about players tonight?", Game Analysis "what do I need to understand about
+        # the game?". Player Trends and Players Positioned to Succeed are retired here —
+        # the desk shows the same players with the evidence laid out — and Key Matchups
+        # asks tactical questions instead of prop questions the desk already answers.
+        desk_html, tactical = _postseason_sections(game, slate_date)
+        chunks = [
+            mlb_components.hero_html(hero, series),
+            desk_html,
+            '<div class="ga-divider"><h2>Game Analysis</h2>'
+            '<p>Context and interpretation</p></div>',
+            mlb_components.team_identity_html(page.away_identity, page.home_identity),
+            mlb_components.game_story_html(page.game_story),
+            mlb_components.key_matchups_html(tactical),
+            mlb_components.game_shape_html(page.game_shape),
+            mlb_components.storylines_html(page.storylines),
+            data_note,
+        ]
+    else:
+        chunks = _regular_season_chunks(game, page, hero, series, data_note)
+    return {
+        "section": "today",
+        "league": "MLB",
+        "game": game,
+        "slate_date": slate_date,
+        "day": "tomorrow" if slate_date > date.today() else "today",
+        "content_chunks": [chunk for chunk in chunks if chunk],
+        "cache_source": cache_source,
+        "build_ms": round((perf_counter() - started) * 1000, 1),
+    }
+
+
+def _regular_season_chunks(game: SlateGame, page, hero, series, data_note: str) -> list[str]:
+    """The regular-season page, unchanged: every section, in its original order."""
     chunks = [
         mlb_components.hero_html(hero, series),
-        _prop_desk(game, slate_date),
         mlb_components.team_identity_html(page.away_identity, page.home_identity),
         mlb_components.game_story_html(page.game_story),
         mlb_components.key_matchups_html(page.key_matchups),
@@ -69,45 +105,30 @@ def mlb_context(game: SlateGame, slate_date: date) -> dict:
             '<div class="mlb-empty">No game-specific opportunities currently meet '
             "the display threshold.</div>"
         )
-    chunks.extend(
-        [
-            '<div class="mlb-section"><div class="mlb-section-head">'
-            "<h2>Players Positioned to Succeed</h2></div>"
-            f"{opportunities}</div>",
-            mlb_components.game_shape_html(page.game_shape),
-            mlb_components.storylines_html(page.storylines),
-            mlb_components.data_context_html(page.data_status.detail)
-            if page.data_status and page.data_status.detail
-            else "",
-        ]
-    )
-    return {
-        "section": "today",
-        "league": "MLB",
-        "game": game,
-        "slate_date": slate_date,
-        "day": "tomorrow" if slate_date > date.today() else "today",
-        "content_chunks": [chunk for chunk in chunks if chunk],
-        "cache_source": cache_source,
-        "build_ms": round((perf_counter() - started) * 1000, 1),
-    }
+    chunks.extend([
+        '<div class="mlb-section"><div class="mlb-section-head">'
+        "<h2>Players Positioned to Succeed</h2></div>"
+        f"{opportunities}</div>",
+        mlb_components.game_shape_html(page.game_shape),
+        mlb_components.storylines_html(page.storylines),
+        data_note,
+    ])
+    return chunks
 
 
-def _prop_desk(game: SlateGame, slate_date: date) -> str:
-    """The postseason prop desk, under the header and above the existing analysis.
+def _postseason_sections(game: SlateGame, slate_date: date) -> tuple[str, tuple]:
+    """``(prop desk html, tactical key matchups)`` for a postseason game.
 
-    Postseason only for now (decision log 2026-09-30). Built at render time, like the
-    series strip: lineups post a few hours before first pitch, and a page cached at the
-    morning build would otherwise keep yesterday's order all day. Non-fatal — the rest of
-    the page stands on its own.
+    Built at render time, like the series strip: lineups post a few hours before first
+    pitch, and a page cached at the morning build would otherwise keep yesterday's order
+    all day. Non-fatal — the rest of the page stands on its own.
     """
-    if not game.is_postseason:
-        return ""
-    key = f"django:mlb-prop-desk:v1:{slate_date.isoformat()}:{game.game_id}"
-    html = cache.get(key)
-    if html is not None:
-        return html
+    key = f"django:mlb-postseason:v2:{slate_date.isoformat()}:{game.game_id}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
     try:
+        from services.mlb_playoff_matchups import tactical
         from components.prop_desk import prop_desk_html
         from services import mlb_analytics, mlb_prop_desk
         from services.data_access import load_plate_appearances
@@ -122,13 +143,13 @@ def _prop_desk(game: SlateGame, slate_date: date) -> str:
             away_pid=mlb_analytics.match_pitcher(pa, meta.get("away_pitcher")),
             home_pid=mlb_analytics.match_pitcher(pa, meta.get("home_pitcher")),
             lineups=get_lineups(slate_date))
-        html = prop_desk_html(desk)
+        result = (prop_desk_html(desk, str(game.game_id)), tactical(pa, desk))
     except Exception:                                    # noqa: BLE001
         import logging
         logging.getLogger(__name__).exception("prop desk failed for %s", game.game_id)
-        html = ""
-    cache.set(key, html, timeout=300)
-    return html
+        result = ("", ())
+    cache.set(key, result, timeout=300)
+    return result
 
 
 def _postseason_hero(game: SlateGame, hero, slate_date: date):

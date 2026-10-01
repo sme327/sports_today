@@ -1027,6 +1027,10 @@ a.mlb-hero-series:focus-visible { outline: 2px solid var(--brand); outline-offse
 
 /* Recent-form pill: icon + label */
 .mlb-form-pill { display: inline-flex; align-items: center; gap: .3rem; }
+/* "Regular-season form: bats heating up" on playoff pages is longer than the old pill and
+   overran the opposite side of the hero on a phone. It wraps instead. */
+.mlb-hero-side .mlb-form-pill { max-width: 100%; white-space: normal; }
+.mlb-hero-team.home .mlb-form-pill { justify-content: flex-end; text-align: right; }
 
 /* Insight cards get a role header (icon + label) */
 .mlb-insight { flex-direction: column; align-items: stretch; gap: .35rem; }
@@ -2403,31 +2407,35 @@ a.mlb-hero-series:focus-visible { outline: 2px solid var(--brand); outline-offse
 }
 
 /* --- Playoff Prop Desk (postseason MLB matchup pages) ---------------------------------
-   Evidence, not picks: neutral text throughout, orange only for playoff games and the
-   selected control, small samples muted. No green or red here — on this surface those
-   would read as "bet" and "don't". One layout for every market; a mode only changes
-   which cells show (data-m) and which starter rows are emphasised (data-emph). */
+   Evidence, not picks: neutral text throughout, orange only for playoff games, the
+   selected control and a starter's headline, small samples muted. No green or red — on
+   this surface those would read as "bet" and "don't". One layout for every market; a mode
+   only changes which cells show (data-m) and which half of the desk is in focus.
+   Collapsed rows are a scan; the deeper evidence waits behind a tap. */
 .pd {
-  margin: 0 0 1.6rem; padding: 1rem 1.1rem 1.1rem; border-radius: var(--r-lg);
+  margin: 0 0 1.4rem; padding: 1rem 1.1rem 1.1rem; border-radius: var(--r-lg);
   background: var(--surface-1); box-shadow: var(--edge-hi), var(--shadow-md);
 }
-.pd-head { display: flex; align-items: baseline; justify-content: space-between; gap: .4rem 1rem; flex-wrap: wrap; }
+.pd-head { display: flex; align-items: flex-end; justify-content: space-between; gap: .4rem 1rem; flex-wrap: wrap; }
 .pd-head h2 { margin: 0; color: var(--text-1); font-size: 1.15rem; letter-spacing: -.01em; }
-.pd-through { color: var(--text-4); font-size: .74rem; font-weight: 600; }
-.pd-modes { display: flex; flex-wrap: wrap; gap: .25rem; margin: .8rem 0 .2rem; padding: .2rem;
-  border: 1px solid var(--divider); border-radius: var(--r-pill); background: var(--surface-2); width: fit-content; max-width: 100%; }
-.pd-modes[hidden] { display: none; }
+.pd-sub { margin: .1rem 0 0; color: var(--text-3); font-size: .78rem; }
+.pd-through { color: var(--text-4); font-size: .72rem; font-weight: 600; }
+.pd-modes { display: flex; flex-wrap: wrap; gap: .25rem; margin: .85rem 0 .2rem; padding: .2rem;
+  border: 1px solid var(--divider); border-radius: var(--r-pill); background: var(--surface-2);
+  width: fit-content; max-width: 100%; }
+.pd-modes[hidden], .pd-tpills[hidden], .pd-th-table[hidden], .pd-watching[hidden], .pd-watch[hidden] { display: none; }
 .pd-modes button, .pd-tpills button {
   font: inherit; cursor: pointer; border: 0; background: none; color: var(--text-3);
   padding: .38rem .72rem; border-radius: var(--r-pill); font-size: .78rem; font-weight: 750;
 }
 .pd-modes button:hover, .pd-tpills button:hover { color: var(--text-1); }
 .pd-modes button[aria-pressed="true"], .pd-tpills button[aria-pressed="true"] { color: var(--on-brand); background: var(--brand-grad); }
-.pd-modes button:focus-visible, .pd-tpills button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.pd-note { margin: .55rem 0 0; color: var(--text-3); font-size: .78rem; line-height: 1.45; }
-.pd-quiet { margin: .35rem 0 0; color: var(--text-4); font-size: .72rem; line-height: 1.4; }
-.pd-label { color: var(--text-3); font-weight: 700; }
+.pd-modes button:focus-visible, .pd-tpills button:focus-visible, .pd-watch:focus-visible,
+.pd-watching button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.pd-note { margin: .5rem 0 0; color: var(--text-3); font-size: .76rem; line-height: 1.45; }
+.pd-quiet { margin: .35rem 0 0; color: var(--text-4); font-size: .7rem; line-height: 1.4; }
 .pd-post-key { color: var(--brand-2); }
+.pd abbr { text-decoration: none; cursor: help; }
 
 /* Mode visibility: a cell tagged for other modes is not drawn. */
 .pd[data-mode="hits"] [data-m]:not([data-m~="hits"]),
@@ -2437,118 +2445,154 @@ a.mlb-hero-series:focus-visible { outline: 2px solid var(--brand); outline-offse
 .pd[data-mode="ha"] [data-m]:not([data-m~="ha"]),
 .pd[data-mode="bb"] [data-m]:not([data-m~="bb"]) { display: none; }
 
-/* Starters */
+/* Focus follows the market: hitter modes quiet the starter cards, pitcher modes quiet the
+   lineups. Batter K keeps both, because the opposing starter carries that market. */
+.pd:is([data-mode="hits"], [data-mode="tb"]) .pd-sp { opacity: .62; }
+.pd:is([data-mode="sk"], [data-mode="ha"], [data-mode="bb"]) .pd-lineup { opacity: .62; }
+.pd .pd-sp, .pd .pd-lineup { transition: opacity .16s ease; }
+
+/* Watching */
+.pd-watching { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .5rem; margin-top: .7rem; }
+.pd-watching > span:first-child { color: var(--text-4); font-size: .66rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.pd-watching [data-pd-watch-list] { display: flex; flex-wrap: wrap; gap: .3rem; }
+.pd-watching button { font: inherit; cursor: pointer; padding: .22rem .6rem; border: 1px solid var(--divider);
+  border-radius: var(--r-pill); background: var(--surface-2); color: var(--text-1); font-size: .76rem; font-weight: 700; }
+.pd-watching button:hover { border-color: var(--brand-ring); }
+.pd-watch { font: inherit; cursor: pointer; border: 0; background: none; color: var(--text-4);
+  font-size: 1rem; line-height: 1; padding: .2rem .25rem; border-radius: var(--r-xs); }
+.pd-watch:hover { color: var(--text-2); }
+.pd-watch[aria-pressed="true"] { color: var(--brand-2); }
+
+/* Starters: market headline → workload → recent → context. */
 .pd-starters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .9rem; }
-.pd-sp { min-width: 0; padding: .75rem .8rem; border: 1px solid var(--divider); border-radius: var(--r-md); background: var(--surface-2); }
-.pd-sp-head { display: flex; flex-direction: column; gap: .1rem; }
-.pd-sp-head strong { color: var(--text-1); font-size: 1rem; }
-.pd-sp-head span { color: var(--text-3); font-size: .74rem; }
-.pd-sp-scroll, .pd-detail-scroll { overflow-x: auto; margin-top: .55rem; }
+.pd-sp { min-width: 0; padding: .8rem .85rem; border: 1px solid var(--divider); border-radius: var(--r-md); background: var(--surface-2); scroll-margin-top: 1rem; }
+.pd-sp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.pd-sp-head strong { display: block; color: var(--text-1); font-size: .98rem; }
+.pd-sp-head span { color: var(--text-3); font-size: .72rem; }
+.pd-sp-headline { margin-top: .45rem; color: var(--text-2); font-size: .86rem; font-weight: 650; }
+.pd-sp-headline b { color: var(--text-1); font-size: 1.7rem; font-weight: 850; letter-spacing: -.02em; margin-right: .2rem; }
+.pd:is([data-mode="sk"], [data-mode="ha"], [data-mode="bb"]) .pd-sp-headline b { color: var(--brand-2); }
+.pd-sp-workload { margin-top: .15rem; color: var(--text-2); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.pd-sp-workload b { color: var(--text-1); }
+.pd-sp-workload small { color: var(--text-4); font-size: .7rem; }
+.pd:is([data-mode="sk"], [data-mode="ha"], [data-mode="bb"]) .pd-sp-workload { color: var(--text-1); font-weight: 650; }
+.pd-sp-strip { display: flex; align-items: center; gap: .5rem; margin-top: .45rem; }
+.pd-sp-strip > span:first-child { flex: 0 0 4.4rem; color: var(--text-3); font-size: .68rem; font-weight: 700; }
+.pd-sp-work .pd-v { background: none; color: var(--text-3); box-shadow: inset 0 0 0 1px var(--hairline-2); }
+.pd-span { color: var(--text-2); font-weight: 700; }
+.pd-sp-lineup { margin: .5rem 0 0; padding-top: .45rem; border-top: 1px solid var(--hairline); color: var(--text-3); font-size: .74rem; }
+.pd-sp-lineup span { color: var(--text-1); font-weight: 700; }
+.pd-sp-lineup small, .pd-c small, .pd-sum small { color: var(--text-4); font-weight: 600; }
+.pd-sp-more { margin-top: .5rem; }
+.pd-sp-more > summary { cursor: pointer; color: var(--text-3); font-size: .72rem; font-weight: 700; width: fit-content; }
+.pd-sp-more > summary:hover { color: var(--text-1); }
+.pd-sp-scroll, .pd-detail-scroll { overflow-x: auto; margin-top: .45rem; }
 .pd-sp-table, .pd-detail-table, .pd-th-table table {
-  border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .76rem; color: var(--text-3);
+  border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .74rem; color: var(--text-3);
 }
-.pd-sp-table th, .pd-sp-table td { padding: .26rem .42rem; text-align: center; white-space: nowrap; }
-.pd-sp-table thead th { color: var(--text-4); font-size: .64rem; font-weight: 700; }
-.pd-sp-table thead th small { display: block; font-size: .58rem; font-weight: 600; }
-.pd-sp-table tbody th { text-align: left; color: var(--text-3); font-weight: 650; }
+.pd-sp-table th, .pd-sp-table td { padding: .24rem .4rem; text-align: center; white-space: nowrap; }
+.pd-sp-table thead th { color: var(--text-4); font-size: .62rem; font-weight: 700; }
+.pd-sp-table thead th small { display: block; font-size: .56rem; font-weight: 600; }
+.pd-sp-table tbody th { text-align: left; font-weight: 650; }
 .pd-sp-table .pd-avg { color: var(--text-2); font-weight: 750; border-right: 1px solid var(--hairline-2); }
 .pd-sp-table .post { color: var(--brand-2); }
 .pd-sp-table thead th.post { border-top: 2px solid var(--brand-ring); }
-/* Workload leads in every starter mode: in October a short hook caps the strikeouts. */
-.pd:is([data-mode="sk"], [data-mode="ha"], [data-mode="bb"]) .pd-sp-row.workload :is(th, td) { color: var(--text-2); }
-.pd[data-mode="sk"] .pd-sp-row[data-emph~="sk"] :is(th, td),
-.pd[data-mode="bk"] .pd-sp-row[data-emph~="bk"] :is(th, td),
-.pd[data-mode="ha"] .pd-sp-row[data-emph~="ha"] :is(th, td),
-.pd[data-mode="bb"] .pd-sp-row[data-emph~="bb"] :is(th, td) {
-  color: var(--text-1); font-weight: 800; background: rgba(255, 255, 255, .035);
-}
-.pd-sp-lineup { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .7rem; margin-top: .55rem;
-  padding-top: .5rem; border-top: 1px solid var(--hairline); color: var(--text-2); font-size: .78rem; }
-.pd-sp-lineup small, .pd-sum small { color: var(--text-4); font-size: .9em; font-weight: 600; }
-.pd-small-sample { font-style: italic; }
-
-/* Lineups — the centrepiece. The batting slot is the loudest thing in a row. */
-.pd-lineups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 1rem; }
-.pd-lineup { min-width: 0; }
-.pd-lineup-head { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem .6rem; margin-bottom: .35rem; }
-.pd-lineup-head strong { color: var(--text-1); font-size: 1rem; }
-.pd-badge { padding: .14rem .5rem; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-2);
-  font-size: .66rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.pd-badge.off { background: var(--brand-soft); border: 1px dashed var(--brand-2); color: var(--brand-2); }
-.pd-unconfirmed { color: var(--brand-2) !important; font-style: normal !important; font-weight: 650; }
-.pd-sp-table abbr { text-decoration: none; cursor: help; }
 .pd-sp-table .gap { border-left: 2px dashed var(--hairline-2); }
-.pd-span { color: var(--text-2); font-weight: 700; }
-.pd-facing { color: var(--text-3); font-size: .74rem; }
-.pd-unconfirmed { margin: 0 0 .4rem; color: var(--text-3); font-size: .74rem; font-style: italic; }
-.pd-hitter { border-bottom: 1px solid var(--hairline); }
-.pd-hitter summary {
-  display: grid; grid-template-columns: 2.1rem minmax(0, 9.5rem) minmax(0, 1fr); align-items: center;
-  gap: .55rem; padding: .42rem .2rem; cursor: pointer; list-style: none;
-}
-.pd-hitter summary::-webkit-details-marker { display: none; }
-.pd-hitter summary:hover { background: rgba(255, 255, 255, .025); }
-.pd-hitter summary:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: var(--r-xs); }
-.pd-slot {
-  display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--r-xs);
-  background: var(--surface-3); color: var(--text-1); font-size: 1.1rem; font-weight: 850;
-  font-variant-numeric: tabular-nums;
-}
-.pd-hitter.unconfirmed .pd-slot { background: none; border: 1px dashed var(--text-4); color: var(--text-3); }
-.pd-slot.sm { display: inline-grid; width: 1.3rem; height: 1.3rem; margin-right: .45rem; font-size: .72rem; }
-.pd-who { display: flex; flex-direction: column; min-width: 0; }
-.pd-who b { overflow: hidden; color: var(--text-1); font-size: .86rem; text-overflow: ellipsis; white-space: nowrap; }
-.pd-who small { color: var(--text-4); font-size: .68rem; }
-.pd-read { display: flex; flex-direction: column; gap: .18rem; min-width: 0; }
-.pd-sum { color: var(--text-3); font-size: .74rem; font-variant-numeric: tabular-nums; }
-.pd-sum b { color: var(--text-1); font-weight: 750; }
-.pd-strip { display: inline-flex; gap: .16rem; }
+
+/* Strips: regular season, a rule, then playoff games outlined. */
+.pd-strip { display: inline-flex; align-items: center; gap: .16rem; }
 .pd-v { min-width: 1.15rem; padding: .04rem .2rem; border-radius: 4px; background: var(--surface-3);
   color: var(--text-2); font-size: .68rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
 .pd-v.post { background: none; box-shadow: inset 0 0 0 1px var(--brand-ring); color: var(--brand-2); }
+.pd-sep { display: inline-block; width: 2px; height: 1.05rem; margin: 0 .22rem; border-radius: 1px; background: var(--brand-2); vertical-align: middle; }
 .pd-strip-empty { color: var(--text-4); font-size: .7rem; }
 
+/* Lineups — the centrepiece. The batting slot is the loudest thing in a row. */
+.pd-lineups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; margin-top: 1.05rem; }
+.pd-lineup { min-width: 0; }
+.pd-lineup-head { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem .6rem; margin-bottom: .3rem; }
+.pd-lineup-head strong { color: var(--text-1); font-size: 1rem; }
+.pd-badge { padding: .14rem .5rem; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-2);
+  font-size: .66rem; font-weight: 800; letter-spacing: .03em; }
+.pd-badge.off { background: var(--brand-soft); border: 1px dashed var(--brand-2); color: var(--brand-2); }
+.pd-facing { color: var(--text-4); font-size: .72rem; }
+.pd-unconfirmed { margin: 0 0 .4rem; color: var(--brand-2); font-size: .74rem; font-weight: 650; }
+.pd-hitter { border-bottom: 1px solid var(--hairline); scroll-margin-top: 1rem; }
+.pd-hitter > summary {
+  display: grid; grid-template-columns: 2.1rem minmax(0, 9.6rem) minmax(0, 1fr) auto;
+  grid-template-areas: "slot who read watch" "slot who strip watch";
+  align-items: center; gap: .15rem .6rem; padding: .45rem .2rem; cursor: pointer; list-style: none;
+}
+.pd-hitter > summary::-webkit-details-marker { display: none; }
+.pd-hitter > summary:hover { background: rgba(255, 255, 255, .025); }
+.pd-hitter > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: var(--r-xs); }
+.pd-hitter[open] > summary { background: rgba(255, 255, 255, .03); }
+.pd-slot {
+  grid-area: slot; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--r-xs);
+  background: var(--surface-3); color: var(--text-1); font-size: 1.1rem; font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.pd-hitter.unconfirmed .pd-slot { background: none; border: 1px dashed var(--brand-2); color: var(--text-2); }
+.pd-slot.sm { display: inline-grid; width: 1.3rem; height: 1.3rem; margin-right: .45rem; font-size: .72rem; }
+.pd-who { grid-area: who; display: flex; flex-direction: column; min-width: 0; }
+.pd-who b { overflow: hidden; color: var(--text-1); font-size: .86rem; text-overflow: ellipsis; white-space: nowrap; }
+.pd-who small { color: var(--text-4); font-size: .68rem; }
+.pd-read { grid-area: read; min-width: 0; }
+.pd-row-strip { grid-area: strip; min-width: 0; overflow: hidden; }
+.pd-hitter > summary .pd-watch { grid-area: watch; }
+.pd-sum { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .7rem; font-variant-numeric: tabular-nums; }
+.pd-lineup-key { margin-left: auto; color: var(--text-3); font-size: .7rem; font-weight: 700; }
+.pd-c { color: var(--text-1); font-size: .8rem; font-weight: 700; white-space: nowrap; }
+.pd-c small { margin-right: .25rem; font-size: .64rem; text-transform: uppercase; letter-spacing: .03em; }
+.pd-c.post { color: var(--brand-2); }
+.pd-sum-extra { margin-top: .05rem; }
+
 /* Expanded hitter: one table, slices in a fixed order, weight falling with the sample. */
-.pd-detail { padding: .2rem .2rem .7rem 2.65rem; }
-.pd-opp { margin: .1rem 0 0; color: var(--text-2); font-size: .78rem; font-weight: 650; }
+.pd-detail { padding: .2rem .2rem .75rem 2.7rem; }
+.pd-opp { margin: .15rem 0 0; color: var(--text-2); font-size: .76rem; font-weight: 650; }
 .pd-detail-table th, .pd-detail-table td { padding: .26rem .45rem; text-align: right; white-space: nowrap; }
-.pd-detail-table thead th { color: var(--text-4); font-size: .64rem; font-weight: 700; }
+.pd-detail-table thead th { color: var(--text-4); font-size: .62rem; font-weight: 700; }
 .pd-detail-table tbody th { text-align: left; font-weight: 700; }
-.pd-detail-table tbody th small { display: block; color: var(--text-4); font-size: .62rem; font-weight: 600; }
+.pd-detail-table tbody th small { display: block; color: var(--text-4); font-size: .6rem; font-weight: 600; }
 .pd-detail-table .pd-line { text-align: left; }
 .pd-slice.base { color: var(--text-1); }
 .pd-slice.base th, .pd-slice.base td { font-weight: 750; }
 .pd-slice.recent { color: var(--text-2); }
 .pd-slice.small { color: var(--text-3); }
 .pd-slice:nth-child(4) :is(th, td) { border-top: 1px solid var(--brand-ring); }
-.pd-bvp { margin: .45rem 0 0; color: var(--text-4); font-size: .72rem; }
+.pd-bvp { margin: .45rem 0 0; color: var(--text-4); font-size: .7rem; }
 .pd-bvp small { font-size: 1em; }
 
-/* Thresholds */
+/* Thresholds: a lookup — pick a mark, read one small table. */
 .pd-thresholds { margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid var(--hairline); }
 .pd-th-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .3rem .8rem; }
 .pd-th-head h3 { margin: 0; color: var(--text-1); font-size: .95rem; }
 .pd-tpills { display: flex; flex-wrap: wrap; gap: .25rem; margin: .55rem 0 .3rem; }
-.pd-tpills[hidden], .pd-th-table[hidden] { display: none; }
 .pd-tpills button { background: var(--surface-2); }
-.pd-th-table { overflow-x: auto; margin-top: .4rem; max-width: 46rem; }
-.pd-th-starters { max-width: none; }
+.pd-th-table { overflow-x: auto; margin-top: .35rem; max-width: 34rem; }
 .pd-th-table table { width: 100%; }
-.pd-th-table th, .pd-th-table td { padding: .28rem .5rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--hairline); }
-.pd-th-table thead th { color: var(--text-4); font-size: .64rem; font-weight: 700; }
+.pd-th-table caption { caption-side: top; padding: 0 0 .3rem; color: var(--text-3); font-size: .7rem; text-align: left; }
+.pd-th-table th, .pd-th-table td { padding: .26rem .5rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--hairline); }
+.pd-th-table thead th { color: var(--text-4); font-size: .62rem; font-weight: 700; }
 .pd-th-table thead th:first-child, .pd-th-table tbody th { text-align: left; }
 .pd-th-table tbody th { color: var(--text-1); font-weight: 650; }
 .pd-th-table td { color: var(--text-2); }
-.pd-th-table td.small { color: var(--brand-2); }
-.pd-th-team th { padding-top: .7rem; color: var(--text-3) !important; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
-.pd-th-starters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-.pd-legend { margin: .9rem 0 0; color: var(--text-4); font-size: .72rem; }
+.pd-th-table td.post { color: var(--brand-2); }
+.pd-th-team th { padding-top: .65rem; color: var(--text-4) !important; font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; }
+.pd-legend { margin: .9rem 0 0; color: var(--text-4); font-size: .7rem; line-height: 1.5; }
+.pd-legend .pd-sep { height: .8rem; }
+
+/* The page's second layer: the game itself. */
+.ga-divider { display: flex; align-items: baseline; gap: .7rem; margin: 2rem 0 1rem; padding-top: 1.1rem; border-top: 1px solid var(--divider); }
+.ga-divider h2 { margin: 0; color: var(--text-1); font-size: 1.15rem; letter-spacing: -.01em; }
+.ga-divider p { margin: 0; color: var(--text-4); font-size: .78rem; }
 
 @media (max-width: 760px) {
   .pd { padding: .85rem .75rem; }
-  .pd-starters, .pd-lineups, .pd-th-starters { grid-template-columns: 1fr; }
+  .pd-starters, .pd-lineups { grid-template-columns: 1fr; }
   .pd-modes { border-radius: var(--r-md); }
-  .pd-hitter summary { grid-template-columns: 2.1rem minmax(0, 1fr); }
-  .pd-read { grid-column: 2; }
+  .pd-hitter > summary { grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+    grid-template-areas: "slot who watch" "slot read read" "slot strip strip"; }
   .pd-detail { padding-left: .2rem; }
+  .pd-sp-headline b { font-size: 1.45rem; }
 }

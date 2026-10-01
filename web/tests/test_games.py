@@ -96,3 +96,47 @@ def test_live_nfl_route_bridges_to_archive_matchup(find, _feed_id):
 @patch("web.views.find_game", return_value=None)
 def test_unknown_game_is_404(_find):
     assert Client().get("/game/MLB/missing/").status_code == 404
+
+
+# --- postseason pages: two layers, retired sections (decision log 2026-09-30) -----------
+
+def _fake_page():
+    from domain.mlb_game_page import MLBGameHero, MLBGamePage, MLBTeamIdentity
+
+    hero = MLBGameHero(away_team="Chicago Cubs", home_team="San Diego Padres",
+                       away_logo_url=None, home_logo_url=None, scheduled_time="",
+                       venue=None, game_status=None, probable_away_pitcher=None,
+                       probable_home_pitcher=None, probable_pitcher_status="unavailable",
+                       league_context="MLB")
+    empty = MLBTeamIdentity("", None, "—", "", (), "", (), (), "")
+    return MLBGamePage(hero=hero, game_story=(), away_identity=empty, home_identity=empty,
+                       key_matchups=(), heating_up=(), cooling_off=(), opportunities=(),
+                       game_shape=None, storylines=(), data_status=None,
+                       generated_at="", as_of="2026-09-30")
+
+
+def _page_text(monkeypatch, phase):
+    from domain.models import SlateGame
+    from web import games
+
+    monkeypatch.setattr(games.matchup_cache, "load", lambda *a, **k: _fake_page())
+    monkeypatch.setattr(games.cache, "get", lambda *a, **k: None)
+    monkeypatch.setattr(games.cache, "set", lambda *a, **k: None)
+    monkeypatch.setattr(games, "_postseason_sections",
+                        lambda *a: ('<section class="pd">DESK</section>', ()))
+    monkeypatch.setattr(games, "_postseason_hero", lambda g, hero, d: (hero, None))
+    game = SlateGame(league="MLB", game_id="849842", phase=phase,
+                     away_name="Chicago Cubs", home_name="San Diego Padres")
+    return "".join(games.mlb_context(game, date(2026, 9, 30))["content_chunks"])
+
+
+def test_a_postseason_page_is_two_layers_without_the_retired_sections(monkeypatch):
+    text = _page_text(monkeypatch, "postseason")
+    assert text.index("DESK") < text.index("Game Analysis")
+    assert "Players Positioned to Succeed" not in text
+
+
+def test_a_regular_season_page_is_unchanged(monkeypatch):
+    text = _page_text(monkeypatch, "regular")
+    assert "DESK" not in text and "Game Analysis" not in text
+    assert "Players Positioned to Succeed" in text

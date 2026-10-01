@@ -48,6 +48,10 @@ game**. Team Identity (evidence) is placed above the story (synthesis).
    Hits / Total bases / Batter K / Starter K / Hits allowed / Walks mode. Evidence only —
    see the decision log entry for the rules it must keep. Everything below it describes
    the **regular season only**; playoff plate appearances are excluded from season reads.
+   Below the desk a **Game Analysis** divider opens the second layer. On postseason pages
+   Players Positioned to Succeed and Player/Pitcher Trends are not rendered, and Key
+   Matchups is replaced by three tactical questions from `services/mlb_playoff_matchups.py`
+   (decision log 2026-09-30, refinement entry). Regular-season pages are unchanged.
 2. **Team Identity** — six dimensions per team: Power, Contact, Plate Discipline,
    Speed, RISP (league-relative percentiles shown as qualitative tiers + the
    number), and Recent Form (composite last-10 vs. season baseline → Trending

@@ -224,14 +224,6 @@ def test_the_desk_uses_no_verdict_language_or_colour():
     assert "style=" not in html
 
 
-def test_the_desk_appears_only_on_postseason_games():
-    from domain.models import SlateGame
-    from web.games import _prop_desk
-
-    regular = SlateGame(league="MLB", game_id="1", phase="regular")
-    assert _prop_desk(regular, date(2026, 9, 30)) == ""
-
-
 # --- found by the QC against MLB's own game logs (2026-09-30) ---------------------------
 
 def _with_steal():
@@ -288,3 +280,82 @@ def test_estimated_workload_is_marked_and_the_lineup_state_is_unmissable():
     assert "Not confirmed" in html
     assert "last game&#x27;s order (Sep 29), not tonight&#x27;s" in html
     assert "\\" not in html                  # no stray escapes reach the page
+
+
+# --- refinement pass: hierarchy, the two layers, tactical matchups ---------------------
+
+def _html():
+    from components.prop_desk import prop_desk_html
+    return prop_desk_html(_desk(), "2000")
+
+
+def test_a_collapsed_row_is_a_scan_with_bare_counts():
+    import re
+
+    html = _html()
+    summary = re.search(r'id="pd-h-101">\s*<summary>(.*?)</summary>', html, re.S).group(1)
+    hits = re.search(r'<span class="pd-sum" data-m="hits ha">(.*?)</span></span>', summary).group(0)
+    assert "Season</small>4/4" in hits and "L14</small>2/2" in hits and "Post</small>0/1" in hits
+    assert "%" not in hits                        # rates wait for the expansion
+    for deeper in ("L28", "vs Chicago", "This series"):
+        assert deeper not in summary
+
+
+def test_the_strip_marks_where_the_regular_season_stops():
+    html = _html()
+    assert 'class="pd-sep" aria-label="postseason begins"' in html
+    assert '<span class="pd-v post">' in html
+
+
+def test_each_pitching_market_gives_the_starter_one_headline():
+    html = _html()
+    for mode, unit in (("sk", "K / start"), ("ha", "H allowed / start"), ("bb", "BB / start")):
+        assert f'<span data-m="{mode}"><b>' in html and unit in html
+    assert "~72 pitches" in html or "pitches</abbr>" in html
+
+
+def test_thresholds_are_one_table_at_a_time_for_every_mode():
+    import re
+
+    html = _html()
+    for mode, _label in D.MODES:
+        tables = re.findall(rf'<div class="pd-th-table" data-m="{mode}" data-t="{mode}-(\d+)"( hidden)?', html)
+        assert tables and tables[0] == ("0", "") and all(h == " hidden" for _, h in tables[1:])
+        assert f'<div class="pd-tpills" data-m="{mode}" data-pd-tpills hidden>' in html
+
+
+def test_watching_controls_wait_for_the_script_and_key_on_ids():
+    html = _html()
+    assert 'data-watch="h:101"' in html and 'data-watch="sp:900"' in html
+    assert 'data-pd-watching hidden' in html
+    assert 'data-pd-game="2000"' in html
+
+
+def test_platoon_counts_switch_hitters_as_the_other_side():
+    from services import mlb_playoff_matchups as M
+
+    desk = _desk()
+    away = D.Side(**{**desk.away.__dict__, "hitters": tuple(
+        D.Hitter(**{**h.__dict__, "hand": hand})
+        for h, hand in zip(desk.away.hitters, "LLSRRRRRR"))})
+    m = M.platoon(D.PropDesk(away=away, home=desk.home, data_through=desk.data_through,
+                             reg_end=desk.reg_end))
+    assert "3 of 9 in the Cubs" in m.explanation
+
+
+def test_the_bullpen_question_names_its_dates_and_counts_relief_only():
+    from services import mlb_playoff_matchups as M
+
+    pa = _season()
+    m = M.bullpen(pa.assign(batter_id=pa["batter_id"].astype(str)), _desk())
+    assert "(Sep 27–29)" in m.explanation
+    assert "Through Sep 29" in m.availability_note
+
+
+def test_the_tactical_matchups_ask_no_prop_questions():
+    from services import mlb_playoff_matchups as M
+
+    pa = _season()
+    titles = [m.title.lower() for m in M.tactical(pa, _desk())]
+    assert titles and len(titles) <= 3
+    assert not any("miss" in t or "strike" in t or "hit" in t for t in titles)

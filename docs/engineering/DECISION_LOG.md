@@ -9,6 +9,56 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-09-30 — The prop desk, refined: a scan, then an investigation; and the page in two layers
+
+**Decision.** A refinement of the Playoff Prop Desk (not a rebuild), from the owner's review
+after using it on CHC@SD Game 2, and a reorganisation of the postseason matchup page around it.
+
+- **Collapsed hitter rows are a scan**: slot, name, hand, then Season · L14 · Post as **bare
+  counts** and a game strip. What the row counts ("Games with 1+ hit") is said once in the
+  lineup header, not nine times. L28, plate appearances, the opponent, the series and
+  batter-vs-pitcher moved behind the tap; rates live there and in the thresholds, where
+  there is room to put the sample beside them.
+- **The market mode moves the eye.** Hitter modes quiet the starter cards; pitching modes
+  quiet the lineups; Batter K keeps both, because the opposing starter carries that market.
+- **A starter card leads with one headline** for the selected market — "5.2 K / start",
+  "3.4 H allowed / start", "1.1 BB / start" — then workload (~pitches · BF · ~IP), then the
+  recent strips (the market's own, plus pitches and batters faced in pitching modes), then
+  the opposing lineup. The start-by-start table is folded under "Start by start".
+- **Thresholds are a lookup**: pills for every mode (4+ / 5+ / 6+ / 7+ for starters too) and
+  one small table at a time — Player · Season · L14 · Post, or Starter · Season · Last 6
+  recorded · Post.
+- **Strips mark the boundary**: an orange rule where the regular season stops, playoff games
+  outlined after it.
+- **Watching**: a star on any hitter or starter pins up to four per game in a bar at the top
+  of the desk; a chip scrolls to the player and opens the row. Browser storage, nothing
+  recorded, no odds — a bookmark, not a pick.
+
+**The page in two layers.** On postseason pages: the Prop Desk ("evidence for player and
+pitcher decisions"), then a **Game Analysis** divider ("context and interpretation") over
+Team Identity, What This Game Is About, Key Matchups, Expected Game Shape and Storylines.
+**Retired from postseason pages**: Players Positioned to Succeed (scores like 80/77/76 that
+interpret without showing their evidence — the desk shows the evidence) and Player /
+Pitcher Trends (duplicated by the desk's strips and slices; their one unique element, a hit
+streak, is visible in the strip). **Key Matchups asks tactical questions** instead of prop
+questions the desk now answers (`services/mlb_playoff_matchups.py`): can either lineup run
+up a starter's pitch count (pitches per PA against his hand, beside his pitches and batters
+a start), which lineup has the platoon advantage (switch hitters count), and which bullpen
+is under more pressure (relief pitches over the feed's last three days, named, with
+back-to-back relievers). **Regular-season pages are unchanged** — they have no desk, so they
+keep every section.
+
+**Rejected in this pass:** adding metrics (the owner's rule: this pass is hierarchy, not
+data), and a score of any kind replacing Players Positioned to Succeed.
+
+**Tradeoffs.** Bare counts on the collapsed row trade a glanceable rate for width; 111/162
+reads slower than 69% for some readers, and the threshold table carries the rate one tap
+away. The bullpen question goes stale with the feed (a day behind), which is why it names
+its dates. Watching is per browser and per game, so it does not follow the reader between
+devices.
+
+---
+
 ## 2026-09-30 — A Playoff Prop Desk on postseason MLB matchup pages, and the two phases split
 
 **Decision.** Postseason MLB matchup pages get a **Playoff Prop Desk** between the header

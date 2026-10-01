@@ -125,6 +125,10 @@ small samples as counts. **Regular season and postseason are never pooled**: the
 playoff rows in `dataset`, `load_plate_appearances(phase=...)` splits them, and the MLB
 page's season reads are regular-season only. L14/L28 are the last days *of the regular
 season*. The prop scorers still read both phases, deliberately, until that is measured.
+The postseason page is **two layers**: the desk, then a "Game Analysis" divider. Players
+Positioned to Succeed and Player Trends are retired there, and Key Matchups asks tactical
+questions (pitch counts, platoon, bullpen) rather than prop ones. Regular-season pages keep
+every section.
 
 **The site rolls itself over at midnight.** The export is static, so "today" is baked
 in at build time; the daily run precomputes **three** days and an inline script in
