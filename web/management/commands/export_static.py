@@ -62,7 +62,7 @@ _SEEDS = (
     "/", "/?day=tomorrow", "/?day=day-after", "/results/", "/performance/",
     "/standings/", "/trending/", "/playoffs/",
     *(f"/trending/?league={lg}" for lg in ("MLB", "WNBA")),
-    *(f"/playoffs/?league={lg}" for lg in ("MLB", "WNBA")),
+    *(f"/playoffs/?league={lg}" for lg in ("MLB", "WNBA", "MLS")),
     *(f"/standings/?league={lg}" for lg in
       ("MLB", "WNBA", "MLS", "NFL", "NBA", "NHL")),
     # Both axes of the NFL schedule, enumerated rather than crawled: 18 weeks and 32

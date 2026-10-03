@@ -69,7 +69,8 @@ model. Percentage-point differences are **"pts" everywhere** on it (decision log
 league surfaces, reached from one header menu (leagues first, Performance and Daily
 Results at the bottom): **Standings** for MLB, WNBA, MLS, NFL, NBA and NHL;
 **Trending players** for MLB and WNBA; an **MLB playoff race** that becomes the
-**postseason bracket** in October; and the **NFL season
+**postseason bracket** in October; an **MLS playoff race** (points, cut at seventh and
+ninth per conference, clinched/out as conservative arithmetic); and the **NFL season
 schedule**, browsable by week or by team. Every one of them is description, never
 forecast — the rule the editorial signals follow applies to all of them, and each page
 states what it is *not*. A menu entry with no page yet renders as plain text rather

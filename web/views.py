@@ -159,7 +159,7 @@ def trending(request):
 # Leagues with a race page. Each has its own builder because the formats differ
 # structurally — MLB seeds six per league from divisions plus wild cards, the WNBA seeds
 # eight across one table — and forcing one through the other would invent structure.
-_PLAYOFF_LEAGUES = ("MLB", "WNBA")
+_PLAYOFF_LEAGUES = ("MLB", "WNBA", "MLS")
 
 
 def playoffs(request):
@@ -179,6 +179,10 @@ def playoffs(request):
             return render(request, "web/bracket.html", context)
     if league == "WNBA":
         from services.wnba_playoffs import build_context
+    elif league == "MLS":
+        # Points, two conferences, cut at seventh and ninth — its own builder, like the
+        # WNBA's, because the format is structurally different (decision log 2026-10-02).
+        from services.mls_playoffs import build_context
     else:
         from services.mlb_playoffs import build_context
     context = build_context(timezone.localdate())
@@ -190,14 +194,18 @@ def playoffs(request):
 def _playoff_leagues() -> list[str]:
     """Only offer a league with something to show, so the switch never lands on an
     empty page: a race inside its window, or an MLB bracket."""
-    from services import mlb_bracket, playoff_window, standings
+    from services import mlb_bracket, mls_playoffs, playoff_window, standings
 
     today = timezone.localdate()
-    return [
-        lg for lg in _PLAYOFF_LEAGUES
-        if playoff_window.state(lg, standings.for_league(lg)) in ("live", "final")
-        or (lg == "MLB" and mlb_bracket.is_active(mlb_bracket.load(today)))
-    ]
+
+    def showable(lg: str) -> bool:
+        if lg == "MLS":
+            # MLS keeps its own points table, so its window reads games played there.
+            return mls_playoffs.window_state(mls_playoffs.load_table(today)) in ("live", "final")
+        return (playoff_window.state(lg, standings.for_league(lg)) in ("live", "final")
+                or (lg == "MLB" and mlb_bracket.is_active(mlb_bracket.load(today))))
+
+    return [lg for lg in _PLAYOFF_LEAGUES if showable(lg)]
 
 
 def playoff_series(request, slug: str):

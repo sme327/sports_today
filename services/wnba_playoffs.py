@@ -83,16 +83,20 @@ def build_context(as_of: date | None = None, db_path: Path = DB_PATH) -> dict:
     table = standings.for_league("WNBA", today, db_path=db_path)
     window = playoff_window.state("WNBA", table)
     eyebrow, disclaimer = playoff_window.headline("WNBA", window)
+    # The shared template's default wording is MLB's ("six-team field in each league").
+    words = {"page_read": "The current top eight across the league, the nearest chasers, and "
+                          "how far back they are.",
+             "standings_league": "WNBA"}
 
     if window in ("early", "preseason"):
-        return {"section": "playoffs", "league": "WNBA", "panels": [], "games": [],
+        return {**words, "section": "playoffs", "league": "WNBA", "panels": [], "games": [],
                 "schedule_available": True, "window_end": None, "as_of": today,
                 "has_data": False, "window": window,
                 "eyebrow": eyebrow, "disclaimer": disclaimer,
                 "show_rivals": False, "format_note": "Top eight, seeded across the league"}
 
     panels, _status = race(table)
-    return {"section": "playoffs", "league": "WNBA", "panels": panels,
+    return {**words, "section": "playoffs", "league": "WNBA", "panels": panels,
             # No "games that matter" list: the WNBA slate is small and, right now, on a
             # two-week FIBA break. An empty list is honest; an invented one is not.
             "games": [], "schedule_available": True, "window_end": None,

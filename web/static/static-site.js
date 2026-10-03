@@ -9,6 +9,11 @@
   const scoreLeagues = [
     ["MLB", "baseball", "mlb"], ["WNBA", "basketball", "wnba"],
     ["MLS", "soccer", "usa.1"], ["NFL", "football", "nfl"],
+    // The schedule-only leagues too: their cards are ESPN events, so they match on id.
+    // Missing from this list, an NHL game finished hours ago still read "upcoming" until
+    // the next publish.
+    ["NHL", "hockey", "nhl"], ["NBA", "basketball", "nba"],
+    ["World Cup", "soccer", "fifa.world"],
     // Week Zero intentionally includes FBS + FCS. Duplicate cross-division events
     // are harmless: cards match ESPN's stable event id before falling back to teams.
     ["NCAAF", "football", "college-football", "80"],

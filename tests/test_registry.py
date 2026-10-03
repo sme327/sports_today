@@ -38,3 +38,19 @@ def test_nfl_deep_dive_is_decided_per_game_not_per_league():
     for lg in ("MLB", "WNBA", "MLS"):
         hook = getattr(get_adapter(lg), "deep_dive_available", None)
         assert hook is None or callable(hook)
+
+
+def test_every_registered_league_has_live_scores_on_the_slate():
+    """The slate's live-score script polls a hand-kept list of leagues. A league left off
+    it shows a game that finished hours ago as upcoming until the next publish — NHL did
+    exactly that on 2026-10-01."""
+    import re
+    from pathlib import Path
+
+    from leagues.base import iter_adapters
+
+    script = (Path(__file__).resolve().parents[1] / "web/static/static-site.js").read_text()
+    block = script[script.index("const scoreLeagues"):script.index("function normalizeEspnEvent")]
+    polled = set(re.findall(r'\["([^"]+)",', block))
+    missing = [a.league for a in iter_adapters() if a.league not in polled]
+    assert not missing, f"no live scores for: {missing}"

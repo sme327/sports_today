@@ -34,7 +34,7 @@ LEAGUE_WINDOWS: dict[str, tuple[int, int]] = {
     "NBA": (82, 20),      # ~mid-March
     "NHL": (82, 20),      # ~mid-March
     "WNBA": (44, 12),     # ~mid-August
-    "MLS": (34, 8),       # late September, before Decision Day
+    "MLS": (34, 8),       # ~Oct 1 in 2026; Decision Day is Nov 7 (a World Cup year)
 }
 
 

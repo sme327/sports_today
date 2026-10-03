@@ -9,6 +9,54 @@ Newest first. Each entry: **Decision · Reason · Tradeoffs · Future considerat
 
 ---
 
+## 2026-10-02 — An MLS playoff race, and live scores for every league on the slate
+
+**Decision.** `/playoffs/?league=MLS` is a playoff race page (`services/mls_playoffs.py`),
+linked from the header menu under MLS and offered in the playoff league switch. Separately,
+the slate's live-score script now polls NHL, NBA and World Cup as well as the five leagues
+it already did, and a test fails if a registered league is ever missing from that list.
+
+**The live-score gap.** NHL games that finished hours earlier still read "upcoming": the
+script in `static-site.js` keeps a hand-written list of ESPN scoreboards and NHL, NBA and the
+World Cup were never on it, so their cards only changed state when the site was republished.
+They are ESPN events, so the cards match on event id.
+
+**The MLS format, from the source.** Nine per conference: places 1-7 straight to Round One
+(best-of-three), 8-9 to the Wild Card matches — ESPN's standings note on each club, read on
+2026-10-02, not a remembered format. The page shows each conference as Round One places, a
+"Wild Card places" divider, then every club that can still reach ninth.
+
+**How it reads.**
+- **Points, not games back.** The cushion on a row in the places is its points over tenth
+  ("+13 on 10th", or "level with 10th on points" where only tiebreakers separate them); a
+  chaser shows points behind ninth and the most it can finish on (points + 3 × games left).
+- **The order is the stored `conference_rank`** — ESPN's, with the league's tiebreakers —
+  never a re-sort on points: three Eastern clubs level on 33 sit 8th, 9th and 10th.
+- **Clinched and out are conservative arithmetic.** Clinched: no more than (places − 1)
+  other clubs can still reach the club's points. Out: at least that many already have more
+  than it can reach. A tie counts against the club both ways, since points cannot settle
+  MLS's tiebreakers, so a clinch can appear a match after the league announces it and never
+  before. Only a clinch earns words on a row; which places a row holds, the table says.
+- **Games that matter**: the next 14 days of regular-season fixtures, ranked by who is
+  involved; a meeting of two clubs within 6 points of ninth in the same conference is named
+  a six-pointer. ESPN's soccer scoreboard ignores date ranges, so the fortnight is fetched a
+  day at a time in parallel (≈15 requests, at build time, non-fatal like the MLB schedule).
+
+**The season ends later than the window assumed.** `playoff_window` said "late September,
+before Decision Day" for MLS; in 2026 Decision Day is **Nov 7** (106 regular-season fixtures
+were left on Oct 2). The 8-games-left threshold opened the page around Oct 1, which is the
+right moment; only the comment was wrong.
+
+**Shared template.** `playoffs.html` had MLB's wording hard-coded — "the current six-team
+field in each league" and a standings link to MLB — and the WNBA page was showing both. The
+page read, the games note, the record column's label and the standings link now come from
+each league's context, with MLB's text as the default.
+
+**Future.** When the regular season ends the page persists as "how the race finished"; an
+MLS Cup bracket like MLB's is the natural successor once its seeds are set.
+
+---
+
 ## 2026-09-30 — The static export, profiled: 13 minutes to 74 seconds
 
 **Decision.** Two read-once caches and one narrowed loop, chosen by profiling a full export

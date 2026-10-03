@@ -140,3 +140,22 @@ def test_a_regular_season_page_is_unchanged(monkeypatch):
     text = _page_text(monkeypatch, "regular")
     assert "DESK" not in text and "Game Analysis" not in text
     assert "Players Positioned to Succeed" in text
+
+
+# --- MLS playoff race (decision log 2026-10-02) ----------------------------------------
+
+def test_the_mls_race_page_and_its_menu_entry(monkeypatch):
+    from services import mls_playoffs
+
+    monkeypatch.setattr(mls_playoffs, "fetch_fixtures", lambda *a: [])
+    response = Client(HTTP_HOST="localhost").get("/playoffs/?league=MLS")
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert "MLS playoff race" in html
+    assert 'href="/playoffs/?league=MLS"' in html          # the header menu entry
+
+
+def test_the_mls_race_is_an_export_seed():
+    from web.management.commands.export_static import _SEEDS
+
+    assert "/playoffs/?league=MLS" in _SEEDS

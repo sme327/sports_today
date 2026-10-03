@@ -5,9 +5,9 @@
   <div>
     <div class="eyebrow">{{ eyebrow }}</div>
     <h1 class="page-title">{{ league }} playoff race</h1>
-    <p class="page-read">The current six-team field in each league, the nearest chasers, and the games that can move those races.</p>
+    <p class="page-read">{% if page_read %}{{ page_read }}{% else %}The current six-team field in each league, the nearest chasers, and the games that can move those races.{% endif %}</p>
   </div>
-  <a class="text-link" href="{% url 'standings' %}?league=MLB">Full standings →</a>
+  <a class="text-link" href="{% url 'standings' %}?league={{ standings_league|default:league }}">Full standings →</a>
 </section>
 
 {% if has_data %}
@@ -56,8 +56,18 @@
       against the field is a different September from 24 against the basement. The last
       column is schedule arithmetic — every one of those games is on the calendar today —
       and it forecasts nothing about who wins them.{% endcomment %}
-      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>Record</span><span>Games left</span>{% if show_rivals %}<span title="Remaining games against the other teams in this conference's field and bubble">vs. race</span>{% endif %}</div>
+      <div class="race-row race-head" role="row"><span>Seed</span><span>Team</span><span>{{ record_label|default:"Record" }}</span><span>Games left</span>{% if show_rivals %}<span title="Remaining games against the other teams in this conference's field and bubble">vs. race</span>{% endif %}</div>
       {% for team in panel.field %}
+      <div class="race-row in-field" role="row">
+        <b class="race-seed">{{ team.seed }}</b>
+        <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
+        <span class="race-record">{{ team.record }}</span><span>{{ team.remaining }}</span>{% if show_rivals %}<span class="race-rivals">{% if team.vs_rivals is not None %}{{ team.vs_rivals }}{% else %}—{% endif %}</span>{% endif %}
+      </div>
+      {% endfor %}
+      {% comment %}MLS splits its field: 1-7 go straight to Round One, 8-9 play the Wild
+      Card matches. A league without that split sends no "wildcard" list.{% endcomment %}
+      {% if panel.wildcard %}<div class="race-divider"><span>Wild Card places</span></div>{% endif %}
+      {% for team in panel.wildcard %}
       <div class="race-row in-field" role="row">
         <b class="race-seed">{{ team.seed }}</b>
         <span class="race-team">{% if team.logo %}<img src="{{ team.logo }}" alt="" width="24" height="24">{% endif %}<span><strong>{{ team.name }}</strong><small>{{ team.status }}</small></span></span>
@@ -77,13 +87,14 @@
       </div>
       {% endfor %}
     </div>
+    {% if panel.out %}<p class="quiet-note race-out">Mathematically out: {{ panel.out|join:", " }}.</p>{% endif %}
   </section>
   {% endfor %}
 </div>
 
 <section class="important-games">
   <div class="section-heading">
-    <div><h2>Games that matter next</h2><p>Highest-leverage matchups in the next two weeks, based on the current division and Wild Card races.</p></div>
+    <div><h2>Games that matter next</h2><p>{% if games_note %}{{ games_note }}{% else %}Highest-leverage matchups in the next two weeks, based on the current division and Wild Card races.{% endif %}</p></div>
     <span>Through {{ window_end|date:"M j" }}</span>
   </div>
   {% if games %}
